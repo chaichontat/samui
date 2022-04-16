@@ -1,0 +1,49 @@
+@font-face {
+  font-family: 'Inter var';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../static/fonts/Inter-roman.var.woff2') format('woff2');
+  font-named-instance: 'Regular';
+}
+
+@font-face {
+  font-family: 'Inter var';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../static/fonts/Inter-italic.var.woff2') format('woff2');
+  font-named-instance: 'Italic';
+}
+
+@font-face {
+  font-family: 'Cera';
+  font-style: bold;
+  src: url('../static/fonts/cera.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Altone';
+  font-style: bold;
+  src: url('../static/fonts/AltoneTrial-Bold.ttf') format('truetype');
+}
+
+@tailwind base;
+@layer base {
+  html {
+    font-family: 'Inter var', sans-serif;
+  }
+  body {
+    @apply bg-gray-900 text-slate-100;
+  }
+}
+@tailwind components;
+@layer components {
+  .button-base {
+    @apply border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-700 xl:px-4 xl:text-sm 2xl:px-5 2xl:text-base;
+  }
+  .button {
+    @apply button-base mr-2 mb-2 rounded-lg;
+  }
+}
+@tailwind utilities;

@@ -1,0 +1,47 @@
+[tool.poetry]
+authors = ["Chaichontat Sriworarat <34997334+chaichontat@users.noreply.github.com>"]
+description = ""
+license = "GPL v3.0"
+name = "loopy-browser"
+packages = [
+  {include = "loopy"},
+]
+version = "0.0.1"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+hypothesis = "^6.39.1"
+isort = "^5.10.1"
+pre-commit = "^2.17.0"
+pytest = "^7.0.1"
+pytest-cov = "^3.0.0"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
+[tool.black]
+include = "loopy"
+line-length = 110
+target-version = ['py310']
+
+[tool.pyright]
+include = ["loopy"]
+pythonVersion = "3.10"
+reportMissingTypeStubs = false
+reportPrivateUsage = false
+reportPropertyTypeMismatch = false
+reportUnknownMemberType = false
+reportUntypedFunctionDecorator = false
+reportUnusedImport = false
+reportUnusedVariable = "warning"
+typeCheckingMode = "strict"
+
+[tool.isort]
+line_length = 110
+profile = "black"
+py_version = 310
+src_paths = ["loopy"]

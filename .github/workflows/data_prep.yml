@@ -1,0 +1,50 @@
+name: Run Data Prep Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  release:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: ['3.10']
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Update PATH
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Cache data
+        uses: actions/cache@v2
+        with:
+          key: ${{ runner.os }}
+          path: |
+            data
+
+      - name: Install Conda environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          cache-env: true
+          environment-file: environment.yml
+          environment-name: loopy
+
+      - name: Test run
+        run: |
+          wget --directory-prefix=data -nc https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/test_img.tiff
+          python loopy/gentiff.py data/test_img.tiff /

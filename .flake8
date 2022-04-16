@@ -1,0 +1,12 @@
+[flake8]
+max-line-length = 120
+exclude =
+    archive
+ignore =
+    C408,C812,C815,C816
+    D
+    E
+    N
+    S101
+    Q000
+    RST
