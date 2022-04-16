@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { browser, dev } from '$app/env';
-  import { base } from '$app/paths';
+  import { dev } from '$app/env';
+  import promise from '$lib/meh';
+  import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/maplib';
   import { ScaleLine, Zoom } from 'ol/control.js';
-  import type { Geometry, Point } from 'ol/geom.js';
+  import type { Point } from 'ol/geom.js';
   import type { Draw } from 'ol/interaction.js';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
@@ -16,18 +17,34 @@
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
-  import type getData from '../lib/fetcher';
-  import { fetchArrow } from '../lib/fetcher';
   import { select } from '../lib/mapp/selector';
   import { currRna, params, store } from '../lib/store';
-  import { dataPromise, proteinMap, sample } from '../routes/index.svelte';
 
   let elem: HTMLDivElement;
   let selecting = false;
-  const proteins = Object.keys(proteinMap) as keyof typeof proteinMap;
-  const getColorParams = colorVarFactory(proteinMap);
+  let coords: { x: number; y: number }[];
+  let proteinMap: Record<string, number>;
+  let proteins = ['', '', ''];
+  let getColorParams: ReturnType<typeof colorVarFactory>;
 
-  let coords: Awaited<typeof dataPromise>['coords'];
+  async function hydrate(promise: Promise<Sample>) {
+    const sample = (await promise)!;
+    coords = sample.image.coords!;
+    proteinMap = sample.image.channel!;
+
+    const urls = sample.image.urls.map((url) => ({ url }));
+    sourceTiff = new GeoTIFF({
+      normalize: false,
+      sources: urls
+    });
+
+    proteins = Object.keys(proteinMap);
+    getColorParams = colorVarFactory(proteinMap);
+
+    addData(coords);
+
+    // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
+  }
 
   let bgLayer: TileLayer;
   let sourceTiff: GeoTIFF;
@@ -42,26 +59,6 @@
   let curr = 0;
   let draw: Draw;
   let drawClear: () => void;
-
-  if (browser) {
-    sourceTiff = new GeoTIFF({
-      normalize: false,
-      sources: dev
-        ? [
-            // TODO: Why does GeoTiff.js fill the last band from the penultimate band?
-            { url: `${base}/cogs/${sample}_1.tif` },
-            { url: `${base}/cogs/${sample}_2.tif` }
-          ]
-        : [
-            {
-              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}_1.tif`
-            },
-            {
-              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}_2.tif`
-            }
-          ]
-    });
-  }
 
   const spot_px = params.spotDiam / params.mPerPx;
 
@@ -95,107 +92,109 @@
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
   const { circleFeature, activeLayer } = getCanvasCircle(selectStyle);
   let { spotsSource, addData } = getWebGLCircles();
-  let { spotsSource: dapi, addData: adddapi } = getWebGLCircles();
+  // let { spotsSource: dapi, addData: adddapi } = getWebGLCircles();
   let spotsLayer: WebGLPointsLayer<VectorSource<Point>>;
 
-  async function hydrate(
-    dataPromise: ReturnType<typeof getData>,
-    spotsSource: VectorSource<Geometry>
-  ) {
-    ({ coords } = await dataPromise);
-    addData(coords);
-    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
-    draw.on('drawend', () => (selecting = false));
+  onMount(
+    (() => async () => {
+      await hydrate(promise!).catch(console.error);
 
-    adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
-  }
-
-  onMount(() => {
-    spotsLayer = new WebGLPointsLayer({
-      // @ts-expect-error
-      source: spotsSource,
-      style: genStyle()
-    });
-
-    const dapiLayer = new WebGLPointsLayer({
-      // @ts-expect-error
-      source: dapi,
-      style: {
-        symbol: {
-          symbolType: 'square',
-          size: 4,
-          color: '#ffffff',
-          opacity: 0.5
-        }
-      },
-      minZoom: 4
-    });
-
-    bgLayer = new TileLayer({
-      style: {
-        variables: getColorParams(showing, maxIntensity),
-        color: [
-          'array',
-          ['*', ['/', ['band', ['var', 'red']], ['var', 'redMax']], ['var', 'redMask']],
-          ['*', ['/', ['band', ['var', 'green']], ['var', 'greenMax']], ['var', 'greenMask']],
-          ['*', ['/', ['band', ['var', 'blue']], ['var', 'blueMax']], ['var', 'blueMask']],
-          1
-        ]
-      },
-      source: sourceTiff
-    });
-
-    map = new Map({
-      target: 'map',
-      layers: [bgLayer, spotsLayer, dapiLayer, activeLayer],
-      view: sourceTiff.getView()
-    });
-
-    map.removeControl(map.getControls().getArray()[0]);
-    map.addControl(new Zoom({ delta: 0.4 }));
-    map.addControl(
-      new ScaleLine({
-        text: true,
-        minWidth: 140
-      })
-    );
-
-    // Hover over a circle.
-    map.on('pointermove', (e) => {
-      // Cannot use layer.getFeatures for WebGL.
-      map.forEachFeatureAtPixel(
-        e.pixel,
-        (f) => {
-          const idx = f.getId() as number | undefined;
-          if (idx === curr || !idx) return true;
-          $store.currIdx = { idx, source: 'map' }; // As if came from outside.
-          curr = idx;
-          return true; // Terminates search.
-        },
-        { layerFilter: (layer) => layer === spotsLayer, hitTolerance: 10 }
-      );
-    });
-
-    // Lock / unlock a circle.
-    map.on('click', (e) => {
-      map.forEachFeatureAtPixel(e.pixel, (f) => {
-        const idx = f.getId() as number | undefined;
-        if (!idx) return true;
-        const unlock = idx === $store.lockedIdx.idx;
-        $store.lockedIdx = { idx: unlock ? -1 : idx, source: 'scatter' }; // As if came from outside.
-        curr = idx;
-        return true;
+      spotsLayer = new WebGLPointsLayer({
+        // @ts-expect-error
+        source: spotsSource,
+        style: genStyle()
       });
-    });
 
-    map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
-    map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
+      // const dapiLayer = new WebGLPointsLayer({
+      //   // @ts-expect-error
+      //   source: dapi,
+      //   style: {
+      //     symbol: {
+      //       symbolType: 'square',
+      //       size: 4,
+      //       color: '#ffffff',
+      //       opacity: 0.5
+      //     }
+      //   },
+      //   minZoom: 4
+      // });
 
-    hydrate(dataPromise, spotsSource).catch(console.error);
-  });
+      bgLayer = new TileLayer({
+        style: {
+          variables: {
+            blue: 1,
+            green: 2,
+            red: 3,
+            blueMax: 128,
+            greenMax: 128,
+            redMax: 128,
+            blueMask: 1,
+            greenMask: 1,
+            redMask: 1
+          },
+          color: [
+            'array',
+            ['*', ['/', ['band', ['var', 'red']], ['var', 'redMax']], ['var', 'redMask']],
+            ['*', ['/', ['band', ['var', 'green']], ['var', 'greenMax']], ['var', 'greenMask']],
+            ['*', ['/', ['band', ['var', 'blue']], ['var', 'blueMax']], ['var', 'blueMask']],
+            1
+          ]
+        },
+        source: sourceTiff
+      });
+
+      map = new Map({
+        target: 'map',
+        layers: [bgLayer, spotsLayer, activeLayer],
+        view: sourceTiff.getView()
+      });
+
+      map.removeControl(map.getControls().getArray()[0]);
+      map.addControl(new Zoom({ delta: 0.4 }));
+      map.addControl(
+        new ScaleLine({
+          text: true,
+          minWidth: 140
+        })
+      );
+
+      // Hover over a circle.
+      map.on('pointermove', (e) => {
+        // Cannot use layer.getFeatures for WebGL.
+        map.forEachFeatureAtPixel(
+          e.pixel,
+          (f) => {
+            const idx = f.getId() as number | undefined;
+            if (idx === curr || !idx) return true;
+            $store.currIdx = { idx, source: 'map' }; // As if came from outside.
+            curr = idx;
+            return true; // Terminates search.
+          },
+          { layerFilter: (layer) => layer === spotsLayer, hitTolerance: 10 }
+        );
+      });
+
+      // Lock / unlock a circle.
+      map.on('click', (e) => {
+        map.forEachFeatureAtPixel(e.pixel, (f) => {
+          const idx = f.getId() as number | undefined;
+          if (!idx) return true;
+          const unlock = idx === $store.lockedIdx.idx;
+          $store.lockedIdx = { idx: unlock ? -1 : idx, source: 'scatter' }; // As if came from outside.
+          curr = idx;
+          return true;
+        });
+      });
+
+      map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
+      map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
+      ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
+      draw.on('drawend', () => (selecting = false));
+    })()
+  );
 
   // Update "brightness"
-  $: bgLayer?.updateStyleVariables(getColorParams(showing, maxIntensity));
+  $: if (getColorParams) bgLayer?.updateStyleVariables(getColorParams(showing, maxIntensity));
   $: spotsLayer?.updateStyleVariables({ opacity: colorOpacity });
 
   // Change spot color
@@ -230,7 +229,7 @@
   $: spotsLayer?.setVisible(showAllSpots);
 
   // Enable/disable polygon draw
-  $: if (elem) {
+  $: if (elem && map) {
     if (selecting) {
       drawClear();
       map?.addInteraction(draw);

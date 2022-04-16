@@ -1,21 +1,10 @@
-<script lang="ts" context="module">
-  import { browser } from '$app/env';
-  import getData from '../lib/fetcher';
-  import Mapp from '../pages/mapp.svelte';
-  import Rna from '../pages/rna.svelte';
+<script lang="ts">
+  import promise from '$lib/meh';
+  import Mapp from '$src/pages/mapp.svelte';
+  import Rna from '$src/pages/rna.svelte';
 
-  export const sample = 'Br6522_Ant_IF';
-  export const proteinMap = {
-    DAPI: 2,
-    TMEM119: 6,
-    Olig2: 5,
-    GFAP: 3,
-    NeuN: 4,
-    Lipofuschin: 1,
-    None: 7
-  };
-
-  export const dataPromise = browser ? getData(sample) : undefined;
+  let sample = '';
+  promise?.then((s) => (sample = s.name)).catch(console.error);
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>

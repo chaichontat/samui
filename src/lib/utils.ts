@@ -1,8 +1,8 @@
 import LRU from 'lru-cache';
 import tippy from 'tippy.js';
 
-export function genLRU<K extends unknown[], V>(f: (...args: K) => V) {
-  const cache = new LRU<string, V>({ max: 100 });
+export function genLRU<K extends unknown[], V>(f: (...args: K) => V, max = 100): (...args: K) => V {
+  const cache = new LRU<string, V>({ max });
   return (...args: K): V => {
     const key = JSON.stringify(args);
     if (cache.has(key)) return cache.get(key) as V; // Checked

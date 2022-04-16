@@ -1,24 +1,25 @@
 <script lang="ts">
-  import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
+  import promise from '$lib/meh';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import Chart, { type ChartConfiguration, type ChartEvent } from 'chart.js/auto/auto.js';
   import ChartDataLabels from 'chartjs-plugin-datalabels';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
-  import type getData from '../lib/fetcher';
   import { currRna, store } from '../lib/store';
   import { genLRU } from '../lib/utils';
-  import { dataPromise } from '../routes/index.svelte';
   let curr = 0;
 
-  let coords: Awaited<typeof dataPromise>['coords'];
+  let coords: { x: number; y: number }[];
+
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
   let getColor: (name: string) => string[];
 
   const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
-  async function hydrate(dataPromise: ReturnType<typeof getData>) {
-    ({ coords } = await dataPromise);
+  async function hydrate() {
+    const sample = await promise!;
+    coords = sample.image.coords!;
+
     getColor = genLRU((name: string): string[] => {
       const out = [];
       for (const d of $currRna.values) {
@@ -160,7 +161,7 @@
       }
     );
 
-    hydrate(dataPromise).catch(console.error);
+    hydrate().catch(console.error);
   });
 
   // Change color for different markers.

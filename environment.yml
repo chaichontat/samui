@@ -4,5 +4,8 @@ dependencies:
   - python=3.10
   - click
   - gdal
+  - pyarrow
   - rasterio
+  - scanpy
+  - scipy
   - tifffile

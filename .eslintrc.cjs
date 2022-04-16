@@ -18,7 +18,7 @@ module.exports = {
     sourceType: 'module',
     tsconfigRootDir: __dirname,
     extraFileExtensions: ['.svelte'],
-    project: ['./tsconfig.json', './prettier.config.js']
+    project: ['./tsconfig.json', './prettier.config.cjs']
   },
   env: {
     browser: true,

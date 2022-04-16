@@ -34,6 +34,7 @@ pythonVersion = "3.10"
 reportMissingTypeStubs = false
 reportPrivateUsage = false
 reportPropertyTypeMismatch = false
+reportUnknownArgumentType = false
 reportUnknownMemberType = false
 reportUntypedFunctionDecorator = false
 reportUnusedImport = false

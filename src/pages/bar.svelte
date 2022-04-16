@@ -3,7 +3,7 @@
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
   import { multipleSelect, store } from '../lib/store';
-  import { dataPromise } from '../routes/index.svelte';
+  // import { dataPromise } from '../routes/index.svelte';
 
   let data: Awaited<typeof dataPromise>['data'];
 

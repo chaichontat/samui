@@ -1,32 +1,19 @@
 <script lang="ts" context="module">
   import { browser } from '$app/env';
-  import { genRetrieve } from '$src/lib/fetcher';
+  import promise from '$lib/meh';
   import { currRna } from '$src/lib/store';
   import { clickOutside, debounce } from '$src/lib/utils';
   import { Fzf } from 'fzf';
   import { get } from 'svelte/store';
   import { fade } from 'svelte/transition';
-  import { dataPromise } from '../../routes/index.svelte';
 
   let names: { [key: string]: number };
   let keys: string[] = [];
   let fzf: Fzf<readonly string[]>;
-  let ptr: number[];
-  let coords: { x: number; y: number }[];
+
   let retrieve: (selected: string) => Promise<number[]>;
 
   let currShow = '';
-  const getHeader = async () => {
-    [names, ptr] = await Promise.all([
-      fetch('/Br6522_Ant_IF/names.json').then(
-        (x) => x.json() as Promise<{ [key: string]: number }>
-      ),
-      fetch('/Br6522_Ant_IF/ptr.json').then((res) => res.json() as Promise<number[]>)
-    ]);
-
-    keys = Object.keys(names);
-    fzf = new Fzf(keys, { limit: 8 });
-  };
 
   function highlightChars(str: string, indices: Set<number>): string {
     const chars = str.split('');
@@ -47,13 +34,16 @@
 
 <script lang="ts">
   let showSearch = true;
+
   async function hydrate() {
-    const dp = (async () => {
-      ({ coords } = await dataPromise);
-    })().catch(console.error);
-    const he = getHeader().catch(console.error);
-    await Promise.all([dp, he]);
-    retrieve = genRetrieve(ptr, names, coords.length);
+    const sample = await promise!;
+    names = sample.features.genes.names;
+    keys = Object.keys(names);
+    retrieve = sample.features.genes.retrieve;
+    fzf = new Fzf(keys, { limit: 8 });
+
+    // const he = getHeader().catch(console.error);
+    // await Promise.all([dp, he]);
     currShow = 'GFAP';
     setVal('GFAP');
   }
