@@ -47,4 +47,4 @@ jobs:
       - name: Test run
         run: |
           wget --directory-prefix=data -nc https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/test_img.tiff
-          python loopy/gentiff.py data/test_img.tiff /
+          python loopy/gentiff.py data/test_img.tiff .
