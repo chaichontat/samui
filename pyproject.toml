@@ -36,6 +36,7 @@ reportPrivateUsage = false
 reportPropertyTypeMismatch = false
 reportUnknownArgumentType = false
 reportUnknownMemberType = false
+reportUnknownVariableType = false
 reportUntypedFunctionDecorator = false
 reportUnusedImport = false
 reportUnusedVariable = "warning"
