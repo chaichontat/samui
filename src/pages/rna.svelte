@@ -9,7 +9,9 @@
   import Scatter from './scatter.svelte';
   let showing = 0;
 
+  let vegaShown = false;
   $: console.log(showing);
+  $: if (showing === 1) vegaShown = true;
 </script>
 
 <section class="flex flex-grow flex-col gap-y-2">
@@ -22,6 +24,7 @@
 
     <TabGroup on:change={(e) => (showing = e.detail)}>
       <TabList class="flex space-x-1 rounded-xl bg-gray-800/50 p-1">
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
         <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
           <div
             use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
@@ -30,7 +33,6 @@
             Gene/Intensity Correlation
           </div>
         </Tab>
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
         <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Tab 3</Tab> -->
       </TabList>
       <!-- <TabPanels class="mt-4">
@@ -40,8 +42,10 @@
     </TabGroup>
 
     <div class="mt-2">
-      <div class:hidden={showing !== 0}><Veg /></div>
-      <div class:hidden={showing !== 1}><Bar /></div>
+      <div class:hidden={showing !== 0}><Bar /></div>
+      {#if vegaShown}
+        <div class:hidden={showing !== 1}><Veg /></div>
+      {/if}
     </div>
   </div>
 </section>
