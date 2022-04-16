@@ -4,7 +4,6 @@ import { Vector as VectorLayer } from 'ol/layer.js';
 import 'ol/ol.css';
 import VectorSource from 'ol/source/Vector.js';
 import type { Style } from 'ol/style.js';
-import { params } from '../store';
 
 export function colorVarFactory(mapping: { [key: string]: number }) {
   const len = Object.keys(mapping).length - 1;
@@ -25,14 +24,14 @@ export function colorVarFactory(mapping: { [key: string]: number }) {
 }
 
 // WebGL;
-export function getWebGLCircles() {
+export function getWebGLCircles(mPerPx: number) {
   const spotsSource = new VectorSource({ features: [] });
 
   const addData = (coords: { x: number; y: number }[]) =>
     spotsSource.addFeatures(
       coords.map(({ x, y }, i) => {
         const f = new Feature({
-          geometry: new Point([x * params.mPerPx, -y * params.mPerPx]),
+          geometry: new Point([x * mPerPx, -y * mPerPx]),
           value: 0
         });
         f.setId(i);
@@ -43,8 +42,8 @@ export function getWebGLCircles() {
   return { spotsSource, addData };
 }
 
-export function getCanvasCircle(style: Style) {
-  const circleFeature = new Feature({ geometry: new Circle([0, 0], params.spotDiam / 2) });
+export function getCanvasCircle(style: Style, spotDiam: number) {
+  const circleFeature = new Feature({ geometry: new Circle([0, 0], spotDiam / 2) });
   const circleSource = new VectorSource({ features: [circleFeature] });
   const activeLayer = new VectorLayer({
     source: circleSource,

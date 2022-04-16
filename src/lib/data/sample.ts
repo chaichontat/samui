@@ -36,6 +36,7 @@ export class Image {
 
   async hydrate() {
     this.metadata = await fetch(this.headerURL).then((r) => r.json() as Promise<ImageMetadata>);
+
     ({ channel: this.channel, coords: this.coords } = this.metadata!);
     this.n_spot = this.coords.length;
     // const coordsTable = await fetch(this.params.coordsUrl).then((r) => tableFromIPC(r));

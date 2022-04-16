@@ -10,7 +10,7 @@ import 'ol/ol.css';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style } from 'ol/style.js';
 import CircleStyle from 'ol/style/Circle.js';
-import { multipleSelect, params } from '../store';
+import { multipleSelect } from '../store';
 import { debounce } from '../utils';
 
 export function select(map: Map, features: Feature[]) {
@@ -60,6 +60,7 @@ export function select(map: Map, features: Feature[]) {
 
   map.addInteraction(modify);
   map.addInteraction(snap);
+  const spotDiam = map.get('spotDiam') as number;
 
   const drawClear = () => {
     selectSource.clear();
@@ -72,7 +73,7 @@ export function select(map: Map, features: Feature[]) {
       'change',
       debounce((e: BaseEvent) => {
         const polygon = e.target as Geometry;
-        genCircle(selectSource, features, polygon);
+        genCircle(selectSource, features, polygon, spotDiam);
       }, 10)
     );
   });
@@ -80,14 +81,14 @@ export function select(map: Map, features: Feature[]) {
   draw.on('drawend', (event: DrawEvent) => {
     event.preventDefault();
     const polygon = event.feature.getGeometry()!;
-    genCircle(selectSource, features, polygon);
+    genCircle(selectSource, features, polygon, spotDiam);
   });
 
   modify.on('modifyend', (e: ModifyEvent) => {
     console.log(e);
     const polygon = e.features.getArray()[0].getGeometry()!;
     if ('intersectsExtent' in polygon) {
-      genCircle(selectSource, features, polygon);
+      genCircle(selectSource, features, polygon, spotDiam);
     } else {
       console.error("Polygon doesn't have intersectsExtent");
     }
@@ -98,7 +99,7 @@ export function select(map: Map, features: Feature[]) {
   return { draw, drawClear };
 }
 
-function genCircle(source: VectorSource, features: Feature[], polygon: Geometry) {
+function genCircle(source: VectorSource, features: Feature[], polygon: Geometry, spotDiam: number) {
   const ids: number[] = [];
   source.clear();
   source.addFeatures(
@@ -107,7 +108,7 @@ function genCircle(source: VectorSource, features: Feature[], polygon: Geometry)
       .map((f) => {
         ids.push(f.getId() as number);
         const point = f.getGeometry()! as Point;
-        return new Feature({ geometry: new Circle(point.getCoordinates(), params.spotDiam / 2) });
+        return new Feature({ geometry: new Circle(point.getCoordinates(), spotDiam / 2) });
       })
   );
   multipleSelect.set(ids);

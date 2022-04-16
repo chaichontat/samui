@@ -3,9 +3,11 @@
   import promise from '$lib/meh';
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/maplib';
+  import type { Feature } from 'ol';
   import { ScaleLine, Zoom } from 'ol/control.js';
-  import type { Point } from 'ol/geom.js';
+  import type { Circle, Geometry, Point } from 'ol/geom.js';
   import type { Draw } from 'ol/interaction.js';
+  import type VectorLayer from 'ol/layer/Vector';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
   import Map from 'ol/Map.js';
@@ -18,7 +20,7 @@
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
   import { select } from '../lib/mapp/selector';
-  import { currRna, params, store } from '../lib/store';
+  import { currRna, store } from '../lib/store';
 
   let elem: HTMLDivElement;
   let selecting = false;
@@ -26,6 +28,8 @@
   let proteinMap: Record<string, number>;
   let proteins = ['', '', ''];
   let getColorParams: ReturnType<typeof colorVarFactory>;
+  let mPerPx: number;
+  let genStyle: () => LiteralStyle;
 
   async function hydrate(promise: Promise<Sample>) {
     const sample = (await promise)!;
@@ -40,8 +44,38 @@
 
     proteins = Object.keys(proteinMap);
     getColorParams = colorVarFactory(proteinMap);
+    showing = proteins.slice(0, 3) as [string, string, string];
+    console.log(showing);
 
-    addData(coords);
+    mPerPx = sample.image.metadata!.spot.mPerPx;
+    const spot_px = sample.image.metadata!.spot.spotDiam / mPerPx;
+    genStyle = (): LiteralStyle => ({
+      variables: { opacity: 0.5 },
+      symbol: {
+        symbolType: 'circle',
+        size: [
+          'interpolate',
+          ['exponential', 2],
+          ['zoom'],
+          1,
+          spot_px / 32,
+          2,
+          spot_px / 16,
+          3,
+          spot_px / 8,
+          4,
+          spot_px / 4,
+          5,
+          spot_px
+        ],
+        color: '#fce652ff',
+
+        // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
+        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.1, 1]
+        // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
+      }
+    });
+    return sample;
 
     // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
   }
@@ -60,45 +94,24 @@
   let draw: Draw;
   let drawClear: () => void;
 
-  const spot_px = params.spotDiam / params.mPerPx;
-
-  const genStyle = (): LiteralStyle => ({
-    variables: { opacity: 0.5 },
-    symbol: {
-      symbolType: 'circle',
-      size: [
-        'interpolate',
-        ['exponential', 2],
-        ['zoom'],
-        1,
-        spot_px / 32,
-        2,
-        spot_px / 16,
-        3,
-        spot_px / 8,
-        4,
-        spot_px / 4,
-        5,
-        spot_px
-      ],
-      color: '#fce652ff',
-
-      // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.1, 1]
-      // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
-    }
-  });
-
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-  const { circleFeature, activeLayer } = getCanvasCircle(selectStyle);
-  let { spotsSource, addData } = getWebGLCircles();
-  // let { spotsSource: dapi, addData: adddapi } = getWebGLCircles();
-  let spotsLayer: WebGLPointsLayer<VectorSource<Point>>;
 
+  // let { spotsSource: dapi, addData: adddapi } = getWebGLCircles();
+  let spotsSource: VectorSource<Point>;
+  let spotsLayer: WebGLPointsLayer<typeof spotsSource>;
+  let circleFeature: Feature<Circle>;
+  let activeLayer: VectorLayer<VectorSource<Geometry>>;
   onMount(
     (() => async () => {
-      await hydrate(promise!).catch(console.error);
+      const sample = await hydrate(promise!).catch(console.error);
 
+      ({ circleFeature, activeLayer } = getCanvasCircle(
+        selectStyle,
+        sample.image.metadata!.spot.spotDiam
+      ));
+      let { spotsSource, addData } = getWebGLCircles(sample.image.metadata!.spot.mPerPx);
+
+      addData(coords);
       spotsLayer = new WebGLPointsLayer({
         // @ts-expect-error
         source: spotsSource,
@@ -148,6 +161,8 @@
         layers: [bgLayer, spotsLayer, activeLayer],
         view: sourceTiff.getView()
       });
+
+      map.set('spotDiam', sample.image.metadata!.spot.spotDiam);
 
       map.removeControl(map.getControls().getArray()[0]);
       map.addControl(new Zoom({ delta: 0.4 }));
@@ -216,12 +231,12 @@
         const view = map.getView();
         const currZoom = view.getZoom();
         if ($store.locked) {
-          view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100, zoom: 5 });
+          view.animate({ center: [x * mPerPx, -y * mPerPx], duration: 100, zoom: 5 });
         } else if (currZoom && currZoom > 2) {
           view.animate({ duration: 100 });
         }
       }
-      circleFeature?.getGeometry()?.setCenter([x * params.mPerPx, -y * params.mPerPx]);
+      circleFeature?.getGeometry()?.setCenter([x * mPerPx, -y * mPerPx]);
     }
   }
 
