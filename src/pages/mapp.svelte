@@ -73,6 +73,7 @@
       previousLayer.dispose();
     }
     addData(coords);
+    updateSpots($currRna);
 
     // Refresh background
     bgLayer.getSource()?.dispose();
@@ -176,14 +177,17 @@
   $: if (getColorParams) bgLayer?.updateStyleVariables(getColorParams(showing, maxIntensity));
   $: spotsLayer?.updateStyleVariables({ opacity: colorOpacity });
 
-  // Change spot color
-  $: if (spotsLayer && coords) {
+  function updateSpots(rna: { name: string; values: number[] }) {
     for (let i = 0; i < coords.length; i++) {
       spotsLayer
         .getSource()!
         .getFeatureById(i)
-        ?.setProperties({ value: $currRna.values[i] ?? 0 });
+        ?.setProperties({ value: rna.values[i] ?? 0 });
     }
+  }
+  // Change spot color
+  $: if (spotsLayer && coords) {
+    updateSpots($currRna);
   }
 
   // Move view
