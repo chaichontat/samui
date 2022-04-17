@@ -3,9 +3,9 @@ import fetch from 'node-fetch';
 import * as path from 'path';
 
 const dir = 'static';
-const sample = 'Br6522_Ant_IF';
+const samples = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 
-const s3_url = 'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation';
+const s3_url = 'https://f004.backblazeb2.com/file/chaichontat-host/loopy-browser';
 
 async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
   await fs.mkdir(p, { recursive: true });
@@ -22,18 +22,21 @@ async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
 }
 
 async function run() {
-  const jsons = await getFiles(
-    path.join(dir, sample),
-    ['coords.arrow', 'data.arrow', 'ptr.json', 'names.json', 'veg.json'].map(
-      (name) => `${s3_url}/${sample}/${name}`
-    )
-  );
+  const ps: Promise<unknown>[] = samples.flatMap(async (s) => {
+    return await getFiles(
+      path.join(dir, s),
+      ['gene_csr.json', 'gene_csc.json', 'image.json', 'umap.json'].map(
+        (name) => `${s3_url}/${s}/${name}`
+      )
+    );
+  });
+
   const fonts = await getFiles(path.join(dir, 'fonts'), [
     'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/cera.woff',
     'https://rsms.me/inter/font-files/Inter-italic.var.woff2',
     'https://rsms.me/inter/font-files/Inter-roman.var.woff2'
   ]);
-  await Promise.all([...jsons, ...fonts]);
+  await Promise.all([...ps, ...fonts]);
 }
 
 await run();
