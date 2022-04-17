@@ -6,6 +6,8 @@
     ListboxOptions
   } from '@rgossiaux/svelte-headlessui';
   import { createEventDispatcher } from 'svelte';
+  import { cubicOut } from 'svelte/easing';
+  import { fade } from 'svelte/transition';
 
   export let items: string[];
   let rows: { id: number; name: string }[] = [];
@@ -23,7 +25,7 @@
   }
 </script>
 
-<div class="relative max-w-lg">
+<div class="relative min-w-[200px] max-w-lg">
   <span class="inline-block w-full rounded-md shadow-sm">
     <Listbox
       value={active}
@@ -31,13 +33,14 @@
         active = e.detail;
         dispatch('change', e.detail.name);
       }}
+      let:open
     >
       <ListboxButton
-        class="relative w-full max-w-md cursor-pointer rounded-md border border-gray-300 bg-gray-800 py-2 pl-3 pr-10 text-left transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5"
+        class="relative w-full max-w-md cursor-pointer rounded-md border border-gray-600 bg-gray-800 py-2 pl-3 pr-10 text-left transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5"
       >
-        <span class="block truncate">{active?.name}</span>
+        <span class="block truncate font-medium">{active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+          <svg class="h-5 w-5 text-slate-200" viewBox="0 0 20 20" fill="none" stroke="currentColor">
             <path
               d="M7 7l3-3 3 3m0 6l-3 3-3-3"
               stroke-width="1.5"
@@ -47,47 +50,55 @@
           </svg>
         </span></ListboxButton
       >
-      <div class="absolute mt-1 w-full rounded-md bg-gray-800/80 backdrop-blur">
-        <ListboxOptions
-          class="shadow-xs max-h-60 overflow-auto rounded-md py-1 text-base leading-6 focus:outline-none sm:text-sm sm:leading-5"
+      {#if open}
+        <div
+          class="absolute mt-2 w-full rounded-md bg-gray-800/80 backdrop-blur"
+          out:fade={{ duration: 100, easing: cubicOut }}
         >
-          {#each rows as name (name)}
-            <ListboxOption
-              value={name}
-              class={({ active }) => {
-                return classNames(
-                  'relative cursor-pointer select-none py-2 pl-3 pr-9 focus:outline-none',
-                  active ? 'bg-gray-600 text-white' : ''
-                );
-              }}
-              let:active
-              let:selected
-            >
-              <span
-                class={classNames('block truncate', selected ? 'font-semibold' : 'font-normal')}
-              >
-                {name.name}
-              </span>
-              {#if selected}
-                <span
-                  class={classNames(
-                    'absolute inset-y-0 right-0 flex items-center pr-4',
-                    active ? 'text-white' : 'text-gray-600'
-                  )}
+          <ListboxOptions
+            static
+            class=" overflow-auto rounded-md py-1 text-base leading-6 shadow focus:outline-none sm:text-sm sm:leading-5"
+          >
+            {#each rows as name (name)}
+              <div class="px-2">
+                <ListboxOption
+                  value={name}
+                  class={({ active }) => {
+                    return classNames(
+                      'relative cursor-pointer select-none rounded py-1.5 pl-3 pr-9 focus:outline-none',
+                      active ? 'bg-gray-600 text-white' : ''
+                    );
+                  }}
+                  let:active
+                  let:selected
                 >
-                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                      fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </span>
-              {/if}
-            </ListboxOption>
-          {/each}
-        </ListboxOptions>
-      </div>
+                  <span
+                    class={classNames('block truncate', selected ? 'font-semibold' : 'font-normal')}
+                  >
+                    {name.name}
+                  </span>
+                  {#if selected}
+                    <span
+                      class={classNames(
+                        'absolute inset-y-0 right-0 flex items-center pr-4',
+                        active ? 'text-white' : 'text-gray-200'
+                      )}
+                    >
+                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                          fill-rule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                  {/if}
+                </ListboxOption>
+              </div>
+            {/each}
+          </ListboxOptions>
+        </div>
+      {/if}
     </Listbox>
   </span>
 </div>

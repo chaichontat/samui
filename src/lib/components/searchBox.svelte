@@ -1,11 +1,12 @@
 <script lang="ts" context="module">
   import promise from '$lib/meh';
-  import { currRna } from '$src/lib/store';
+  import { activeSample, currRna, samples } from '$src/lib/store';
   import { clickOutside, debounce } from '$src/lib/utils';
   import { Fzf } from 'fzf';
   import { onMount } from 'svelte';
+  import { cubicInOut, cubicOut } from 'svelte/easing';
   import { get } from 'svelte/store';
-  import { fade } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import type { Sample } from '../data/sample';
 
   let fzf: Fzf<readonly string[]>;
@@ -52,6 +53,9 @@
     update(await promise[0]);
   });
 
+  let currSample = '';
+  $: if ($activeSample !== currSample) update($samples[$activeSample]);
+
   let search = '';
   let chosen: { raw: string; embellished: string }[] = [{ raw: '', embellished: '' }];
 
@@ -72,7 +76,7 @@
 
 {#if search && showSearch}
   <div
-    out:fade={{ duration: 100 }}
+    out:fade={{ duration: 100, easing: cubicOut }}
     class="fixed z-20 flex min-w-[200px] translate-y-12 flex-col rounded bg-gray-800/80 px-2 pt-1 pb-2  text-slate-100 backdrop-blur"
     use:clickOutside
     on:outclick={() => (showSearch = false)}
@@ -87,6 +91,7 @@
           showSearch = false;
           currShow = raw;
         }}
+        transition:slide={{ duration: 100, easing: cubicInOut }}
       >
         {@html embellished}
       </div>
