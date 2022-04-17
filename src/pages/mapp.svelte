@@ -241,7 +241,7 @@
   <!-- Map -->
   <div id="map" class="h-full w-full shadow-lg" bind:this={elem}>
     <div
-      class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 md:top-[5.5rem] xl:text-xl"
+      class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
     >
       <!-- Spot indicator -->
       <div>Spots: <i>{@html $currRna.name}</i></div>
@@ -305,7 +305,7 @@
 
   <!-- Buttons -->
   <div
-    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-gray-800/70 p-2 backdrop-blur md:bottom-6 md:left-4 xl:pr-4"
+    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-gray-800/70 p-2 backdrop-blur lg:bottom-6 lg:left-4 xl:pr-4"
   >
     {#each ['blue', 'green', 'red'] as color, i}
       <div class="flex gap-x-4">

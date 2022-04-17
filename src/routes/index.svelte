@@ -81,10 +81,10 @@
 <svelte:head><title>Loopy Browser</title></svelte:head>
 <!--
 <nav
-  class="top-0 z-40 flex h-14 items-center justify-between gap-x-6 border-b border-b-gray-600 bg-gray-900/80 px-2 pt-2 pb-1 shadow backdrop-blur md:px-4"
+  class="top-0 z-40 flex h-14 items-center justify-between gap-x-6 border-b border-b-gray-600 bg-gray-900/80 px-2 pt-2 pb-1 shadow backdrop-blur lg:px-4"
 >
   <h1
-    class="display-inline font-[Cera] text-2xl font-bold leading-7 tracking-tight text-slate-100 md:text-3xl"
+    class="display-inline font-[Cera] text-2xl font-bold leading-7 tracking-tight text-slate-100 lg:text-3xl"
   >
     <span class="text-yellow-400">Loopy</span> Browser
   </h1>
@@ -105,28 +105,28 @@
 
 <!-- Search -->
 <div
-  class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between text-sm text-slate-100 md:justify-start md:gap-6 lg:text-base"
+  class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-6 text-sm text-slate-100  md:text-base"
 >
-  <div class="text-base md:text-lg xl:text-xl">
+  <div class="text-base lg:text-lg xl:text-xl">
     <SearchBox />
   </div>
-  <div class="flex items-center gap-x-2 pr-8 md:pr-0">
+  <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
     <div>Sample:</div>
     <SampleList items={Object.keys($samples)} on:change={(e) => ($activeSample = e.detail)} />
   </div>
 </div>
 
 <main
-  class="flex flex-col divide-x-2 divide-gray-800 overflow-x-hidden md:h-screen md:flex-row md:flex-nowrap"
+  class="flex flex-col divide-x-2 divide-gray-800 overflow-x-hidden lg:h-screen lg:flex-row lg:flex-nowrap"
 >
-  <div class="h-[600px] flex-grow shadow md:h-full">
+  <div class="h-[600px] flex-grow shadow lg:h-full">
     <Mapp />
   </div>
 
   <!-- <div class="resizer h-full w-1 cursor-ew-resize bg-white" id="dragMe" /> -->
-  <div class="flex h-full max-w-[600px] flex-col pt-2 md:w-[35%]">
+  <div class="flex h-full max-w-[600px] flex-col pt-2 lg:w-[35%]">
     <!-- Nav -->
-    <nav class="hidden bg-gray-900/80 px-6 pb-3 shadow backdrop-blur md:flex md:items-center">
+    <nav class="hidden bg-gray-900/80 px-6 pb-3 shadow backdrop-blur lg:flex lg:items-center">
       <div class="mt-2 text-xl font-medium">Navigation: Showing {$currRna.name}</div>
       <div class="flex-grow" />
       <div title="GitHub" class="">

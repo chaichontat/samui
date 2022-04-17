@@ -25,7 +25,7 @@
   }
 </script>
 
-<div class="relative min-w-[200px] max-w-lg">
+<div class="relative min-w-[150px] max-w-lg md:min-w-[200px]">
   <span class="inline-block w-full rounded-md shadow-sm">
     <Listbox
       value={active}

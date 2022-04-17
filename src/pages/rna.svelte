@@ -14,7 +14,7 @@
 </script>
 
 <section class="flex h-full flex-col gap-y-2 overflow-y-auto">
-  <div class="hidden md:block">
+  <div class="hidden lg:block">
     <Scatter />
   </div>
 
@@ -38,7 +38,7 @@
       </TabPanels> -->
   </TabGroup>
 
-  <div class="mx-auto mt-6 w-[50vh] md:w-[90%]">
+  <div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
     <div class:hidden={showing !== 0}>
       <Scatter target="umap" pointRadius={2} />
     </div>
