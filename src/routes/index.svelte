@@ -105,7 +105,7 @@
 
 <!-- Search -->
 <div
-  class="absolute top-4 left-4 z-20 flex w-screen items-center justify-between text-sm text-slate-100 md:justify-start md:gap-6 lg:text-base"
+  class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between text-sm text-slate-100 md:justify-start md:gap-6 lg:text-base"
 >
   <div class="text-base md:text-lg xl:text-xl">
     <SearchBox />
@@ -116,15 +116,17 @@
   </div>
 </div>
 
-<main class="flex flex-col divide-x-2 divide-gray-800 md:h-screen md:flex-row md:flex-nowrap">
+<main
+  class="flex flex-col divide-x-2 divide-gray-800 overflow-x-hidden md:h-screen md:flex-row md:flex-nowrap"
+>
   <div class="h-[600px] flex-grow shadow md:h-full">
     <Mapp />
   </div>
 
   <!-- <div class="resizer h-full w-1 cursor-ew-resize bg-white" id="dragMe" /> -->
-  <div class="flex max-w-[600px] flex-col px-6 pt-3 md:w-[35%]">
+  <div class="flex h-full max-w-[600px] flex-col pt-2 md:w-[35%]">
     <!-- Nav -->
-    <div class="hidden md:flex md:items-center">
+    <nav class="hidden bg-gray-900/80 px-6 pb-3 shadow backdrop-blur md:flex md:items-center">
       <div class="mt-2 text-xl font-medium">Navigation: Showing {$currRna.name}</div>
       <div class="flex-grow" />
       <div title="GitHub" class="">
@@ -145,7 +147,7 @@
           </svg>
         </a>
       </div>
-    </div>
+    </nav>
 
     <Rna />
   </div>

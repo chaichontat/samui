@@ -13,13 +13,13 @@
   $: if (showing === 1) vegaShown = true;
 </script>
 
-<section class="flex flex-col gap-y-2 overflow-y-auto">
+<section class="flex h-full flex-col gap-y-2 overflow-y-auto">
   <div class="hidden md:block">
     <Scatter />
   </div>
 
   <TabGroup on:change={(e) => (showing = e.detail)}>
-    <TabList class="flex space-x-1 rounded-xl bg-gray-800/50 p-1">
+    <TabList class="mx-4 flex space-x-1 rounded-xl bg-gray-800/50 p-1">
       <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>UMAP</Tab>
       <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
       <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
@@ -38,7 +38,7 @@
       </TabPanels> -->
   </TabGroup>
 
-  <div class="mx-auto mt-6 w-[50vh] md:w-full">
+  <div class="mx-auto mt-6 w-[50vh] md:w-[90%]">
     <div class:hidden={showing !== 0}>
       <Scatter target="umap" pointRadius={2} />
     </div>

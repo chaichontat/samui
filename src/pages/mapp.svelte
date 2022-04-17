@@ -229,7 +229,6 @@
       console.log(URL.createObjectURL(files[0]));
     }
   }
-  $: console.log($activeSample);
 
   $: if ($activeSample !== currSample) update($samples[$activeSample]);
 </script>
@@ -306,7 +305,7 @@
 
   <!-- Buttons -->
   <div
-    class="absolute bottom-3 flex max-w-[40rem] flex-col rounded-lg bg-gray-800/70 p-2 backdrop-blur md:bottom-6 md:left-4"
+    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-gray-800/70 p-2 backdrop-blur md:bottom-6 md:left-4 xl:pr-4"
   >
     {#each ['blue', 'green', 'red'] as color, i}
       <div class="flex gap-x-4">
