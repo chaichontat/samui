@@ -1,15 +1,10 @@
 <script lang="ts">
   import { browser } from '$app/env';
-  import Chart from 'chart.js/auto/auto.js';
+  import type { ChunkedJSON, Sparse } from '$src/lib/data/dataHandlers';
+  import Chart from 'chart.js/auto';
   import { onMount } from 'svelte';
-  import { multipleSelect, store } from '../lib/store';
+  import { activeSample, done, multipleSelect, samples, store } from '../lib/store';
   // import { dataPromise } from '../routes/index.svelte';
-
-  let data: Awaited<typeof dataPromise>['data'];
-
-  (async () => {
-    if (browser) ({ data } = await dataPromise);
-  })().catch(console.error);
 
   Chart.defaults.font.size = 14;
 
@@ -52,35 +47,83 @@
     });
   });
 
-  function getRow<T extends string>(data: Record<T, number[]>, i: number) {
-    return Object.keys(data).reduce((acc, key) => {
-      acc[key as T] = data[key as T][i];
-      return acc;
-    }, {} as Record<T, number>);
-  }
+  async function getRow(i: number): Promise<[string, number][]> {
+    const spotGenes = $samples[$activeSample].features.spotGenes as ChunkedJSON;
+    const geneNames = ($samples[$activeSample].features.genes as ChunkedJSON).revNames!;
+    const row = (await spotGenes.retrieve!(i)) as Sparse;
 
-  $: {
-    if (data && bar && $multipleSelect.length === 0) {
-      if ($store.lockedIdx.idx !== -1) {
-        // Locked
-        bar.data.datasets[0].data = getRow(data, $store.lockedIdx.idx);
-      } else {
-        bar.data.datasets[0].data = getRow(data, $store.currIdx.idx);
-      }
-      bar.options.scales!.y!.max = 10;
-      bar.update();
+    const out = [] as [string, number][];
+    for (let i = 0; i < row.value.length; i++) {
+      out.push([geneNames[row.index[i]], row.value[i]]);
     }
+    return out;
   }
 
-  $: if (data && bar && $multipleSelect.length > 0) {
-    const summed = Object.keys(data).reduce((acc, key) => {
-      acc[key] = $multipleSelect.map((v) => data[key][v]).reduce((a, b) => a + b, 0);
-      return acc;
-    }, {} as ReturnType<typeof getRow>);
-    bar.data.datasets[0].data = summed;
-    bar.options.scales!.y!.max = undefined;
-    bar.update();
+  let curr = 0;
+
+  $: console.log($samples);
+
+  // $: if (bar && $done) {
+  //   getRow(5)
+  //     .then((row) => row.sort(([, val]) => val).slice(0, 10))
+  //     .then((row) => (bar.data.datasets[0].data = Object.fromEntries(row)))
+  //     .then(() => bar.update())
+  //     .then(() => (curr = $store.currIdx.idx))
+  //     .catch(console.error);
+  // }
+
+  $: if (bar && $done && $store.currIdx.idx !== curr) {
+    getRow($store.currIdx.idx)
+      .then((row) => {
+        const filtered = row.sort((a, b) => b[1] - a[1]).slice(0, 10);
+        bar.data.datasets[0].data = filtered.map(([name, val]) => ({ x: name, y: val }));
+        bar.update();
+        curr = $store.currIdx.idx;
+      })
+      .catch(console.error);
+    // if ($store.lockedIdx.idx !== -1) {
+    //   // Locked
+    //   getRow($store.lockedIdx.idx)
+    //     .then((row) => row.sort(([, val]) => val).slice(0, 10))
+    //     .then((row) => (bar.data.datasets[0].data = Object.fromEntries(row)))
+    //     .then(() => bar.update())
+    //     .catch(console.error);
+    // } else {
+    // getRow($store.currIdx.idx)
+    //   .then((row) => row.sort(([, val]) => val).slice(0, 10))
+    //   .then((row) => (bar.data.datasets[0].data = Object.fromEntries(row)))
+    //   .then(() => bar.update())
+    //   .then(() => (curr = $store.currIdx.idx))
+    //   .catch(console.error);
+    // }
+    // bar.options.scales!.y!.max = 10;
+    // bar.update();
   }
+
+  // $: {
+  //   if (data && bar && $multipleSelect.length === 0) {
+  //     if ($store.lockedIdx.idx !== -1) {
+  //       // Locked
+  //       bar.data.datasets[0].data = getRow(data, $store.lockedIdx.idx);
+  //     } else {
+  //       bar.data.datasets[0].data = getRow(data, $store.currIdx.idx);
+  //     }
+  //     bar.options.scales!.y!.max = 10;
+  //     bar.update();
+  //   }
+  // }
+
+  // $: if (data && bar && $multipleSelect.length > 0) {
+  //   const summed = Object.keys(data).reduce((acc, key) => {
+  //     acc[key] = $multipleSelect.map((v) => data[key][v]).reduce((a, b) => a + b, 0);
+  //     return acc;
+  //   }, {} as ReturnType<typeof getRow>);
+  //   bar.data.datasets[0].data = summed;
+  //   bar.options.scales!.y!.max = undefined;
+  //   bar.update();
+  // }
 </script>
+
+<!-- {@debug d} -->
 
 <div class="relative w-full"><canvas id="bar" /></div>

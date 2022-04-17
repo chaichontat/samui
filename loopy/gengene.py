@@ -1,26 +1,21 @@
 import gzip
 import json
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import scanpy as sc
 from anndata import AnnData
 from pydantic import BaseModel
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, csr_matrix
 
 
-class GeneHeader(BaseModel):
-    n_spot: int
-    names: dict[str, int]
+class ChunkedJSONHeader(BaseModel):
+    names: dict[str, int] | None = None
     ptr: list[int]
+    length: int
 
-
-def get_compressed_genes(vis: AnnData):
-    cs = csc_matrix(vis.X)
-    indices = cs.indices.astype(int)
-    indptr = cs.indptr.astype(int)
-    data = cs.data
-
+def chunk_compressed(indices: np.ndarray, indptr: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, bytearray]:
     ptr = np.zeros_like(indptr)
     curr = 0
     outbytes = bytearray()
@@ -39,14 +34,31 @@ def get_compressed_genes(vis: AnnData):
         curr += len(obj)
         ptr[i + 1] = curr
 
-    header = GeneHeader(
-        n_spot=vis.n_obs,
-        names={name: i for i, name in enumerate(vis.var_names)},
+    return ptr, outbytes
+
+def get_compressed_genes(vis: AnnData, mode: Literal["csr", "csc"] = "csc", include_name:bool=True) -> tuple[ChunkedJSONHeader, bytearray]:
+    if mode == "csr":
+        cs = csr_matrix(vis.X)
+        names = vis.obs_names
+    elif mode == "csc":
+        cs = csc_matrix(vis.X)
+        names = vis.var_names
+    else:
+        raise ValueError("Invalid mode")
+
+    indices = cs.indices.astype(int)
+    indptr = cs.indptr.astype(int)
+    data = cs.data
+
+    ptr, outbytes = chunk_compressed(indices, indptr, data)
+
+    length = len(names)
+    names = {name: i for i, name in enumerate(names)} if include_name else None
+    return  ChunkedJSONHeader(
+        names=names,
         ptr=ptr.tolist(),
-    )
-
-    return header, outbytes
-
+        length=length,
+    ), outbytes
 
 # def run():
 

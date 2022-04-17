@@ -1,5 +1,5 @@
 import { browser } from '$app/env';
-import { activeSample, samples } from '$lib/store';
+import { activeSample, done, samples } from '$lib/store';
 import { Sample } from '$src/lib/data/sample';
 import { get } from 'svelte/store';
 
@@ -15,8 +15,15 @@ function gen_samples(n: string[]): Promise<Sample>[] {
         {
           name: 'genes',
           type: 'chunkedJSON',
-          headerUrl: `${s}/header.json`,
-          url: `/${s}/genes.bin`
+          headerUrl: `${s}/gene_csc.json`,
+          url: `/${s}/gene_csc.bin`
+        },
+        {
+          name: 'spotGenes',
+          type: 'chunkedJSON',
+          headerUrl: `${s}/gene_csr.json`,
+          url: `/${s}/gene_csr.bin`,
+          options: { densify: false }
         }
       ]
     )
@@ -24,6 +31,7 @@ function gen_samples(n: string[]): Promise<Sample>[] {
       .then((s) => {
         samples.set({ [s.name]: s, ...get(samples) });
         if (i === 0) activeSample.set(s.name);
+        if (i === n.length - 1) done.set(true);
         return s;
       });
     out.push(sam);

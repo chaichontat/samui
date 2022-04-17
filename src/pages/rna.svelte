@@ -42,7 +42,7 @@
     </TabGroup>
 
     <div class="mt-2">
-      <!-- <div class:hidden={showing !== 0}><Bar /></div> -->
+      <div class:hidden={showing !== 0}><Bar /></div>
       {#if vegaShown}
         <div class:hidden={showing !== 1}><Veg /></div>
       {/if}

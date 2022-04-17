@@ -6,7 +6,7 @@
   import ScaleLine from 'ol/control/ScaleLine';
   import Zoom from 'ol/control/Zoom';
   import type Feature from 'ol/Feature';
-  import type { Circle, Geometry, Point } from 'ol/geom.js';
+  import type { Circle, Geometry } from 'ol/geom.js';
   import type { Draw } from 'ol/interaction.js';
   import type VectorLayer from 'ol/layer/Vector';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
@@ -16,7 +16,6 @@
   import GeoTIFF from 'ol/source/GeoTIFF.js';
   import type VectorSource from 'ol/source/Vector.js';
   import { Stroke, Style } from 'ol/style.js';
-  import type { LiteralStyle } from 'ol/style/literal.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
@@ -95,6 +94,7 @@
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
 
   let spotsSource: VectorSource<Geometry>;
+  // @ts-ignore
   let spotsLayer: WebGLPointsLayer<typeof spotsSource>;
   let circleFeature: Feature<Circle>;
   let activeLayer: VectorLayer<VectorSource<Geometry>>;

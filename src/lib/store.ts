@@ -29,3 +29,4 @@ export const multipleSelect: Writable<number[]> = writable([]);
 
 export const activeSample: Writable<string> = writable('');
 export const samples: Writable<{ [key: string]: Sample }> = writable({});
+export const done: Writable<boolean> = writable(false);

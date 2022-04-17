@@ -1,6 +1,12 @@
-import { ChunkedJSON, PlainJSON } from './dataHandlers';
+import { ChunkedJSON, PlainJSON, type ChunkedJSONOptions } from './dataHandlers';
 
-type ChunkedJSONParams = { type: 'chunkedJSON'; name: string; url: string; headerUrl: string };
+type ChunkedJSONParams = {
+  type: 'chunkedJSON';
+  name: string;
+  url: string;
+  headerUrl: string;
+  options?: ChunkedJSONOptions;
+};
 type ArrowParams = { type: 'arrow'; name: string; url: string };
 type PlainJSONParams = { type: 'plainJSON'; name: string; url: string };
 export type ImageParams = { urls: string[]; headerUrl: string };
@@ -63,7 +69,7 @@ export class Sample {
     for (const f of featParams) {
       switch (f.type) {
         case 'chunkedJSON':
-          this.features[f.name] = new ChunkedJSON(f.headerUrl, f.url, false);
+          this.features[f.name] = new ChunkedJSON(f.headerUrl, f.url, false, f.options);
           break;
         case 'plainJSON':
           this.features[f.name] = new PlainJSON(f.url, false);
