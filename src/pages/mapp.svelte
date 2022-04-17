@@ -171,6 +171,7 @@
     draw.on('drawend', () => (selecting = false));
 
     update(sample);
+    map.updateSize();
   });
 
   // Update "brightness"
@@ -233,13 +234,80 @@
   $: if ($activeSample !== currSample) update($samples[$activeSample]);
 </script>
 
-<!-- Buttons -->
-<div class="flex flex-grow flex-col gap-y-3">
+<section class="relative h-full w-full">
   <!-- <label>
     <input type="file" multiple on:change={(e) => upload(e.currentTarget.files)} />
   </label> -->
 
-  <div class="flex flex-col">
+  <!-- Map -->
+  <div id="map" class="h-full w-full shadow-lg" bind:this={elem}>
+    <div
+      class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 md:top-[5.5rem] xl:text-xl"
+    >
+      <!-- Spot indicator -->
+      <div>Spots: <i>{@html $currRna.name}</i></div>
+
+      <!-- Color indicator -->
+      <div class="mt-2 flex flex-col">
+        {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
+          {#if showing[i] !== 'None'}
+            <span class={`font-semibold ${color}`}>{showing[i]}</span>
+          {/if}
+        {/each}
+      </div>
+    </div>
+
+    <div class="absolute top-16 right-4 z-20 flex flex-col items-end gap-3 md:top-4">
+      <!-- Show all spots -->
+      <div
+        class="inline-flex flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
+      >
+        <label class="cursor-pointer">
+          <input type="checkbox" class="mr-0.5 opacity-80" bind:checked={showAllSpots} />
+          <span>Show all spots</span>
+        </label>
+
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          bind:value={colorOpacity}
+          on:mousedown={() => (showAllSpots = true)}
+          class="max-w-[36rem] cursor-pointer opacity-80"
+        />
+      </div>
+
+      <!-- Select button -->
+      <div class="space-x-1">
+        <button
+          class="rounded bg-sky-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80"
+          class:bg-gray-600={selecting}
+          class:hover:bg-gray-600={selecting}
+          class:active:bg-gray-600={selecting}
+          on:click={() => (selecting = true)}
+          disabled={selecting}
+          >Select
+        </button>
+
+        <button
+          class="rounded bg-orange-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-orange-600/80 active:bg-orange-500/80"
+          on:click={drawClear}
+          disabled={selecting}
+          >Clear
+        </button>
+      </div>
+
+      <div class="relative mt-2">
+        <Colorbar class="right-6" bind:opacity={colorOpacity} color="yellow" min={0} max={10} />
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div
+    class="absolute bottom-3 flex max-w-[40rem] flex-col rounded-lg bg-gray-800/70 p-2 backdrop-blur md:bottom-6 md:left-4"
+  >
     {#each ['blue', 'green', 'red'] as color, i}
       <div class="flex gap-x-4">
         <ButtonGroup names={proteins} bind:curr={showing[i]} {color} />
@@ -248,93 +316,12 @@
           min="0"
           max="254"
           bind:value={maxIntensity[i]}
-          class="hidden cursor-pointer 2xl:block"
+          class="min-w-[4rem] max-w-[16rem] flex-grow cursor-pointer"
         />
       </div>
     {/each}
   </div>
-  <!-- Brightness -->
-  <div class="flex w-full gap-x-8">
-    {#each [0, 1, 2] as i}
-      <input
-        type="range"
-        min="0"
-        max="254"
-        bind:value={maxIntensity[i]}
-        class="block w-full cursor-pointer 2xl:hidden"
-      />
-    {/each}
-  </div>
-
-  <!-- Map -->
-  <div id="map" class="relative h-[70vh] shadow-lg" bind:this={elem}>
-    <!-- Spot indicator -->
-    <div
-      class="absolute left-14 top-[1.2rem] z-10 text-lg font-medium text-white opacity-90 xl:text-xl"
-    >
-      Spots: <i>{@html $currRna.name}</i>
-    </div>
-
-    <!-- Color indicator -->
-    <div
-      class="absolute top-[4.75rem] left-3 z-10 flex flex-col text-lg font-medium text-white opacity-90 xl:text-xl"
-    >
-      {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-        {#if showing[i] !== 'None'}
-          <span class={`font-semibold ${color}`}>{showing[i]}</span>
-        {/if}
-      {/each}
-    </div>
-
-    <!-- Show all spots -->
-    <div
-      class="absolute right-4 top-4 z-50 inline-flex flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
-    >
-      <label class="cursor-pointer">
-        <input type="checkbox" class="mr-0.5 opacity-80" bind:checked={showAllSpots} />
-        <span>Show all spots</span>
-      </label>
-
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        bind:value={colorOpacity}
-        on:mousedown={() => (showAllSpots = true)}
-        class="max-w-[36rem] cursor-pointer opacity-80"
-      />
-    </div>
-
-    <Colorbar
-      class="right-10 top-24 z-10"
-      bind:opacity={colorOpacity}
-      color="yellow"
-      min={0}
-      max={10}
-    />
-
-    <!-- Select button -->
-    <div class="absolute top-[1.05rem] right-[12rem] z-20 space-x-1">
-      <button
-        class="rounded bg-sky-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80"
-        class:bg-gray-600={selecting}
-        class:hover:bg-gray-600={selecting}
-        class:active:bg-gray-600={selecting}
-        on:click={() => (selecting = true)}
-        disabled={selecting}
-        >Select
-      </button>
-
-      <button
-        class="rounded bg-orange-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-orange-600/80 active:bg-orange-500/80"
-        on:click={drawClear}
-        disabled={selecting}
-        >Clear
-      </button>
-    </div>
-  </div>
-</div>
+</section>
 
 <style lang="postcss">
   #map :global(.ol-zoomslider) {
@@ -355,5 +342,9 @@
 
   #map :global(.ol-scale-line-inner) {
     @apply pb-1 text-sm;
+  }
+
+  #map :global(.ol-zoom) {
+    @apply absolute left-auto right-4 bottom-6 top-auto;
   }
 </style>

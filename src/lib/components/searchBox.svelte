@@ -66,38 +66,46 @@
   }
 </script>
 
-<input
-  type="text"
-  class="mb-2 w-full rounded border border-gray-600 bg-gray-800 py-2 px-4 "
-  bind:value={search}
-  on:click={() => (showSearch = true)}
-  placeholder="Search genes..."
-/>
+<div class="relative">
+  <input
+    type="text"
+    class="w-full rounded border border-gray-600 bg-gray-800 py-2 px-3 "
+    bind:value={search}
+    on:click={() => (showSearch = true)}
+    placeholder="Search features"
+  />
 
-{#if search && showSearch}
-  <div
-    out:fade={{ duration: 100, easing: cubicOut }}
-    class="fixed z-20 flex min-w-[200px] translate-y-12 flex-col rounded bg-gray-800/80 px-2 pt-1 pb-2  text-slate-100 backdrop-blur"
-    use:clickOutside
-    on:outclick={() => (showSearch = false)}
-    on:mouseout={() => setVal(currShow)}
-    on:blur={() => setVal(currShow)}
-  >
-    {#each chosen as { raw, embellished }}
-      <div
-        class="cursor-pointer rounded py-1.5 px-3 hover:bg-gray-700/80 active:bg-gray-600/80"
-        on:mousemove={() => setVal(raw)}
-        on:click={() => {
-          showSearch = false;
-          currShow = raw;
-        }}
-        transition:slide={{ duration: 100, easing: cubicInOut }}
-      >
-        {@html embellished}
-      </div>
-    {/each}
-    {#if chosen.length === 0}
-      <i class="py-1 px-3 text-slate-300">No genes found.</i>
-    {/if}
-  </div>
-{/if}
+  {#if search && showSearch}
+    <div
+      out:fade={{ duration: 100, easing: cubicOut }}
+      class="absolute top-14 z-30 flex w-full flex-col rounded bg-gray-800/80 px-2 pt-1 pb-2 text-slate-100 backdrop-blur"
+      use:clickOutside
+      on:outclick={() => (showSearch = false)}
+      on:mouseout={() => setVal(currShow)}
+      on:blur={() => setVal(currShow)}
+    >
+      {#each chosen as { raw, embellished }}
+        <div
+          class="cursor-pointer rounded py-1.5 px-3 hover:bg-gray-700/80 active:bg-gray-600/80"
+          on:mousemove={() => setVal(raw)}
+          on:click={() => {
+            showSearch = false;
+            currShow = raw;
+          }}
+          transition:slide={{ duration: 100, easing: cubicInOut }}
+        >
+          {@html embellished}
+        </div>
+      {/each}
+      {#if chosen.length === 0}
+        <i class="py-1 px-3 text-slate-300">No genes found.</i>
+      {/if}
+    </div>
+  {/if}
+</div>
+
+<style lang="postcss">
+  ::placeholder {
+    @apply text-slate-200;
+  }
+</style>

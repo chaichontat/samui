@@ -35,6 +35,7 @@
   }
   body {
     @apply bg-gray-900 text-slate-100;
+    scrollbar-gutter: stable both-edges;
   }
 }
 @tailwind components;

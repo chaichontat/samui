@@ -10,11 +10,15 @@
   import { genLRU } from '../lib/utils';
 
   export let target = 'coords';
+  export let opacity = 'ff';
+  export let pointRadius = 2.5;
 
   let currSample = '';
   let curr = 0;
 
   let coords: { x: number; y: number }[];
+
+  const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
   let getColor: (sample: string | undefined, name: string) => string[];
@@ -22,12 +26,10 @@
     const out = [];
     for (const d of $currRna.values) {
       const idx = Math.round(Math.min(d / 10, 1) * 255);
-      out.push(colors[idx]);
+      out.push(colors[idx] + opacity);
     }
     return out;
   });
-
-  const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
   function update(s: Sample) {
     if (!myChart || !anotherChart) return;
@@ -144,11 +146,7 @@
               data: [],
               parsing: false,
               normalized: true,
-              pointRadius: 2.5,
-              pointHoverRadius: 20,
-              pointHoverBorderWidth: 1,
-              pointHoverBorderColor: '#eeeeee',
-              pointHitRadius: 3
+              pointRadius
             }
           ]
         },

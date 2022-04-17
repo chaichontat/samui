@@ -37,7 +37,7 @@
   }
 </script>
 
-<div class="inline-flex flex-wrap rounded-md shadow-sm" id="group" role="group">
+<div class="inline-flex rounded-md shadow-sm" id="group" role="group">
   <button
     on:click={() => (curr = names[0])}
     class={`${genClass(color, curr === names[0])} button-base rounded-l-lg border`}

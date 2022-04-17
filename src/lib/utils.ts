@@ -12,14 +12,11 @@ export function genLRU<K extends unknown[], V>(f: (...args: K) => V, max = 100):
   };
 }
 
-export function debounce<T extends unknown[]>(
-  f: (...args: T) => void | Promise<unknown>,
-  timeout = 300
-) {
+export function debounce<T extends unknown[], R>(f: (...args: T) => R, timeout = 300) {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return (...args: T) => {
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => f(...args) as void, timeout);
+    timer = setTimeout(() => f(...args) as unknown as void, timeout);
   };
 }
 
@@ -47,4 +44,19 @@ export function tooltip(node: HTMLElement, content: string) {
     update: (newmsg: string): void => tip.setContent(newmsg),
     destroy: (): void => tip.destroy()
   };
+}
+
+function interpolateTurbo(x: number) {
+  x = Math.max(0, Math.min(1, x));
+  return (
+    '#' +
+    [
+      34.61 + x * (1172.33 - x * (10793.56 - x * (33300.12 - x * (38394.49 - x * 14825.05)))),
+      23.31 + x * (557.33 + x * (1225.33 - x * (3574.96 - x * (1073.77 + x * 707.56)))),
+      27.2 + x * (3211.1 - x * (15327.97 - x * (27814 - x * (22569.18 - x * 6838.66))))
+    ]
+      .map(Math.floor)
+      .map((x) => Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0'))
+      .join('')
+  );
 }

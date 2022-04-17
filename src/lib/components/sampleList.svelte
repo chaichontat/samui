@@ -36,7 +36,7 @@
       let:open
     >
       <ListboxButton
-        class="relative w-full max-w-md cursor-pointer rounded-md border border-gray-600 bg-gray-800 py-2 pl-3 pr-10 text-left transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5"
+        class="relative w-full max-w-md cursor-pointer rounded-md border border-gray-600 bg-gray-800 py-2 pl-3 pr-10 text-left transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:leading-5"
       >
         <span class="block truncate font-medium">{active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -57,7 +57,7 @@
         >
           <ListboxOptions
             static
-            class=" overflow-auto rounded-md py-1 text-base leading-6 shadow focus:outline-none sm:text-sm sm:leading-5"
+            class="overflow-auto rounded-md pt-1 pb-2 leading-6 shadow focus:outline-none sm:leading-5"
           >
             {#each rows as name (name)}
               <div class="px-2">
@@ -65,7 +65,7 @@
                   value={name}
                   class={({ active }) => {
                     return classNames(
-                      'relative cursor-pointer select-none rounded py-1.5 pl-3 pr-9 focus:outline-none',
+                      'relative cursor-pointer select-none rounded py-2 pl-3 pr-9 focus:outline-none',
                       active ? 'bg-gray-600 text-white' : ''
                     );
                   }}
