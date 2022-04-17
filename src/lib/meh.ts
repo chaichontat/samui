@@ -24,6 +24,11 @@ function gen_samples(n: string[]): Promise<Sample>[] {
           headerUrl: `${s}/gene_csr.json`,
           url: `/${s}/gene_csr.bin`,
           options: { densify: false }
+        },
+        {
+          name: 'umap',
+          type: 'plainJSON',
+          url: `/${s}/umap.json`
         }
       ]
     )

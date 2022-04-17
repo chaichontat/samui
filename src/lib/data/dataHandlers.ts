@@ -7,25 +7,25 @@ export interface Data {
   hydrate: () => Promise<this>;
 }
 
-export class PlainJSON implements Data {
-  kv = {} as Record<string, number[]> | undefined;
-  constructor(readonly url: string, autoHydrate = true) {
-    this.url = url;
-    if (autoHydrate) {
-      this.hydrate().catch(console.error);
-    }
-  }
+// export class PlainJSON implements Data {
+//   kv = {} as Record<string, number[]> | undefined;
+//   constructor(readonly url: string, autoHydrate = true) {
+//     this.url = url;
+//     if (autoHydrate) {
+//       this.hydrate().catch(console.error);
+//     }
+//   }
 
-  async hydrate() {
-    await fetch(this.url).then((r) => r.json());
-    return this;
-  }
+//   async hydrate() {
+//     await fetch(this.url).then((r) => r.json());
+//     return this;
+//   }
 
-  retrieve(name: string | number) {
-    const prom = new Promise((resolve) => resolve(this.kv ? this.kv[name] : undefined));
-    return prom as Promise<number[] | undefined>;
-  }
-}
+//   retrieve(name: string | number) {
+//     const prom = new Promise((resolve) => resolve(this.kv ? this.kv[name] : undefined));
+//     return prom as Promise<number[] | undefined>;
+//   }
+// }
 
 type ChunkedJSONHeader = {
   length: number;

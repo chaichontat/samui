@@ -9,6 +9,8 @@
   import { activeSample, currRna, samples, store } from '../lib/store';
   import { genLRU } from '../lib/utils';
 
+  export let target = 'coords';
+
   let currSample = '';
   let curr = 0;
 
@@ -30,20 +32,29 @@
   function update(s: Sample) {
     if (!myChart || !anotherChart) return;
 
-    coords = s.image.coords!;
+    if (target === 'coords') {
+      coords = s.image.coords!;
+    } else {
+      coords = s.features[target] as { x: number; y: number }[];
+    }
+
     const min = coords
       .reduce((acc, { x, y }) => [Math.min(acc[0], x), Math.min(acc[1], y)], [Infinity, Infinity])
-      .map((x) => x - 100);
+      .map((x) => x);
     const max = coords
       .reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0])
-      .map((x) => x + 100);
+      .map((x) => x);
 
     myChart.data.datasets[0].data = coords;
+    const over = 0.05;
+    const range = [max[0] - min[0], max[1] - min[1]];
+    console.log(coords);
+
     for (const c of [myChart, anotherChart]) {
-      c.options.scales!.x!.min = min[0] - 100;
-      c.options.scales!.x!.max = max[0] + 100;
-      c.options.scales!.y!.min = min[1] - 100;
-      c.options.scales!.y!.max = max[1] + 100;
+      c.options.scales!.x!.min = min[0] - over * range[0];
+      c.options.scales!.x!.max = max[0] + over * range[0];
+      c.options.scales!.y!.min = min[1] - over * range[1];
+      c.options.scales!.y!.max = max[1] + over * range[0];
       c.update();
     }
 
@@ -59,7 +70,7 @@
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
     anotherChart = new Chart(
-      (document.getElementById('another') as HTMLCanvasElement).getContext('2d')!,
+      (document.getElementById(`${target}-another`) as HTMLCanvasElement).getContext('2d')!,
       {
         type: 'scatter',
         data: {
@@ -124,13 +135,14 @@
     );
 
     myChart = new Chart(
-      (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!,
+      (document.getElementById(`${target}-myChart`) as HTMLCanvasElement).getContext('2d')!,
       {
         data: {
           datasets: [
             {
               type: 'scatter',
               data: [],
+              parsing: false,
               normalized: true,
               pointRadius: 2.5,
               pointHoverRadius: 20,
@@ -140,7 +152,7 @@
             }
           ]
         },
-        options: chartOptions
+        options: { ...chartOptions }
       }
     );
 
@@ -163,8 +175,8 @@
 
 <div class="relative z-10">
   <Colorbar min={0} max={10} />
-  <canvas class="absolute" id="another" />
-  <canvas class="" id="myChart" />
+  <canvas class="absolute" id={`${target}-another`} />
+  <canvas class="" id={`${target}-myChart`} />
   <!-- <div
     class="absolute left-10 top-10 z-10 rounded-lg bg-white/10 px-3 py-1 text-lg font-medium text-white opacity-90 backdrop-blur-sm"
   >

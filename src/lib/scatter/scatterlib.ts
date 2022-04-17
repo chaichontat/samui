@@ -1,6 +1,6 @@
 import type { ChartConfiguration } from 'chart.js/auto';
 
-export const chartOptions: ChartConfiguration<'scatter'> = {
+export const chartOptions: Readonly<ChartConfiguration<'scatter'>> = {
   animation: false,
   aspectRatio: 1,
   scales: {

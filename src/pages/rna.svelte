@@ -24,13 +24,14 @@
 
     <TabGroup on:change={(e) => (showing = e.detail)}>
       <TabList class="flex space-x-1 rounded-xl bg-gray-800/50 p-1">
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>UMAP</Tab>
         <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
         <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
           <div
             use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
             class="h-full w-full"
           >
-            Gene/Intensity Correlation
+            Intensity Correlation
           </div>
         </Tab>
         <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Tab 3</Tab> -->
@@ -42,9 +43,10 @@
     </TabGroup>
 
     <div class="mt-2">
-      <div class:hidden={showing !== 0}><Bar /></div>
+      <div class:hidden={showing !== 0}><Scatter target="umap" /></div>
+      <div class:hidden={showing !== 1}><Bar /></div>
       {#if vegaShown}
-        <div class:hidden={showing !== 1}><Veg /></div>
+        <div class:hidden={showing !== 2}><Veg /></div>
       {/if}
     </div>
   </div>

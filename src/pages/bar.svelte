@@ -54,6 +54,7 @@
 
     const out = [] as [string, number][];
     for (let i = 0; i < row.value.length; i++) {
+      if (geneNames[row.index[i]].startsWith('MT-')) continue;
       out.push([geneNames[row.index[i]], row.value[i]]);
     }
     return out;

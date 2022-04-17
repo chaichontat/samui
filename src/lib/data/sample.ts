@@ -1,4 +1,4 @@
-import { ChunkedJSON, PlainJSON, type ChunkedJSONOptions } from './dataHandlers';
+import { ChunkedJSON, type ChunkedJSONOptions } from './dataHandlers';
 
 type ChunkedJSONParams = {
   type: 'chunkedJSON';
@@ -53,7 +53,7 @@ export class Image {
 
 export class Sample {
   image: Image;
-  features: Record<string, ChunkedJSON | PlainJSON>;
+  features: Record<string, ChunkedJSON | unknown>;
 
   constructor(
     readonly name: string,
@@ -65,21 +65,25 @@ export class Sample {
     this.featParams = featParams;
 
     this.image = new Image(imgParams.urls, imgParams.headerUrl, false);
-    this.features = {} as Record<string, ChunkedJSON | PlainJSON>;
+    this.features = {} as Record<string, ChunkedJSON | unknown>;
     for (const f of featParams) {
       switch (f.type) {
         case 'chunkedJSON':
           this.features[f.name] = new ChunkedJSON(f.headerUrl, f.url, false, f.options);
           break;
         case 'plainJSON':
-          this.features[f.name] = new PlainJSON(f.url, false);
+          this.loadPlainJson(f.name, f.url).catch(console.error);
           break;
         default:
           throw new Error('Unsupported feature type at Sample.constructor');
-          break;
       }
     }
     this.hydrate().catch(console.error);
+  }
+
+  async loadPlainJson(name: string, url: string) {
+    const data = (await fetch(url).then((r) => r.json())) as unknown;
+    this.features[name] = data;
   }
 
   async hydrate() {

@@ -3,6 +3,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 from typing import Literal, cast
 
+import pandas as pd
 from scanpy import read_visium
 from tifffile import imread
 
@@ -28,8 +29,14 @@ channels = {
     "TMEM119": 6,
 }
 
+def better_visium(d: Path):
+    vis = read_visium(d)
+    vis.obs = vis.obs.join(pd.read_csv(d / "analysis" / "umap" / "2_components" / "projection.csv", index_col=0), how="left")
+
+    return vis
+
 def run(s: str) -> None:
-    vis = read_visium(directory / s)
+    vis = better_visium(directory / s)
     vis.var_names_make_unique()
     o = Path(out / s)
     o.mkdir(exist_ok=True, parents=True)
@@ -39,6 +46,7 @@ def run(s: str) -> None:
         (o / f"gene_{orient}.json").write_text(header.json().replace(" ", ""))
         (o / f"gene_{orient}.bin").write_bytes(bytedict)
 
+    (o / "umap.json").write_text(vis.obs[["UMAP-1", "UMAP-2"]].rename(columns={"UMAP-1": "x", "UMAP-2": "y"}).to_json(orient="records", double_precision=3))
     (o / "image.json").write_text(genvisium.get_img_metadata(vis, s, channels).json().replace(" ", ""))
     img = imread(directory / (s+".tif") )
     tifs = gentiff.gen_geotiff(img, o / s)
