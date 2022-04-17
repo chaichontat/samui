@@ -5,11 +5,14 @@
     ListboxOption,
     ListboxOptions
   } from '@rgossiaux/svelte-headlessui';
+  import { createEventDispatcher } from 'svelte';
 
   export let items: string[];
   let rows: { id: number; name: string }[] = [];
 
-  $: rows = items?.map((item, i) => ({
+  const dispatch = createEventDispatcher();
+
+  $: rows = items?.sort().map((item, i) => ({
     id: i,
     name: item
   }));
@@ -20,11 +23,17 @@
   }
 </script>
 
-<div class="relative h-full max-w-lg">
-  <span class="inline-block h-full w-full rounded-md shadow-sm">
-    <Listbox value={active} on:change={(e) => (active = e.detail)}>
+<div class="relative max-w-lg">
+  <span class="inline-block w-full rounded-md shadow-sm">
+    <Listbox
+      value={active}
+      on:change={(e) => {
+        active = e.detail;
+        dispatch('change', e.detail.name);
+      }}
+    >
       <ListboxButton
-        class="relative h-full w-full max-w-md cursor-pointer rounded-md border border-gray-300 bg-gray-800 py-2 pl-3 pr-10 text-left transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5"
+        class="relative w-full max-w-md cursor-pointer rounded-md border border-gray-300 bg-gray-800 py-2 pl-3 pr-10 text-left transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5"
       >
         <span class="block truncate">{active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">

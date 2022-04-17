@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { dev } from '$app/env';
   import promise from '$lib/meh';
   import type { Sample } from '$src/lib/data/sample';
-  import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/maplib';
-  import type { Feature } from 'ol';
-  import { ScaleLine, Zoom } from 'ol/control.js';
+  import { colorVarFactory, genTileLayer } from '$src/lib/mapp/background';
+  import { genStyle, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/spots';
+  import ScaleLine from 'ol/control/ScaleLine';
+  import Zoom from 'ol/control/Zoom';
+  import type Feature from 'ol/Feature';
   import type { Circle, Geometry, Point } from 'ol/geom.js';
   import type { Draw } from 'ol/interaction.js';
   import type VectorLayer from 'ol/layer/Vector';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
-  import TileLayer from 'ol/layer/WebGLTile.js';
+  import type TileLayer from 'ol/layer/WebGLTile.js';
   import Map from 'ol/Map.js';
   import 'ol/ol.css';
   import GeoTIFF from 'ol/source/GeoTIFF.js';
@@ -20,7 +21,7 @@
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
   import { select } from '../lib/mapp/selector';
-  import { currRna, store } from '../lib/store';
+  import { activeSample, currRna, samples, store } from '../lib/store';
 
   let elem: HTMLDivElement;
   let selecting = false;
@@ -29,61 +30,11 @@
   let proteins = ['', '', ''];
   let getColorParams: ReturnType<typeof colorVarFactory>;
   let mPerPx: number;
-  let genStyle: () => LiteralStyle;
-
-  async function hydrate(promise: Promise<Sample>) {
-    const sample = (await promise)!;
-    coords = sample.image.coords!;
-    proteinMap = sample.image.channel!;
-
-    const urls = sample.image.urls.map((url) => ({ url }));
-    sourceTiff = new GeoTIFF({
-      normalize: false,
-      sources: urls
-    });
-
-    proteins = Object.keys(proteinMap);
-    getColorParams = colorVarFactory(proteinMap);
-    showing = proteins.slice(0, 3) as [string, string, string];
-    console.log(showing);
-
-    mPerPx = sample.image.metadata!.spot.mPerPx;
-    const spot_px = sample.image.metadata!.spot.spotDiam / mPerPx;
-    genStyle = (): LiteralStyle => ({
-      variables: { opacity: 0.5 },
-      symbol: {
-        symbolType: 'circle',
-        size: [
-          'interpolate',
-          ['exponential', 2],
-          ['zoom'],
-          1,
-          spot_px / 32,
-          2,
-          spot_px / 16,
-          3,
-          spot_px / 8,
-          4,
-          spot_px / 4,
-          5,
-          spot_px
-        ],
-        color: '#fce652ff',
-
-        // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.1, 1]
-        // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
-      }
-    });
-    return sample;
-
-    // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
-  }
-
   let bgLayer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
   let showAllSpots = true;
+  let currSample = '';
 
   let colorOpacity = 0.8;
 
@@ -94,119 +45,132 @@
   let draw: Draw;
   let drawClear: () => void;
 
+  function update(sample: Sample) {
+    if (!map) return;
+    console.log($samples);
+    console.log(sample);
+
+    coords = sample.image.coords!;
+    proteinMap = sample.image.channel!;
+
+    const urls = sample.image.urls.map((url) => ({ url }));
+    sourceTiff = new GeoTIFF({
+      normalize: false,
+      sources: urls
+    });
+
+    // Refresh spots
+    const previousLayer = spotsLayer;
+    spotsSource.clear();
+    spotsLayer = new WebGLPointsLayer({
+      // @ts-expect-error
+      source: spotsSource,
+      style: genStyle(sample.image.metadata!.spot.spotDiam / sample.image.metadata!.spot.mPerPx)
+    });
+    map.addLayer(spotsLayer);
+    if (previousLayer) {
+      map.removeLayer(previousLayer);
+      previousLayer.dispose();
+    }
+    addData(coords);
+
+    // Refresh background
+    bgLayer.getSource()?.dispose();
+    bgLayer.setSource(sourceTiff);
+    map.setView(sourceTiff.getView());
+
+    if (Object.keys(proteinMap) !== proteins) {
+      proteins = Object.keys(proteinMap);
+      getColorParams = colorVarFactory(proteinMap);
+      showing = proteins.slice(0, 3) as [string, string, string];
+    }
+
+    mPerPx = sample.image.metadata!.spot.mPerPx;
+    currSample = sample.name;
+
+    // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
+  }
+
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
 
-  // let { spotsSource: dapi, addData: adddapi } = getWebGLCircles();
-  let spotsSource: VectorSource<Point>;
+  let spotsSource: VectorSource<Geometry>;
   let spotsLayer: WebGLPointsLayer<typeof spotsSource>;
   let circleFeature: Feature<Circle>;
   let activeLayer: VectorLayer<VectorSource<Geometry>>;
-  onMount(
-    (() => async () => {
-      const sample = await hydrate(promise!).catch(console.error);
+  let addData: (coords: { x: number; y: number }[]) => void;
 
-      ({ circleFeature, activeLayer } = getCanvasCircle(
-        selectStyle,
-        sample.image.metadata!.spot.spotDiam
-      ));
-      let { spotsSource, addData } = getWebGLCircles(sample.image.metadata!.spot.mPerPx);
+  onMount(async () => {
+    const sample = await promise[0]!;
+    const mPerPx = sample.image.metadata!.spot.mPerPx;
+    const spotDiam = sample.image.metadata!.spot.spotDiam;
+    // TODO: Fix this depenedency
+    ({ circleFeature, activeLayer } = getCanvasCircle(selectStyle, spotDiam));
+    ({ spotsSource, addData } = getWebGLCircles(mPerPx));
 
-      addData(coords);
-      spotsLayer = new WebGLPointsLayer({
-        // @ts-expect-error
-        source: spotsSource,
-        style: genStyle()
-      });
+    // const dapiLayer = new WebGLPointsLayer({
+    //   // @ts-expect-error
+    //   source: dapi,
+    //   style: {
+    //     symbol: {
+    //       symbolType: 'square',
+    //       size: 4,
+    //       color: '#ffffff',
+    //       opacity: 0.5
+    //     }
+    //   },
+    //   minZoom: 4
+    // });
 
-      // const dapiLayer = new WebGLPointsLayer({
-      //   // @ts-expect-error
-      //   source: dapi,
-      //   style: {
-      //     symbol: {
-      //       symbolType: 'square',
-      //       size: 4,
-      //       color: '#ffffff',
-      //       opacity: 0.5
-      //     }
-      //   },
-      //   minZoom: 4
-      // });
+    bgLayer = genTileLayer();
+    map = new Map({
+      target: 'map',
+      layers: [bgLayer, activeLayer]
+    });
 
-      bgLayer = new TileLayer({
-        style: {
-          variables: {
-            blue: 1,
-            green: 2,
-            red: 3,
-            blueMax: 128,
-            greenMax: 128,
-            redMax: 128,
-            blueMask: 1,
-            greenMask: 1,
-            redMask: 1
-          },
-          color: [
-            'array',
-            ['*', ['/', ['band', ['var', 'red']], ['var', 'redMax']], ['var', 'redMask']],
-            ['*', ['/', ['band', ['var', 'green']], ['var', 'greenMax']], ['var', 'greenMask']],
-            ['*', ['/', ['band', ['var', 'blue']], ['var', 'blueMax']], ['var', 'blueMask']],
-            1
-          ]
-        },
-        source: sourceTiff
-      });
+    map.removeControl(map.getControls().getArray()[0]);
+    map.addControl(new Zoom({ delta: 0.4 }));
+    map.addControl(
+      new ScaleLine({
+        text: true,
+        minWidth: 140
+      })
+    );
 
-      map = new Map({
-        target: 'map',
-        layers: [bgLayer, spotsLayer, activeLayer],
-        view: sourceTiff.getView()
-      });
-
-      map.set('spotDiam', sample.image.metadata!.spot.spotDiam);
-
-      map.removeControl(map.getControls().getArray()[0]);
-      map.addControl(new Zoom({ delta: 0.4 }));
-      map.addControl(
-        new ScaleLine({
-          text: true,
-          minWidth: 140
-        })
-      );
-
-      // Hover over a circle.
-      map.on('pointermove', (e) => {
-        // Cannot use layer.getFeatures for WebGL.
-        map.forEachFeatureAtPixel(
-          e.pixel,
-          (f) => {
-            const idx = f.getId() as number | undefined;
-            if (idx === curr || !idx) return true;
-            $store.currIdx = { idx, source: 'map' }; // As if came from outside.
-            curr = idx;
-            return true; // Terminates search.
-          },
-          { layerFilter: (layer) => layer === spotsLayer, hitTolerance: 10 }
-        );
-      });
-
-      // Lock / unlock a circle.
-      map.on('click', (e) => {
-        map.forEachFeatureAtPixel(e.pixel, (f) => {
+    // Hover over a circle.
+    map.on('pointermove', (e) => {
+      // Cannot use layer.getFeatures for WebGL.
+      map.forEachFeatureAtPixel(
+        e.pixel,
+        (f) => {
           const idx = f.getId() as number | undefined;
-          if (!idx) return true;
-          const unlock = idx === $store.lockedIdx.idx;
-          $store.lockedIdx = { idx: unlock ? -1 : idx, source: 'scatter' }; // As if came from outside.
+          if (idx === curr || !idx) return true;
+          $store.currIdx = { idx, source: 'map' }; // As if came from outside.
           curr = idx;
-          return true;
-        });
-      });
+          return true; // Terminates search.
+        },
+        { layerFilter: (layer) => layer === spotsLayer, hitTolerance: 10 }
+      );
+    });
 
-      map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
-      map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
-      ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
-      draw.on('drawend', () => (selecting = false));
-    })()
-  );
+    // Lock / unlock a circle.
+    map.on('click', (e) => {
+      map.forEachFeatureAtPixel(e.pixel, (f) => {
+        const idx = f.getId() as number | undefined;
+        if (!idx) return true;
+        const unlock = idx === $store.lockedIdx.idx;
+        $store.lockedIdx = { idx: unlock ? -1 : idx, source: 'scatter' }; // As if came from outside.
+        curr = idx;
+        return true;
+      });
+    });
+
+    map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
+    map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
+    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
+    draw.on('drawend', () => (selecting = false));
+
+    update(sample);
+  });
 
   // Update "brightness"
   $: if (getColorParams) bgLayer?.updateStyleVariables(getColorParams(showing, maxIntensity));
@@ -244,7 +208,7 @@
   $: spotsLayer?.setVisible(showAllSpots);
 
   // Enable/disable polygon draw
-  $: if (elem && map) {
+  $: if (map) {
     if (selecting) {
       drawClear();
       map?.addInteraction(draw);
@@ -260,6 +224,9 @@
       console.log(URL.createObjectURL(files[0]));
     }
   }
+  $: console.log($activeSample);
+
+  $: if ($activeSample !== currSample) update($samples[$activeSample]);
 </script>
 
 <!-- Buttons -->

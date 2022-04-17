@@ -1,16 +1,17 @@
 <script lang="ts" context="module">
-  import { browser } from '$app/env';
   import promise from '$lib/meh';
   import { currRna } from '$src/lib/store';
   import { clickOutside, debounce } from '$src/lib/utils';
   import { Fzf } from 'fzf';
+  import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { fade } from 'svelte/transition';
+  import type { Sample } from '../data/sample';
+
+  let fzf: Fzf<readonly string[]>;
 
   let names: { [key: string]: number };
   let keys: string[] = [];
-  let fzf: Fzf<readonly string[]>;
-
   let retrieve: (selected: string) => Promise<number[]>;
 
   let currShow = '';
@@ -35,8 +36,7 @@
 <script lang="ts">
   let showSearch = true;
 
-  async function hydrate() {
-    const sample = await promise!;
+  function update(sample: Sample) {
     names = sample.features.genes.names;
     keys = Object.keys(names);
     retrieve = sample.features.genes.retrieve;
@@ -48,9 +48,9 @@
     setVal('GFAP');
   }
 
-  if (browser) {
-    hydrate().catch(console.error);
-  }
+  onMount(async () => {
+    update(await promise[0]);
+  });
 
   let search = '';
   let chosen: { raw: string; embellished: string }[] = [{ raw: '', embellished: '' }];

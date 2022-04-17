@@ -1,8 +1,9 @@
+import { browser } from '$app/env';
 import pako from 'pako';
 import { genLRU } from '../utils';
 
 export interface Data {
-  retrieve: ((name: string) => Promise<number[] | undefined> | number[] | undefined) | undefined;
+  retrieve: ((name: string) => Promise<number[] | undefined>) | undefined;
   hydrate: () => Promise<this>;
 }
 
@@ -20,8 +21,9 @@ export class PlainJSON implements Data {
     return this;
   }
 
-  retrieve(name: string): number[] | undefined {
-    return this.kv ? this.kv[name] : undefined;
+  retrieve(name: string) {
+    const prom = new Promise((resolve) => resolve(this.kv ? this.kv[name] : undefined));
+    return prom;
   }
 }
 
@@ -82,18 +84,19 @@ export class ChunkedJSON implements Data {
     return this;
   }
 
-  decompressBlob = false // browser && 'CompressionStream' in window // Chromium
-    ? async (blob: Blob) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-        const ds = new DecompressionStream('gzip');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-        const decompressedStream = blob.stream().pipeThrough(ds);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        return await new Response(decompressedStream).text();
-      }
-    : async (blob: Blob): Promise<string> => {
-        return pako.inflate((await blob.arrayBuffer()) as pako.Data, { to: 'string' });
-      };
+  decompressBlob =
+    browser && 'CompressionStream' in window // Chromium
+      ? async (blob: Blob) => {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+          const ds = new DecompressionStream('gzip');
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+          const decompressedStream = blob.stream().pipeThrough(ds);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          return await new Response(decompressedStream).text();
+        }
+      : async (blob: Blob): Promise<string> => {
+          return pako.inflate((await blob.arrayBuffer()) as pako.Data, { to: 'string' });
+        };
 
   genDense(obj: Sparse, len: number): number[] {
     const dense = new Array(len).fill(0) as number[];

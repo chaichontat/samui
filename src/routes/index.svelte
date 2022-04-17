@@ -1,11 +1,12 @@
 <script lang="ts">
   import promise from '$lib/meh';
   import SampleList from '$src/lib/components/sampleList.svelte';
+  import { activeSample, samples } from '$src/lib/store';
   import Mapp from '$src/pages/mapp.svelte';
   import Rna from '$src/pages/rna.svelte';
 
   let sample = '';
-  promise?.then((s) => (sample = s.name)).catch(console.error);
+  promise ? promise[0]?.then((s) => (sample = s.name)).catch(console.error) : undefined;
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -15,9 +16,9 @@
     <h1 class="order-1 mb-1 font-[Cera] text-3xl font-bold leading-7 text-white md:text-4xl">
       <span class="tracking-tight text-yellow-400">Loopy</span> Browser
     </h1>
-    <h3 class="mb-6 flex items-center gap-2 text-sm text-slate-100 lg:text-base">
+    <h3 class="mb-6 mt-2 flex items-center gap-2 text-sm text-slate-100 lg:text-base">
       <div>Sample:</div>
-      <SampleList items={[sample]} />
+      <SampleList items={Object.keys($samples)} on:change={(e) => ($activeSample = e.detail)} />
     </h3>
   </div>
 

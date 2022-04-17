@@ -27,4 +27,5 @@ export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> =
 
 export const multipleSelect: Writable<number[]> = writable([]);
 
-export const activeSample: Writable<Sample | undefined> = writable(undefined);
+export const activeSample: Writable<string> = writable('');
+export const samples: Writable<{ [key: string]: Sample }> = writable({});
