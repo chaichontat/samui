@@ -2,7 +2,7 @@
   import type { Sample } from '$lib/data/sample';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import { chartOptions } from '$src/lib/scatter/scatterlib';
-  import Chart, { type ChartEvent } from 'chart.js/auto';
+  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
   import ChartDataLabels from 'chartjs-plugin-datalabels';
   import colormap from 'colormap';
   import { onMount } from 'svelte';

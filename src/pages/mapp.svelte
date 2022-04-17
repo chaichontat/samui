@@ -3,14 +3,14 @@
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, genTileLayer } from '$src/lib/mapp/background';
   import { genStyle, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/spots';
-  import ScaleLine from 'ol/control/ScaleLine';
-  import Zoom from 'ol/control/Zoom';
+  import ScaleLine from 'ol/control/ScaleLine.js';
+  import Zoom from 'ol/control/Zoom.js';
   import type Feature from 'ol/Feature';
   import type { Circle, Geometry } from 'ol/geom.js';
   import type { Draw } from 'ol/interaction.js';
   import type VectorLayer from 'ol/layer/Vector';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
-  import type TileLayer from 'ol/layer/WebGLTile.js';
+  import type TileLayer from 'ol/layer/WebGLTile';
   import Map from 'ol/Map.js';
   import 'ol/ol.css';
   import GeoTIFF from 'ol/source/GeoTIFF.js';

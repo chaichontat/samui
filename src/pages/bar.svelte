@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/env';
   import type { ChunkedJSON, Sparse } from '$src/lib/data/dataHandlers';
-  import Chart from 'chart.js/auto';
+  import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
   import { activeSample, done, multipleSelect, samples, store } from '../lib/store';
   // import { dataPromise } from '../routes/index.svelte';
