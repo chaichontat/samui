@@ -1,10 +1,9 @@
 #%%
-from pathlib import Path
 from typing import cast
 
 import pandas as pd
+from anndata import AnnData
 from pydantic import BaseModel
-from scanpy import read_visium
 
 
 class SpotParams(BaseModel):
@@ -24,25 +23,17 @@ class ImageMetadata(BaseModel):
     spot: SpotParams
 
 
-adata = read_visium("../../br6522/")
+def get_img_metadata(vis: AnnData, sample: str, channels: dict[str, int]):
+    spatial = cast(pd.DataFrame, vis.obsm["spatial"])
+    coords = pd.DataFrame(spatial, columns=["x", "y"], dtype="uint32")
+    coords = [Coords(x=row.x, y=row.y) for row in coords.itertuples()]  # type: ignore
 
-spatial = cast(pd.DataFrame, adata.obsm["spatial"])
-coords = pd.DataFrame(spatial, columns=["x", "y"], dtype="uint32")
-coords = [Coords(x=row.x, y=row.y) for row in coords.itertuples()]  # type: ignore
+    return ImageMetadata(
+        sample=sample,
+        coords=coords,
+        channel=channels,
+        spot=SpotParams(),
+    )
 
-imm = ImageMetadata(
-    sample="Br6522",
-    coords=coords,
-    channel={
-        "Lipofuscin": 1,
-        "DAPI": 2,
-        "GFAP": 3,
-        "NeuN": 4,
-        "OLIG2": 5,
-        "TMEM119": 6,
-    },
-    spot=SpotParams(),
-)
-
-Path("image.json").write_text(imm.json().replace(" ", ""))
+# Path("image.json").write_text(imm.json().replace(" ", ""))
 # %%
