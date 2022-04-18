@@ -4,35 +4,17 @@ import { Vector as VectorLayer } from 'ol/layer.js';
 import 'ol/ol.css';
 import VectorSource from 'ol/source/Vector.js';
 import type { Style } from 'ol/style.js';
-import { params } from '../store';
-
-export function colorVarFactory(mapping: { [key: string]: number }) {
-  const len = Object.keys(mapping).length - 1;
-  return (showing: [string, string, string], max: [number, number, number]) => {
-    const variables = {
-      blue: Math.min(mapping[showing[0]], len),
-      green: Math.min(mapping[showing[1]], len),
-      red: Math.min(mapping[showing[2]], len),
-      blueMax: 255 - max[0],
-      greenMax: 255 - max[1],
-      redMax: 255 - max[2],
-      blueMask: mapping[showing[0]] > len ? 0 : 1,
-      greenMask: mapping[showing[1]] > len ? 0 : 1,
-      redMask: mapping[showing[2]] > len ? 0 : 1
-    };
-    return variables;
-  };
-}
+import type { LiteralStyle } from 'ol/style/literal';
 
 // WebGL;
 export function getWebGLCircles() {
   const spotsSource = new VectorSource({ features: [] });
 
-  const addData = (coords: { x: number; y: number }[]) =>
+  const addData = (coords: { x: number; y: number }[], mPerPx: number) =>
     spotsSource.addFeatures(
       coords.map(({ x, y }, i) => {
         const f = new Feature({
-          geometry: new Point([x * params.mPerPx, -y * params.mPerPx]),
+          geometry: new Point([x * mPerPx, -y * mPerPx]),
           value: 0
         });
         f.setId(i);
@@ -43,8 +25,8 @@ export function getWebGLCircles() {
   return { spotsSource, addData };
 }
 
-export function getCanvasCircle(style: Style) {
-  const circleFeature = new Feature({ geometry: new Circle([0, 0], params.spotDiam / 2) });
+export function getCanvasCircle(style: Style, spotDiam: number) {
+  const circleFeature = new Feature({ geometry: new Circle([0, 0], spotDiam / 2) });
   const circleSource = new VectorSource({ features: [circleFeature] });
   const activeLayer = new VectorLayer({
     source: circleSource,
@@ -62,4 +44,32 @@ export function getCanvasCircle(style: Style) {
   //     );
 
   return { circleFeature, circleSource, activeLayer };
+}
+
+export function genStyle(spotPx: number): LiteralStyle {
+  return {
+    variables: { opacity: 0.5 },
+    symbol: {
+      symbolType: 'circle',
+      size: [
+        'interpolate',
+        ['exponential', 2],
+        ['zoom'],
+        1,
+        spotPx / 32,
+        2,
+        spotPx / 16,
+        3,
+        spotPx / 8,
+        4,
+        spotPx / 4,
+        5,
+        spotPx
+      ],
+      color: '#fce652ff',
+      // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
+      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.0, 1]
+      // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
+    }
+  };
 }

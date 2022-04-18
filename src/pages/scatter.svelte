@@ -1,81 +1,77 @@
 <script lang="ts">
-  import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
+  import type { Sample } from '$lib/data/sample';
   import Colorbar from '$src/lib/components/colorbar.svelte';
-  import Chart, { type ChartConfiguration, type ChartEvent } from 'chart.js/auto/auto.js';
+  import { chartOptions } from '$src/lib/scatter/scatterlib';
+  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
   import ChartDataLabels from 'chartjs-plugin-datalabels';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
-  import type getData from '../lib/fetcher';
-  import { currRna, store } from '../lib/store';
+  import { activeSample, currRna, samples, store } from '../lib/store';
   import { genLRU } from '../lib/utils';
-  import { dataPromise } from '../routes/index.svelte';
+
+  export let target = 'coords';
+  export let opacity = 'ff';
+  export let pointRadius = 2.5;
+
+  let currSample = '';
   let curr = 0;
 
-  let coords: Awaited<typeof dataPromise>['coords'];
-  let myChart: Chart<'scatter', { x: number; y: number }[], string>;
-  let getColor: (name: string) => string[];
+  let coords: { x: number; y: number }[];
 
   const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
-  async function hydrate(dataPromise: ReturnType<typeof getData>) {
-    ({ coords } = await dataPromise);
-    getColor = genLRU((name: string): string[] => {
-      const out = [];
-      for (const d of $currRna.values) {
-        const idx = Math.round(Math.min(d / 10, 1) * 255);
-        out.push(colors[idx]);
-      }
-      return out;
-    });
+  let myChart: Chart<'scatter', { x: number; y: number }[], string>;
+  let getColor: (sample: string | undefined, name: string) => string[];
+  getColor = genLRU((sample: string | undefined, name: string): string[] => {
+    const out = [];
+    for (const d of $currRna.values) {
+      const idx = Math.round(Math.min(d / 10, 1) * 255);
+      out.push(colors[idx] + opacity);
+    }
+    return out;
+  });
+
+  function update(s: Sample) {
+    if (!myChart || !anotherChart) return;
+
+    if (target === 'coords') {
+      coords = s.image.coords!;
+    } else {
+      coords = s.features[target] ? (s.features[target] as { x: number; y: number }[]) : [];
+    }
 
     const min = coords
       .reduce((acc, { x, y }) => [Math.min(acc[0], x), Math.min(acc[1], y)], [Infinity, Infinity])
-      .map((x) => x - 100);
+      .map((x) => x);
     const max = coords
       .reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0])
-      .map((x) => x + 100);
+      .map((x) => x);
+
+    myChart.data.datasets[0].data = coords;
+    const over = 0.05;
+    const range = [max[0] - min[0], max[1] - min[1]];
 
     for (const c of [myChart, anotherChart]) {
-      c.options.scales!.x!.min = min[0] - 100;
-      c.options.scales!.x!.max = max[0] + 100;
-      c.options.scales!.y!.min = min[1] - 100;
-      c.options.scales!.y!.max = max[1] + 100;
+      c.options.scales!.x!.min = min[0] - over * range[0];
+      c.options.scales!.x!.max = max[0] + over * range[0];
+      c.options.scales!.y!.min = min[1] - over * range[1];
+      c.options.scales!.y!.max = max[1] + over * range[0];
       c.update();
     }
 
-    myChart.data.datasets[0].data = coords;
-    // $currRna = Object.keys(data)[0];
+    currSample = s.name;
   }
 
   function changeColor(chart: Chart, name: string): void {
     if (!chart || !getColor) return;
-    chart.data.datasets[0].backgroundColor = getColor(name);
+    chart.data.datasets[0].backgroundColor = getColor($activeSample, name);
     chart.update();
   }
 
-  const chartOptions: ChartConfiguration<'scatter'> = {
-    animation: false,
-    aspectRatio: 1,
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false,
-        reverse: true
-      }
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: false }
-    }
-  };
-
-  //   console.log(min);
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
     anotherChart = new Chart(
-      (document.getElementById('another') as HTMLCanvasElement).getContext('2d')!,
+      (document.getElementById(`${target}-another`) as HTMLCanvasElement).getContext('2d')!,
       {
         type: 'scatter',
         data: {
@@ -96,10 +92,10 @@
             ...chartOptions.plugins,
             datalabels: {
               formatter: () => $currRna.values[$store.currIdx.idx]?.toFixed(2) ?? '',
-              align: 'end',
+              align: 'center',
               anchor: 'end',
               offset: 2,
-              color: '#A8A29E',
+              color: '#FFFFFF',
               font: { size: 14 }
             }
           },
@@ -140,27 +136,24 @@
     );
 
     myChart = new Chart(
-      (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!,
+      (document.getElementById(`${target}-myChart`) as HTMLCanvasElement).getContext('2d')!,
       {
         data: {
           datasets: [
             {
               type: 'scatter',
-              data: coords,
+              data: [],
+              parsing: false,
               normalized: true,
-              pointRadius: 2.5,
-              pointHoverRadius: 20,
-              pointHoverBorderWidth: 1,
-              pointHoverBorderColor: '#eeeeee',
-              pointHitRadius: 3
+              pointRadius
             }
           ]
         },
-        options: chartOptions
+        options: { ...chartOptions }
       }
     );
 
-    hydrate(dataPromise).catch(console.error);
+    // update();
   });
 
   // Change color for different markers.
@@ -170,19 +163,16 @@
   $: if (coords && anotherChart) {
     const idx = $store.locked ? $store.lockedIdx.idx : $store.currIdx.idx;
     anotherChart.data.datasets[0].data = [coords[idx]];
-    anotherChart.data.datasets[0].backgroundColor = getColor($currRna.name)[idx] + 'cc';
+    anotherChart.data.datasets[0].backgroundColor = getColor($activeSample, $currRna.name)[idx];
     anotherChart.update();
   }
+  $: if ($activeSample !== currSample) update($samples[$activeSample]);
 </script>
-
-<!-- {#if data}
-  <ButtonGroup names={Object.keys(data)} color="slate" bind:curr={$currRna} />
-{/if} -->
 
 <div class="relative z-10">
   <Colorbar min={0} max={10} />
-  <canvas class="absolute" id="another" />
-  <canvas class="" id="myChart" />
+  <canvas class="absolute" id={`${target}-another`} />
+  <canvas class="" id={`${target}-myChart`} />
   <!-- <div
     class="absolute left-10 top-10 z-10 rounded-lg bg-white/10 px-3 py-1 text-lg font-medium text-white opacity-90 backdrop-blur-sm"
   >

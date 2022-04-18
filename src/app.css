@@ -34,16 +34,30 @@
     font-family: 'Inter var', sans-serif;
   }
   body {
-    @apply bg-gray-900 text-slate-100;
+    @apply bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-slate-100;
+    scrollbar-gutter: stable both-edges;
   }
 }
 @tailwind components;
 @layer components {
   .button-base {
-    @apply border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-700 xl:px-4 xl:text-sm 2xl:px-5 2xl:text-base;
+    @apply px-3 py-2 text-xs font-medium text-white focus:outline-none focus:ring-1 xl:px-4 xl:text-sm 2xl:px-5 2xl:text-base;
   }
   .button {
     @apply button-base mr-2 mb-2 rounded-lg;
   }
 }
 @tailwind utilities;
+@layer utilities {
+  .bg-default {
+    @apply bg-gray-100/80 text-gray-800  dark:bg-gray-800/80 dark:text-slate-100;
+  }
+
+  .border-default {
+    @apply border-gray-300 dark:border-gray-600;
+  }
+
+  .hover-default {
+    @apply hover:bg-gray-300/80 active:bg-gray-400/80 dark:hover:bg-gray-700/80 dark:active:bg-gray-600/80;
+  }
+}

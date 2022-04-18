@@ -7,28 +7,28 @@
   function genClass(c: Color, active: boolean) {
     switch (c) {
       case 'blue':
-        return `border-blue-700/50 ${
+        return `border-gray-400 dark:border-blue-700/50 ${
           active
-            ? 'bg-blue-700 hover:bg-blue-600'
-            : 'bg-blue-900/50 hover:bg-blue-800 active:bg-blue-700'
+            ? 'bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600'
+            : 'bg-gray-200/30 text-gray-600 dark:text-gray-100 dark:bg-blue-900/50 dark:hover:bg-blue-800 dark:active:bg-blue-700'
         }`;
       case 'green':
-        return `border-green-700/50 ${
+        return `border-gray-400 dark:border-green-700/50 ${
           active
-            ? 'bg-green-700 hover:bg-green-700'
-            : 'bg-green-900/50 hover:bg-green-800 active:bg-green-700'
+            ? 'bg-green-600 dark:bg-green-700 dark:hover:bg-green-700'
+            : 'bg-gray-200/30 text-gray-600 dark:text-gray-100 dark:bg-green-900/50 dark:hover:bg-green-800 dark:active:bg-green-700'
         }`;
       case 'red':
-        return `border-red-700/50 ${
+        return `border-gray-400 dark:border-red-700/50 ${
           active
-            ? 'bg-red-800 hover:bg-red-700 active:bg-red-600'
-            : 'bg-red-900/50 hover:bg-red-800 active:bg-red-700'
+            ? 'bg-red-700 dark:hover:bg-red-700 dark:active:bg-red-600'
+            : 'bg-gray-200/30 text-gray-600 dark:text-gray-100 dark:bg-red-900/50 dark:hover:bg-red-800 dark:active:bg-red-700'
         }`;
       case 'slate':
-        return `border-slate-500/50 ${
+        return `border-gray-400 dark:border-slate-500/50 ${
           active
-            ? 'bg-slate-700 hover:bg-slate-700'
-            : 'bg-slate-900/50 hover:bg-slate-800 active:bg-slate-700'
+            ? 'bg-slate-700 dark:hover:bg-slate-700'
+            : 'bg-slate-300 text-gray-500 dark:text-gray-100 dark:bg-slate-900/50 dark:hover:bg-slate-800 dark:active:bg-slate-700'
         }`;
 
       default:
@@ -37,10 +37,10 @@
   }
 </script>
 
-<div class="inline-flex flex-wrap rounded-md shadow-sm" id="group" role="group">
+<div class="inline-flex rounded-md shadow-sm" id="group" role="group">
   <button
     on:click={() => (curr = names[0])}
-    class={`${genClass(color, curr === names[0])} button-base rounded-l-lg border`}
+    class={`${genClass(color, curr === names[0])} button-base rounded-l-lg border `}
     >{names[0]}</button
   >
 

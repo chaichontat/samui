@@ -5,13 +5,14 @@ from typing import Any
 
 import click
 import numpy as np
+import numpy.typing as npt
 import rasterio
 import tifffile
 from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
 
 
-def gen_geotiff(img: np.ndarray[Any, Any], path: Path) -> list[Path]:
+def gen_geotiff(img: npt.ArrayLike, path: Path) -> list[Path]:
     z = img.shape[0]
     if z < 4:
         names = ("_1",)
