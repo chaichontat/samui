@@ -130,12 +130,7 @@
 
     map.removeControl(map.getControls().getArray()[0]);
     map.addControl(new Zoom({ delta: 0.4 }));
-    map.addControl(
-      new ScaleLine({
-        text: true,
-        minWidth: 140
-      })
-    );
+    map.addControl(new ScaleLine({ text: true, minWidth: 140 }));
 
     // Hover over a circle.
     map.on('pointermove', (e) => {
@@ -171,7 +166,6 @@
     draw.on('drawend', () => (selecting = false));
 
     update(sample);
-    map.updateSize();
   });
 
   // Update "brightness"
@@ -229,7 +223,6 @@
       console.log(URL.createObjectURL(files[0]));
     }
   }
-  $: console.log(map);
 
   $: if ($activeSample !== currSample) update($samples[$activeSample]);
 </script>

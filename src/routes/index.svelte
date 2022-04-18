@@ -1,108 +1,13 @@
 <script lang="ts">
-  import promise from '$lib/meh';
+  import { resizable } from '$lib/utils';
   import SampleList from '$src/lib/components/sampleList.svelte';
   import SearchBox from '$src/lib/components/searchBox.svelte';
   import { activeSample, currRna, samples } from '$src/lib/store';
-  import { debounce } from '$src/lib/utils';
   import Mapp from '$src/pages/mapp.svelte';
   import Rna from '$src/pages/rna.svelte';
-  import { onMount } from 'svelte';
-
-  let sample = '';
-  promise ? promise[0]?.then((s) => (sample = s.name)).catch(console.error) : undefined;
-
-  onMount(() => {
-    // Query the element
-    // Query the element
-    const resizer = document.getElementById('dragMe')!;
-    const leftSide = resizer.previousElementSibling!;
-    const rightSide = resizer.nextElementSibling!;
-
-    // The current position of mouse
-    let x = 0;
-    let y = 0;
-    let leftWidth = 0;
-
-    // Handle the mousedown event
-    // that's triggered when user drags the resizer
-    const mouseDownHandler = function (e) {
-      // Get the current mouse position
-      x = e.clientX;
-      y = e.clientY;
-      leftWidth = leftSide.getBoundingClientRect().width;
-
-      // Attach the listeners to `document`
-      document.addEventListener('mousemove', mouseMoveHandler);
-      document.addEventListener('mouseup', mouseUpHandler);
-    };
-
-    const mouseMoveHandler = function (e) {
-      // How far the mouse has been moved
-      const dx = e.clientX - x;
-      const dy = e.clientY - y;
-
-      const newLeftWidth =
-        ((leftWidth + dx) * 100) / resizer.parentNode.getBoundingClientRect().width;
-      leftSide.style.width = `${newLeftWidth}%`;
-
-      debounce(() => document.body.dispatchEvent(new Event('resize')), 50);
-
-      resizer.style.cursor = 'col-resize';
-      document.body.style.cursor = 'col-resize';
-
-      leftSide.style.userSelect = 'none';
-      leftSide.style.pointerEvents = 'none';
-
-      rightSide.style.userSelect = 'none';
-      rightSide.style.pointerEvents = 'none';
-    };
-
-    const mouseUpHandler = function () {
-      resizer.style.removeProperty('cursor');
-      document.body.style.removeProperty('cursor');
-
-      leftSide.style.removeProperty('user-select');
-      leftSide.style.removeProperty('pointer-events');
-
-      rightSide.style.removeProperty('user-select');
-      rightSide.style.removeProperty('pointer-events');
-
-      document.body.dispatchEvent(new Event('resize'));
-
-      // Remove the handlers of `mousemove` and `mouseup`
-      document.removeEventListener('mousemove', mouseMoveHandler);
-      document.removeEventListener('mouseup', mouseUpHandler);
-    };
-
-    // Attach the handler
-    resizer.addEventListener('mousedown', mouseDownHandler);
-  });
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
-<!--
-<nav
-  class="top-0 z-40 flex h-14 items-center justify-between gap-x-6 border-b border-b-gray-600 bg-gray-900/80 px-2 pt-2 pb-1 shadow backdrop-blur lg:px-4"
->
-  <h1
-    class="display-inline font-[Cera] text-2xl font-bold leading-7 tracking-tight text-slate-100 lg:text-3xl"
-  >
-    <span class="text-yellow-400">Loopy</span> Browser
-  </h1>
-
-  <div class="flex items-center gap-2 text-sm text-slate-100 lg:text-base">
-    <div>Sample:</div>
-    <SampleList items={Object.keys($samples)} on:change={(e) => ($activeSample = e.detail)} />
-  </div>
-
-  <div class="flex-grow" />
-
-  <div class="w-[30%]">
-    <SearchBox />
-  </div>
-
-
-</nav> -->
 
 <!-- Search -->
 <div
@@ -118,13 +23,13 @@
 </div>
 
 <main
-  class="flex flex-col divide-x-2 divide-gray-800 overflow-x-hidden lg:h-screen lg:flex-row lg:flex-nowrap"
+  class="flex flex-col divide-x-2 divide-gray-900 overflow-x-hidden lg:h-screen lg:flex-row lg:flex-nowrap"
 >
   <div class="h-[600px] w-[75%] shadow lg:h-full">
     <Mapp />
   </div>
 
-  <div class="resizer h-full w-1 cursor-ew-resize bg-white" id="dragMe" />
+  <div class="resizer h-full w-1 cursor-ew-resize bg-gray-800" use:resizable />
   <div class="flex h-full max-w-[600px] flex-1 flex-col pt-2">
     <!-- Nav -->
     <nav class="hidden bg-gray-900/80 px-6 pb-3 shadow backdrop-blur lg:flex lg:items-center">
