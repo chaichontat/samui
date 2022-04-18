@@ -2,7 +2,7 @@
   import type { Sample } from '$lib/data/sample';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import { chartOptions } from '$src/lib/scatter/scatterlib';
-  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
+  import Chart, { type ChartEvent } from 'chart.js/auto';
   import ChartDataLabels from 'chartjs-plugin-datalabels';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
@@ -37,7 +37,7 @@
     if (target === 'coords') {
       coords = s.image.coords!;
     } else {
-      coords = s.features[target] as { x: number; y: number }[];
+      coords = s.features[target] ? (s.features[target] as { x: number; y: number }[]) : [];
     }
 
     const min = coords
@@ -50,7 +50,6 @@
     myChart.data.datasets[0].data = coords;
     const over = 0.05;
     const range = [max[0] - min[0], max[1] - min[1]];
-    console.log(coords);
 
     for (const c of [myChart, anotherChart]) {
       c.options.scales!.x!.min = min[0] - over * range[0];
@@ -93,10 +92,10 @@
             ...chartOptions.plugins,
             datalabels: {
               formatter: () => $currRna.values[$store.currIdx.idx]?.toFixed(2) ?? '',
-              align: 'end',
+              align: 'center',
               anchor: 'end',
               offset: 2,
-              color: '#A8A29E',
+              color: '#FFFFFF',
               font: { size: 14 }
             }
           },
@@ -164,8 +163,7 @@
   $: if (coords && anotherChart) {
     const idx = $store.locked ? $store.lockedIdx.idx : $store.currIdx.idx;
     anotherChart.data.datasets[0].data = [coords[idx]];
-    anotherChart.data.datasets[0].backgroundColor =
-      getColor($activeSample, $currRna.name)[idx] + 'cc';
+    anotherChart.data.datasets[0].backgroundColor = getColor($activeSample, $currRna.name)[idx];
     anotherChart.update();
   }
   $: if ($activeSample !== currSample) update($samples[$activeSample]);

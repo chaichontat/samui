@@ -4,7 +4,6 @@
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
   import { activeSample, done, multipleSelect, samples, store } from '../lib/store';
-  // import { dataPromise } from '../routes/index.svelte';
 
   Chart.defaults.font.size = 14;
 
@@ -61,8 +60,6 @@
   }
 
   let curr = 0;
-
-  $: console.log($samples);
 
   // $: if (bar && $done) {
   //   getRow(5)

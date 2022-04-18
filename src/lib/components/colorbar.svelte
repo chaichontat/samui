@@ -14,10 +14,12 @@
   };
 </script>
 
-<div class={`absolute z-10 h-36 w-4 rounded border border-slate-600 ${cl}`}>
-  <div class="absolute -right-5 -top-2 text-sm text-slate-200">{max}</div>
-  <div class="absolute -right-5 top-[42.5%] text-sm text-slate-200">{(min + max) / 2}</div>
-  <div class="absolute -right-5 -bottom-2 text-sm text-slate-200">{min}</div>
+<div class={`absolute z-10 h-36 w-4 rounded border border-gray-600 font-medium ${cl}`}>
+  <div class="absolute -right-5 -top-2 text-sm text-gray-800 dark:text-slate-200">{max}</div>
+  <div class="absolute -right-5 top-[42.5%] text-sm text-gray-800 dark:text-slate-200">
+    {(min + max) / 2}
+  </div>
+  <div class="absolute -right-5 -bottom-2 text-sm text-gray-800 dark:text-slate-200">{min}</div>
   <div class="h-full w-full" style={`opacity: ${opacity};`}>
     <div
       class="h-full w-full rounded"

@@ -1,3 +1,4 @@
+import type { ImageMode } from '../mapp/imgControl';
 import { ChunkedJSON, type ChunkedJSONOptions } from './dataHandlers';
 
 type ChunkedJSONParams = {
@@ -23,6 +24,7 @@ export type ImageMetadata = {
   coords: { x: number; y: number }[];
   channel: Record<string, number>;
   spot: SpotParams;
+  mode?: ImageMode;
 };
 
 export class Image {

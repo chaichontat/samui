@@ -69,7 +69,7 @@
 <div class="relative">
   <input
     type="text"
-    class="w-full rounded border border-gray-600 bg-gray-800 py-2 px-3 "
+    class="w-full rounded-md border border-gray-400 bg-gray-100 py-2 px-4 shadow transition-colors dark:border-gray-600 dark:bg-gray-800"
     bind:value={search}
     on:click={() => (showSearch = true)}
     placeholder="Search features"
@@ -78,7 +78,7 @@
   {#if search && showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="absolute top-14 z-30 flex w-full flex-col rounded bg-gray-800/80 px-2 pt-1 pb-2 text-slate-100 backdrop-blur"
+      class="bg-default absolute top-14 z-40 flex w-full flex-col rounded p-2  backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setVal(currShow)}
@@ -86,7 +86,7 @@
     >
       {#each chosen as { raw, embellished }}
         <div
-          class="cursor-pointer rounded py-1.5 px-3 hover:bg-gray-700/80 active:bg-gray-600/80"
+          class="hover-default cursor-pointer rounded py-1.5 px-3 "
           on:mousemove={() => setVal(raw)}
           on:click={() => {
             showSearch = false;
@@ -105,7 +105,10 @@
 </div>
 
 <style lang="postcss">
-  ::placeholder {
+  .dark::placeholder {
     @apply text-slate-200;
+  }
+  ::placeholder {
+    @apply text-slate-600;
   }
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resizable } from '$lib/utils';
+  import Darkswitch from '$src/lib/components/darkswitch.svelte';
   import SampleList from '$src/lib/components/sampleList.svelte';
   import SearchBox from '$src/lib/components/searchBox.svelte';
   import { activeSample, currRna, samples } from '$src/lib/store';
@@ -17,24 +18,27 @@
     <SearchBox />
   </div>
   <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
-    <div>Sample:</div>
+    <div class="font-semibold text-gray-900 dark:font-medium dark:text-white">Sample:</div>
     <SampleList items={Object.keys($samples)} on:change={(e) => ($activeSample = e.detail)} />
   </div>
 </div>
 
 <main
-  class="flex flex-col divide-x-2 divide-gray-900 overflow-x-hidden lg:h-screen lg:flex-row lg:flex-nowrap"
+  class="flex flex-col overflow-x-hidden dark:divide-gray-900 lg:h-screen lg:flex-row lg:flex-nowrap"
 >
   <div class="h-[600px] w-[75%] shadow lg:h-full">
     <Mapp />
   </div>
 
-  <div class="resizer h-full w-1 cursor-ew-resize bg-gray-800" use:resizable />
+  <div class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800" use:resizable />
   <div class="flex h-full max-w-[600px] flex-1 flex-col pt-2">
     <!-- Nav -->
-    <nav class="hidden bg-gray-900/80 px-6 pb-3 shadow backdrop-blur lg:flex lg:items-center">
+    <nav
+      class="hidden gap-x-3 bg-gray-100 px-6 pb-3 shadow backdrop-blur dark:bg-gray-900 lg:flex lg:items-center"
+    >
       <div class="mt-2 text-xl font-medium">Navigation: Showing {$currRna.name}</div>
       <div class="flex-grow" />
+      <Darkswitch />
       <div title="GitHub" class="">
         <a
           target="_blank"
