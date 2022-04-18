@@ -4,7 +4,9 @@ import { Sample } from '$src/lib/data/sample';
 import { get } from 'svelte/store';
 
 export const names = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
-export const s3_url = dev ? '' : 'https://f004.backblazeb2.com/file/chaichontat-host/loopy-browser';
+export const s3_url = dev
+  ? ''
+  : 'https://chaichontat-host.s3.us-west-004.backblazeb2.com/loopy-browser/';
 
 function gen_samples(n: string[]): Promise<Sample>[] {
   const out = [];
