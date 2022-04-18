@@ -13,7 +13,7 @@
   import type VectorLayer from 'ol/layer/Vector';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import type TileLayer from 'ol/layer/WebGLTile';
-  import WebGLTileLayer from 'ol/layer/WebGLTile';
+  import WebGLTileLayer from 'ol/layer/WebGLTile.js';
   import Map from 'ol/Map.js';
   import 'ol/ol.css';
   import GeoTIFF from 'ol/source/GeoTIFF.js';
