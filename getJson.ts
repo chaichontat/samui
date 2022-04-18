@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 import * as path from 'path';
 
 const dir = 'static';
-const samples = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
+const samples = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF', '151508'];
 
 const s3_url = 'https://f004.backblazeb2.com/file/chaichontat-host/loopy-browser';
 
