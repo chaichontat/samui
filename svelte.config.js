@@ -29,7 +29,7 @@ const config = {
           output: {
             manualChunks: {
               'chart.js': ['chart.js'],
-              'vega-embed': ['vega-embed'],
+              // 'vega-embed': ['vega-embed'],
               'lru-cache': ['lru-cache'],
               ol: ['ol'],
               'tippy.js': ['tippy.js']

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Veg from '$src/lib/components/veg.svelte';
+  // import Veg from '$src/lib/components/veg.svelte';
   import { activeSample, currRna, samples } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
