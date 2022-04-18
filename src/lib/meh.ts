@@ -10,18 +10,18 @@ function gen_samples(n: string[]): Promise<Sample>[] {
   const out = [];
   const s = '151508';
   out.push(
-    new Sample(s, { headerUrl: `/${s}/image.json`, urls: [`/${s}/${s}.tif`] }, [
+    new Sample(s, { headerUrl: `/${s}/image.json`, urls: [`${s3_url}/${s}/${s}.tif`] }, [
       {
         name: 'genes',
         type: 'chunkedJSON',
         headerUrl: `${s}/gene_csc.json`,
-        url: `/${s}/gene_csc.bin`
+        url: `${s3_url}/${s}/gene_csc.bin`
       },
       {
         name: 'spotGenes',
         type: 'chunkedJSON',
         headerUrl: `${s}/gene_csr.json`,
-        url: `/${s}/gene_csr.bin`,
+        url: `${s3_url}/${s}/gene_csr.bin`,
         options: { densify: false }
       }
     ])
