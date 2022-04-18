@@ -229,9 +229,12 @@
       console.log(URL.createObjectURL(files[0]));
     }
   }
+  $: console.log(map);
 
   $: if ($activeSample !== currSample) update($samples[$activeSample]);
 </script>
+
+<svelte:body on:resize={() => map?.updateSize()} />
 
 <section class="relative h-full w-full">
   <!-- <label>

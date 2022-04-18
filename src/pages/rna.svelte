@@ -13,41 +13,34 @@
   $: if (showing === 1) vegaShown = true;
 </script>
 
-<section class="flex h-full flex-col gap-y-2 overflow-y-auto">
-  <div class="hidden lg:block">
-    <Scatter />
-  </div>
+<div class="mx-auto mt-6 hidden w-[90%] lg:block">
+  <Scatter />
+</div>
 
-  <TabGroup on:change={(e) => (showing = e.detail)}>
-    <TabList class="mx-4 flex space-x-1 rounded-xl bg-gray-800/50 p-1">
-      <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>UMAP</Tab>
-      <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
-      <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
-        <div
-          use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
-          class="h-full w-full"
-        >
-          Intensity Correlation
-        </div>
-      </Tab>
-      <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Tab 3</Tab> -->
-    </TabList>
-    <!-- <TabPanels class="mt-4">
-        <TabPanel><Bar /></TabPanel>
-        <TabPanel><Veg /></TabPanel>
-      </TabPanels> -->
-  </TabGroup>
+<TabGroup on:change={(e) => (showing = e.detail)}>
+  <TabList class="mx-4 flex space-x-1 rounded-xl bg-gray-800/50 p-1">
+    <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>UMAP</Tab>
+    <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
+    <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
+      <div
+        use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
+        class="h-full w-full"
+      >
+        Intensity Correlation
+      </div>
+    </Tab>
+  </TabList>
+</TabGroup>
 
-  <div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
-    <div class:hidden={showing !== 0}>
-      <Scatter target="umap" pointRadius={2} />
-    </div>
-    <div class:hidden={showing !== 1}><Bar /></div>
-    {#if vegaShown}
-      <div class:hidden={showing !== 2}><Veg /></div>
-    {/if}
+<div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
+  <div class:hidden={showing !== 0}>
+    <Scatter target="umap" pointRadius={2} />
   </div>
-</section>
+  <div class:hidden={showing !== 1}><Bar /></div>
+  {#if vegaShown}
+    <div class:hidden={showing !== 2}><Veg /></div>
+  {/if}
+</div>
 
 <style lang="postcss">
   :global(div > .tippy-box) {

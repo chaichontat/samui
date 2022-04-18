@@ -11,71 +11,72 @@
   let sample = '';
   promise ? promise[0]?.then((s) => (sample = s.name)).catch(console.error) : undefined;
 
-  //   onMount(() => {
-  //     // Query the element
-  //     // Query the element
-  //     const resizer = document.getElementById('dragMe')!;
-  //     const leftSide = resizer.previousElementSibling!;
-  //     const rightSide = resizer.nextElementSibling!;
+  onMount(() => {
+    // Query the element
+    // Query the element
+    const resizer = document.getElementById('dragMe')!;
+    const leftSide = resizer.previousElementSibling!;
+    const rightSide = resizer.nextElementSibling!;
 
-  //     // The current position of mouse
-  //     let x = 0;
-  //     let y = 0;
-  //     let leftWidth = 0;
+    // The current position of mouse
+    let x = 0;
+    let y = 0;
+    let leftWidth = 0;
 
-  //     // Handle the mousedown event
-  //     // that's triggered when user drags the resizer
-  //     const mouseDownHandler = function (e) {
-  //       // Get the current mouse position
-  //       x = e.clientX;
-  //       y = e.clientY;
-  //       leftWidth = leftSide.getBoundingClientRect().width;
+    // Handle the mousedown event
+    // that's triggered when user drags the resizer
+    const mouseDownHandler = function (e) {
+      // Get the current mouse position
+      x = e.clientX;
+      y = e.clientY;
+      leftWidth = leftSide.getBoundingClientRect().width;
 
-  //       // Attach the listeners to `document`
-  //       document.addEventListener('mousemove', mouseMoveHandler);
-  //       document.addEventListener('mouseup', mouseUpHandler);
-  //     };
+      // Attach the listeners to `document`
+      document.addEventListener('mousemove', mouseMoveHandler);
+      document.addEventListener('mouseup', mouseUpHandler);
+    };
 
-  //     const mouseMoveHandler = function (e) {
-  //       // How far the mouse has been moved
-  //       const dx = e.clientX - x;
-  //       const dy = e.clientY - y;
+    const mouseMoveHandler = function (e) {
+      // How far the mouse has been moved
+      const dx = e.clientX - x;
+      const dy = e.clientY - y;
 
-  //       const newLeftWidth =
-  //         ((leftWidth + dx) * 100) / resizer.parentNode.getBoundingClientRect().width;
-  //       leftSide.style.width = `${newLeftWidth}%`;
+      const newLeftWidth =
+        ((leftWidth + dx) * 100) / resizer.parentNode.getBoundingClientRect().width;
+      leftSide.style.width = `${newLeftWidth}%`;
 
-  //       debounce(() => document.body.dispatchEvent(new Event('resize')), 50);
+      debounce(() => document.body.dispatchEvent(new Event('resize')), 50);
 
-  //       resizer.style.cursor = 'col-resize';
-  //       document.body.style.cursor = 'col-resize';
+      resizer.style.cursor = 'col-resize';
+      document.body.style.cursor = 'col-resize';
 
-  //       leftSide.style.userSelect = 'none';
-  //       leftSide.style.pointerEvents = 'none';
+      leftSide.style.userSelect = 'none';
+      leftSide.style.pointerEvents = 'none';
 
-  //       rightSide.style.userSelect = 'none';
-  //       rightSide.style.pointerEvents = 'none';
-  //     };
+      rightSide.style.userSelect = 'none';
+      rightSide.style.pointerEvents = 'none';
+    };
 
-  //     const mouseUpHandler = function () {
-  //       resizer.style.removeProperty('cursor');
-  //       document.body.style.removeProperty('cursor');
+    const mouseUpHandler = function () {
+      resizer.style.removeProperty('cursor');
+      document.body.style.removeProperty('cursor');
 
-  //       leftSide.style.removeProperty('user-select');
-  //       leftSide.style.removeProperty('pointer-events');
+      leftSide.style.removeProperty('user-select');
+      leftSide.style.removeProperty('pointer-events');
 
-  //       rightSide.style.removeProperty('user-select');
-  //       rightSide.style.removeProperty('pointer-events');
+      rightSide.style.removeProperty('user-select');
+      rightSide.style.removeProperty('pointer-events');
 
-  //       // Remove the handlers of `mousemove` and `mouseup`
-  //       document.removeEventListener('mousemove', mouseMoveHandler);
-  //       document.removeEventListener('mouseup', mouseUpHandler);
-  //     };
+      document.body.dispatchEvent(new Event('resize'));
 
-  //     // Attach the handler
-  //     resizer.addEventListener('mousedown', mouseDownHandler);
-  //   });
-  //
+      // Remove the handlers of `mousemove` and `mouseup`
+      document.removeEventListener('mousemove', mouseMoveHandler);
+      document.removeEventListener('mouseup', mouseUpHandler);
+    };
+
+    // Attach the handler
+    resizer.addEventListener('mousedown', mouseDownHandler);
+  });
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -105,7 +106,7 @@
 
 <!-- Search -->
 <div
-  class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-6 text-sm text-slate-100  md:text-base"
+  class="absolute top-4 left-4 z-20 flex  max-w-[48rem] items-center justify-between gap-6 text-sm text-slate-100 md:text-base"
 >
   <div class="text-base lg:text-lg xl:text-xl">
     <SearchBox />
@@ -119,12 +120,12 @@
 <main
   class="flex flex-col divide-x-2 divide-gray-800 overflow-x-hidden lg:h-screen lg:flex-row lg:flex-nowrap"
 >
-  <div class="h-[600px] flex-grow shadow lg:h-full">
+  <div class="h-[600px] w-[75%] shadow lg:h-full">
     <Mapp />
   </div>
 
-  <!-- <div class="resizer h-full w-1 cursor-ew-resize bg-white" id="dragMe" /> -->
-  <div class="flex h-full max-w-[600px] flex-col pt-2 lg:w-[35%]">
+  <div class="resizer h-full w-1 cursor-ew-resize bg-white" id="dragMe" />
+  <div class="flex h-full max-w-[600px] flex-1 flex-col pt-2">
     <!-- Nav -->
     <nav class="hidden bg-gray-900/80 px-6 pb-3 shadow backdrop-blur lg:flex lg:items-center">
       <div class="mt-2 text-xl font-medium">Navigation: Showing {$currRna.name}</div>
@@ -148,7 +149,8 @@
         </a>
       </div>
     </nav>
-
-    <Rna />
+    <section class="h-full overflow-y-auto">
+      <Rna />
+    </section>
   </div>
 </main>
