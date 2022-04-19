@@ -1,7 +1,7 @@
 <script lang="ts" context="module">
-  // import promise from '$lib/data/meh';
   import { activeSample, currRna, samples } from '$src/lib/store';
-  import { clickOutside, debounce, genUpdate } from '$src/lib/utils';
+  import { clickOutside, genUpdate } from '$src/lib/utils';
+  import { debounce } from 'lodash-es';
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { get } from 'svelte/store';
   import { fade, slide } from 'svelte/transition';
@@ -28,9 +28,7 @@
     }
   }, 10);
 
-  export const setVal = debounce((selected: string) => {
-    showVal(selected);
-  }, 10);
+  export const setVal = showVal;
 </script>
 
 <script lang="ts">

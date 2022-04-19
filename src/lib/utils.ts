@@ -13,14 +13,6 @@ export function genLRU<K extends unknown[], V>(f: (...args: K) => V, max = 100):
   };
 }
 
-export function debounce<T extends unknown[], R>(f: (...args: T) => R, timeout = 300) {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  return (...args: T) => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => f(...args) as unknown as void, timeout);
-  };
-}
-
 export function clickOutside(node: HTMLElement) {
   const handleClick = (event: MouseEvent) => {
     if (node && !node.contains(event.target) && !event.defaultPrevented) {
