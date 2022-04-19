@@ -1,30 +1,12 @@
-/* @font-face {
-  font-family: 'Inter var';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('../static/fonts/Inter-roman.var.woff2') format('woff2');
-  font-named-instance: 'Regular';
-}
-
-@font-face {
-  font-family: 'Inter var';
-  font-style: italic;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('../static/fonts/Inter-italic.var.woff2') format('woff2');
-  font-named-instance: 'Italic';
-} */
-
 @tailwind base;
 @layer base {
   html {
+    @apply subpixel-antialiased;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
       'Apple Color Emoji', 'Segoe UI Emoji';
   }
   body {
-    @apply bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-slate-100;
-    scrollbar-gutter: stable both-edges;
+    @apply text-slate-900 dark:bg-slate-900 dark:text-slate-100;
   }
 }
 @tailwind components;
@@ -39,14 +21,14 @@
 @tailwind utilities;
 @layer utilities {
   .bg-default {
-    @apply bg-gray-100/80 text-gray-800  dark:bg-gray-800/80 dark:text-slate-100;
+    @apply bg-slate-100/80 text-slate-800  dark:bg-slate-800/80 dark:text-slate-100;
   }
 
   .border-default {
-    @apply border-gray-300 dark:border-gray-600;
+    @apply border-slate-300 dark:border-slate-600;
   }
 
   .hover-default {
-    @apply hover:bg-gray-300/80 active:bg-gray-400/80 dark:hover:bg-gray-700/80 dark:active:bg-gray-600/80;
+    @apply hover:bg-slate-300/80 active:bg-slate-400/80 dark:hover:bg-slate-700/80 dark:active:bg-slate-600/80;
   }
 }

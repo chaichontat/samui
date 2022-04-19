@@ -280,7 +280,7 @@
     <div class="absolute top-16 right-4 z-20 flex flex-col items-end gap-3 md:top-4">
       <!-- Show all spots -->
       <div
-        class="inline-flex flex-col gap-y-1 rounded-lg bg-gray-100/80 p-2 px-3 text-sm font-medium backdrop-blur-sm transition-all hover:bg-gray-200/80 dark:bg-neutral-600/70 dark:text-white/90 dark:hover:bg-neutral-600/90"
+        class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur-sm transition-all hover:bg-slate-200/80 dark:bg-neutral-600/70 dark:text-white/90 dark:hover:bg-neutral-600/90"
       >
         <label class="cursor-pointer">
           <input type="checkbox" class="mr-0.5 opacity-80" bind:checked={showAllSpots} />
@@ -302,9 +302,9 @@
       <div class="space-x-1">
         <button
           class="rounded bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-700/70 dark:text-slate-200"
-          class:bg-gray-600={selecting}
-          class:hover:bg-gray-600={selecting}
-          class:active:bg-gray-600={selecting}
+          class:bg-slate-600={selecting}
+          class:hover:bg-slate-600={selecting}
+          class:active:bg-slate-600={selecting}
           on:click={() => (selecting = true)}
           disabled={selecting}
           >Select
@@ -326,7 +326,7 @@
 
   <!-- Buttons -->
   <div
-    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-gray-200/80 p-2 font-medium backdrop-blur transition-colors dark:bg-gray-800/70 lg:bottom-6 lg:left-4 xl:pr-4"
+    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur transition-colors dark:bg-slate-800/70 lg:bottom-6 lg:left-4 xl:pr-4"
   >
     {#if mode === 'composite'}
       <svelte:component this={ImgControl} {mode} names={proteins} bind:imgCtrl />

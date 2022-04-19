@@ -35,7 +35,6 @@
           bind:value={imgCtrl[name]}
           class="min-w-[4rem] max-w-[12rem] cursor-pointer col-span-2"
         />
-        <!-- else content here -->
       {/each}
     </div>
   {/if}

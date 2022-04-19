@@ -13,51 +13,63 @@
   $: if (showing === 1) vegaShown = true;
 </script>
 
-<div class="mx-auto mt-6 hidden w-[90%] lg:block">
-  <Scatter />
-</div>
+<div class="flex flex-col divide-y dark:divide-slate-700">
+  <div class="mx-auto mt-6 hidden w-[90%] lg:block">
+    <Scatter />
+  </div>
 
-<TabGroup on:change={(e) => (showing = e.detail)}>
-  <TabList class="mx-4 flex space-x-1 rounded-xl  p-1 dark:bg-gray-800/50">
-    <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>UMAP</Tab>
-    <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
-    <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
-      <div
+  <section class="pt-4">
+    <TabGroup on:change={(e) => (showing = e.detail)}>
+      <TabList class="mx-4 flex space-x-1 rounded-xl  bg-indigo-50 p-1 dark:bg-slate-800/50">
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>UMAP</Tab>
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
+        <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
+        <div
         use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
         class="h-full w-full"
-      >
+        >
         Intensity Correlation
       </div>
     </Tab> -->
-  </TabList>
-</TabGroup>
+      </TabList>
+    </TabGroup>
 
-<div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
-  <div class:hidden={showing !== 0}>
-    <!-- {#if $samples[$activeSample] && 'umap' in $samples[$activeSample].features} -->
-    <Scatter target="umap" pointRadius={2} />
-    <!-- {/if} -->
-  </div>
-  <div class:hidden={showing !== 1}><Bar /></div>
-  <!-- {#if vegaShown}
+    <div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
+      <div class:hidden={showing !== 0}>
+        <!-- {#if $samples[$activeSample] && 'umap' in $samples[$activeSample].features} -->
+        <Scatter coordsSource="umap" pointRadius={2} />
+        <!-- {/if} -->
+      </div>
+      <div class:hidden={showing !== 1}><Bar /></div>
+      <!-- {#if vegaShown}
     <div class:hidden={showing !== 2}><Veg /></div>
-  {/if} -->
+    {/if} -->
+    </div>
+  </section>
 </div>
 
 <style lang="postcss">
   :global(div > .tippy-box) {
-    @apply rounded-lg bg-gray-700/80 py-0.5 px-1 text-center backdrop-blur;
+    @apply rounded-lg bg-slate-700/80 py-0.5 px-1 text-center backdrop-blur;
   }
 
   :global(div > .tippy-box > .tippy-arrow) {
-    @apply text-gray-700/80;
+    @apply text-slate-700/80;
   }
 
   :global(.tab) {
-    @apply w-full rounded-lg py-2.5 px-2 text-sm font-medium leading-5 text-gray-500 ring-opacity-60 ring-offset-2 hover:bg-indigo-100 focus:outline-none dark:bg-gray-800 dark:text-gray-100 dark:ring-white dark:ring-offset-gray-500 dark:hover:bg-gray-700 dark:active:bg-gray-600;
+    @apply w-full rounded-lg py-2.5 px-2 text-sm font-medium leading-5 text-slate-500 ring-opacity-60 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
+  }
+
+  :global(.dark .tab) {
+    @apply bg-slate-800 text-slate-100 ring-white ring-offset-slate-500 hover:bg-slate-700;
   }
 
   :global(.tab-selected) {
-    @apply tab bg-indigo-300/50 font-semibold text-indigo-800 hover:bg-indigo-300/50 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-600 dark:active:bg-gray-500;
+    @apply bg-indigo-300/50 font-semibold text-indigo-800 hover:bg-indigo-300/50;
+  }
+
+  :global(.dark .tab-selected) {
+    @apply bg-slate-600 text-white hover:bg-slate-600 active:bg-slate-500;
   }
 </style>

@@ -13,28 +13,28 @@
   function genClass(c: Color, active: boolean) {
     switch (c) {
       case 'blue':
-        return `border-gray-400 dark:border-blue-700/50 ${
+        return `border-slate-400 dark:border-blue-700/50 ${
           active
             ? 'bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600'
-            : 'bg-gray-200/30 text-gray-600 dark:text-gray-100 dark:bg-blue-900/50 dark:hover:bg-blue-800 dark:active:bg-blue-700'
+            : 'bg-slate-200/30 text-slate-600 dark:text-slate-100 dark:bg-blue-900/50 dark:hover:bg-blue-800 dark:active:bg-blue-700'
         }`;
       case 'green':
-        return `border-gray-400 dark:border-green-700/50 ${
+        return `border-slate-400 dark:border-green-700/50 ${
           active
             ? 'bg-green-600 dark:bg-green-700 dark:hover:bg-green-700'
-            : 'bg-gray-200/30 text-gray-600 dark:text-gray-100 dark:bg-green-900/50 dark:hover:bg-green-800 dark:active:bg-green-700'
+            : 'bg-slate-200/30 text-slate-600 dark:text-slate-100 dark:bg-green-900/50 dark:hover:bg-green-800 dark:active:bg-green-700'
         }`;
       case 'red':
-        return `border-gray-400 dark:border-red-700/50 ${
+        return `border-slate-400 dark:border-red-700/50 ${
           active
             ? 'bg-red-700 dark:hover:bg-red-700 dark:active:bg-red-600'
-            : 'bg-gray-200/30 text-gray-600 dark:text-gray-100 dark:bg-red-900/50 dark:hover:bg-red-800 dark:active:bg-red-700'
+            : 'bg-slate-200/30 text-slate-600 dark:text-slate-100 dark:bg-red-900/50 dark:hover:bg-red-800 dark:active:bg-red-700'
         }`;
       case 'slate':
-        return `border-gray-400 dark:border-slate-500/50 ${
+        return `border-slate-400 dark:border-slate-500/50 ${
           active
             ? 'bg-slate-700 dark:hover:bg-slate-700'
-            : 'bg-slate-300 text-gray-500 dark:text-gray-100 dark:bg-slate-900/50 dark:hover:bg-slate-800 dark:active:bg-slate-700'
+            : 'bg-slate-300 text-slate-500 dark:text-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-800 dark:active:bg-slate-700'
         }`;
 
       default:
