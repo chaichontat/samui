@@ -153,7 +153,7 @@
       }
     );
 
-    // update();
+    update($samples[$activeSample]);
   });
 
   // Change color for different markers.

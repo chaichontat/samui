@@ -1,91 +1,45 @@
-import type { ImageMode } from '../mapp/imgControl';
-import { ChunkedJSON, type ChunkedJSONOptions } from './dataHandlers';
+import { ChunkedJSON, PlainJSON, type Data, type FeatureParams } from './dataHandlers';
+import { Image, type ImageParams } from './image';
 
-type ChunkedJSONParams = {
-  type: 'chunkedJSON';
+export type SampleParams = {
   name: string;
-  url: string;
-  headerUrl: string;
-  options?: ChunkedJSONOptions;
+  imgParams: ImageParams;
+  featParams: FeatureParams[];
 };
-type ArrowParams = { type: 'arrow'; name: string; url: string };
-type PlainJSONParams = { type: 'plainJSON'; name: string; url: string };
-export type ImageParams = { urls: string[]; headerUrl: string };
-
-export type FeatureParams = ChunkedJSONParams | ArrowParams | PlainJSONParams;
-
-export type SpotParams = {
-  spotDiam: number;
-  mPerPx: number;
-};
-
-export type ImageMetadata = {
-  sample: string;
-  coords: { x: number; y: number }[];
-  channel: Record<string, number>;
-  spot: SpotParams;
-  mode?: ImageMode;
-};
-
-export class Image {
-  coords: { x: number; y: number }[] | undefined;
-  channel: Record<string, number> | undefined;
-  metadata: ImageMetadata | undefined;
-  n_spot: number | undefined;
-
-  constructor(readonly urls: string[], readonly headerURL: string, autoHydrate = true) {
-    this.urls = urls;
-    this.headerURL = headerURL;
-
-    if (autoHydrate) {
-      this.hydrate().catch(console.error);
-    }
-  }
-
-  async hydrate() {
-    this.metadata = await fetch(this.headerURL).then((r) => r.json() as Promise<ImageMetadata>);
-
-    ({ channel: this.channel, coords: this.coords } = this.metadata!);
-    this.n_spot = this.coords.length;
-    // const coordsTable = await fetch(this.params.coordsUrl).then((r) => tableFromIPC(r));
-    // this.coords = coordsTable.toArray().map((row) => row!.toJSON()) as { x: number; y: number }[];
-    return this;
-  }
-}
 
 export class Sample {
-  image: Image;
-  features: Record<string, ChunkedJSON | unknown>;
+  name: string;
+  imgParams: ImageParams;
+  featParams: FeatureParams[];
 
-  constructor(
-    readonly name: string,
-    readonly imgParams: ImageParams,
-    readonly featParams: FeatureParams[]
-  ) {
+  image: Image;
+  features: Record<string, Data>;
+  protected hydrated: boolean;
+
+  constructor({ name, imgParams, featParams }: SampleParams, autoHydrate = false) {
     this.name = name;
     this.imgParams = imgParams;
+    this.image = new Image(this.imgParams, false);
     this.featParams = featParams;
+    this.hydrated = false;
 
-    this.image = new Image(imgParams.urls, imgParams.headerUrl, false);
-    this.features = {} as Record<string, ChunkedJSON | unknown>;
+    this.features = {} as Record<string, Data>;
     for (const f of featParams) {
       switch (f.type) {
         case 'chunkedJSON':
-          this.features[f.name] = new ChunkedJSON(f.headerUrl, f.url, false, f.options);
+          this.features[f.name] = new ChunkedJSON(f, false);
           break;
         case 'plainJSON':
-          this.loadPlainJson(f.name, f.url).catch(console.error);
+          this.features[f.name] = new PlainJSON(f, false);
           break;
         default:
           throw new Error('Unsupported feature type at Sample.constructor');
       }
     }
-    this.hydrate().catch(console.error);
-  }
 
-  async loadPlainJson(name: string, url: string) {
-    const data = (await fetch(url).then((r) => r.json())) as unknown;
-    this.features[name] = data;
+    if (autoHydrate) {
+      this.hydrate().catch(console.error);
+    }
   }
 
   async hydrate() {

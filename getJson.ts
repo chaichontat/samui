@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import * as path from 'path';
 
 const dir = 'static';
+const defaultDir = 'src/lib/data/default';
 const samples = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF', '151508'];
 
 const s3_url = 'https://f004.backblazeb2.com/file/chaichontat-host/loopy-browser';
@@ -30,6 +31,11 @@ async function run() {
       )
     );
   });
+
+  await getFiles(
+    defaultDir,
+    ['gene_csr.json', 'gene_csc.json', 'image.json'].map((name) => `${s3_url}/151508/${name}`)
+  );
 
   const fonts = await getFiles(path.join(dir, 'fonts'), [
     'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/cera.woff',

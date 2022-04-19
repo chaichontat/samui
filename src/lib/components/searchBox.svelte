@@ -1,12 +1,12 @@
 <script lang="ts" context="module">
-  import promise from '$lib/meh';
+  // import promise from '$lib/data/meh';
   import { activeSample, currRna, samples } from '$src/lib/store';
   import { clickOutside, debounce } from '$src/lib/utils';
-  import { Fzf } from 'fzf';
   import { onMount } from 'svelte';
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { get } from 'svelte/store';
   import { fade, slide } from 'svelte/transition';
+  import { Fzf } from '../../../node_modules/fzf';
   import type { Sample } from '../data/sample';
 
   let fzf: Fzf<readonly string[]>;
@@ -43,15 +43,15 @@
     retrieve = sample.features.genes.retrieve;
     fzf = new Fzf(keys, { limit: 8 });
 
-    // const he = getHeader().catch(console.error);
-    // await Promise.all([dp, he]);
     currShow = 'GFAP';
     setVal('GFAP');
   }
 
-  onMount(async () => {
-    update(await promise[0]);
-  });
+  update($samples[$activeSample]);
+
+  // onMount(async () => {
+  //   update(promise[0]);
+  // });
 
   let currSample = '';
   $: if ($activeSample !== currSample) update($samples[$activeSample]);

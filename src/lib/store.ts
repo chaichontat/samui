@@ -1,6 +1,6 @@
+import first from '$lib/data/first';
 import { writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
-
 export type State = {
   lockedIdx: { idx: number; source: 'scatter' | 'map' };
   currIdx: { idx: number; source: 'scatter' | 'map' };
@@ -25,8 +25,9 @@ export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> =
   names: {}
 });
 
+const s = first.name;
+
 export const multipleSelect: Writable<number[]> = writable([]);
 
-export const activeSample: Writable<string> = writable('');
-export const samples: Writable<{ [key: string]: Sample }> = writable({});
-export const done: Writable<boolean> = writable(false);
+export const activeSample: Writable<string> = writable(s);
+export const samples: Writable<{ [key: string]: Sample }> = writable({ [s]: first });

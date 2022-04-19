@@ -3,7 +3,7 @@
   import type { ChunkedJSON, Sparse } from '$src/lib/data/dataHandlers';
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
-  import { activeSample, done, multipleSelect, samples, store } from '../lib/store';
+  import { activeSample, multipleSelect, samples, store } from '../lib/store';
 
   Chart.defaults.font.size = 14;
 
@@ -70,7 +70,7 @@
   //     .catch(console.error);
   // }
 
-  $: if (bar && $done && $store.currIdx.idx !== curr) {
+  $: if (bar && $store.currIdx.idx !== curr) {
     getRow($store.currIdx.idx)
       .then((row) => {
         const filtered = row.sort((a, b) => b[1] - a[1]).slice(0, 10);

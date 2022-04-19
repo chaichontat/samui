@@ -7,54 +7,83 @@ export interface Data {
   hydrate: () => Promise<this>;
 }
 
-// export class PlainJSON implements Data {
-//   kv = {} as Record<string, number[]> | undefined;
-//   constructor(readonly url: string, autoHydrate = true) {
-//     this.url = url;
-//     if (autoHydrate) {
-//       this.hydrate().catch(console.error);
-//     }
-//   }
-
-//   async hydrate() {
-//     await fetch(this.url).then((r) => r.json());
-//     return this;
-//   }
-
-//   retrieve(name: string | number) {
-//     const prom = new Promise((resolve) => resolve(this.kv ? this.kv[name] : undefined));
-//     return prom as Promise<number[] | undefined>;
-//   }
-// }
-
-type ChunkedJSONHeader = {
-  length: number;
-  names?: Record<string, number>;
-  ptr: number[];
+export type PlainJSONParams = {
+  type: 'plainJSON';
+  name: string;
+  url?: string;
+  value?: unknown;
 };
 
-export type Sparse = { index: number[]; value: number[] };
+export type ChunkedJSONParams = {
+  type: 'chunkedJSON';
+  name: string;
+  url: string;
+  headerUrl?: string;
+  header?: ChunkedJSONHeader;
+  options?: ChunkedJSONOptions;
+};
+
 export type ChunkedJSONOptions = {
   densify?: boolean;
 };
 
+export type ChunkedJSONHeader = {
+  length: number;
+  names: Record<string, number> | null;
+  ptr: number[];
+};
+export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
+export type Sparse = { index: number[]; value: number[] };
+
+export class PlainJSON implements Data {
+  name: string;
+  url?: string;
+  value?: unknown;
+
+  constructor({ name, url, value }: PlainJSONParams, autoHydrate = false) {
+    this.name = name;
+    this.url = url;
+    this.value = value;
+
+    if (!this.url && !this.value) throw new Error('Must provide url or value');
+    if (autoHydrate) {
+      this.hydrate().catch(console.error);
+    }
+  }
+
+  async hydrate() {
+    if (!this.value && this.url) {
+      this.value = (await fetch(this.url).then((r) => r.json())) as unknown;
+    }
+    return this;
+  }
+
+  retrieve(name: string | number) {
+    return this.value[name];
+  }
+}
+
 export class ChunkedJSON implements Data {
   retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
-  ptr: number[] | undefined;
-  names: Record<string, number> | undefined;
-  length: number | undefined;
+  ptr?: number[];
+  names?: Record<string, number> | null;
+  length?: number;
+
+  headerUrl?: string;
+  header?: ChunkedJSONHeader;
+  url: string;
+  name: string;
+
   readonly densify: boolean;
 
-  constructor(
-    private readonly headerUrl: string,
-    private readonly url: string,
-    autoHydrate = true,
-    { densify }: ChunkedJSONOptions = { densify: true }
-  ) {
-    this.headerUrl = headerUrl;
+  constructor({ name, url, headerUrl, header, options }: ChunkedJSONParams, autoHydrate = false) {
+    this.name = name;
     this.url = url;
-    this.densify = densify ?? true;
+    this.header = header;
+    this.headerUrl = headerUrl;
+    this.densify = options?.densify ?? true;
 
+    if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
     if (autoHydrate) {
       this.hydrate().catch(console.error);
     }
@@ -73,10 +102,12 @@ export class ChunkedJSON implements Data {
   }
 
   async hydrate() {
-    const header = await fetch(this.headerUrl).then(
-      (res) => res.json() as Promise<ChunkedJSONHeader>
-    );
-    ({ names: this.names, ptr: this.ptr, length: this.length } = header);
+    if (!this.header && this.headerUrl) {
+      this.header = await fetch(this.headerUrl).then(
+        (res) => res.json() as Promise<ChunkedJSONHeader>
+      );
+    }
+    ({ names: this.names, ptr: this.ptr, length: this.length } = this.header!);
 
     const zero = new Array(length).fill(0) as number[];
 
@@ -146,7 +177,7 @@ export class ChunkedJSON implements Data {
 //   keys: (string | number | symbol)[] | undefined;
 //   private readonly data: Record<string, TypedArray>;
 
-//   constructor(private readonly url: string, autoHydrate = true) {
+//   constructor(private readonly url: string, autoHydrate = false) {
 //     this.url = url;
 //     this.data = {} as Record<string, TypedArray>;
 
