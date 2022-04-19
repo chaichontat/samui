@@ -44,7 +44,7 @@
     >{names[0]}</button
   >
 
-  {#each names.slice(1, -1) as pro}
+  {#each names.slice(1) as pro}
     <button
       on:click={() => (curr = pro)}
       class={`${genClass(color, curr === pro)} button-base border-t border-b border-r`}
@@ -53,11 +53,11 @@
   {/each}
 
   <button
-    on:click={() => (curr = names[names.length - 1])}
+    on:click={() => (curr = 'none')}
     class={`${genClass(
       color,
-      curr === names[names.length - 1]
+      curr === 'none'
     )} button-base rounded-r-lg border-t border-b border-r`}
-    >{names[names.length - 1]}
+    >None
   </button>
 </div>
