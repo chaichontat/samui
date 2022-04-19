@@ -41,13 +41,21 @@
     keys = Object.keys(names);
     retrieve = sample.features.genes.retrieve;
     fzf = new Fzf(keys, { limit: 8 });
-
-    currShow = 'GFAP';
-    setVal('GFAP');
   });
 
-  update($samples[$activeSample]).catch(console.error);
+  // const update = genUpdate((sample: Sample) => {
+  //   names = sample.features.genes.names;
+  //   keys = Object.keys(names);
+  //   retrieve = sample.features.genes.retrieve;
+  //   fzf = new Fzf(keys, { limit: 8 });
 
+  //   currShow = 'GFAP';
+  //   setVal('GFAP');
+  // });
+
+  update($samples[$activeSample]).catch(console.error);
+  currShow = 'GFAP';
+  setVal('GFAP');
   // onMount(async () => {
   //   update(promise[0]);
   // });

@@ -113,6 +113,7 @@ export class ChunkedJSON implements Data {
 
     this.retrieve = genLRU(
       async (selected: string | number): Promise<number[] | Sparse | undefined> => {
+        if (!browser) return;
         if (selected === -1) throw new Error('-1 sent to retrieve');
 
         let idx: number;

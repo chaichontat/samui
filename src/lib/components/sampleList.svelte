@@ -8,12 +8,25 @@
   import { createEventDispatcher } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
+  import type { Sample } from '../data/sample';
+  import { activeSample, samples } from '../store';
+  import Spinner from './spinner.svelte';
 
   export let items: string[];
   let rows: { id: number; name: string }[] = [];
 
   const dispatch = createEventDispatcher();
 
+  let loading = false;
+
+  async function checkHydrate(s: Sample) {
+    if (!s.hydrated) {
+      loading = true;
+      await s.hydrate();
+      loading = false;
+    }
+  }
+  $: checkHydrate($samples[$activeSample]).catch(console.error);
   $: rows = items?.sort().map((item, i) => ({
     id: i,
     name: item
@@ -40,19 +53,23 @@
       >
         <span class="block truncate font-medium">{active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          <svg
-            class="h-5 w-5 text-gray-500 dark:text-slate-200"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path
-              d="M7 7l3-3 3 3m0 6l-3 3-3-3"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          {#if loading}
+            <Spinner />
+          {:else}
+            <svg
+              class="h-5 w-5 text-gray-500 dark:text-slate-200"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                d="M7 7l3-3 3 3m0 6l-3 3-3-3"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          {/if}
         </span></ListboxButton
       >
       {#if open}
