@@ -1,8 +1,7 @@
 <script lang="ts" context="module">
   // import promise from '$lib/data/meh';
   import { activeSample, currRna, samples } from '$src/lib/store';
-  import { clickOutside, debounce } from '$src/lib/utils';
-  import { onMount } from 'svelte';
+  import { clickOutside, debounce, genUpdate } from '$src/lib/utils';
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { get } from 'svelte/store';
   import { fade, slide } from 'svelte/transition';
@@ -37,7 +36,7 @@
 <script lang="ts">
   let showSearch = true;
 
-  function update(sample: Sample) {
+  const update = genUpdate((sample: Sample) => {
     names = sample.features.genes.names;
     keys = Object.keys(names);
     retrieve = sample.features.genes.retrieve;
@@ -45,16 +44,16 @@
 
     currShow = 'GFAP';
     setVal('GFAP');
-  }
+  });
 
-  update($samples[$activeSample]);
+  update($samples[$activeSample]).catch(console.error);
 
   // onMount(async () => {
   //   update(promise[0]);
   // });
 
   let currSample = '';
-  $: if ($activeSample !== currSample) update($samples[$activeSample]);
+  $: if ($activeSample !== currSample) update($samples[$activeSample]).catch(console.error);
 
   let search = '';
   let chosen: { raw: string; embellished: string }[] = [{ raw: '', embellished: '' }];

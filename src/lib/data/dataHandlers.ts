@@ -109,7 +109,7 @@ export class ChunkedJSON implements Data {
     }
     ({ names: this.names, ptr: this.ptr, length: this.length } = this.header!);
 
-    const zero = new Array(length).fill(0) as number[];
+    const zero = new Array(this.length).fill(0) as number[];
 
     this.retrieve = genLRU(
       async (selected: string | number): Promise<number[] | Sparse | undefined> => {

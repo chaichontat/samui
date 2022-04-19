@@ -1,10 +1,10 @@
 <script lang="ts">
-  // import promise from '$lib/data/meh';
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, genBgStyle } from '$src/lib/mapp/background';
   import type { ImageCtrl, ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { genStyle, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/spots';
+  import { genUpdate } from '$src/lib/utils';
   import ScaleLine from 'ol/control/ScaleLine.js';
   import Zoom from 'ol/control/Zoom.js';
   import type Feature from 'ol/Feature';
@@ -27,7 +27,7 @@
   let mode: ImageMode;
   let elem: HTMLDivElement;
   let selecting = false;
-  let coords: { x: number; y: number }[];
+  let coords: readonly { x: number; y: number }[];
   let proteinMap: Record<string, number>;
   let proteins = ['', '', ''];
   let getColorParams: ReturnType<typeof colorVarFactory>;
@@ -44,7 +44,7 @@
   let draw: Draw;
   let drawClear: () => void;
 
-  function update(sample: Sample) {
+  const update = genUpdate((sample: Sample) => {
     if (!map) return;
     coords = sample.image.coords!;
     proteinMap = sample.image.channel!;
@@ -103,7 +103,7 @@
     bgLayer?.updateStyleVariables(getColorParams(imgCtrl));
 
     // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
-  }
+  });
 
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
 
@@ -112,13 +112,12 @@
   let spotsLayer: WebGLPointsLayer<typeof spotsSource>;
   let circleFeature: Feature<Circle>;
   let activeLayer: VectorLayer<VectorSource<Geometry>>;
-  let addData: (coords: { x: number; y: number }[], mPerPx: number) => void;
+  let addData: (coords: readonly { x: number; y: number }[], mPerPx: number) => void;
   let imgCtrl: ImageCtrl;
 
   onMount(() => {
     const sample = $samples[$activeSample]!;
     const spotDiam = sample.image.header!.spot.spotDiam;
-    // TODO: Fix this depenedency
     ({ circleFeature, activeLayer } = getCanvasCircle(selectStyle, spotDiam));
     ({ spotsSource, addData } = getWebGLCircles());
 
@@ -179,7 +178,7 @@
     ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
     draw.on('drawend', () => (selecting = false));
 
-    update(sample);
+    update(sample).catch(console.error);
   });
 
   // Update "brightness"
@@ -239,7 +238,7 @@
     }
   }
 
-  $: if ($activeSample !== currSample) update($samples[$activeSample]);
+  $: if ($activeSample !== currSample) update($samples[$activeSample]).catch(console.error);
 </script>
 
 <svelte:body on:resize={() => map?.updateSize()} />

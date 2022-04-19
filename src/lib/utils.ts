@@ -1,5 +1,6 @@
 import LRU from 'lru-cache';
 import tippy from 'tippy.js';
+import type { Sample } from './data/sample';
 
 export function genLRU<K extends unknown[], V>(f: (...args: K) => V, max = 100): (...args: K) => V {
   const cache = new LRU<string, V>({ max });
@@ -114,4 +115,13 @@ export function resizable(resizer: HTMLDivElement) {
   };
 
   resizer.addEventListener('mousedown', mouseDownHandler);
+}
+
+export function genUpdate(f: (s: Sample) => void) {
+  return async (s: Sample) => {
+    if (!s.hydrated) {
+      await s.hydrate();
+    }
+    return f(s);
+  };
 }

@@ -14,7 +14,7 @@ export class Sample {
 
   image: Image;
   features: Record<string, Data>;
-  protected hydrated: boolean;
+  hydrated: boolean;
 
   constructor({ name, imgParams, featParams }: SampleParams, autoHydrate = false) {
     this.name = name;
@@ -47,6 +47,7 @@ export class Sample {
       this.image.hydrate(),
       ...Object.values(this.features).map((f) => f.hydrate())
     ]);
+    this.hydrated = true;
     return this;
   }
 }

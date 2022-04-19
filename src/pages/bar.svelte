@@ -1,6 +1,8 @@
 <script lang="ts">
   import { browser } from '$app/env';
   import type { ChunkedJSON, Sparse } from '$src/lib/data/dataHandlers';
+  import type { Sample } from '$src/lib/data/sample';
+  import { genUpdate } from '$src/lib/utils';
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
   import { activeSample, multipleSelect, samples, store } from '../lib/store';
@@ -44,11 +46,19 @@
         }
       }
     });
+
+    update($samples[$activeSample]).catch(console.error);
+  });
+
+  let spotGenes: ChunkedJSON;
+  let geneNames: Record<number, string>;
+
+  const update = genUpdate((s: Sample) => {
+    spotGenes = s.features.spotGenes as ChunkedJSON;
+    geneNames = (s.features.genes as ChunkedJSON).revNames!;
   });
 
   async function getRow(i: number): Promise<[string, number][]> {
-    const spotGenes = $samples[$activeSample].features.spotGenes as ChunkedJSON;
-    const geneNames = ($samples[$activeSample].features.genes as ChunkedJSON).revNames!;
     const row = (await spotGenes.retrieve!(i)) as Sparse;
 
     const out = [] as [string, number][];
@@ -60,6 +70,7 @@
   }
 
   let curr = 0;
+  $: update($samples[$activeSample]).catch(console.error);
 
   // $: if (bar && $done) {
   //   getRow(5)

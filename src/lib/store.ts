@@ -1,4 +1,5 @@
 import first from '$lib/data/first';
+import sampleList from '$lib/data/meh';
 import { writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
 export type State = {
@@ -31,3 +32,6 @@ export const multipleSelect: Writable<number[]> = writable([]);
 
 export const activeSample: Writable<string> = writable(s);
 export const samples: Writable<{ [key: string]: Sample }> = writable({ [s]: first });
+
+const obj = sampleList ? Object.fromEntries(sampleList.map((s) => [s.name, s])) : {};
+samples.set(Object.assign({ [s]: first }, obj));
