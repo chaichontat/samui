@@ -10,7 +10,7 @@ import type { LiteralStyle } from 'ol/style/literal';
 export function getWebGLCircles() {
   const spotsSource = new VectorSource({ features: [] });
 
-  const addData = (coords: { x: number; y: number }[], mPerPx: number) =>
+  const addData = (coords: readonly { x: number; y: number }[], mPerPx: number) =>
     spotsSource.addFeatures(
       coords.map(({ x, y }, i) => {
         const f = new Feature({

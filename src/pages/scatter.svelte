@@ -7,16 +7,15 @@
   import colormap from 'colormap';
   import { onMount } from 'svelte';
   import { activeSample, currRna, samples, store } from '../lib/store';
-  import { genLRU } from '../lib/utils';
+  import { genLRU, genUpdate } from '../lib/utils';
 
   export let target = 'coords';
   export let opacity = 'ff';
   export let pointRadius = 2.5;
 
-  let currSample = '';
   let curr = 0;
 
-  let coords: { x: number; y: number }[];
+  let coords: readonly { x: number; y: number }[];
 
   const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
@@ -31,13 +30,14 @@
     return out;
   });
 
-  function update(s: Sample) {
+  const update = genUpdate((s: Sample) => {
     if (!myChart || !anotherChart) return;
 
     if (target === 'coords') {
       coords = s.image.coords!;
     } else {
-      coords = s.features[target] ? (s.features[target] as { x: number; y: number }[]) : [];
+      coords = s.image.coords!;
+      // coords = s.features[target] ? (s.features[target].retrieve()) : [];
     }
 
     const min = coords
@@ -60,7 +60,7 @@
     }
 
     currSample = s.name;
-  }
+  });
 
   function changeColor(chart: Chart, name: string): void {
     if (!chart || !getColor) return;
@@ -153,7 +153,7 @@
       }
     );
 
-    // update();
+    update($samples[$activeSample]).catch(console.error);
   });
 
   // Change color for different markers.
@@ -166,7 +166,11 @@
     anotherChart.data.datasets[0].backgroundColor = getColor($activeSample, $currRna.name)[idx];
     anotherChart.update();
   }
-  $: if ($activeSample !== currSample) update($samples[$activeSample]);
+
+  let currSample = $activeSample;
+  $: if ($activeSample !== currSample) {
+    update($samples[$activeSample]).catch(console.error);
+  }
 </script>
 
 <div class="relative z-10">

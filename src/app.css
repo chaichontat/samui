@@ -1,4 +1,4 @@
-@font-face {
+/* @font-face {
   font-family: 'Inter var';
   font-style: normal;
   font-weight: 100 900;
@@ -14,24 +14,13 @@
   font-display: swap;
   src: url('../static/fonts/Inter-italic.var.woff2') format('woff2');
   font-named-instance: 'Italic';
-}
-
-@font-face {
-  font-family: 'Cera';
-  font-style: bold;
-  src: url('../static/fonts/cera.woff') format('woff');
-}
-
-@font-face {
-  font-family: 'Altone';
-  font-style: bold;
-  src: url('../static/fonts/AltoneTrial-Bold.ttf') format('truetype');
-}
+} */
 
 @tailwind base;
 @layer base {
   html {
-    font-family: 'Inter var', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
+      'Apple Color Emoji', 'Segoe UI Emoji';
   }
   body {
     @apply bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-slate-100;
