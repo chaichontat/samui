@@ -9,7 +9,9 @@
   import { activeSample, currRna, samples, store } from '../lib/store';
   import { genLRU, genUpdate } from '../lib/utils';
 
-  export let target = 'coords';
+  export let coordsSource = 'coords';
+  export let intensitySource = 'genes'; // Accepts PlainJSON only.
+
   export let opacity = 'ff';
   export let pointRadius = 2.5;
 
@@ -33,11 +35,16 @@
   const update = genUpdate((s: Sample) => {
     if (!myChart || !anotherChart) return;
 
-    if (target === 'coords') {
+    if (coordsSource === 'coords') {
       coords = s.image.coords!;
     } else {
-      coords = s.image.coords!;
-      // coords = s.features[target] ? (s.features[target].retrieve()) : [];
+      if (s.features[coordsSource]) {
+        coords = s.features[coordsSource].value;
+      } else {
+        console.error(`No such feature: ${coordsSource}`);
+        coords = [];
+        return;
+      }
     }
 
     const min = coords
@@ -71,7 +78,7 @@
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
     anotherChart = new Chart(
-      (document.getElementById(`${target}-another`) as HTMLCanvasElement).getContext('2d')!,
+      (document.getElementById(`${coordsSource}-another`) as HTMLCanvasElement).getContext('2d')!,
       {
         type: 'scatter',
         data: {
@@ -136,7 +143,7 @@
     );
 
     myChart = new Chart(
-      (document.getElementById(`${target}-myChart`) as HTMLCanvasElement).getContext('2d')!,
+      (document.getElementById(`${coordsSource}-myChart`) as HTMLCanvasElement).getContext('2d')!,
       {
         data: {
           datasets: [
@@ -173,10 +180,15 @@
   }
 </script>
 
-<div class="relative z-10">
-  <Colorbar min={0} max={10} />
-  <canvas class="absolute" id={`${target}-another`} />
-  <canvas class="" id={`${target}-myChart`} />
+<div class="relative z-10 mx-auto w-full max-w-[400px]">
+  {#if coords?.length === 0}
+    <div class="text-center text-lg text-slate-200">No data available.</div>
+  {:else}
+    <Colorbar min={0} max={10} />
+  {/if}
+
+  <canvas class="absolute" id={`${coordsSource}-another`} />
+  <canvas class="" id={`${coordsSource}-myChart`} />
   <!-- <div
     class="absolute left-10 top-10 z-10 rounded-lg bg-white/10 px-3 py-1 text-lg font-medium text-white opacity-90 backdrop-blur-sm"
   >

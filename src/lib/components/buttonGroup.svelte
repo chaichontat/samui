@@ -1,8 +1,14 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
+
   type Color = 'blue' | 'green' | 'red' | 'slate';
   export let names: string[];
   export let color: Color;
-  export let curr: string;
+  export let curr: string | null = null;
+  export let cl = '';
+  export let addNone = false;
+
+  const dispatch = createEventDispatcher();
 
   function genClass(c: Color, active: boolean) {
     switch (c) {
@@ -39,21 +45,30 @@
 
 <div class="inline-flex rounded-md shadow-sm" id="group" role="group">
   <button
-    on:click={() => (curr = names[0])}
+    on:click={() => {
+      curr = names[0];
+      dispatch('change', { value: names[0] });
+    }}
     class={`${genClass(color, curr === names[0])} button-base rounded-l-lg border `}
     >{names[0]}</button
   >
 
   {#each names.slice(1) as pro}
     <button
-      on:click={() => (curr = pro)}
+      on:click={() => {
+        curr = pro;
+        dispatch('change', { value: pro });
+      }}
       class={`${genClass(color, curr === pro)} button-base border-t border-b border-r`}
       >{pro}</button
     >
   {/each}
 
   <button
-    on:click={() => (curr = 'none')}
+    on:click={() => {
+      curr = 'none';
+      dispatch('change', { value: 'none' });
+    }}
     class={`${genClass(
       color,
       curr === 'none'

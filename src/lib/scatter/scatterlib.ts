@@ -15,5 +15,6 @@ export const chartOptions: Readonly<ChartConfiguration<'scatter'>> = {
   plugins: {
     legend: { display: false },
     tooltip: { enabled: false }
-  }
+  },
+  resizeDelay: 50
 };

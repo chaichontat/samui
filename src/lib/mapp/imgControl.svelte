@@ -13,7 +13,7 @@
   {#if mode === 'composite'}
     {#each ['blue', 'green', 'red'] as color, i}
       <div class="flex gap-x-4">
-        <ButtonGroup {names} bind:curr={imgCtrl.showing[i]} {color} />
+        <ButtonGroup {names} bind:curr={imgCtrl.showing[i]} {color} addNone />
         <input
           type="range"
           min="0"
