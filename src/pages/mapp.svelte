@@ -199,21 +199,26 @@
     updateSpots($currRna);
   }
 
+  function moveView(idx: number) {
+    if (!coords[idx]) return;
+    const { x, y } = coords[idx];
+    if ($store.currIdx.source !== 'map') {
+      const view = map.getView();
+      const currZoom = view.getZoom();
+      if ($store.locked) {
+        view.animate({ center: [x * mPerPx, -y * mPerPx], duration: 100, zoom: 5 });
+      } else if (currZoom && currZoom > 2) {
+        view.animate({ duration: 100 });
+      }
+    }
+    circleFeature?.getGeometry()?.setCenter([x * mPerPx, -y * mPerPx]);
+  }
+
   // Move view
   $: {
     if (map && coords) {
       const idx = $store.locked ? $store.lockedIdx : $store.currIdx;
-      const { x, y } = coords[idx.idx];
-      if ($store.currIdx.source !== 'map') {
-        const view = map.getView();
-        const currZoom = view.getZoom();
-        if ($store.locked) {
-          view.animate({ center: [x * mPerPx, -y * mPerPx], duration: 100, zoom: 5 });
-        } else if (currZoom && currZoom > 2) {
-          view.animate({ duration: 100 });
-        }
-      }
-      circleFeature?.getGeometry()?.setCenter([x * mPerPx, -y * mPerPx]);
+      moveView(idx.idx);
     }
   }
 

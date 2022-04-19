@@ -1,27 +1,21 @@
 import type { ImageCtrl, ImageMode } from '$src/lib/mapp/imgControl';
-import TileLayer, { type Style } from 'ol/layer/WebGLTile.js';
+import type { Style } from 'ol/layer/WebGLTile.js';
 
 export function colorVarFactory(mode: ImageMode, mapping?: { [key: string]: number }) {
   if (mode === 'composite') {
     if (!mapping) throw new Error('Missing mapping for composite mode');
-    const len = Object.keys(mapping).length - 1;
-
     return (imgCtrl: ImageCtrl) => {
       if (imgCtrl.type !== 'composite') throw new Error('Expected composite image control');
       const showing = imgCtrl.showing;
       const max = imgCtrl.maxIntensity;
-      const variables = {
-        blue: Math.min(mapping[showing[0]], len),
-        green: Math.min(mapping[showing[1]], len),
-        red: Math.min(mapping[showing[2]], len),
-        blueMax: 255 - max[0],
-        greenMax: 255 - max[1],
-        redMax: 255 - max[2],
-        blueMask: mapping[showing[0]] > len ? 0 : 1,
-        greenMask: mapping[showing[1]] > len ? 0 : 1,
-        redMask: mapping[showing[2]] > len ? 0 : 1
-      };
-      return variables;
+
+      return ['blue', 'green', 'red']
+        .map((c, i) => ({
+          [c]: showing[i] === 'none' ? 1 : mapping[showing[i]],
+          [c + 'Max']: 255 - max[i],
+          [c + 'Mask']: showing[i] === 'none' ? 0 : 1
+        }))
+        .reduce((acc, x) => Object.assign(acc, x), {});
     };
   } else if (mode === 'rgb') {
     return (imgCtrl: ImageCtrl) => {
