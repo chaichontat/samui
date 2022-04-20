@@ -3,7 +3,16 @@ import { get, type Writable } from 'svelte/store';
 import tippy from 'tippy.js';
 import type { Sample } from './data/sample';
 
-export function genLRU<K extends unknown[], V>(f: (...args: K) => V, max = 100): (...args: K) => V {
+/**
+ * Decorates a function with LRU caching.
+ * Do not use array as arguments. Really hard to assure equality.
+ * @param f - (...args: Exclude<T, unknown[]>[]) => V
+ * @param [max=100] - The maximum number of items to store in the cache.
+ */
+export function genLRU<T, K extends Exclude<T, unknown[]>[], V>(
+  f: (...args: K) => V,
+  max = 100
+): (...args: K) => V {
   const cache = new LRU<string, V>({ max });
   return (...args: K): V => {
     const key = JSON.stringify(args);
@@ -134,6 +143,7 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
  * Wraps the update function. Hydrates the sample if not already done then call update.
  * Also wrapped with oneLRU to prevent repeated calls on the same sample.
  * This assumes that the sample is not mutated.
+ * Like the LRU above, do not use array as arguments.
  * @returns A function that takes a string and returns a promise that resolves to void.
  */
 export function genUpdate(
