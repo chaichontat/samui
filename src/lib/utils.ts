@@ -6,6 +6,7 @@ import type { Sample } from './data/sample';
 /**
  * Decorates a function with LRU caching.
  * Do not use array as arguments. Really hard to assure equality.
+ * Mutable objects are also a no-no.
  * @param f - (...args: Exclude<T, unknown[]>[]) => V
  * @param [max=100] - The maximum number of items to store in the cache.
  */
