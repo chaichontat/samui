@@ -82,9 +82,10 @@ def compress(ps: list[Path], quality: int = 90) -> None:
 @click.argument("tiff", nargs=1, type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument("outdir", nargs=1, type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--quality", default=90, help="JPEG compression quality")
-def run(tiff: Path, outdir: Path, quality: int = 90):
+@click.option("--scale", default=0.497e-6, help="Scale factor")
+def run(tiff: Path, outdir: Path, quality: int = 90, scale: float = 0.497e-6) -> None:
     img: np.ndarray[Any, Any] = tifffile.imread(tiff)
-    ps = gen_geotiff(img, outdir)
+    ps = gen_geotiff(img, outdir, scale)
     compress(ps, quality)
 
 
