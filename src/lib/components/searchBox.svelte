@@ -41,22 +41,9 @@
     fzf = new Fzf(keys, { limit: 8 });
   });
 
-  // const update = genUpdate((sample: Sample) => {
-  //   names = sample.features.genes.names;
-  //   keys = Object.keys(names);
-  //   retrieve = sample.features.genes.retrieve;
-  //   fzf = new Fzf(keys, { limit: 8 });
-
-  //   currShow = 'GFAP';
-  //   setVal('GFAP');
-  // });
-
   update($samples[$activeSample]).catch(console.error);
   currShow = 'GFAP';
   setVal('GFAP');
-  // onMount(async () => {
-  //   update(promise[0]);
-  // });
 
   let currSample = '';
   $: if ($activeSample !== currSample) update($samples[$activeSample]).catch(console.error);
@@ -74,7 +61,8 @@
 <div class="relative">
   <input
     type="text"
-    class="w-full rounded-md border border-gray-400 bg-gray-100 py-2 px-4 shadow transition-colors dark:border-gray-600 dark:bg-gray-800"
+    id="search"
+    class="w-full rounded-md border border-slate-400 bg-slate-100 py-2 px-4 shadow transition-colors dark:border-slate-600 dark:bg-slate-800"
     bind:value={search}
     on:click={() => (showSearch = true)}
     placeholder="Search features"
@@ -83,7 +71,7 @@
   {#if search && showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="bg-default absolute top-14 z-40 flex w-full flex-col rounded p-2  backdrop-blur"
+      class="bg-default absolute top-14 flex w-full flex-col rounded p-2  backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setVal(currShow)}
@@ -110,10 +98,7 @@
 </div>
 
 <style lang="postcss">
-  .dark::placeholder {
+  .dark input::placeholder {
     @apply text-slate-200;
-  }
-  ::placeholder {
-    @apply text-slate-600;
   }
 </style>

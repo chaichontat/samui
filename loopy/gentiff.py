@@ -12,10 +12,19 @@ from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
 
 
-def gen_geotiff(img: npt.ArrayLike, path: Path) -> list[Path]:
-    z = img.shape[0]
+def gen_geotiff(img: npt.ArrayLike, path: Path, scale: float, rgb: bool = False) -> list[Path]:
+    if rgb:
+        z = img.shape[2]
+        assert z == 3
+        height = img.shape[0]
+        width = img.shape[1]
+    else:
+        z = img.shape[0]
+        height = img.shape[1]
+        width = img.shape[2]
+
     if z < 4:
-        names = ("_1",)
+        names = ("",)
     elif z > 6:
         raise ValueError("Too many channels")
     else:
@@ -30,11 +39,12 @@ def gen_geotiff(img: npt.ArrayLike, path: Path) -> list[Path]:
             ps[i],
             "w",
             driver="GTiff",
-            height=img.shape[1],
-            width=img.shape[2],
-            count=3 + i if z > 5 else 3,
+            height=height,
+            width=width,
+            count=3,
+            photometric="RGB" if rgb else None,
             transform=rasterio.Affine(
-                0.497e-6, 0, 0, 0, -0.497e-6, 0
+                scale, 0, 0, 0, -scale, 0
             ),  # https://gdal.org/tutorials/geotransforms_tut.html
             dtype=img.dtype,
             crs="EPSG:32648",  # meters
@@ -42,7 +52,7 @@ def gen_geotiff(img: npt.ArrayLike, path: Path) -> list[Path]:
         ) as dst:  # type: ignore
             for j in range(3):
                 idx = j + 3 * i
-                dst.write(img[idx], j + 1)
+                dst.write(img[idx] if not rgb else img[:, :, idx], j + 1)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
     return ps
 
@@ -72,9 +82,10 @@ def compress(ps: list[Path], quality: int = 90) -> None:
 @click.argument("tiff", nargs=1, type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument("outdir", nargs=1, type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--quality", default=90, help="JPEG compression quality")
-def run(tiff: Path, outdir: Path, quality: int = 90):
+@click.option("--scale", default=0.497e-6, help="Scale factor")
+def run(tiff: Path, outdir: Path, quality: int = 90, scale: float = 0.497e-6) -> None:
     img: np.ndarray[Any, Any] = tifffile.imread(tiff)
-    ps = gen_geotiff(img, outdir)
+    ps = gen_geotiff(img, outdir, scale)
     compress(ps, quality)
 
 

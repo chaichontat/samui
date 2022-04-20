@@ -1,5 +1,5 @@
 #%%
-from typing import cast
+from typing import Literal, cast
 
 import pandas as pd
 from anndata import AnnData
@@ -21,9 +21,10 @@ class ImageMetadata(BaseModel):
     coords: list[Coords]
     channel: dict[str, int]
     spot: SpotParams
+    mode: Literal["composite", "rgb"]
 
 
-def get_img_metadata(vis: AnnData, sample: str, channels: dict[str, int]):
+def get_img_metadata(vis: AnnData, sample: str, channels: dict[str, int], spot: SpotParams, is_rgb:bool =False) -> ImageMetadata:
     spatial = cast(pd.DataFrame, vis.obsm["spatial"])
     coords = pd.DataFrame(spatial, columns=["x", "y"], dtype="uint32")
     coords = [Coords(x=row.x, y=row.y) for row in coords.itertuples()]  # type: ignore
@@ -32,7 +33,8 @@ def get_img_metadata(vis: AnnData, sample: str, channels: dict[str, int]):
         sample=sample,
         coords=coords,
         channel=channels,
-        spot=SpotParams(),
+        spot=spot,
+        mode="rgb" if is_rgb else "composite",
     )
 
 # Path("image.json").write_text(imm.json().replace(" ", ""))

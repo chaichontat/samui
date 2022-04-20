@@ -43,7 +43,8 @@
         plugins: {
           tooltip: { enabled: false },
           legend: { display: false }
-        }
+        },
+        resizeDelay: 10
       }
     });
 
