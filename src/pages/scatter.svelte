@@ -15,6 +15,7 @@
   export let opacity = 'ff';
   export let pointRadius = 2.5;
 
+  let currColor: string[];
   let curr = 0;
 
   let coords: readonly { x: number; y: number }[];
@@ -22,15 +23,21 @@
   const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
-  let getColor: (sample: string | undefined, name: string) => string[];
-  getColor = genLRU((sample: string | undefined, name: string): string[] => {
+
+  async function anotherGetColor(sample: string | undefined, name: string) {
     const out = [];
-    for (const d of $currRna.values) {
+    for (const d of (await $samples[sample].features.genes.retrieve(name)) as number[]) {
       const idx = Math.round(Math.min(d / 10, 1) * 255);
       out.push(colors[idx] + opacity);
     }
     return out;
-  });
+  }
+
+  let getColor: (sample: string | undefined, name: string) => Promise<void>;
+  getColor = async (sample: string, name: string): Promise<void> => {
+    if (!$samples[sample].features.genes?.retrieve) return;
+    currColor = await anotherGetColor(sample, name);
+  };
 
   const update = genUpdate((s: Sample) => {
     if (!myChart || !anotherChart) return;
@@ -40,6 +47,7 @@
     } else {
       if (s.features[coordsSource]) {
         coords = s.features[coordsSource].value;
+        getColor(s.name, $currRna.name).catch(console.error);
       } else {
         console.error(`No such feature: ${coordsSource}`);
         coords = [];
@@ -67,11 +75,12 @@
     }
 
     currSample = s.name;
+    changeColor(myChart, $currRna.name);
   });
 
-  function changeColor(chart: Chart, name: string): void {
-    if (!chart || !getColor) return;
-    chart.data.datasets[0].backgroundColor = getColor($activeSample, name);
+  function changeColor(chart: Chart, currColor: string[]): void {
+    if (!chart || !currColor) return;
+    chart.data.datasets[0].backgroundColor = currColor;
     chart.update();
   }
 
@@ -163,14 +172,16 @@
     update($samples[$activeSample]).catch(console.error);
   });
 
+  $: getColor($activeSample, $currRna.name).catch(console.error);
+
   // Change color for different markers.
-  $: changeColor(myChart, $currRna.name);
+  $: changeColor(myChart, currColor);
 
   // Decision on what to show.
-  $: if (coords && anotherChart) {
+  $: if (coords && anotherChart && currColor) {
     const idx = $store.locked ? $store.lockedIdx.idx : $store.currIdx.idx;
     anotherChart.data.datasets[0].data = [coords[idx]];
-    anotherChart.data.datasets[0].backgroundColor = getColor($activeSample, $currRna.name)[idx];
+    anotherChart.data.datasets[0].backgroundColor = currColor[idx];
     anotherChart.update();
   }
 

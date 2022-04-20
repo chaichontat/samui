@@ -15,6 +15,7 @@
   let retrieve: (selected: string) => Promise<number[]>;
 
   let currShow = '';
+  let currSample = '';
 
   function highlightChars(str: string, indices: Set<number>): string {
     const chars = str.split('');
@@ -23,7 +24,7 @@
 
   export const showVal = debounce(async (selected: string) => {
     if (!selected || !retrieve) return;
-    if (get(currRna).name !== selected) {
+    if (get(currRna).name !== selected || get(activeSample) !== currSample) {
       currRna.set({ name: selected, values: await retrieve(selected) });
     }
   }, 10);
@@ -35,6 +36,7 @@
   let showSearch = true;
 
   const update = genUpdate((sample: Sample) => {
+    setVal($currRna.name.length === 0 ? 'GFAP' : $currRna.name)?.catch(console.error);
     names = sample.features.genes.names;
     keys = Object.keys(names);
     retrieve = sample.features.genes.retrieve;
@@ -42,10 +44,8 @@
   });
 
   update($samples[$activeSample]).catch(console.error);
-  currShow = 'GFAP';
-  setVal('GFAP');
+  setVal('GFAP')?.catch(console.error);
 
-  let currSample = '';
   $: if ($activeSample !== currSample) update($samples[$activeSample]).catch(console.error);
 
   let search = '';
