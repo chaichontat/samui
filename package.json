@@ -17,6 +17,7 @@
     "@rgossiaux/svelte-headlessui": "^1.0.0-beta.12",
     "@sveltejs/adapter-static": "^1.0.0-next.29",
     "@sveltejs/kit": "next",
+    "@tailwindcss/typography": "^0.5.2",
     "@types/colormap": "^2.3.1",
     "@types/lodash-es": "^4.17.6",
     "@types/lru-cache": "^7.6.1",
