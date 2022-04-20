@@ -44,7 +44,7 @@
   let draw: Draw;
   let drawClear: () => void;
 
-  const update = genUpdate((sample: Sample) => {
+  const update = genUpdate(samples, (sample: Sample) => {
     if (!map) return;
     coords = sample.image.coords!;
     proteinMap = sample.image.channel!;
@@ -74,6 +74,7 @@
       normalize: sample.image.header!.mode === 'rgb',
       sources: urls
     });
+
     mPerPx = sample.image.header!.spot.mPerPx;
 
     // Refresh spots
@@ -178,7 +179,7 @@
     ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
     draw.on('drawend', () => (selecting = false));
 
-    update(sample).catch(console.error);
+    update($activeSample).catch(console.error);
   });
 
   // Update "brightness"
@@ -243,7 +244,7 @@
     }
   }
 
-  $: if ($activeSample !== currSample) update($samples[$activeSample]).catch(console.error);
+  $: if (map) update($activeSample).catch(console.error);
 </script>
 
 <svelte:body on:resize={() => map?.updateSize()} />
@@ -265,7 +266,7 @@
       class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
     >
       <!-- Spot indicator -->
-      <div>Spots: <i>{@html $currRna.name}</i></div>
+      <div class="mix-blend-difference">Spots: <i>{@html $currRna.name}</i></div>
 
       <!-- Color indicator -->
       <div class="mt-2 flex flex-col">

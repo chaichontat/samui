@@ -1,4 +1,5 @@
 import LRU from 'lru-cache';
+import { get, type Writable } from 'svelte/store';
 import tippy from 'tippy.js';
 import type { Sample } from './data/sample';
 
@@ -109,11 +110,32 @@ export function resizable(resizer: HTMLDivElement) {
   resizer.addEventListener('mousedown', mouseDownHandler);
 }
 
-export function genUpdate(f: (s: Sample) => void) {
-  return async (s: Sample) => {
-    if (!s.hydrated) {
-      await s.hydrate();
+export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
+  f: (...args: T) => R
+): (...args: T) => R {
+  let lastArgs: T;
+  let lastResult: R;
+  return (...args: T): R => {
+    if (args.some((a) => Array.isArray(a))) {
+      throw new Error(`doNotRepeat: args must not be arrays.`);
     }
-    return f(s);
+    if (lastArgs && lastArgs.every((a, i) => a === args[i])) return lastResult;
+    lastArgs = args;
+    lastResult = f(...args);
+    return lastResult;
   };
+}
+
+export function genUpdate(
+  store: Writable<{ [key: string]: Sample }>,
+  f: (sample: Sample) => void
+): (s: string) => Promise<void> {
+  return oneLRU(async (s: string) => {
+    const sample = get(store)[s];
+    if (!sample) throw new Error(`Sample ${s} not found.`);
+    if (!sample.hydrated) {
+      await sample.hydrate();
+    }
+    return f(sample);
+  });
 }

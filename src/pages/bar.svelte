@@ -2,7 +2,7 @@
   import { browser } from '$app/env';
   import type { ChunkedJSON, Sparse } from '$src/lib/data/dataHandlers';
   import type { Sample } from '$src/lib/data/sample';
-  import { genUpdate } from '$src/lib/utils';
+  import { genUpdate, oneLRU } from '$src/lib/utils';
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
   import { activeSample, multipleSelect, samples, store } from '../lib/store';
@@ -48,30 +48,29 @@
       }
     });
 
-    update($samples[$activeSample]).catch(console.error);
+    update($activeSample).catch(console.error);
   });
 
   let spotGenes: ChunkedJSON;
   let geneNames: Record<number, string>;
 
-  const update = genUpdate((s: Sample) => {
+  const update = genUpdate(samples, (s: Sample) => {
     spotGenes = s.features.spotGenes as ChunkedJSON;
     geneNames = (s.features.genes as ChunkedJSON).revNames!;
   });
 
-  async function getRow(i: number): Promise<[string, number][]> {
+  const getRow = oneLRU(async (i: number): Promise<[string, number][]> => {
     const row = (await spotGenes.retrieve!(i)) as Sparse;
-
     const out = [] as [string, number][];
     for (let i = 0; i < row.value.length; i++) {
       if (geneNames[row.index[i]].startsWith('MT-')) continue;
       out.push([geneNames[row.index[i]], row.value[i]]);
     }
     return out;
-  }
+  });
 
   let curr = 0;
-  $: update($samples[$activeSample]).catch(console.error);
+  $: update($activeSample).catch(console.error);
 
   // $: if (bar && $done) {
   //   getRow(5)

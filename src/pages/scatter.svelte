@@ -39,7 +39,7 @@
     currColor = await anotherGetColor(sample, name);
   };
 
-  const update = genUpdate((s: Sample) => {
+  const update = genUpdate(samples, (s: Sample) => {
     if (!myChart || !anotherChart) return;
 
     if (coordsSource === 'coords') {
@@ -169,7 +169,7 @@
       }
     );
 
-    update($samples[$activeSample]).catch(console.error);
+    update($activeSample).catch(console.error);
   });
 
   $: getColor($activeSample, $currRna.name).catch(console.error);
@@ -187,7 +187,7 @@
 
   let currSample = $activeSample;
   $: if ($activeSample !== currSample) {
-    update($samples[$activeSample]).catch(console.error);
+    update($activeSample).catch(console.error);
   }
 </script>
 
