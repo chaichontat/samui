@@ -110,6 +110,10 @@ export function resizable(resizer: HTMLDivElement) {
   resizer.addEventListener('mousedown', mouseDownHandler);
 }
 
+/**
+ * Decorates a function with an LRU with a cache size of 1.
+ * Mainly to prevent state change functions from being called when the state is the same.
+ */
 export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
   f: (...args: T) => R
 ): (...args: T) => R {
@@ -126,9 +130,15 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
   };
 }
 
+/**
+ * Wraps the update function. Hydrates the sample if not already done then call update.
+ * Also wrapped with oneLRU to prevent repeated calls on the same sample.
+ * This assumes that the sample is not mutated.
+ * @returns A function that takes a string and returns a promise that resolves to void.
+ */
 export function genUpdate(
   store: Writable<{ [key: string]: Sample }>,
-  f: (sample: Sample) => void
+  update: (sample: Sample) => void
 ): (s: string) => Promise<void> {
   return oneLRU(async (s: string) => {
     const sample = get(store)[s];
@@ -136,6 +146,6 @@ export function genUpdate(
     if (!sample.hydrated) {
       await sample.hydrate();
     }
-    return f(sample);
+    return update(sample);
   });
 }
