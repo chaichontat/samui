@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { viridis } from '../colors';
+
   type Color = 'viridis' | 'yellow';
   export let color: Color = 'viridis';
   export let min: number;
@@ -8,8 +10,7 @@
   export { cl as class };
 
   const mapping: { [color in Color]: string } = {
-    viridis:
-      '#440154, #482475, #414487, #355f8d, #2a788e, #21908d, #22a884, #42be71, #7ad151, #bddf26, #bddf26',
+    viridis: viridis.join(', '),
     yellow: '#000000, #fce652'
   };
 </script>
