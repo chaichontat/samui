@@ -22,6 +22,7 @@
     "@types/lodash-es": "^4.17.6",
     "@types/lru-cache": "^7.6.1",
     "@types/pako": "^1.0.3",
+    "@types/wicg-file-system-access": "^2020.9.5",
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
     "autoprefixer": "^10.4.4",
