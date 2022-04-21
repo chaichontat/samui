@@ -10,14 +10,16 @@ export interface Data {
 export type PlainJSONParams = {
   type: 'plainJSON';
   name: string;
+  dataType?: 'categorical' | 'quantitative';
   url?: string;
-  value?: unknown;
+  values?: unknown;
 };
 
 export type ChunkedJSONParams = {
   type: 'chunkedJSON';
   name: string;
   url: string;
+  dataType?: 'categorical' | 'quantitative';
   headerUrl?: string;
   header?: ChunkedJSONHeader;
   options?: ChunkedJSONOptions;
@@ -38,28 +40,30 @@ export type Sparse = { index: number[]; value: number[] };
 export class PlainJSON implements Data {
   name: string;
   url?: string;
-  value?: unknown;
+  dataType?: 'categorical' | 'quantitative';
+  values?: unknown;
 
-  constructor({ name, url, value }: PlainJSONParams, autoHydrate = false) {
+  constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
     this.name = name;
     this.url = url;
-    this.value = value;
+    this.values = values;
+    this.dataType = dataType ?? 'quantitative';
 
-    if (!this.url && !this.value) throw new Error('Must provide url or value');
+    if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
       this.hydrate().catch(console.error);
     }
   }
 
   async hydrate() {
-    if (!this.value && this.url) {
-      this.value = (await fetch(this.url).then((r) => r.json())) as unknown;
+    if (!this.values && this.url) {
+      this.values = (await fetch(this.url).then((r) => r.json())) as unknown;
     }
     return this;
   }
 
   retrieve(name: string | number) {
-    return this.value[name];
+    return this.values[name];
   }
 }
 
@@ -69,6 +73,7 @@ export class ChunkedJSON implements Data {
   names?: Record<string, number> | null;
   length?: number;
 
+  dataType: 'categorical' | 'quantitative';
   headerUrl?: string;
   header?: ChunkedJSONHeader;
   url: string;
@@ -76,10 +81,14 @@ export class ChunkedJSON implements Data {
 
   readonly densify: boolean;
 
-  constructor({ name, url, headerUrl, header, options }: ChunkedJSONParams, autoHydrate = false) {
+  constructor(
+    { name, url, headerUrl, header, dataType, options }: ChunkedJSONParams,
+    autoHydrate = false
+  ) {
     this.name = name;
     this.url = url;
     this.header = header;
+    this.dataType = dataType ?? 'quantitative';
     this.headerUrl = headerUrl;
     this.densify = options?.densify ?? true;
 
