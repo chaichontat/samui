@@ -4,6 +4,7 @@ dependencies:
   - python=3.10
   - click
   - gdal
+  - pydantic
   - rasterio
   - scanpy
   - scipy
