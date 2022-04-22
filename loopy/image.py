@@ -1,15 +1,60 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, Literal, cast
 
 import click
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import rasterio
 import tifffile
+from anndata import AnnData
 from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
+
+from loopy.utils import ReadonlyModel, Url
+
+Meter = Annotated[float, "meter"]
+
+
+class Coords(ReadonlyModel):
+    x: int
+    y: int
+
+
+class SpotParams(ReadonlyModel):
+    spotDiam: Meter = 65e-6
+    mPerPx: float = 0.497e-6
+
+
+class ImageParams(ReadonlyModel):
+    urls: list[Url]
+    headerUrl: Url
+
+
+class ImageHeader(ReadonlyModel):
+    sample: str
+    coords: list[Coords]
+    channel: dict[str, int]
+    spot: SpotParams
+    mode: Literal["composite", "rgb"]
+
+
+def gen_header(
+    vis: AnnData, sample: str, channels: dict[str, int], spot: SpotParams, is_rgb: bool = False
+) -> ImageHeader:
+    spatial = cast(pd.DataFrame, vis.obsm["spatial"])
+    coords = pd.DataFrame(spatial, columns=["x", "y"], dtype="uint32")
+    coords = [Coords(x=row.x, y=row.y) for row in coords.itertuples()]  # type: ignore
+
+    return ImageHeader(
+        sample=sample,
+        coords=coords,
+        channel=channels,
+        spot=spot,
+        mode="rgb" if is_rgb else "composite",
+    )
 
 
 def gen_geotiff(img: npt.ArrayLike, path: Path, scale: float, rgb: bool = False) -> list[Path]:
@@ -42,7 +87,7 @@ def gen_geotiff(img: npt.ArrayLike, path: Path, scale: float, rgb: bool = False)
             height=height,
             width=width,
             count=3,
-            photometric="RGB" if rgb else None,
+            photometric="RGB" if rgb else "MINISBLACK",
             transform=rasterio.Affine(
                 scale, 0, 0, 0, -scale, 0
             ),  # https://gdal.org/tutorials/geotransforms_tut.html
