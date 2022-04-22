@@ -37,20 +37,20 @@ jobs:
           path: |
             data
 
-      - name: Install poetry
-        run: |
-          curl -sSL "https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py" | python
+      # - name: Install poetry
+      #   run: |
+      #     curl -sSL "https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py" | python
 
-      - name: Update PATH
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+      # - name: Update PATH
+      #   if: ${{ matrix.os != 'windows-latest' }}
+      #   run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # - name: Install Conda environment
-      #   uses: mamba-org/provision-with-micromamba@main
-      #   with:
-      #     cache-env: true
-      #     environment-file: environment.yml
-      #     environment-name: loopy
+      - name: Install Conda environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          cache-env: true
+          environment-file: environment.yml
+          environment-name: loopy
 
       - name: Get & Extract Test Data
         run: |
@@ -60,5 +60,6 @@ jobs:
 
       - name: Test run
         run: |
-          poetry install
-          poetry run pytest -rP
+          pip install pytest pytest-cov
+          pip install .
+          pytest -rP
