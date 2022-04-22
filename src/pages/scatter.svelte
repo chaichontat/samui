@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { Sample } from '$lib/data/sample';
+  import { tableau10 } from '$src/lib/colors';
   import Colorbar from '$src/lib/components/colorbar.svelte';
+  import type { PlainJSON } from '$src/lib/data/dataHandlers';
   import { chartOptions } from '$src/lib/scatter/scatterlib';
-  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
+  import Chart, { type ChartEvent } from 'chart.js/auto';
   import ChartDataLabels from 'chartjs-plugin-datalabels';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
@@ -24,18 +26,33 @@
 
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
 
-  async function anotherGetColor(sample: string | undefined, name: string) {
+  async function anotherGetColor(sample: string, name: string) {
     const out = [];
-    for (const d of (await $samples[sample].features.genes.retrieve(name)) as number[]) {
-      const idx = Math.round(Math.min(d / 10, 1) * 255);
-      out.push(colors[idx] + opacity);
+    if (intensitySource !== 'genes') console.log('here');
+    if (intensitySource === 'genes') {
+      for (const d of (await $samples[sample].features.genes.retrieve!(name)) as number[]) {
+        const idx = Math.round(Math.min(d / 10, 1) * 255);
+        out.push(colors[idx] + opacity);
+      }
+    } else {
+      const v = ($samples[sample].features[intensitySource] as PlainJSON).values as number[];
+      const vals = Object.values(tableau10);
+      const max = Math.max(...v);
+      for (const d of v) {
+        // const idx = Math.round(Math.min(d / max, 1) * 255);
+        out.push(vals[d] + opacity);
+      }
     }
     return out;
   }
 
-  let getColor: (sample: string | undefined, name: string) => Promise<void>;
+  let getColor: (sample: string, name: string) => Promise<void>;
   getColor = async (sample: string, name: string): Promise<void> => {
-    if (!$samples[sample].features.genes?.retrieve) return;
+    if (intensitySource === 'genes') {
+      if (!$samples[sample].features[intensitySource]?.retrieve) return;
+    } else {
+      if (!$samples[sample].features[intensitySource]?.values) return;
+    }
     currColor = await anotherGetColor(sample, name);
   };
 
@@ -46,13 +63,17 @@
       coords = s.image.coords!;
     } else {
       if (s.features[coordsSource]) {
-        coords = s.features[coordsSource].value;
+        coords = s.features[coordsSource].values;
         getColor(s.name, $currRna.name).catch(console.error);
       } else {
         console.error(`No such feature: ${coordsSource}`);
         coords = [];
         return;
       }
+    }
+
+    if (!s.features[intensitySource]) {
+      console.error(`No such intensity feature: ${intensitySource}`);
     }
 
     const min = coords
@@ -62,6 +83,7 @@
       .reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0])
       .map((x) => x);
 
+    // @ts-ignore
     myChart.data.datasets[0].data = coords;
     const over = 0.05;
     const range = [max[0] - min[0], max[1] - min[1]];
@@ -75,7 +97,8 @@
     }
 
     currSample = s.name;
-    changeColor(myChart, $currRna.name);
+
+    getColor(s.name, $currRna.name).catch(console.error);
   });
 
   function changeColor(chart: Chart, currColor: string[]): void {
@@ -87,7 +110,9 @@
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
     anotherChart = new Chart(
-      (document.getElementById(`${coordsSource}-another`) as HTMLCanvasElement).getContext('2d')!,
+      (
+        document.getElementById(`${coordsSource}-${intensitySource}-another`) as HTMLCanvasElement
+      ).getContext('2d')!,
       {
         type: 'scatter',
         data: {
@@ -152,7 +177,9 @@
     );
 
     myChart = new Chart(
-      (document.getElementById(`${coordsSource}-myChart`) as HTMLCanvasElement).getContext('2d')!,
+      (
+        document.getElementById(`${coordsSource}-${intensitySource}-myChart`) as HTMLCanvasElement
+      ).getContext('2d')!,
       {
         data: {
           datasets: [
@@ -177,6 +204,10 @@
   // Change color for different markers.
   $: changeColor(myChart, currColor);
 
+  $: if (intensitySource) {
+    getColor($activeSample, $currRna.name).catch(console.error);
+  }
+
   // Decision on what to show.
   $: if (coords && anotherChart && currColor) {
     const idx = $store.locked ? $store.lockedIdx.idx : $store.currIdx.idx;
@@ -198,8 +229,8 @@
     <Colorbar min={0} max={10} />
   {/if}
 
-  <canvas class="absolute" id={`${coordsSource}-another`} />
-  <canvas class="" id={`${coordsSource}-myChart`} />
+  <canvas class="absolute" id={`${coordsSource}-${intensitySource}-another`} />
+  <canvas class="" id={`${coordsSource}-${intensitySource}-myChart`} />
   <!-- <div
     class="absolute left-10 top-10 z-10 rounded-lg bg-white/10 px-3 py-1 text-lg font-medium text-white opacity-90 backdrop-blur-sm"
   >

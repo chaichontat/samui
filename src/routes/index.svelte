@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Sample, type SampleParams } from '$lib/data/sample';
   import { resizable } from '$lib/utils';
   import SampleList from '$src/lib/components/sampleList.svelte';
   import SearchBox from '$src/lib/components/searchBox.svelte';
@@ -7,17 +8,17 @@
   import Mapp from '$src/pages/mapp.svelte';
   import Rna from '$src/pages/rna.svelte';
 
-  async function readFile<T>(
+  async function readFile<T extends object>(
     dirHandle: FileSystemDirectoryHandle,
     name: string,
-    mode: 'chunked' | 'plain'
-  ): Promise<T | ArrayBuffer> {
+    mode: 'url' | 'plain'
+  ): Promise<T | string> {
     const file = await dirHandle.getFileHandle(name).then((fileHandle) => fileHandle.getFile());
 
     if (mode === 'plain') {
       return JSON.parse(await file.text()) as T;
     } else {
-      return await file.arrayBuffer();
+      return URL.createObjectURL(file);
     }
   }
 
@@ -28,15 +29,17 @@
     }
     const directoryHandle = await window.showDirectoryPicker();
 
-    readFile(directoryHandle, 'sample.json', 'plain')
-      .then((samples) => {
-        console.log(samples);
-      })
-      .catch(console.error);
+    const sp = (await readFile<SampleParams>(directoryHandle, 'sample.json', 'plain').catch(
+      console.error
+    )) as SampleParams;
+    sp.handle = directoryHandle;
+    const sample = new Sample(sp);
+    await sample.hydrate();
 
-    for await (const entry of directoryHandle.values()) {
-      console.log(entry.kind, entry.name);
-    }
+    $samples[sample.name] = sample;
+    // for await  (const entry of directoryHandle.values()) {
+    //   console.log(entry.kind, entry.name);
+    // }
   }
 </script>
 

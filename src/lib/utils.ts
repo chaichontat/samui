@@ -160,3 +160,7 @@ export function genUpdate(
     return update(sample);
   });
 }
+
+export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
+  return await handle.getFileHandle(name).then((fh) => fh.getFile());
+}

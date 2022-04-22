@@ -1,26 +1,28 @@
 import { browser } from '$app/env';
 import pako from 'pako';
-import { genLRU } from '../utils';
+import { genLRU, getFile } from '../utils';
 
 export interface Data {
   retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
-  hydrate: () => Promise<this>;
+  hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
 }
+export type Url = { url: string; type: 'local' | 'network' };
+export type DataType = 'categorical' | 'quantitative' | 'coords';
 
 export type PlainJSONParams = {
   type: 'plainJSON';
   name: string;
-  dataType?: 'categorical' | 'quantitative';
-  url?: string;
+  dataType?: DataType;
+  url?: Url;
   values?: unknown;
 };
 
 export type ChunkedJSONParams = {
   type: 'chunkedJSON';
   name: string;
-  url: string;
-  dataType?: 'categorical' | 'quantitative';
-  headerUrl?: string;
+  url: Url;
+  dataType?: DataType;
+  headerUrl?: Url;
   header?: ChunkedJSONHeader;
   options?: ChunkedJSONOptions;
 };
@@ -39,8 +41,8 @@ export type Sparse = { index: number[]; value: number[] };
 
 export class PlainJSON implements Data {
   name: string;
-  url?: string;
-  dataType?: 'categorical' | 'quantitative';
+  url?: Url;
+  dataType?: DataType;
   values?: unknown;
 
   constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
@@ -55,9 +57,12 @@ export class PlainJSON implements Data {
     }
   }
 
-  async hydrate() {
+  async hydrate(handle?: FileSystemDirectoryHandle) {
     if (!this.values && this.url) {
-      this.values = (await fetch(this.url).then((r) => r.json())) as unknown;
+      if (handle) {
+        this.url = await convertLocalToNetwork(handle, this.url);
+      }
+      this.values = (await fetch(this.url.url).then((r) => r.json())) as unknown;
     }
     return this;
   }
@@ -73,10 +78,10 @@ export class ChunkedJSON implements Data {
   names?: Record<string, number> | null;
   length?: number;
 
-  dataType: 'categorical' | 'quantitative';
-  headerUrl?: string;
+  dataType: DataType;
+  headerUrl?: Url;
   header?: ChunkedJSONHeader;
-  url: string;
+  url: Url;
   name: string;
 
   readonly densify: boolean;
@@ -94,7 +99,8 @@ export class ChunkedJSON implements Data {
 
     if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
     if (autoHydrate) {
-      this.hydrate().catch(console.error);
+      throw new Error('Not implemented');
+      // this.hydrate(handle).catch(console.error);
     }
   }
 
@@ -110,9 +116,14 @@ export class ChunkedJSON implements Data {
     return f();
   }
 
-  async hydrate() {
+  async hydrate(handle?: FileSystemDirectoryHandle) {
     if (!this.header && this.headerUrl) {
-      this.header = await fetch(this.headerUrl).then(
+      if (handle) {
+        this.headerUrl = await convertLocalToNetwork(handle, this.headerUrl);
+        this.url = await convertLocalToNetwork(handle, this.url);
+      }
+
+      this.header = await fetch(this.headerUrl.url).then(
         (res) => res.json() as Promise<ChunkedJSONHeader>
       );
     }
@@ -141,7 +152,7 @@ export class ChunkedJSON implements Data {
           return zero;
         }
 
-        const raw = await fetch(this.url, {
+        const raw = await fetch(this.url.url, {
           headers: {
             Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`
           }
@@ -183,6 +194,15 @@ export class ChunkedJSON implements Data {
   }
 }
 
+export async function convertLocalToNetwork(
+  handle: FileSystemDirectoryHandle,
+  url: Url
+): Promise<Url> {
+  if (url.type === 'local') {
+    return { url: URL.createObjectURL(await getFile(handle, url.url)), type: 'network' };
+  }
+  return url;
+}
 // export class Arrow implements Data {
 //   keys: (string | number | symbol)[] | undefined;
 //   private readonly data: Record<string, TypedArray>;

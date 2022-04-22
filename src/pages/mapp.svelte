@@ -69,7 +69,7 @@
       bgLayer.setStyle(genBgStyle(mode));
     }
 
-    const urls = sample.image.urls.map((url) => ({ url }));
+    const urls = sample.image.urls.map((url) => ({ url: url.url }));
     sourceTiff = new GeoTIFF({
       normalize: sample.image.header!.mode === 'rgb',
       sources: urls

@@ -1,6 +1,7 @@
 import type { ImageMode } from '../mapp/imgControl';
+import { convertLocalToNetwork, type Url } from './dataHandlers';
 
-export type ImageParams = { urls: string[]; headerUrl?: string; header?: ImageHeader };
+export type ImageParams = { urls: Url[]; headerUrl?: Url; header?: ImageHeader };
 
 export type SpotParams = {
   spotDiam: number;
@@ -16,11 +17,11 @@ export type ImageHeader = {
 };
 
 export class Image {
-  urls: readonly string[];
+  urls: readonly Url[];
   coords?: readonly { x: number; y: number }[];
   channel?: Record<string, number>;
   header?: ImageHeader;
-  headerUrl?: string;
+  headerUrl?: Url;
   n_spot?: number;
 
   constructor({ urls, headerUrl, header }: ImageParams, autoHydrate = false) {
@@ -34,10 +35,17 @@ export class Image {
     }
   }
 
-  async hydrate() {
+  async hydrate(handle?: FileSystemDirectoryHandle) {
     if (!this.header && this.headerUrl) {
-      this.header = await fetch(this.headerUrl).then((r) => r.json() as Promise<ImageHeader>);
+      if (handle) {
+        this.headerUrl = await convertLocalToNetwork(handle, this.headerUrl);
+        this.urls = await Promise.all(
+          this.urls.map(async (url) => convertLocalToNetwork(handle, url))
+        );
+      }
+      this.header = await fetch(this.headerUrl.url).then((r) => r.json() as Promise<ImageHeader>);
     }
+
     ({ channel: this.channel, coords: this.coords } = this.header!);
     this.n_spot = this.coords.length;
     return this;
