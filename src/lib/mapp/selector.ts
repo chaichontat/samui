@@ -94,8 +94,8 @@ export class Draww {
     map.addLayer(this.layer);
     this.select = new _Selectt({ map, spotDiam: map.get('spotDiam') as number });
     this.modify = new Modify({ source: this.source });
-    this.attachDraw();
-    this.attachModify();
+    this._attachDraw();
+    this._attachModify();
   }
 
   clear() {
@@ -108,7 +108,7 @@ export class Draww {
     this.select.updateSample(f);
   }
 
-  attachDraw() {
+  _attachDraw() {
     this.draw.on('drawstart', (event: DrawEvent) => {
       event.feature.getGeometry()!.on(
         'change',
@@ -130,7 +130,7 @@ export class Draww {
     });
   }
 
-  attachModify() {
+  _attachModify() {
     this.modify.on('modifyend', (e: ModifyEvent) => {
       console.log(e);
       const polygon = e.features.getArray()[0].getGeometry()!;

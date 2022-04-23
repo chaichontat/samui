@@ -49,7 +49,7 @@
       let:open
     >
       <ListboxButton
-        class="relative w-full max-w-md cursor-pointer rounded-md border bg-slate-100 py-2 pl-3 pr-10 text-left text-slate-800 transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-slate-800/80 dark:text-slate-100 sm:leading-5"
+        class="relative w-full max-w-md cursor-pointer rounded-md border bg-slate-100/90 py-2 pl-3 pr-10 text-left text-slate-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-slate-800/80 dark:text-slate-100 sm:leading-5"
       >
         <span class="block truncate font-medium">{active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">

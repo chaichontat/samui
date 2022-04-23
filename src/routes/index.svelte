@@ -19,9 +19,7 @@
   <div
     class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-6 text-sm md:text-base"
   >
-    <div class="mt-1 text-base lg:text-lg xl:text-xl">
-      <SearchBox />
-    </div>
+    <!-- Sample list -->
     <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
       <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">Sample:</div>
       <SampleList items={Object.keys($samples)} on:change={(e) => ($activeSample = e.detail)} />
@@ -32,7 +30,7 @@
       on:click={byod}
     >
       <span
-        class="relative rounded-md bg-slate-50 px-5 py-2 transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900"
+        class="relative rounded-md bg-slate-50/90 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900/80"
       >
         Run your Data
       </span>
