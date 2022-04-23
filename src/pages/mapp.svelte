@@ -3,13 +3,13 @@
   import { colorVarFactory, genBgStyle } from '$src/lib/mapp/background';
   import type { ImageCtrl, ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
+  import { Draww } from '$src/lib/mapp/selector';
   import { genStyle, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/spots';
   import { genUpdate } from '$src/lib/utils';
   import ScaleLine from 'ol/control/ScaleLine.js';
   import Zoom from 'ol/control/Zoom.js';
   import type Feature from 'ol/Feature';
   import type { Circle, Geometry } from 'ol/geom.js';
-  import type { Draw } from 'ol/interaction.js';
   import type VectorLayer from 'ol/layer/Vector';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import type TileLayer from 'ol/layer/WebGLTile';
@@ -21,7 +21,6 @@
   import { Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
-  import { select } from '../lib/mapp/selector';
   import { activeSample, currRna, samples, store } from '../lib/store';
 
   let mode: ImageMode;
@@ -37,12 +36,11 @@
   let map: Map;
   let showAllSpots = true;
   let currSample = '';
+  let draw: Draww;
 
   let colorOpacity = 0.8;
 
   let curr = 0;
-  let draw: Draw;
-  let drawClear: () => void;
 
   const update = genUpdate(samples, (sample: Sample) => {
     if (!map) return;
@@ -94,8 +92,7 @@
     updateSpots($currRna);
 
     // Refresh select
-    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
-    draw.on('drawend', () => (selecting = false));
+    draw.updateSample(spotsSource.getFeatures());
 
     // Refresh background
     bgLayer.getSource()?.dispose();
@@ -150,6 +147,8 @@
     map.removeControl(map.getControls().getArray()[0]);
     map.addControl(new Zoom({ delta: 0.4 }));
     map.addControl(new ScaleLine({ text: true, minWidth: 140 }));
+    draw = new Draww(map);
+    draw.draw.on('drawend', () => (selecting = false));
 
     // Hover over a circle.
     map.on('pointermove', (e) => {
@@ -232,11 +231,10 @@
   // Enable/disable polygon draw
   $: if (map) {
     if (selecting) {
-      drawClear();
-      map?.addInteraction(draw);
+      map?.addInteraction(draw.draw);
       map.getViewport().style.cursor = 'crosshair';
     } else {
-      map?.removeInteraction(draw);
+      map?.removeInteraction(draw.draw);
       map.getViewport().style.cursor = 'grab';
     }
   }
@@ -316,7 +314,7 @@
 
         <button
           class="rounded bg-orange-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-orange-600/80 active:bg-orange-500/80 dark:bg-orange-700/70 dark:text-slate-200"
-          on:click={drawClear}
+          on:click={() => draw?.clear()}
           disabled={selecting}
           >Clear
         </button>

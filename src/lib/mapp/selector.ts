@@ -1,119 +1,144 @@
-import { debounce } from 'lodash-es';
-import type { Map } from 'ol';
+import debounce from 'lodash-es/debounce';
+import { Feature, type Map } from 'ol';
 import type BaseEvent from 'ol/events/Event';
-import Feature from 'ol/Feature.js';
-import { Circle, Geometry, Point } from 'ol/geom.js';
-import { Modify, Snap } from 'ol/interaction.js';
-import Draw, { DrawEvent } from 'ol/interaction/Draw.js';
-import type { ModifyEvent } from 'ol/interaction/Modify.js';
-import { Vector as VectorLayer } from 'ol/layer.js';
-import 'ol/ol.css';
-import VectorSource from 'ol/source/Vector.js';
-import { Fill, Stroke, Style } from 'ol/style.js';
-import CircleStyle from 'ol/style/Circle.js';
-import { multipleSelect } from '../store';
+import { Circle, type Geometry, type Point } from 'ol/geom';
+import { Draw, Modify } from 'ol/interaction';
+import type { DrawEvent } from 'ol/interaction/Draw';
+import type { ModifyEvent } from 'ol/interaction/Modify';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import { Fill, Stroke, Style } from 'ol/style';
+import CircleStyle from 'ol/style/Circle';
 
-export function select(map: Map, features: Feature[]) {
-  const drawSource = new VectorSource();
+export class _Selectt {
+  readonly features: Feature[];
+  readonly layer: VectorLayer<VectorSource<Geometry>>;
+  readonly source: VectorSource<Geometry>;
 
-  const draw = new Draw({
-    type: 'Polygon',
-    source: drawSource,
-    // condition: platformModifierKeyOnly,
-    // freehandCondition: shiftKeyOnly,
-    // Style for drawing polygons.
-    style: new Style({
-      fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' }),
-      stroke: new Stroke({ color: '#00ffe9', width: 2 }),
-      image: new CircleStyle({
-        radius: 6,
-        fill: new Fill({
-          color: [0, 153, 255, 1]
-        }),
-        stroke: new Stroke({
-          color: '#fff',
-          width: 1.5
-        })
-      }),
-      zIndex: Infinity
-    }),
-    stopClick: true
-  });
+  readonly spotDiam: number;
+  template?: Feature[];
 
-  // Style for finished polygons.
-  const drawLayer = new VectorLayer({
-    source: drawSource,
-    style: new Style({
-      stroke: new Stroke({ color: '#00ffe9', width: 1 })
-    })
-  });
+  constructor({ map, spotDiam }: { map: Map; spotDiam: number }) {
+    this.features = [];
+    this.source = new VectorSource({ features: this.features });
+    this.layer = new VectorLayer({
+      source: this.source,
+      style: new Style({ stroke: new Stroke({ color: '#ffffffaa', width: 1 }) })
+    });
+    this.spotDiam = spotDiam;
+    map.addLayer(this.layer);
+  }
 
-  const modify = new Modify({ source: drawSource });
-  const snap = new Snap({ source: drawSource });
-  const spotDiam = map.get('spotDiam') as number;
+  updateSample(template: Feature[]) {
+    this.source.clear();
+    this.template = template;
+  }
 
-  const selectedFeatures: Feature<Geometry>[] = [];
-  const selectSource = new VectorSource({ features: selectedFeatures });
-  const select = new VectorLayer({
-    source: selectSource,
-    style: new Style({ stroke: new Stroke({ color: '#ffffffaa', width: 1 }) })
-  });
-
-  map.addInteraction(modify);
-  map.addInteraction(snap);
-
-  const drawClear = () => {
-    selectSource.clear();
-    drawSource.clear();
-    multipleSelect.set([]);
-  };
-
-  draw.on('drawstart', (event: DrawEvent) => {
-    event.feature.getGeometry()!.on(
-      'change',
-      debounce(
-        (e: BaseEvent) => {
-          const polygon = e.target as Geometry;
-          genCircle(selectSource, features, polygon, spotDiam);
-        },
-        10,
-        { leading: true, trailing: false }
-      )
-    );
-  });
-
-  draw.on('drawend', (event: DrawEvent) => {
-    event.preventDefault();
-    const polygon = event.feature.getGeometry()!;
-    genCircle(selectSource, features, polygon, spotDiam);
-  });
-
-  modify.on('modifyend', (e: ModifyEvent) => {
-    console.log(e);
-    const polygon = e.features.getArray()[0].getGeometry()!;
-    if ('intersectsExtent' in polygon) {
-      genCircle(selectSource, features, polygon, spotDiam);
-    } else {
-      console.error("Polygon doesn't have intersectsExtent");
+  updateSelect(polygon: Geometry) {
+    if (!this.template) {
+      console.warn('No template defined for select.');
+      return;
     }
-  });
-
-  map.addLayer(drawLayer);
-  map.addLayer(select);
-  return { draw, drawClear };
+    const ids: number[] = [];
+    this.source.clear();
+    this.source.addFeatures(
+      this.template
+        .filter((f) => polygon.intersectsExtent(f.getGeometry()!.getExtent()))
+        .map((f) => {
+          ids.push(f.getId() as number);
+          const point = f.getGeometry()! as Point;
+          return new Feature({ geometry: new Circle(point.getCoordinates(), this.spotDiam / 2) });
+        })
+    );
+  }
 }
 
-function genCircle(source: VectorSource, features: Feature[], polygon: Geometry, spotDiam: number) {
-  const ids: number[] = [];
-  source.clear();
-  source.addFeatures(
-    features
-      .filter((f) => polygon.intersectsExtent(f.getGeometry()!.getExtent()))
-      .map((f) => {
-        ids.push(f.getId() as number);
-        const point = f.getGeometry()! as Point;
-        return new Feature({ geometry: new Circle(point.getCoordinates(), spotDiam / 2) });
+export class Draww {
+  readonly draw: Draw;
+  readonly source: VectorSource<Geometry>;
+  readonly layer: VectorLayer<VectorSource<Geometry>>;
+  readonly select: _Selectt;
+  readonly modify: Modify;
+
+  constructor(map: Map) {
+    this.source = new VectorSource();
+    this.draw = new Draw({
+      type: 'Polygon',
+      source: this.source,
+      // condition: platformModifierKeyOnly,
+      // freehandCondition: shiftKeyOnly,
+      // Style for drawing polygons.
+      style: new Style({
+        fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' }),
+        stroke: new Stroke({ color: '#00ffe9', width: 2 }),
+        image: new CircleStyle({
+          radius: 6,
+          fill: new Fill({
+            color: [0, 153, 255, 1]
+          }),
+          stroke: new Stroke({
+            color: '#fff',
+            width: 1.5
+          })
+        }),
+        zIndex: Infinity
+      }),
+      stopClick: true
+    });
+    this.layer = new VectorLayer({
+      source: this.source,
+      style: new Style({
+        stroke: new Stroke({ color: '#00ffe9', width: 1 })
       })
-  );
-  multipleSelect.set(ids);
+    });
+    map.addLayer(this.layer);
+    this.select = new _Selectt({ map, spotDiam: map.get('spotDiam') as number });
+    this.modify = new Modify({ source: this.source });
+    this.attachDraw();
+    this.attachModify();
+  }
+
+  clear() {
+    this.source.clear();
+    this.select.source.clear();
+  }
+
+  updateSample(f: Feature[]) {
+    this.source.clear();
+    this.select.updateSample(f);
+  }
+
+  attachDraw() {
+    this.draw.on('drawstart', (event: DrawEvent) => {
+      event.feature.getGeometry()!.on(
+        'change',
+        debounce(
+          (e: BaseEvent) => {
+            const polygon = e.target as Geometry;
+            this.select.updateSelect(polygon);
+          },
+          10,
+          { leading: true, trailing: false }
+        )
+      );
+    });
+
+    this.draw.on('drawend', (event: DrawEvent) => {
+      event.preventDefault();
+      const polygon = event.feature.getGeometry()!;
+      this.select.updateSelect(polygon);
+    });
+  }
+
+  attachModify() {
+    this.modify.on('modifyend', (e: ModifyEvent) => {
+      console.log(e);
+      const polygon = e.features.getArray()[0].getGeometry()!;
+      if ('intersectsExtent' in polygon) {
+        this.select.updateSelect(polygon);
+      } else {
+        console.error("Polygon doesn't have intersectsExtent");
+      }
+    });
+  }
 }
