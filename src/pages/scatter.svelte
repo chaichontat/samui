@@ -28,11 +28,13 @@
 
   async function anotherGetColor(sample: string, name: string) {
     const out = [];
-    if (intensitySource !== 'genes') console.log('here');
     if (intensitySource === 'genes') {
-      for (const d of (await $samples[sample].features.genes.retrieve!(name)) as number[]) {
-        const idx = Math.round(Math.min(d / 10, 1) * 255);
-        out.push(colors[idx] + opacity);
+      const ret = (await $samples[sample].features.genes.retrieve!(name)) as number[] | undefined;
+      if (ret) {
+        for (const d of ret) {
+          const idx = Math.round(Math.min(d / 10, 1) * 255);
+          out.push(colors[idx] + opacity);
+        }
       }
     } else {
       const v = ($samples[sample].features[intensitySource] as PlainJSON).values as number[];
@@ -109,72 +111,71 @@
 
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
-    anotherChart = new Chart(
-      (
-        document.getElementById(`${coordsSource}-${intensitySource}-another`) as HTMLCanvasElement
-      ).getContext('2d')!,
-      {
-        type: 'scatter',
-        data: {
-          datasets: [
-            {
-              data: [],
-              normalized: true,
-              pointRadius: 25,
-              pointHoverRadius: 25,
-              borderColor: '#eeeeeedd'
-            }
-          ]
+    const ctx = (
+      document.getElementById(`${coordsSource}-${intensitySource}-another`) as HTMLCanvasElement
+    ).getContext('2d')!;
+    ctx.globalCompositeOperation = 'destination-over';
+    anotherChart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            data: [],
+            normalized: true,
+            pointRadius: 25,
+            pointHoverRadius: 25,
+            borderColor: '#eeeeeedd'
+          }
+        ]
+      },
+      plugins: [ChartDataLabels],
+      options: {
+        ...chartOptions,
+        plugins: {
+          ...chartOptions.plugins,
+          datalabels: {
+            formatter: () => $currRna.values[$store.currIdx.idx]?.toFixed(2) ?? '',
+            align: 'center',
+            anchor: 'end',
+            offset: 2,
+            color: '#FFFFFF',
+            font: { size: 14 }
+          }
         },
-        plugins: [ChartDataLabels],
-        options: {
-          ...chartOptions,
-          plugins: {
-            ...chartOptions.plugins,
-            datalabels: {
-              formatter: () => $currRna.values[$store.currIdx.idx]?.toFixed(2) ?? '',
-              align: 'center',
-              anchor: 'end',
-              offset: 2,
-              color: '#FFFFFF',
-              font: { size: 14 }
-            }
-          },
-          onHover: (evt: ChartEvent) => {
-            if (!myChart || !evt.native || $store.locked) return;
+        onHover: (evt: ChartEvent) => {
+          if (!myChart || !evt.native || $store.locked) return;
+          const points = myChart.getElementsAtEventForMode(
+            evt.native,
+            'nearest',
+            { intersect: true },
+            true
+          );
+
+          anotherChart.canvas.style.cursor = points.length > 0 ? 'pointer' : '';
+          if (points.length === 0 || points[0].index === curr) return;
+          curr = points[0].index;
+          if (!$store.locked) {
+            $store.currIdx = { idx: points[0].index, source: 'scatter' };
+          }
+        },
+
+        onClick: (evt: ChartEvent) => {
+          if (!myChart) return;
+          if (evt.native) {
             const points = myChart.getElementsAtEventForMode(
               evt.native,
               'nearest',
               { intersect: true },
               true
             );
-
-            anotherChart.canvas.style.cursor = points.length > 0 ? 'pointer' : '';
-            if (points.length === 0 || points[0].index === curr) return;
+            if (points.length === 0) return;
             curr = points[0].index;
-            if (!$store.locked) {
-              $store.currIdx = { idx: points[0].index, source: 'scatter' };
-            }
-          },
-
-          onClick: (evt: ChartEvent) => {
-            if (!myChart) return;
-            if (evt.native) {
-              const points = myChart.getElementsAtEventForMode(
-                evt.native,
-                'nearest',
-                { intersect: true },
-                true
-              );
-              if (points.length === 0) return;
-              curr = points[0].index;
-            }
-            $store.lockedIdx.idx = $store.lockedIdx.idx === curr ? -1 : curr;
-            $store.currIdx = { idx: curr, source: 'scatter' };
           }
+          $store.lockedIdx.idx = $store.lockedIdx.idx === curr ? -1 : curr;
+          $store.currIdx = { idx: curr, source: 'scatter' };
         }
       }
-    );
+    });
 
     myChart = new Chart(
       (
