@@ -1,8 +1,7 @@
 import { browser, dev } from '$app/env';
 import { Sample } from '$src/lib/data/sample';
-import type { FeatureParams } from './dataHandlers';
 
-export const names = ['Br6432_Ant_IF', 'Br2720_Ant_IF'];
+export const names = ['Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 export const s3_url = dev
   ? ''
   : 'https://chaichontat-host.s3.us-west-004.backblazeb2.com/loopy-browser';

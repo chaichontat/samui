@@ -22,27 +22,26 @@ async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
   });
 }
 
+const toGet = ['gene_csr.json', 'gene_csc.json', 'image.json', 'umap.json', 'sample.json'];
 async function run() {
   const ps: Promise<unknown>[] = samples.flatMap(async (s) => {
     return await getFiles(
       path.join(dir, s),
-      ['gene_csr.json', 'gene_csc.json', 'image.json', 'umap.json'].map(
-        (name) => `${s3_url}/${s}/${name}`
-      )
+      toGet.map((name) => `${s3_url}/${s}/${name}`)
     );
   });
 
   await getFiles(
     defaultDir,
-    ['gene_csr.json', 'gene_csc.json', 'image.json'].map((name) => `${s3_url}/151508/${name}`)
+    toGet.map((name) => `${s3_url}/${samples[0]}/${name}`)
   );
 
-  const fonts = await getFiles(path.join(dir, 'fonts'), [
-    'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/cera.woff',
-    'https://rsms.me/inter/font-files/Inter-italic.var.woff2',
-    'https://rsms.me/inter/font-files/Inter-roman.var.woff2'
-  ]);
-  await Promise.all([...ps, ...fonts]);
+  // const fonts = await getFiles(path.join(dir, 'fonts'), [
+  //   'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/cera.woff',
+  //   'https://rsms.me/inter/font-files/Inter-italic.var.woff2',
+  //   'https://rsms.me/inter/font-files/Inter-roman.var.woff2'
+  // ]);
+  await Promise.all(ps);
 }
 
 await run();
