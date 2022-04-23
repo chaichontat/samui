@@ -52,7 +52,6 @@
   let chosen: { raw: string; embellished: string }[] = [{ raw: '', embellished: '' }];
 
   $: if (fzf) {
-    showSearch = true;
     const res = fzf.find(search);
     chosen = res.map((x) => ({ raw: x.item, embellished: highlightChars(x.item, x.positions) }));
   }
@@ -71,7 +70,7 @@
   {#if search && showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="bg-default absolute top-14 flex w-full flex-col rounded p-2  backdrop-blur"
+      class="bg-default absolute top-14 z-40 flex w-full flex-col rounded p-2 backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setVal(currShow)}
@@ -83,6 +82,7 @@
           on:mousemove={() => setVal(raw)}
           on:click={() => {
             showSearch = false;
+            search = raw;
             currShow = raw;
           }}
           transition:slide={{ duration: 100, easing: cubicInOut }}
