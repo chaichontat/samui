@@ -93,6 +93,10 @@
     addData(coords, mPerPx);
     updateSpots($currRna);
 
+    // Refresh select
+    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
+    draw.on('drawend', () => (selecting = false));
+
     // Refresh background
     bgLayer.getSource()?.dispose();
     bgLayer.setSource(sourceTiff);
@@ -141,6 +145,7 @@
       target: 'map',
       layers: [bgLayer, activeLayer]
     });
+    map.set('spotDiam', spotDiam);
 
     map.removeControl(map.getControls().getArray()[0]);
     map.addControl(new Zoom({ delta: 0.4 }));
@@ -176,8 +181,6 @@
 
     map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
     map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
-    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
-    draw.on('drawend', () => (selecting = false));
 
     update($activeSample).catch(console.error);
   });
@@ -300,7 +303,7 @@
       </div>
 
       <!-- Select button -->
-      <div class="space-x-1">
+      <div class="flex space-x-2">
         <button
           class="rounded bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-700/70 dark:text-slate-200"
           class:bg-slate-600={selecting}

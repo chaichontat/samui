@@ -50,17 +50,17 @@ export function select(map: Map, features: Feature[]) {
 
   const modify = new Modify({ source: drawSource });
   const snap = new Snap({ source: drawSource });
+  const spotDiam = map.get('spotDiam') as number;
 
   const selectedFeatures: Feature<Geometry>[] = [];
   const selectSource = new VectorSource({ features: selectedFeatures });
   const select = new VectorLayer({
     source: selectSource,
-    style: new Style({ stroke: new Stroke({ color: '#ffffff50' }) })
+    style: new Style({ stroke: new Stroke({ color: '#ffffffaa', width: 1 }) })
   });
 
   map.addInteraction(modify);
   map.addInteraction(snap);
-  const spotDiam = map.get('spotDiam') as number;
 
   const drawClear = () => {
     selectSource.clear();
@@ -76,7 +76,7 @@ export function select(map: Map, features: Feature[]) {
           const polygon = e.target as Geometry;
           genCircle(selectSource, features, polygon, spotDiam);
         },
-        100,
+        10,
         { leading: true, trailing: false }
       )
     );
