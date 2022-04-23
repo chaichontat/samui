@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Sample, type SampleParams } from '$lib/data/sample';
+  import { byod } from '$lib/data/byod';
   import { resizable } from '$lib/utils';
   import SampleList from '$src/lib/components/sampleList.svelte';
   import SearchBox from '$src/lib/components/searchBox.svelte';
@@ -7,40 +7,6 @@
   import { activeSample, samples } from '$src/lib/store';
   import Mapp from '$src/pages/mapp.svelte';
   import Rna from '$src/pages/rna.svelte';
-
-  async function readFile<T extends object>(
-    dirHandle: FileSystemDirectoryHandle,
-    name: string,
-    mode: 'url' | 'plain'
-  ): Promise<T | string> {
-    const file = await dirHandle.getFileHandle(name).then((fileHandle) => fileHandle.getFile());
-
-    if (mode === 'plain') {
-      return JSON.parse(await file.text()) as T;
-    } else {
-      return URL.createObjectURL(file);
-    }
-  }
-
-  async function byod() {
-    if (!('showDirectoryPicker' in window)) {
-      alert('This browser does not support the File System API. Use Chrome/Safari.');
-      return;
-    }
-    const directoryHandle = await window.showDirectoryPicker();
-
-    const sp = (await readFile<SampleParams>(directoryHandle, 'sample.json', 'plain').catch(
-      console.error
-    )) as SampleParams;
-    sp.handle = directoryHandle;
-    const sample = new Sample(sp);
-    await sample.hydrate();
-
-    $samples[sample.name] = sample;
-    // for await  (const entry of directoryHandle.values()) {
-    //   console.log(entry.kind, entry.name);
-    // }
-  }
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -62,11 +28,11 @@
     </div>
     <!-- Upload your data -->
     <button
-      class="group relative mb-2 mr-2 inline-flex items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-white dark:focus:ring-cyan-800"
+      class="group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
       on:click={byod}
     >
       <span
-        class="relative rounded-md bg-white px-5 py-2 transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900"
+        class="relative rounded-md bg-slate-50 px-5 py-2 transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900"
       >
         Run your Data
       </span>
