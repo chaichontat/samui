@@ -170,12 +170,16 @@ export class ChunkedJSON implements Data {
   decompressBlob =
     browser && 'CompressionStream' in window // Chromium
       ? async (blob: Blob) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-          const ds = new DecompressionStream('gzip');
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-          const decompressedStream = blob.stream().pipeThrough(ds);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          return await new Response(decompressedStream).text();
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+            const ds = new DecompressionStream('gzip');
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+            const decompressedStream = blob.stream().pipeThrough(ds);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            return await new Response(decompressedStream).text();
+          } catch (e) {
+            throw new Error(`Error decompressing blob: ${e}`);
+          }
         }
       : async (blob: Blob): Promise<string> => {
           return pako.inflate((await blob.arrayBuffer()) as pako.Data, { to: 'string' });
