@@ -8,7 +8,7 @@ export type SampleParams = {
   handle?: FileSystemDirectoryHandle;
 };
 
-export class Sample {
+export class Sample implements Data {
   name: string;
   imgParams: ImageParams;
   featParams: FeatureParams[];

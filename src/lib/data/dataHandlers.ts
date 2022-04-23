@@ -3,8 +3,9 @@ import pako from 'pako';
 import { genLRU, getFile } from '../utils';
 
 export interface Data {
-  retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
+  // retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
   hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
+  hydrated: boolean;
 }
 export type Url = { url: string; type: 'local' | 'network' };
 export type DataType = 'categorical' | 'quantitative' | 'coords';
@@ -44,6 +45,7 @@ export class PlainJSON implements Data {
   url?: Url;
   dataType?: DataType;
   values?: unknown;
+  hydrated = false;
 
   constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
     this.name = name;
@@ -64,6 +66,7 @@ export class PlainJSON implements Data {
       }
       this.values = (await fetch(this.url.url).then((r) => r.json())) as unknown;
     }
+    this.hydrated = true;
     return this;
   }
 
@@ -83,6 +86,9 @@ export class ChunkedJSON implements Data {
   header?: ChunkedJSONHeader;
   url: Url;
   name: string;
+  hydrated = false;
+
+  allData?: ArrayBuffer;
 
   readonly densify: boolean;
 
@@ -163,7 +169,7 @@ export class ChunkedJSON implements Data {
         return this.genDense(sparse, this.length!, this.densify);
       }
     );
-
+    this.hydrated = true;
     return this;
   }
 

@@ -10,11 +10,11 @@ export const s3_url = dev
 function gen_samples(n: string[]): Sample[] {
   const out = [];
   for (const s of n) {
-    const kmeans: FeatureParams[] = [...Array(8).keys()].map((i) => ({
-      name: `kmeans${i + 2}`,
-      type: 'plainJSON',
-      url: { url: `/${s}/kmeans${i + 2}.json`, type: 'network' }
-    }));
+    // const kmeans: FeatureParams[] = [...Array(8).keys()].map((i) => ({
+    //   name: `kmeans${i + 2}`,
+    //   type: 'plainJSON',
+    //   url: { url: `/${s}/kmeans${i + 2}.json`, type: 'network' }
+    // }));
 
     const sam = new Sample({
       name: s,
@@ -25,7 +25,7 @@ function gen_samples(n: string[]): Sample[] {
           type: 'network'
         }))
       },
-      featParams: kmeans.concat(kmeans, [
+      featParams: [
         {
           name: 'genes',
           type: 'chunkedJSON',
@@ -43,13 +43,13 @@ function gen_samples(n: string[]): Sample[] {
           name: 'umap',
           type: 'plainJSON',
           url: { url: `/${s}/umap.json`, type: 'network' }
-        },
-        {
-          name: 'tsne',
-          type: 'plainJSON',
-          url: { url: `/${s}/tsne.json`, type: 'network' }
         }
-      ])
+        // {
+        //   name: 'tsne',
+        //   type: 'plainJSON',
+        //   url: { url: `/${s}/tsne.json`, type: 'network' }
+        // }
+      ]
     });
     out.push(sam);
   }

@@ -1,5 +1,5 @@
 import type { ImageMode } from '../mapp/imgControl';
-import { convertLocalToNetwork, type Url } from './dataHandlers';
+import { convertLocalToNetwork, type Data, type Url } from './dataHandlers';
 
 export type ImageParams = { urls: Url[]; headerUrl?: Url; header?: ImageHeader };
 
@@ -16,13 +16,14 @@ export type ImageHeader = {
   mode?: ImageMode;
 };
 
-export class Image {
+export class Image implements Data {
   urls: readonly Url[];
   coords?: readonly { x: number; y: number }[];
   channel?: Record<string, number>;
   header?: ImageHeader;
   headerUrl?: Url;
   n_spot?: number;
+  hydrated = false;
 
   constructor({ urls, headerUrl, header }: ImageParams, autoHydrate = false) {
     this.urls = urls;
@@ -48,6 +49,7 @@ export class Image {
 
     ({ channel: this.channel, coords: this.coords } = this.header!);
     this.n_spot = this.coords.length;
+    this.hydrated = true;
     return this;
   }
 }
