@@ -1,4 +1,4 @@
-# Loopy Browser ➰
+# ➰ Loopy Browser
 
 [![Run Data Prep Workflow](https://github.com/chaichontat/loopy-browser/actions/workflows/data_prep.yml/badge.svg?branch=main)](https://github.com/chaichontat/loopy-browser/actions/workflows/data_prep.yml)
 
@@ -10,4 +10,19 @@ Head over to https://loopy-browser.pages.dev to see the Loopy Browser with examp
 
 ## Data Preparation
 
-All data must be processed being used in the Loopy Browser.
+All data must be processed prior to being used in the Loopy Browser.
+
+```sh
+git clone https://github.com/chaichontat/loopy-browser/
+conda create -n loopy -f loopy-browser/environment.yml
+pip install .
+```
+
+An example script is available at `scripts/run_sample.py`.
+
+## Nomenclature
+
+Being compatible with static hosting, there are multiple layers of data.
+
+- `sample.json`: this contains the overall detail of the sample, such as its names and list of features.
+- `{features}.json`: these are either headers for `ChunkedJSON` or headers and data for `PlainJSON`.

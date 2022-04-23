@@ -5,9 +5,10 @@ export type SampleParams = {
   name: string;
   imgParams: ImageParams;
   featParams: FeatureParams[];
+  handle?: FileSystemDirectoryHandle;
 };
 
-export class Sample {
+export class Sample implements Data {
   name: string;
   imgParams: ImageParams;
   featParams: FeatureParams[];
@@ -15,13 +16,15 @@ export class Sample {
   image: Image;
   features: Record<string, Data>;
   hydrated: boolean;
+  handle?: FileSystemDirectoryHandle;
 
-  constructor({ name, imgParams, featParams }: SampleParams, autoHydrate = false) {
+  constructor({ name, imgParams, featParams, handle }: SampleParams, autoHydrate = false) {
     this.name = name;
     this.imgParams = imgParams;
     this.image = new Image(this.imgParams, false);
     this.featParams = featParams;
     this.hydrated = false;
+    this.handle = handle;
 
     this.features = {} as Record<string, Data>;
     for (const f of featParams) {
@@ -44,8 +47,8 @@ export class Sample {
 
   async hydrate() {
     await Promise.all([
-      this.image.hydrate(),
-      ...Object.values(this.features).map((f) => f.hydrate())
+      this.image.hydrate(this.handle),
+      ...Object.values(this.features).map((f) => f.hydrate(this.handle))
     ]);
     this.hydrated = true;
     return this;

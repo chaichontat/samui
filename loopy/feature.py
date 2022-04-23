@@ -1,21 +1,46 @@
 import gzip
 import json
-from pathlib import Path
 from typing import Literal
 
 import numpy as np
-import scanpy as sc
 from anndata import AnnData
-from pydantic import BaseModel
 from scipy.sparse import csc_matrix, csr_matrix
 
+from .utils import ReadonlyModel, Url
 
-class ChunkedJSONHeader(BaseModel):
+
+class PlainJSONParams(ReadonlyModel):
+    name: str
+    url: Url
+    dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
+    type: Literal["plainJSON"] = "plainJSON"
+
+
+class ChunkedJSONOptions(ReadonlyModel):
+    densify: bool = True
+
+
+class ChunkedJSONParams(ReadonlyModel):
+    type: Literal["chunkedJSON"] = "chunkedJSON"
+    name: str
+    url: Url
+    headerUrl: Url
+    dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
+    options: ChunkedJSONOptions = ChunkedJSONOptions()
+
+
+class ChunkedJSONHeader(ReadonlyModel):
     names: dict[str, int] | None = None
     ptr: list[int]
     length: int
 
-def chunk_compressed(indices: np.ndarray, indptr: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, bytearray]:
+
+FeatureParams = ChunkedJSONParams | PlainJSONParams
+
+
+def chunk_compressed(
+    indices: np.ndarray, indptr: np.ndarray, data: np.ndarray
+) -> tuple[np.ndarray, bytearray]:
     ptr = np.zeros_like(indptr)
     curr = 0
     outbytes = bytearray()
@@ -36,7 +61,10 @@ def chunk_compressed(indices: np.ndarray, indptr: np.ndarray, data: np.ndarray) 
 
     return ptr, outbytes
 
-def get_compressed_genes(vis: AnnData, mode: Literal["csr", "csc"] = "csc", include_name:bool=True) -> tuple[ChunkedJSONHeader, bytearray]:
+
+def get_compressed_genes(
+    vis: AnnData, mode: Literal["csr", "csc"] = "csc", include_name: bool = True
+) -> tuple[ChunkedJSONHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(vis.X)
         names = vis.obs_names
@@ -54,15 +82,11 @@ def get_compressed_genes(vis: AnnData, mode: Literal["csr", "csc"] = "csc", incl
 
     length = len(names)
     names = {name: i for i, name in enumerate(names)} if include_name else None
-    return  ChunkedJSONHeader(
-        names=names,
-        ptr=ptr.tolist(),
-        length=length,
-    ), outbytes
-
-# def run():
-
-#     Path("./header.json").write_text(json.dumps(header, separators=(",", ":")))
-
-#     with open("./Counts_Br6522_Ant_IF.dump", "wb") as f:
-#         f.write(outbytes)
+    return (
+        ChunkedJSONHeader(
+            names=names,
+            ptr=ptr.tolist(),
+            length=length,
+        ),
+        outbytes,
+    )

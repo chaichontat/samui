@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { byod } from '$lib/data/byod';
   import { resizable } from '$lib/utils';
   import SampleList from '$src/lib/components/sampleList.svelte';
   import SearchBox from '$src/lib/components/searchBox.svelte';
@@ -25,6 +26,17 @@
       <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">Sample:</div>
       <SampleList items={Object.keys($samples)} on:change={(e) => ($activeSample = e.detail)} />
     </div>
+    <!-- Upload your data -->
+    <button
+      class="group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
+      on:click={byod}
+    >
+      <span
+        class="relative rounded-md bg-slate-50 px-5 py-2 transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900"
+      >
+        Run your Data
+      </span>
+    </button>
   </div>
   <div class="h-[600px] w-full lg:h-full lg:w-[75%]"><Mapp /></div>
 

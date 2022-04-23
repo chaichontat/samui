@@ -11,6 +11,7 @@
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "moduleResolution": "node",
+    "resolveJsonModule": true,
     "checkJs": true,
     "paths": {
       "$src/*": ["src/*"],

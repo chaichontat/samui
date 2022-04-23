@@ -9,7 +9,14 @@ packages = [
 version = "0.0.1"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+GDAL = "^3.4.2"
+anndata = "^0.8.0"
+click = "^8.1.2"
+python = ">=3.10,<3.11"
+rasterio = "^1.2.10"
+scanpy = "^1.9.1"
+scipy = "^1.8.0"
+tifffile = "^2022.4.8"
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
@@ -24,7 +31,6 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0"]
 
 [tool.black]
-include = "loopy"
 line-length = 110
 target-version = ['py310']
 
@@ -47,3 +53,10 @@ line_length = 110
 profile = "black"
 py_version = 310
 src_paths = ["loopy"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=loopy --cov-report=html --cov-report=xml"
+log_cli = 1
+# log_cli_level = "DEBUG"
+minversion = "7.0"
+testpaths = ["tests"]

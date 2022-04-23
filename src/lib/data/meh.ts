@@ -1,7 +1,7 @@
 import { browser, dev } from '$app/env';
 import { Sample } from '$src/lib/data/sample';
 
-export const names = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
+export const names = ['Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 export const s3_url = dev
   ? ''
   : 'https://chaichontat-host.s3.us-west-004.backblazeb2.com/loopy-browser';
@@ -9,38 +9,47 @@ export const s3_url = dev
 function gen_samples(n: string[]): Sample[] {
   const out = [];
   for (const s of n) {
+    // const kmeans: FeatureParams[] = [...Array(8).keys()].map((i) => ({
+    //   name: `kmeans${i + 2}`,
+    //   type: 'plainJSON',
+    //   url: { url: `/${s}/kmeans${i + 2}.json`, type: 'network' }
+    // }));
+
     const sam = new Sample({
       name: s,
       imgParams: {
-        headerUrl: `/${s}/image.json`,
-        urls: [`${s3_url}/${s}/${s}_1.tif`, `${s3_url}/${s}/${s}_2.tif`]
+        headerUrl: { url: `/${s}/image.json`, type: 'network' },
+        urls: [`${s3_url}/${s}/${s}_1.tif`, `${s3_url}/${s}/${s}_2.tif`].map((url) => ({
+          url,
+          type: 'network'
+        }))
       },
       featParams: [
         {
           name: 'genes',
           type: 'chunkedJSON',
-          headerUrl: `/${s}/gene_csc.json`,
-          url: `${s3_url}/${s}/gene_csc.bin`
+          headerUrl: { url: `/${s}/gene_csc.json`, type: 'network' },
+          url: { url: `${s3_url}/${s}/gene_csc.bin`, type: 'network' }
         },
         {
           name: 'spotGenes',
           type: 'chunkedJSON',
-          headerUrl: `/${s}/gene_csr.json`,
-          url: `${s3_url}/${s}/gene_csr.bin`,
+          headerUrl: { url: `/${s}/gene_csr.json`, type: 'network' },
+          url: { url: `${s3_url}/${s}/gene_csr.bin`, type: 'network' },
           options: { densify: false }
         },
         {
           name: 'umap',
           type: 'plainJSON',
-          url: `/${s}/umap.json`
+          url: { url: `/${s}/umap.json`, type: 'network' }
         }
+        // {
+        //   name: 'tsne',
+        //   type: 'plainJSON',
+        //   url: { url: `/${s}/tsne.json`, type: 'network' }
+        // }
       ]
     });
-    // .hydrate()
-    // .then((s) => {
-    //   samples.set({ [s.name]: s, ...get(samples) });
-    //   return s;
-    // });
     out.push(sam);
   }
   return out;

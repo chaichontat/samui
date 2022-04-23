@@ -68,7 +68,7 @@ export function genStyle(spotPx: number): LiteralStyle {
       ],
       color: '#fce652ff',
       // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.0, 1]
+      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.1, 1]
       // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
     }
   };

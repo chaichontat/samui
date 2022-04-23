@@ -35,7 +35,7 @@
 <script lang="ts">
   let showSearch = true;
 
-  const update = genUpdate((sample: Sample) => {
+  const update = genUpdate(samples, (sample: Sample) => {
     setVal($currRna.name.length === 0 ? 'GFAP' : $currRna.name)?.catch(console.error);
     names = sample.features.genes.names;
     keys = Object.keys(names);
@@ -43,10 +43,10 @@
     fzf = new Fzf(keys, { limit: 8 });
   });
 
-  update($samples[$activeSample]).catch(console.error);
+  update($activeSample).catch(console.error);
   setVal('GFAP')?.catch(console.error);
 
-  $: if ($activeSample !== currSample) update($samples[$activeSample]).catch(console.error);
+  $: update($activeSample).catch(console.error);
 
   let search = '';
   let chosen: { raw: string; embellished: string }[] = [{ raw: '', embellished: '' }];
