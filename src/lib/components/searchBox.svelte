@@ -78,7 +78,7 @@
     >
       {#each chosen as { raw, embellished }}
         <div
-          class="hover-default cursor-pointer rounded py-1.5 px-3 "
+          class="hover-default cursor-pointer rounded py-1.5 px-3"
           on:mousemove={() => setVal(raw)}
           on:click={() => {
             showSearch = false;
