@@ -166,7 +166,7 @@ export class ChunkedJSON implements Data {
         const blob = await raw.blob();
         const decomped = await this.decompressBlob(blob);
         const sparse = JSON.parse(decomped) as Sparse;
-        return this.genDense(sparse, this.length!, this.densify);
+        return this.densify ? this.genDense(sparse) : sparse;
       }
     );
     this.hydrated = true;
@@ -191,15 +191,13 @@ export class ChunkedJSON implements Data {
           return pako.inflate((await blob.arrayBuffer()) as pako.Data, { to: 'string' });
         };
 
-  genDense(obj: Sparse, len: number, densify: false): Sparse;
-  genDense(obj: Sparse, len: number, densify: true): number[];
-  genDense(obj: Sparse, len: number, densify: boolean): number[] | Sparse;
-  genDense(obj: Sparse, len: number, densify: boolean): number[] | Sparse {
-    if (!densify) return obj;
-    const dense = new Array(len).fill(0) as number[];
+  genDense(obj: Sparse): number[] {
+    console.assert(obj.index.length === obj.value.length);
+    const dense = new Array(obj.index.length).fill(0) as number[];
     for (let i = 0; i < obj.index.length; i++) {
       dense[obj.index[i]] = obj.value[i];
     }
+    console.assert(dense.every((x) => x !== undefined));
     return dense;
   }
 }

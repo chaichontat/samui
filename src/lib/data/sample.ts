@@ -16,6 +16,7 @@ export class Sample implements Data {
   image: Image;
   features: Record<string, Data>;
   hydrated: boolean;
+  hydratePromise?: Promise<void>;
   handle?: FileSystemDirectoryHandle;
 
   constructor({ name, imgParams, featParams, handle }: SampleParams, autoHydrate = false) {

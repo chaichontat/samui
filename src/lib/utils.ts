@@ -149,7 +149,7 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
  */
 export function genUpdate(
   store: Writable<{ [key: string]: Sample }>,
-  update: (sample: Sample) => void
+  update: (sample: Sample) => void | Promise<void>
 ): (s: string) => Promise<void> {
   return oneLRU(async (s: string) => {
     const sample = get(store)[s];
@@ -157,10 +157,29 @@ export function genUpdate(
     if (!sample.hydrated) {
       await sample.hydrate();
     }
-    return update(sample);
+    const res = update(sample);
+    return res instanceof Promise ? await res : res;
   });
 }
 
 export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
   return await handle.getFileHandle(name).then((fh) => fh.getFile());
+}
+
+export class Deferred<T extends unknown[] = [], R = void> {
+  resolve!: (arg: R) => void;
+  reject!: () => void;
+  promise: Promise<R>;
+  f: (...args: T) => R;
+
+  constructor(f: (...args: T) => R = () => {}) {
+    this.f = f;
+    this.promise = new Promise(
+      (resolve, reject) => ([this.resolve, this.reject] = [resolve, reject])
+    );
+  }
+
+  run(...args: T) {
+    this.resolve(this.f(...args));
+  }
 }
