@@ -1,6 +1,6 @@
 import Chart, { type ChartConfiguration, type ChartDataset, type ChartEvent } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { Deferred } from '../utils';
+import { Deferrable } from '../utils';
 
 export const chartOptions: Readonly<ChartConfiguration<'scatter'>> = {
   animation: false,
@@ -22,14 +22,13 @@ export const chartOptions: Readonly<ChartConfiguration<'scatter'>> = {
   resizeDelay: 50
 };
 
-export class MainChart {
+export class MainChart extends Deferrable {
   chart?: Chart;
   dataset: ChartDataset<'scatter', { x: number; y: number }[]>;
   mounted = false;
-  promise: Promise<void>;
-  _deferred: Deferred<[void], void>;
 
   constructor() {
+    super();
     this.dataset = {
       type: 'scatter',
       data: [],
@@ -37,9 +36,6 @@ export class MainChart {
       normalized: true,
       pointRadius: 1.5
     };
-
-    this._deferred = new Deferred();
-    this.promise = this._deferred.promise;
   }
 
   mount(el: HTMLCanvasElement) {
@@ -182,18 +178,15 @@ export class HoverChart extends MainChart {
   }
 }
 
-export class Charts {
+export class Charts extends Deferrable {
   readonly mainChart: MainChart;
   readonly hoverChart: HoverChart;
   mounted = false;
-  promise: Promise<void>;
-  _deferred: Deferred<[void], void>;
 
   constructor() {
+    super();
     this.mainChart = new MainChart();
     this.hoverChart = new HoverChart();
-    this._deferred = new Deferred();
-    this.promise = this._deferred.promise;
   }
 
   mount(elMain: HTMLCanvasElement, elHov: HTMLCanvasElement) {

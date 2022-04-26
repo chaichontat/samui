@@ -1,6 +1,6 @@
 import { browser } from '$app/env';
 import pako from 'pako';
-import { genLRU, getFile } from '../utils';
+import { Deferrable, genLRU, getFile } from '../utils';
 
 export interface Data {
   // retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
@@ -40,7 +40,7 @@ export type ChunkedJSONHeader = {
 export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
 export type Sparse = { index: number[]; value: number[] };
 
-export class PlainJSON implements Data {
+export class PlainJSON extends Deferrable implements Data {
   name: string;
   url?: Url;
   dataType?: DataType;
@@ -48,6 +48,7 @@ export class PlainJSON implements Data {
   hydrated = false;
 
   constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
+    super();
     this.name = name;
     this.url = url;
     this.values = values;
