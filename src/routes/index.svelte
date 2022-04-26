@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { byod } from '$lib/data/byod';
   import { resizable } from '$lib/utils';
   import SampleList from '$src/lib/components/sampleList.svelte';
-  import SearchBox from '$src/lib/components/searchBox.svelte';
+  import { byod } from '$src/lib/data/byod';
   import Nav from '$src/lib/nav.svelte';
   import { activeSample, samples } from '$src/lib/store';
   import Mapp from '$src/pages/mapp.svelte';
@@ -36,7 +35,9 @@
       </span>
     </button>
   </div>
-  <div class="h-[600px] w-full lg:h-full lg:w-[75%]"><Mapp /></div>
+  <div class="h-[600px] w-full lg:h-full lg:w-[75%]">
+    <Mapp image={$samples[$activeSample].image} />
+  </div>
 
   <div class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800" use:resizable />
   <aside class="relative flex h-full flex-1 flex-col pt-2">

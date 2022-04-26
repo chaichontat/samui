@@ -1,7 +1,7 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
   // import Veg from '$src/lib/components/veg.svelte';
-  import { activeSample, currRna, samples } from '$src/lib/store';
+  import { activeSample, samples } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
   import 'tippy.js/dist/tippy.css';

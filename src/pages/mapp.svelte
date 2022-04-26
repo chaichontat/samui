@@ -1,127 +1,95 @@
 <script lang="ts">
-  import type { Sample } from '$src/lib/data/sample';
-  import { colorVarFactory, genBgStyle } from '$src/lib/mapp/background';
-  import type { ImageCtrl, ImageMode } from '$src/lib/mapp/imgControl';
+  import type { Image } from '$src/lib/data/image';
+  import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
-  import { Draww } from '$src/lib/mapp/selector';
-  import { genStyle, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/spots';
-  import { genUpdate } from '$src/lib/utils';
-  import ScaleLine from 'ol/control/ScaleLine.js';
-  import Zoom from 'ol/control/Zoom.js';
-  import type Feature from 'ol/Feature';
-  import type { Circle, Geometry } from 'ol/geom.js';
-  import type VectorLayer from 'ol/layer/Vector';
-  import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
-  import type TileLayer from 'ol/layer/WebGLTile';
-  import WebGLTileLayer from 'ol/layer/WebGLTile.js';
-  import Map from 'ol/Map.js';
+  import { Mapp } from '$src/lib/mapp/mapp';
   import 'ol/ol.css';
-  import GeoTIFF from 'ol/source/GeoTIFF.js';
-  import type VectorSource from 'ol/source/Vector.js';
-  import { Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
   import { activeSample, currRna, samples, store } from '../lib/store';
 
-  let mode: ImageMode;
-  let elem: HTMLDivElement;
   let selecting = false;
-  let coords: readonly { x: number; y: number }[];
-  let proteinMap: Record<string, number>;
-  let proteins = ['', '', ''];
-  let getColorParams: ReturnType<typeof colorVarFactory>;
-  let mPerPx: number;
-  let bgLayer: TileLayer;
-  let sourceTiff: GeoTIFF;
-  let map: Map;
-  let showAllSpots = true;
-  let currSample = '';
-  let draw: Draww;
+
+  export let image: Image;
+  // export let spotIntensity: { name: string; value: number[] | Promise<number[]> };
+  let currHover = 0;
+  const map = new Mapp();
 
   let colorOpacity = 0.8;
 
-  let curr = 0;
+  // async function update({img, intensity} , {img?: Image, intensity?: number[] | Promise<number[]>}) => {
+  //   coords = image.coords!;
+  //   proteinMap = image.channel!;
 
-  const update = genUpdate(samples, (sample: Sample) => {
-    if (!map) return;
-    coords = sample.image.coords!;
-    proteinMap = sample.image.channel!;
+  //   if (Object.keys(proteinMap) !== proteins) {
+  //     proteins = Object.keys(proteinMap);
+  //   }
 
-    if (Object.keys(proteinMap) !== proteins) {
-      proteins = Object.keys(proteinMap);
-    }
+  //   if (mode !== (image.header?.mode ?? 'composite')) {
+  //     mode = image.header?.mode ?? 'composite';
+  //     getColorParams = colorVarFactory(mode, proteinMap);
 
-    if (mode !== (sample.image.header?.mode ?? 'composite')) {
-      mode = sample.image.header?.mode ?? 'composite';
-      getColorParams = colorVarFactory(mode, proteinMap);
+  //     if (mode === 'composite') {
+  //       imgCtrl = {
+  //         type: 'composite',
+  //         showing: proteins.slice(0, 3),
+  //         maxIntensity: [128, 128, 128]
+  //       };
+  //     } else {
+  //       imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
+  //     }
+  //     bgLayer.setStyle(genBgStyle(mode));
+  //   }
 
-      if (mode === 'composite') {
-        imgCtrl = {
-          type: 'composite',
-          showing: proteins.slice(0, 3),
-          maxIntensity: [128, 128, 128]
-        };
-      } else {
-        imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
-      }
-      bgLayer.setStyle(genBgStyle(mode));
-    }
+  //   const urls = image.urls.map((url) => ({ url: url.url }));
+  //   sourceTiff = new GeoTIFF({
+  //     normalize: image.header!.mode === 'rgb',
+  //     sources: urls
+  //   });
 
-    const urls = sample.image.urls.map((url) => ({ url: url.url }));
-    sourceTiff = new GeoTIFF({
-      normalize: sample.image.header!.mode === 'rgb',
-      sources: urls
-    });
+  //   mPerPx = image.header!.spot.mPerPx;
 
-    mPerPx = sample.image.header!.spot.mPerPx;
+  //   // Refresh spots
+  //   const previousLayer = spotsLayer;
+  //   spotsSource.clear();
+  //   spotsLayer = new WebGLPointsLayer({
+  //     // @ts-expect-error
+  //     source: spotsSource,
+  //     style: genStyle(image.header!.spot.spotDiam / mPerPx)
+  //   });
+  //   map.addLayer(spotsLayer);
+  //   if (previousLayer) {
+  //     map.removeLayer(previousLayer);
+  //     previousLayer.dispose();
+  //   }
+  //   addData(coords, mPerPx);
+  //   updateSpots($currRna);
 
-    // Refresh spots
-    const previousLayer = spotsLayer;
-    spotsSource.clear();
-    spotsLayer = new WebGLPointsLayer({
-      // @ts-expect-error
-      source: spotsSource,
-      style: genStyle(sample.image.header!.spot.spotDiam / mPerPx)
-    });
-    map.addLayer(spotsLayer);
-    if (previousLayer) {
-      map.removeLayer(previousLayer);
-      previousLayer.dispose();
-    }
-    addData(coords, mPerPx);
-    updateSpots($currRna);
+  //   // Refresh select
+  //   draw.updateSample(spotsSource.getFeatures());
 
-    // Refresh select
-    draw.updateSample(spotsSource.getFeatures());
+  //   // Refresh background
+  //   bgLayer.getSource()?.dispose();
+  //   bgLayer.setSource(sourceTiff);
+  //   map.setView(sourceTiff.getView());
 
-    // Refresh background
-    bgLayer.getSource()?.dispose();
-    bgLayer.setSource(sourceTiff);
-    map.setView(sourceTiff.getView());
+  //   mPerPx = image.header!.spot.mPerPx;
+  //   currSample = sample.name;
 
-    mPerPx = sample.image.header!.spot.mPerPx;
-    currSample = sample.name;
+  //   bgLayer?.updateStyleVariables(getColorParams(imgCtrl));
 
-    bgLayer?.updateStyleVariables(getColorParams(imgCtrl));
+  //   // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
+  // }
 
-    // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
-  });
-
-  const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-
-  let spotsSource: VectorSource<Geometry>;
-  // @ts-ignore
-  let spotsLayer: WebGLPointsLayer<typeof spotsSource>;
-  let circleFeature: Feature<Circle>;
-  let activeLayer: VectorLayer<VectorSource<Geometry>>;
-  let addData: (coords: readonly { x: number; y: number }[], mPerPx: number) => void;
   let imgCtrl: ImageCtrl;
 
-  onMount(() => {
-    const sample = $samples[$activeSample]!;
-    const spotDiam = sample.image.header!.spot.spotDiam;
-    ({ circleFeature, activeLayer } = getCanvasCircle(selectStyle, spotDiam));
-    ({ spotsSource, addData } = getWebGLCircles());
+  onMount(async () => {
+    map.mount();
+    await map.update({ image }).catch(console.error);
+    map.draw!.draw.on('drawend', () => (selecting = false));
+    map.handlePointer({
+      pointermove: (id: number) => (currHover = id)
+    });
 
     // const dapiLayer = new WebGLPointsLayer({
     //   // @ts-expect-error
@@ -136,132 +104,98 @@
     //   },
     //   minZoom: 4
     // });
-
-    bgLayer = new WebGLTileLayer({});
-    map = new Map({
-      target: 'map',
-      layers: [bgLayer, activeLayer]
-    });
-    map.set('spotDiam', spotDiam);
-
-    map.removeControl(map.getControls().getArray()[0]);
-    map.addControl(new Zoom({ delta: 0.4 }));
-    map.addControl(new ScaleLine({ text: true, minWidth: 140 }));
-    draw = new Draww(map);
-    draw.draw.on('drawend', () => (selecting = false));
-
-    // Hover over a circle.
-    map.on('pointermove', (e) => {
-      // Cannot use layer.getFeatures for WebGL.
-      map.forEachFeatureAtPixel(
-        e.pixel,
-        (f) => {
-          const idx = f.getId() as number | undefined;
-          if (idx === curr || !idx) return true;
-          $store.currIdx = { idx, source: 'map' }; // As if came from outside.
-          curr = idx;
-          return true; // Terminates search.
-        },
-        { layerFilter: (layer) => layer === spotsLayer, hitTolerance: 10 }
-      );
-    });
-
-    // Lock / unlock a circle.
-    map.on('click', (e) => {
-      map.forEachFeatureAtPixel(e.pixel, (f) => {
-        const idx = f.getId() as number | undefined;
-        if (!idx) return true;
-        const unlock = idx === $store.lockedIdx.idx;
-        $store.lockedIdx = { idx: unlock ? -1 : idx, source: 'scatter' }; // As if came from outside.
-        curr = idx;
-        return true;
-      });
-    });
-
-    map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
-    map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
-
-    update($activeSample).catch(console.error);
+    // update($activeSample).catch(console.error);
   });
 
   // Update "brightness"
-  $: if (getColorParams && imgCtrl?.type === mode)
-    bgLayer?.updateStyleVariables(getColorParams(imgCtrl));
-  $: spotsLayer?.updateStyleVariables({ opacity: colorOpacity });
+  // $: if (getColorParams && imgCtrl?.type === mode)
+  //   bgLayer?.updateStyleVariables(getColorParams(imgCtrl));
+  // $: spotsLayer?.updateStyleVariables({ opacity: colorOpacity });
 
-  function updateSpots(rna: { name: string; values: number[] }) {
-    for (let i = 0; i < coords.length; i++) {
-      spotsLayer
-        .getSource()!
-        .getFeatureById(i)
-        ?.setProperties({ value: rna.values[i] ?? 0 });
-    }
-  }
-  // Change spot color
-  $: if (spotsLayer && coords) {
-    updateSpots($currRna);
-  }
+  // function updateSpots(rna: { name: string; values: number[] }) {
+  //   for (let i = 0; i < coords.length; i++) {
+  //     spotsLayer
+  //       .getSource()!
+  //       .getFeatureById(i)
+  //       ?.setProperties({ value: rna.values[i] ?? 0 });
+  //   }
+  // }
+  // // Change spot color
+  // $: if (spotsLayer && coords) {
+  //   updateSpots($currRna);
+  // }
 
-  function moveView(idx: number) {
-    if (!coords[idx]) return;
-    const { x, y } = coords[idx];
-    if ($store.currIdx.source !== 'map') {
-      const view = map.getView();
-      const currZoom = view.getZoom();
-      if ($store.locked) {
-        view.animate({ center: [x * mPerPx, -y * mPerPx], duration: 100, zoom: 5 });
-      } else if (currZoom && currZoom > 2) {
-        view.animate({ duration: 100 });
-      }
-    }
-    circleFeature?.getGeometry()?.setCenter([x * mPerPx, -y * mPerPx]);
-  }
+  // function moveView(idx: number) {
+  //   if (!coords[idx]) return;
+  //   const { x, y } = coords[idx];
+  //   if ($store.currIdx.source !== 'map') {
+  //     const view = map.getView();
+  //     const currZoom = view.getZoom();
+  //     if ($store.locked) {
+  //       view.animate({ center: [x * mPerPx, -y * mPerPx], duration: 100, zoom: 5 });
+  //     } else if (currZoom && currZoom > 2) {
+  //       view.animate({ duration: 100 });
+  //     }
+  //   }
+  //   circleFeature?.getGeometry()?.setCenter([x * mPerPx, -y * mPerPx]);
+  // }
 
   // Move view
-  $: {
-    if (map && coords) {
-      const idx = $store.locked ? $store.lockedIdx : $store.currIdx;
-      moveView(idx.idx);
-    }
-  }
-
-  // Checkbox show all spots
-  $: spotsLayer?.setVisible(showAllSpots);
+  // $: {
+  //   if (map && coords) {
+  //     const idx = $store.locked ? $store.lockedIdx : $store.currIdx;
+  //     moveView(idx.idx);
+  //   }
+  // }
 
   // Enable/disable polygon draw
-  $: if (map) {
+  $: if (map.map && map.draw) {
     if (selecting) {
-      map?.addInteraction(draw.draw);
-      map.getViewport().style.cursor = 'crosshair';
+      map.map?.addInteraction(map.draw.draw);
+      map.map.getViewport().style.cursor = 'crosshair';
     } else {
-      map?.removeInteraction(draw.draw);
-      map.getViewport().style.cursor = 'grab';
+      map.map.removeInteraction(map.draw.draw);
+      map.map.getViewport().style.cursor = 'grab';
     }
   }
 
-  function upload(files: FileList | null) {
-    if (files) {
-      console.log(URL.createObjectURL(files[0]));
-    }
+  const setSpotVisible = (c: boolean) => map.layerMap.spots.layer?.setVisible(c);
+  const setOpacity = async (opacity: string) => {
+    await map.layerMap.spots.promise;
+    map.layerMap.spots.layer!.updateStyleVariables({ opacity: Number(opacity) });
+  };
+
+  let mode: ImageMode;
+  let convertImgCtrl: ReturnType<typeof colorVarFactory>;
+  const update = async (img: Image) => {
+    await img.promise;
+    mode = img.header?.mode ?? 'composite';
+    convertImgCtrl = colorVarFactory(mode, img.channel);
+  };
+
+  $: update(image).catch(console.error);
+  $: if (convertImgCtrl && imgCtrl) {
+    map.layerMap.background.updateStyle(convertImgCtrl(imgCtrl));
   }
 
-  $: if (map) update($activeSample).catch(console.error);
+  const changeHover = async (idx: number) => {
+    await image.promise;
+    map.layerMap.active.change(image.coords![idx], image.header!.spot);
+  };
+
+  $: if (map.mounted) changeHover(currHover).catch(console.error);
 </script>
 
-<svelte:body on:resize={() => map?.updateSize()} />
+<!-- For pane resize. -->
+<svelte:body on:resize={() => map.map?.updateSize()} />
 
 <section class="relative h-full w-full">
-  <!-- <label>
-    <input type="file" multiple on:change={(e) => upload(e.currentTarget.files)} />
-  </label> -->
-
   <!-- Map -->
   <div
     id="map"
     class="h-full w-full shadow-lg"
-    class:rgbmode={mode === 'rgb'}
-    class:compositemode={mode === 'composite'}
-    bind:this={elem}
+    class:rgbmode={image.header?.mode === 'rgb'}
+    class:compositemode={image.header?.mode === 'composite'}
   >
     <div
       class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
@@ -285,7 +219,12 @@
         class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur-sm transition-all hover:bg-slate-200/80 dark:bg-neutral-600/70 dark:text-white/90 dark:hover:bg-neutral-600/90"
       >
         <label class="cursor-pointer">
-          <input type="checkbox" class="mr-0.5 opacity-80" bind:checked={showAllSpots} />
+          <input
+            type="checkbox"
+            class="mr-0.5 cursor-pointer opacity-80"
+            checked
+            on:change={(e) => setSpotVisible(e.target.checked)}
+          />
           <span>Show all spots</span>
         </label>
 
@@ -294,8 +233,8 @@
           min="0"
           max="1"
           step="0.01"
-          bind:value={colorOpacity}
-          on:mousedown={() => (showAllSpots = true)}
+          on:change={(e) => setOpacity(e.target.value)}
+          on:mousedown={() => setSpotVisible(true)}
           class="max-w-[36rem] cursor-pointer opacity-80"
         />
       </div>
@@ -314,7 +253,7 @@
 
         <button
           class="rounded bg-orange-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-orange-600/80 active:bg-orange-500/80 dark:bg-orange-700/70 dark:text-slate-200"
-          on:click={() => draw?.clear()}
+          on:click={() => map.draw?.clear()}
           disabled={selecting}
           >Clear
         </button>
@@ -331,9 +270,11 @@
     class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur transition-colors dark:bg-slate-800/70 lg:bottom-6 lg:left-4 xl:pr-4"
   >
     {#if mode === 'composite'}
-      <svelte:component this={ImgControl} {mode} names={proteins} bind:imgCtrl />
+      <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
     {:else if mode === 'rgb'}
       <svelte:component this={ImgControl} {mode} bind:imgCtrl />
+    {:else if mode === undefined}{:else}
+      {console.error('Unknown mode: ' + mode)}
     {/if}
   </div>
 </section>

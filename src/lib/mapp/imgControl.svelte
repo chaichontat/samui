@@ -1,12 +1,22 @@
 <script lang="ts">
   import ButtonGroup from '../components/buttonGroup.svelte';
-  import type { ImageCtrl } from './imgControl';
+  import type { ImageCtrl, ImageMode } from './imgControl';
 
-  export let mode: 'composite' | 'rgb' = 'composite';
-  export let names: string[] = [];
-  export let imgCtrl: ImageCtrl;
+  export let mode: ImageMode = 'composite';
+  export let channels: Record<string, number> | null = null;
 
-  $: imgCtrl;
+  let names = channels ? Object.keys(channels) : null;
+  const _ic: ImageCtrl =
+    mode === 'composite'
+      ? {
+          type: 'composite',
+          showing: [names![0], names![0], names![0]],
+          maxIntensity: [128, 128, 128]
+        }
+      : { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
+
+  export let imgCtrl: ImageCtrl = _ic;
+  imgCtrl = _ic; // Override from upstream.
 </script>
 
 {#if imgCtrl}

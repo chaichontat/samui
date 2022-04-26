@@ -29,7 +29,7 @@ export class _Selectt {
     map.addLayer(this.layer);
   }
 
-  updateSample(template: Feature[]) {
+  update(template: Feature[]) {
     this.source.clear();
     this.template = template;
   }
@@ -103,9 +103,9 @@ export class Draww {
     this.select.source.clear();
   }
 
-  updateSample(f: Feature[]) {
+  update(template: Feature[]) {
     this.source.clear();
-    this.select.updateSample(f);
+    this.select.update(template);
   }
 
   _attachDraw() {
