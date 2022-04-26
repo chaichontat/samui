@@ -140,6 +140,17 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
   };
 }
 
+export function keyLRU<T extends unknown[], R>(f: (...args: T) => R) {
+  let lastName: string;
+  let lastResult: R;
+  return ({ key, args }: { key: string; args: T }): R => {
+    if (key === lastName) return lastResult;
+    lastName = key;
+    lastResult = f(...args);
+    return lastResult;
+  };
+}
+
 /**
  * Wraps the update function. Hydrates the sample if not already done then call update.
  * Also wrapped with oneLRU to prevent repeated calls on the same sample.
@@ -166,7 +177,7 @@ export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
   return await handle.getFileHandle(name).then((fh) => fh.getFile());
 }
 
-export class Deferred<T extends unknown[] = [], R = void> {
+export class Deferred<T extends unknown[], R> {
   resolve!: (arg: R) => void;
   reject!: () => void;
   promise: Promise<R>;

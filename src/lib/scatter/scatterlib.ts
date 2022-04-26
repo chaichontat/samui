@@ -27,7 +27,7 @@ export class MainChart {
   dataset: ChartDataset<'scatter', { x: number; y: number }[]>;
   mounted = false;
   promise: Promise<void>;
-  _deferred: Deferred;
+  _deferred: Deferred<[void], void>;
 
   constructor() {
     this.dataset = {
@@ -187,7 +187,7 @@ export class Charts {
   readonly hoverChart: HoverChart;
   mounted = false;
   promise: Promise<void>;
-  _deferred: Deferred;
+  _deferred: Deferred<[void], void>;
 
   constructor() {
     this.mainChart = new MainChart();
