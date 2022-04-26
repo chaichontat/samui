@@ -7,10 +7,10 @@
   class="hidden gap-x-3 bg-gray-100 px-6 pb-3 shadow backdrop-blur dark:bg-gray-900 lg:flex lg:items-center"
 >
   <!-- <div class="over mt-2 text-ellipsis text-xl font-medium">Showing <i>{$currRna.name}</i>.</div> -->
-  <div class="mt-1 text-base xl:text-lg">
+  <div class="mt-1 mr-2 text-base lg:flex-grow xl:text-lg">
     <SearchBox />
   </div>
-  <div class="flex-grow" />
+  <!-- <div class="flex-grow" /> -->
   <Darkswitch />
   <div title="GitHub" class="">
     <a
