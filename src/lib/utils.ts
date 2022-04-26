@@ -177,12 +177,14 @@ export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
   return await handle.getFileHandle(name).then((fh) => fh.getFile());
 }
 
-export class Deferred<T extends unknown[], R> {
+export class Deferred<T extends unknown[] = [void], R = void> {
   resolve!: (arg: R) => void;
   reject!: () => void;
   promise: Promise<R>;
   f: (...args: T) => R;
 
+  // @ts-expect-error
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   constructor(f: (...args: T) => R = () => {}) {
     this.f = f;
     this.promise = new Promise(
@@ -192,5 +194,19 @@ export class Deferred<T extends unknown[], R> {
 
   run(...args: T) {
     this.resolve(this.f(...args));
+  }
+}
+
+export class Deferrable {
+  readonly promise: Promise<void>;
+  readonly _deferred: Deferred<[void], void>;
+
+  constructor() {
+    this._deferred = new Deferred();
+    this.promise = this._deferred.promise;
+  }
+
+  mount() {
+    throw new Error('Mount not implemented');
   }
 }
