@@ -1,4 +1,9 @@
-import Chart, { type ChartConfiguration, type ChartDataset, type ChartEvent } from 'chart.js/auto';
+import Chart, {
+  type ChartConfiguration,
+  type ChartDataset,
+  type ChartEvent,
+  type ChartOptions
+} from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Deferrable } from '../utils';
 
@@ -128,8 +133,16 @@ export class MainChart extends Deferrable {
 export class HoverChart extends MainChart {
   mainChart?: MainChart;
   dataset: ChartDataset<'scatter', never[]>;
+  readonly externalHover: (evt: ChartEvent) => void;
+  readonly options: ChartOptions<'scatter'>;
 
-  constructor() {
+  constructor({
+    options,
+    onHover: externalHover
+  }: {
+    options?: ChartOptions<'scatter'>;
+    onHover?: (evt: ChartEvent) => void;
+  }) {
     super();
     this.dataset = {
       data: [],
@@ -138,28 +151,30 @@ export class HoverChart extends MainChart {
       pointHoverRadius: 25,
       borderColor: '#eeeeeedd'
     };
+    this.options = options ?? {};
+    this.externalHover = externalHover ?? (() => {});
   }
 
   mount(el: HTMLCanvasElement) {
     this.chart = new Chart(el.getContext('2d')!, {
       type: 'scatter',
       data: { datasets: [this.dataset] },
-      plugins: [ChartDataLabels],
+      // plugins: [ChartDataLabels],
       options: {
         ...chartOptions,
         plugins: {
-          ...chartOptions.plugins,
-          datalabels: {
-            // formatter: () => $currRna.values[$store.currIdx.idx]?.toFixed(2) ?? '',
-            align: 'center',
-            anchor: 'end',
-            offset: 2,
-            color: '#FFFFFF',
-            font: { size: 14 }
-          }
+          ...chartOptions.plugins
+          // datalabels: {
+          //   formatter: (x: { x: number; y: number }): string => ,
+          //   align: 'center',
+          //   anchor: 'end',
+          //   offset: 2,
+          //   color: '#FFFFFF',
+          //   font: { size: 14 }
+          // }
         },
-
-        onHover: (evt) => this.handleHover(evt)
+        onHover: (evt) => this.handleHover(evt),
+        ...this.options
       }
     });
     this._deferred.resolve();
@@ -175,18 +190,23 @@ export class HoverChart extends MainChart {
     }
 
     this.chart.canvas.style.cursor = 'pointer';
+    this.externalHover(evt);
   }
 }
 
 export class Charts extends Deferrable {
   readonly mainChart: MainChart;
   readonly hoverChart: HoverChart;
+  readonly onHover: (idx: number) => void;
   mounted = false;
+  _coords: { x: number; y: number }[] = [];
+  _colors: string[] = [];
 
-  constructor() {
+  constructor({ onHover }: { onHover?: (idx: number) => void }) {
     super();
+    this.onHover = onHover ?? (() => {});
     this.mainChart = new MainChart();
-    this.hoverChart = new HoverChart();
+    this.hoverChart = new HoverChart({ onHover: (evt) => this.handleHover(evt) });
   }
 
   mount(elMain: HTMLCanvasElement, elHov: HTMLCanvasElement) {
@@ -197,10 +217,44 @@ export class Charts extends Deferrable {
     this.mounted = true;
   }
 
+  handleHover(evt: ChartEvent) {
+    if (!evt.native || !this.mounted) return;
+
+    const points = this.mainChart.getHoverPoint(evt);
+    if (points.length === 0) return;
+
+    const idx = points[0]?.index;
+    this.hoverChart.chart!.canvas.style.cursor = points.length > 0 ? 'pointer' : '';
+    this.hoverChart.chart!.data.datasets[0].data = [this.coords[idx]];
+    this.hoverChart.chart!.data.datasets[0].backgroundColor = this.colors[idx];
+    this.hoverChart.chart!.update();
+    this.onHover(idx);
+  }
+
+  set coords(coords: { x: number; y: number }[]) {
+    this.mainChart.update({ coords }).catch(console.error);
+    this.hoverChart._updateBounds(coords).catch(console.error);
+    this._coords = coords;
+  }
+  get coords() {
+    return this._coords;
+  }
+
+  set colors(colors: string[]) {
+    this.mainChart.update({ color: colors }).catch(console.error);
+    this._colors = colors;
+  }
+
+  get colors() {
+    return this._colors;
+  }
+
   async update({ coords, color }: { coords?: { x: number; y: number }[]; color?: string[] }) {
     await this.mainChart.update({ coords, color });
+    if (color) this.colors = color;
     if (coords) {
       await this.hoverChart._updateBounds(coords);
+      this.coords = coords;
     }
   }
 }

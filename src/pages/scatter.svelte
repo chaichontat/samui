@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
 
   const id = Math.random();
+
   export let colormap = 'viridis';
   export let colorbar = false;
   export let coordsSource: { x: number; y: number }[];
@@ -14,8 +15,13 @@
   export let opacity = 'ff';
   export let pointRadius = 2.5;
 
-  const charts = new Charts();
-  const colors = genColormap({ colormap, nshades: 256, format: 'hex' });
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  // export let onHover: (idx: number) => void = () => {};
+  // export let hoverOptions: ChartOptions<'scatter'> = {} as ChartOptions<'scatter'>;
+
+  const charts = new Charts({});
+  const _color256 = genColormap({ colormap, nshades: 256, format: 'hex' });
+  let colors: string[];
 
   const update = async ({
     coords,
@@ -25,29 +31,34 @@
     intensity: number[] | Promise<number[]>;
   }) => {
     if (coords) await updateCoords(coords);
-    if (intensity) await updateIntensity(intensity);
+    if (intensity) {
+      colors = await calcColor(intensity);
+      await updateColors(colors);
+    }
   };
 
-  const updateCoords = async (c: { x: number; y: number }[]) => await charts.update({ coords: c });
-
-  const updateIntensity = async (intensity: number[] | Promise<number[]>) => {
+  async function calcColor(intensity: number[] | Promise<number[]>) {
     const out = [];
     if (intensity instanceof Promise) {
       intensity = await intensity;
     }
 
     if (!intensity.every((x) => x !== undefined)) {
-      console.error('Intensity source is not ready.');
-      return;
+      throw new Error('Intensity source is not ready.');
     }
 
     // TODO get percentile
     const thresh = 10; // minmax === 'auto' ? Math.max(...intensitySource) : minmax[1];
     for (const d of intensity) {
       const idx = Math.round(Math.min((d ?? 0) / thresh, 1) * 255);
-      out.push(colors[idx] + opacity);
+      out.push(_color256[idx] + opacity);
     }
-    await charts.update({ color: out });
+    return out;
+  }
+
+  const updateCoords = async (c: { x: number; y: number }[]) => await charts.update({ coords: c });
+  const updateColors = async (color: string[]) => {
+    await charts.update({ color });
   };
 
   onMount(() => {
@@ -65,7 +76,6 @@
   {#if colorbar}
     <Colorbar min={0} max={10} />
   {/if}
-
   <canvas class="absolute" id={`${id}-hover`} />
   <canvas class="" id={`${id}-main`} />
   <!-- <div

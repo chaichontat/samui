@@ -205,8 +205,4 @@ export class Deferrable {
     this._deferred = new Deferred();
     this.promise = this._deferred.promise;
   }
-
-  mount() {
-    throw new Error('Mount not implemented');
-  }
 }

@@ -4,6 +4,7 @@
   import { activeSample, samples } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
+  import type { ChartOptions } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
   import Bar from './bar.svelte';
   import Scatter from './scatter.svelte';
@@ -12,6 +13,10 @@
   let vegaShown = false;
   $: console.log(showing);
   $: if (showing === 1) vegaShown = true;
+
+  const hoverOptions: ChartOptions<'scatter'> = {
+    onHover: (evt) => {}
+  };
 </script>
 
 <div class="flex flex-col divide-y dark:divide-slate-700">
@@ -19,6 +24,7 @@
     <Scatter
       coordsSource={$samples[$activeSample].image.coords}
       intensitySource={$samples[$activeSample]?.features?.genes?.retrieve('GFAP')}
+      {hoverOptions}
     />
   </div>
 
