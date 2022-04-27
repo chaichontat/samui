@@ -73,7 +73,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
 
   genStyle(spotPx: number): LiteralStyle {
     return {
-      variables: { opacity: 0.5 },
+      variables: { opacity: 0.9 },
       symbol: {
         symbolType: 'circle',
         size: [

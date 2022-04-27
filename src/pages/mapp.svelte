@@ -213,7 +213,7 @@
       class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
     >
       <!-- Spot indicator -->
-      <div class="mix-blend-difference">Spots: <i>{@html $currRna.name}</i></div>
+      <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures.genes.active}</i></div>
 
       <!-- Color indicator -->
       <div class="mt-2 flex flex-col">
@@ -244,6 +244,7 @@
           type="range"
           min="0"
           max="1"
+          value="0.9"
           step="0.01"
           on:change={(e) => setOpacity(e.target.value)}
           on:mousemove={(e) => setOpacity(e.target.value)}
