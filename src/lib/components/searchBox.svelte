@@ -1,6 +1,5 @@
-<script lang="ts" context="module">
+<script lang="ts">
   import { clickOutside, oneLRU } from '$src/lib/utils';
-  import { debounce } from 'lodash-es';
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
@@ -8,27 +7,6 @@
 
   let fzf: Fzf<readonly string[]>;
 
-  // let names: { [key: string]: number };
-  // let keys: string[] = [];
-  // let retrieve: (selected: string) => Promise<number[]>;
-
-  // let currShow = '';
-  // let currSample = '';
-
-  // function highlightChars(str: string, indices: Set<number>): string {
-  //   const chars = str.split('');
-  //   return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
-  // }
-
-  // export const showVal = debounce(async (selected: string) => {
-  //   if (!selected || !retrieve) return;
-  //   if (get(currRna).name !== selected || get(activeSample) !== currSample) {
-  //     currRna.set({ name: selected, values: await retrieve(selected) });
-  //   }
-  // }, 10);
-</script>
-
-<script lang="ts">
   export let names: string[];
   export let curr: HoverName;
 
@@ -42,9 +20,12 @@
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
   }
 
-  const setVal = oneLRU((x: string | null, isHover: boolean) => {
-    isHover ? (curr.hover = x) : (curr.selected = x);
-  });
+  const setVal = oneLRU(
+    ({ hover, selected }: { hover?: string | null; selected?: string | null }) => {
+      if (hover !== undefined) curr.hover = hover;
+      if (selected !== undefined) curr.selected = selected;
+    }
+  );
 
   $: if (names) {
     fzf = new Fzf(names, { limit: 8 });
@@ -77,16 +58,16 @@
       class="bg-default absolute top-14 z-40 flex w-full flex-col rounded p-2 backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
-      on:mouseout={() => setVal(null, false)}
-      on:blur={() => setVal(null, false)}
+      on:mouseout={() => setVal({ hover: null })}
+      on:blur={() => setVal({ hover: null })}
     >
       {#each candidates as { raw, embellished }}
         <div
           class="hover-default cursor-pointer rounded py-1.5 px-3"
-          on:mousemove={() => setVal(raw, true)}
+          on:mousemove={() => setVal({ hover: raw })}
           on:click={() => {
             showSearch = false;
-            setVal(raw, false);
+            setVal({ selected: raw });
           }}
           transition:slide={{ duration: 100, easing: cubicInOut }}
         >
