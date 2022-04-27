@@ -1,6 +1,7 @@
 <script lang="ts">
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import { Charts } from '$src/lib/scatter/scatterlib';
+  import { store } from '$src/lib/store';
   import genColormap from 'colormap';
   import { onMount } from 'svelte';
 
@@ -19,7 +20,12 @@
   // export let onHover: (idx: number) => void = () => {};
   // export let hoverOptions: ChartOptions<'scatter'> = {} as ChartOptions<'scatter'>;
 
-  const charts = new Charts({});
+  const charts = new Charts({ onHover: handleHover });
+
+  function handleHover(idx: number) {
+    $store.currIdx = { idx, source: 'scatter' };
+  }
+
   const _color256 = genColormap({ colormap, nshades: 256, format: 'hex' });
   let colors: string[];
 
@@ -69,6 +75,7 @@
     update({ coords: coordsSource, intensity: intensitySource }).catch(console.error);
   });
 
+  $: if ($store.currIdx.source !== 'scatter') charts.triggerHover($store.currIdx.idx);
   $: update({ coords: coordsSource, intensity: intensitySource }).catch(console.error);
 </script>
 

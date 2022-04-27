@@ -2,9 +2,12 @@ import first from '$lib/data/first';
 import sampleList from '$lib/data/meh';
 import { writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
+
+export type Idx = { idx: number; source: string };
+
 export type State = {
-  lockedIdx: { idx: number; source: 'scatter' | 'map' };
-  currIdx: { idx: number; source: 'scatter' | 'map' };
+  lockedIdx: Idx;
+  currIdx: Idx;
   readonly locked: boolean;
 };
 

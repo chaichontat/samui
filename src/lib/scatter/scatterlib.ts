@@ -192,6 +192,13 @@ export class HoverChart extends MainChart {
     this.chart.canvas.style.cursor = 'pointer';
     this.externalHover(evt);
   }
+
+  triggerHover(coord: { x: number; y: number }, color: string) {
+    if (!(this.chart && this.mainChart)) return;
+    this.chart.data.datasets[0].data = [coord];
+    this.chart.data.datasets[0].backgroundColor = color;
+    this.chart.update();
+  }
 }
 
 export class Charts extends Deferrable {
@@ -225,10 +232,12 @@ export class Charts extends Deferrable {
 
     const idx = points[0]?.index;
     this.hoverChart.chart!.canvas.style.cursor = points.length > 0 ? 'pointer' : '';
-    this.hoverChart.chart!.data.datasets[0].data = [this.coords[idx]];
-    this.hoverChart.chart!.data.datasets[0].backgroundColor = this.colors[idx];
-    this.hoverChart.chart!.update();
+    this.triggerHover(idx);
     this.onHover(idx);
+  }
+
+  triggerHover(idx: number) {
+    this.hoverChart.triggerHover(this.coords[idx], this.colors[idx]);
   }
 
   set coords(coords: { x: number; y: number }[]) {

@@ -6,13 +6,12 @@
   import 'ol/ol.css';
   import { onMount } from 'svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
-  import { activeSample, currRna, samples, store } from '../lib/store';
+  import { currRna, store } from '../lib/store';
 
   let selecting = false;
 
   export let image: Image;
   // export let spotIntensity: { name: string; value: number[] | Promise<number[]> };
-  let currHover = 0;
   const map = new Mapp();
 
   let colorOpacity = 0.8;
@@ -88,7 +87,7 @@
     await map.update({ image }).catch(console.error);
     map.draw!.draw.on('drawend', () => (selecting = false));
     map.handlePointer({
-      pointermove: (id: number) => (currHover = id)
+      pointermove: (idx: number) => ($store.currIdx = { idx, source: 'map' })
     });
 
     // const dapiLayer = new WebGLPointsLayer({
@@ -183,7 +182,7 @@
     map.layerMap.active.change(image.coords![idx], image.header!.spot);
   };
 
-  $: if (map.mounted) changeHover(currHover).catch(console.error);
+  $: if (map.mounted) changeHover($store.currIdx.idx).catch(console.error);
 </script>
 
 <!-- For pane resize. -->
@@ -273,7 +272,7 @@
       <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
     {:else if mode === 'rgb'}
       <svelte:component this={ImgControl} {mode} bind:imgCtrl />
-    {:else if mode === undefined}{:else}
+    {:else}
       {console.error('Unknown mode: ' + mode)}
     {/if}
   </div>
