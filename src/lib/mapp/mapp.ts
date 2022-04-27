@@ -62,12 +62,12 @@ export class Mapp extends Deferrable {
   }
 
   async update({ image }: { image: Image }) {
-    if (!this.map) throw new Error('Map not initialized.');
+    await this.promise;
     await image.promise;
     await Promise.all([
-      this.layerMap.background.update(this.map, image),
+      this.layerMap.background.update(this.map!, image),
       this.layerMap.spots.update(
-        this.map,
+        this.map!,
         image.coords!,
         image.header!.spot.spotDiam,
         image.header!.spot.mPerPx

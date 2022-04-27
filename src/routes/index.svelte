@@ -36,7 +36,7 @@
     </button>
   </div>
   <div class="h-[600px] w-full lg:h-full lg:w-[75%]">
-    <Mapp image={$samples[$activeSample].image} />
+    <Mapp />
   </div>
 
   <div class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800" use:resizable />

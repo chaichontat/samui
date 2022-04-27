@@ -21,7 +21,7 @@
 <div class="flex flex-col divide-y dark:divide-slate-700">
   <div class="mx-auto mt-6 hidden w-[90%] lg:block">
     <Scatter
-      coordsSource={{ name: 'coords', values: $samples[$activeSample].image.coords }}
+      coordsSource={{ name: $activeSample, values: $samples[$activeSample].image.coords }}
       intensitySource={{
         name: $activeFeatures.genes.active,
         values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)

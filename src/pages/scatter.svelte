@@ -37,15 +37,18 @@
     coords: Named<{ x: number; y: number }[]>;
     intensity: Named<number[] | Promise<number[]>>;
   }) => {
-    if (coords) await updateCoords({ key: coords.name, args: [coords.values] });
+    if (coords) {
+      await updateCoords({ key: coords.name, args: [coords.values] });
+    }
+
     if (intensity) {
       if (intensity.values instanceof Promise) {
         intensity.values = await intensity.values;
       }
 
       if (intensity) {
-        colors = calcColor({ key: intensity.name, args: [intensity.values] });
-        await updateColors({ key: intensity.name, args: [colors] });
+        colors = calcColor({ key: coords.name + intensity.name, args: [intensity.values] });
+        await updateColors({ key: coords.name + intensity.name, args: [colors] });
       }
     }
   };

@@ -36,8 +36,9 @@ export class WebGLSpots extends Deferrable implements MapComponent {
 
     if (intensity.length !== this.source?.getFeatures().length) {
       console.error("Intensity length doesn't match");
-      return;
+      return false;
     }
+
     for (let i = 0; i < intensity.length; i++) {
       this.source.getFeatureById(i)?.setProperties({ value: intensity[i] });
     }

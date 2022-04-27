@@ -140,15 +140,18 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
   };
 }
 
-export function keyOneLRU<T extends unknown[], R>(f: (...args: T) => R) {
+export function keyOneLRU<T extends unknown[], R>(f: (...args: T) => R | false) {
   let lastName: string;
   let lastResult: R;
 
-  return ({ key, args }: { key: string; args: T }): R => {
+  return ({ key, args }: { key: string; args: T }): R | false => {
     if (key === lastName) return lastResult;
-    lastName = key;
-    lastResult = f(...args);
-    return lastResult;
+    const res = f(...args);
+    if (res !== false) {
+      lastName = key;
+      lastResult = res;
+    }
+    return res;
   };
 }
 

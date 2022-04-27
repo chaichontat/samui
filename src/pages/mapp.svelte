@@ -3,16 +3,18 @@
   import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
-  import { oneLRU } from '$src/lib/utils';
+  import { keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { onMount } from 'svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
-  import { activeFeatures, activeSample, currRna, samples, store } from '../lib/store';
+  import { activeFeatures, activeSample, samples, store } from '../lib/store';
 
   let selecting = false;
+  let image: Image;
+  $: image = $samples[$activeSample].image;
 
-  export let image: Image;
-  export let intensity: number[];
+  // export let image: Image;
+  // export let intensity: number[];
   // export let spotIntensity: { name: string; value: number[] | Promise<number[]> };
   const map = new Mapp();
 
@@ -86,11 +88,12 @@
 
   onMount(async () => {
     map.mount();
-    await map.update({ image }).catch(console.error);
     map.draw!.draw.on('drawend', () => (selecting = false));
     map.handlePointer({
       pointermove: (idx: number) => ($store.currIdx = { idx, source: 'map' })
     });
+
+    await update(image).catch(console.error);
 
     // const dapiLayer = new WebGLPointsLayer({
     //   // @ts-expect-error
@@ -169,9 +172,13 @@
   let mode: ImageMode;
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
   const update = async (img: Image) => {
-    await img.promise;
-    mode = img.header?.mode ?? 'composite';
+    await map.update({ image });
+    mode = img.header!.mode ?? 'composite';
     convertImgCtrl = colorVarFactory(mode, img.channel);
+    updateSpot({
+      key: `${$activeSample}${$activeFeatures.genes.active}`,
+      args: [$activeFeatures.genes.active]
+    });
   };
 
   $: update(image).catch(console.error);
@@ -183,19 +190,24 @@
     await image.promise;
     map.layerMap.active.update(image.coords![idx], image.header!.spot);
   };
-  update;
 
   $: if (map.mounted) changeHover($store.currIdx.idx).catch(console.error);
 
-  const updateSpot = oneLRU((name: string | null) => {
-    if (name) {
-      map.layerMap.spots
-        .updateIntensity(map.map!, $samples[$activeSample].features.genes.retrieve(name))
-        .catch(console.error);
-    }
+  const updateSpot = keyOneLRU((name: string | null) => {
+    map.layerMap.spots
+      .updateIntensity(map.map!, $samples[$activeSample].features.genes.retrieve(name))
+      .catch(console.error);
   });
 
-  $: updateSpot($activeFeatures.genes.active);
+  /// To remove $activeSample dependency since updateSpot must run after updateSample.
+  function updateSpotName(name: string) {
+    updateSpot({
+      key: `${$activeSample}${$activeFeatures.genes.active}`,
+      args: [$activeFeatures.genes.active]
+    });
+  }
+
+  $: updateSpotName($activeFeatures.genes.active);
 </script>
 
 <!-- For pane resize. -->
