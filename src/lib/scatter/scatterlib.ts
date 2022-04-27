@@ -92,7 +92,6 @@ export class MainChart extends Deferrable {
       .map((x) => x);
     const over = 0.05;
     const range = [max[0] - min[0], max[1] - min[1]];
-
     await this.promise;
     this.chart!.options.scales!.x!.min = min[0] - over * range[0];
     this.chart!.options.scales!.x!.max = max[0] + over * range[0];

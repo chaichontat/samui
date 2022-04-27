@@ -2,6 +2,7 @@
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import { Charts } from '$src/lib/scatter/scatterlib';
   import { store } from '$src/lib/store';
+  import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
   import genColormap from 'colormap';
   import { onMount } from 'svelte';
 
@@ -9,10 +10,10 @@
 
   export let colormap = 'viridis';
   export let colorbar = false;
-  export let coordsSource: { x: number; y: number }[];
+  export let coordsSource: Named<{ x: number; y: number }[]>;
   export let minmax: 'auto' | [number, number] = 'auto';
 
-  export let intensitySource: number[] | Promise<number[]>;
+  export let intensitySource: Named<number[] | Promise<number[]>>;
   export let opacity = 'ff';
   export let pointRadius = 2.5;
 
@@ -33,22 +34,24 @@
     coords,
     intensity
   }: {
-    coords: { x: number; y: number }[];
-    intensity: number[] | Promise<number[]>;
+    coords: Named<{ x: number; y: number }[]>;
+    intensity: Named<number[] | Promise<number[]>>;
   }) => {
-    if (coords) await updateCoords(coords);
+    if (coords) await updateCoords({ key: coords.name, args: [coords.values] });
     if (intensity) {
-      colors = await calcColor(intensity);
-      await updateColors(colors);
+      if (intensity.values instanceof Promise) {
+        intensity.values = await intensity.values;
+      }
+
+      if (intensity) {
+        colors = calcColor({ key: intensity.name, args: [intensity.values] });
+        await updateColors({ key: intensity.name, args: [colors] });
+      }
     }
   };
 
-  async function calcColor(intensity: number[] | Promise<number[]>) {
+  const calcColor = keyLRU((intensity: number[]) => {
     const out = [];
-    if (intensity instanceof Promise) {
-      intensity = await intensity;
-    }
-
     if (!intensity.every((x) => x !== undefined)) {
       throw new Error('Intensity source is not ready.');
     }
@@ -60,12 +63,14 @@
       out.push(_color256[idx] + opacity);
     }
     return out;
-  }
+  });
 
-  const updateCoords = async (c: { x: number; y: number }[]) => await charts.update({ coords: c });
-  const updateColors = async (color: string[]) => {
+  const updateCoords = keyOneLRU(
+    async (c: { x: number; y: number }[]) => await charts.update({ coords: c })
+  );
+  const updateColors = keyOneLRU(async (color: string[]) => {
     await charts.update({ color });
-  };
+  });
 
   onMount(() => {
     charts.mount(

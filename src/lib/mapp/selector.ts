@@ -132,7 +132,6 @@ export class Draww {
 
   _attachModify() {
     this.modify.on('modifyend', (e: ModifyEvent) => {
-      console.log(e);
       const polygon = e.features.getArray()[0].getGeometry()!;
       if ('intersectsExtent' in polygon) {
         this.select.updateSelect(polygon);

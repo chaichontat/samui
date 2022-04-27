@@ -28,7 +28,22 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  change(map: Map, coords: readonly { x: number; y: number }[], spotDiam: number, mPerPx: number) {
+  async updateIntensity(map: Map, intensity: number[] | Promise<number[]>) {
+    if (!intensity || !map) return;
+    if (intensity instanceof Promise) {
+      intensity = await intensity;
+    }
+
+    if (intensity.length !== this.source?.getFeatures().length) {
+      console.error("Intensity length doesn't match");
+      return;
+    }
+    for (let i = 0; i < intensity.length; i++) {
+      this.source.getFeatureById(i)?.setProperties({ value: intensity[i] });
+    }
+  }
+
+  update(map: Map, coords: readonly { x: number; y: number }[], spotDiam: number, mPerPx: number) {
     const spotSize = spotDiam / mPerPx;
     const newLayer = new WebGLPointsLayer({
       source: this.source,
@@ -78,7 +93,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
         ],
         color: '#fce652ff',
         // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.1, 1]
+        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 5]], 0.1, 1]
         // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
       }
     };
@@ -109,7 +124,7 @@ export class ActiveSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  change({ x, y }: { x: number; y: number }, sp: SpotParams) {
+  update({ x, y }: { x: number; y: number }, sp: SpotParams) {
     this.feature
       .getGeometry()
       ?.setCenterAndRadius([x * sp.mPerPx, -y * sp.mPerPx], sp.spotDiam / 2);

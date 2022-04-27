@@ -1,7 +1,7 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
   // import Veg from '$src/lib/components/veg.svelte';
-  import { activeSample, samples } from '$src/lib/store';
+  import { activeFeatures, activeSample, samples, type HoverName } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
   import type { ChartOptions } from 'chart.js';
@@ -11,7 +11,6 @@
   let showing = 0;
 
   let vegaShown = false;
-  $: console.log(showing);
   $: if (showing === 1) vegaShown = true;
 
   const hoverOptions: ChartOptions<'scatter'> = {
@@ -22,8 +21,11 @@
 <div class="flex flex-col divide-y dark:divide-slate-700">
   <div class="mx-auto mt-6 hidden w-[90%] lg:block">
     <Scatter
-      coordsSource={$samples[$activeSample].image.coords}
-      intensitySource={$samples[$activeSample]?.features?.genes?.retrieve('GFAP')}
+      coordsSource={{ name: 'coords', values: $samples[$activeSample].image.coords }}
+      intensitySource={{
+        name: $activeFeatures.genes.active,
+        values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)
+      }}
       {hoverOptions}
     />
   </div>

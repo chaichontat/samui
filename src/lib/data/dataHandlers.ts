@@ -76,7 +76,7 @@ export class PlainJSON extends Deferrable implements Data {
   }
 }
 
-export class ChunkedJSON implements Data {
+export class ChunkedJSON extends Deferrable implements Data {
   retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
   ptr?: number[];
   names?: Record<string, number> | null;
@@ -97,6 +97,7 @@ export class ChunkedJSON implements Data {
     { name, url, headerUrl, header, dataType, options }: ChunkedJSONParams,
     autoHydrate = false
   ) {
+    super();
     this.name = name;
     this.url = url;
     this.header = header;
@@ -154,6 +155,10 @@ export class ChunkedJSON implements Data {
             idx = selected;
           }
         }
+        if (idx === undefined) {
+          console.error("Couldn't find index for", selected);
+          return undefined;
+        }
 
         if (this.ptr![idx] === this.ptr![idx + 1]) {
           return zero;
@@ -170,6 +175,7 @@ export class ChunkedJSON implements Data {
         return this.densify ? this.genDense(sparse) : sparse;
       }
     );
+    this._deferred.resolve();
     this.hydrated = true;
     return this;
   }
@@ -194,7 +200,7 @@ export class ChunkedJSON implements Data {
 
   genDense(obj: Sparse): number[] {
     console.assert(obj.index.length === obj.value.length);
-    const dense = new Array(obj.index.length).fill(0) as number[];
+    const dense = new Array(this.length).fill(0) as number[];
     for (let i = 0; i < obj.index.length; i++) {
       dense[obj.index[i]] = obj.value[i];
     }

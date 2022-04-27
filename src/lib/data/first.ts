@@ -7,9 +7,11 @@ import sp from './default/sample.json';
 import type { ImageHeader, ImageParams } from './image';
 import { Sample, type SampleParams } from './sample';
 
-export const s3_url = dev
-  ? ''
-  : 'https://chaichontat-host.s3.us-west-004.backblazeb2.com/loopy-browser';
+export const s3_url = '';
+
+// dev
+// ? ''
+// : 'https://chaichontat-host.s3.us-west-004.backblazeb2.com/loopy-browser';
 
 const sampleparams = { ...sp } as SampleParams;
 const s = sampleparams.name;

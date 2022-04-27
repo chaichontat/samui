@@ -140,14 +140,26 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
   };
 }
 
-export function keyLRU<T extends unknown[], R>(f: (...args: T) => R) {
+export function keyOneLRU<T extends unknown[], R>(f: (...args: T) => R) {
   let lastName: string;
   let lastResult: R;
+
   return ({ key, args }: { key: string; args: T }): R => {
     if (key === lastName) return lastResult;
     lastName = key;
     lastResult = f(...args);
     return lastResult;
+  };
+}
+
+export function keyLRU<T extends unknown[], R>(f: (...args: T) => R, max = 100) {
+  const cache = new LRU<string, R>({ max });
+
+  return ({ key, args }: { key: string; args: T }): R => {
+    if (cache.has(key)) return cache.get(key) as R; // Checked
+    const r = f(...args);
+    cache.set(key, r);
+    return r;
   };
 }
 
@@ -206,3 +218,5 @@ export class Deferrable {
     this.promise = this._deferred.promise;
   }
 }
+
+export type Named<T> = { name: string; values: T };

@@ -23,7 +23,7 @@ export class Background extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  async change(map: Map, image: Image) {
+  async update(map: Map, image: Image) {
     await image.promise;
     if (!this.layer) {
       this.layer = new WebGLTileLayer({});

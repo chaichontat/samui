@@ -3,14 +3,16 @@
   import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
+  import { oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { onMount } from 'svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
-  import { currRna, store } from '../lib/store';
+  import { activeFeatures, activeSample, currRna, samples, store } from '../lib/store';
 
   let selecting = false;
 
   export let image: Image;
+  export let intensity: number[];
   // export let spotIntensity: { name: string; value: number[] | Promise<number[]> };
   const map = new Mapp();
 
@@ -159,10 +161,10 @@
   }
 
   const setSpotVisible = (c: boolean) => map.layerMap.spots.layer?.setVisible(c);
-  const setOpacity = async (opacity: string) => {
+  const setOpacity = oneLRU(async (opacity: string) => {
     await map.layerMap.spots.promise;
     map.layerMap.spots.layer!.updateStyleVariables({ opacity: Number(opacity) });
-  };
+  });
 
   let mode: ImageMode;
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
@@ -179,10 +181,21 @@
 
   const changeHover = async (idx: number) => {
     await image.promise;
-    map.layerMap.active.change(image.coords![idx], image.header!.spot);
+    map.layerMap.active.update(image.coords![idx], image.header!.spot);
   };
+  update;
 
   $: if (map.mounted) changeHover($store.currIdx.idx).catch(console.error);
+
+  const updateSpot = oneLRU((name: string | null) => {
+    if (name) {
+      map.layerMap.spots
+        .updateIntensity(map.map!, $samples[$activeSample].features.genes.retrieve(name))
+        .catch(console.error);
+    }
+  });
+
+  $: updateSpot($activeFeatures.genes.active);
 </script>
 
 <!-- For pane resize. -->
@@ -233,6 +246,7 @@
           max="1"
           step="0.01"
           on:change={(e) => setOpacity(e.target.value)}
+          on:mousemove={(e) => setOpacity(e.target.value)}
           on:mousedown={() => setSpotVisible(true)}
           class="max-w-[36rem] cursor-pointer opacity-80"
         />

@@ -15,7 +15,8 @@ import { ActiveSpots, WebGLSpots } from './spots';
 export interface MapComponent extends Deferrable {
   readonly source?: VectorSource<Geometry> | GeoTIFFSource;
   readonly layer?: Layer | WebGLPointsLayer<VectorSource<Point>>;
-  change(...args: unknown[]): void;
+  update(...args: unknown[]): void;
+  mount(...args: unknown[]): void;
 }
 
 export class Mapp extends Deferrable {
@@ -64,8 +65,8 @@ export class Mapp extends Deferrable {
     if (!this.map) throw new Error('Map not initialized.');
     await image.promise;
     await Promise.all([
-      this.layerMap.background.change(this.map, image),
-      this.layerMap.spots.change(
+      this.layerMap.background.update(this.map, image),
+      this.layerMap.spots.update(
         this.map,
         image.coords!,
         image.header!.spot.spotDiam,
