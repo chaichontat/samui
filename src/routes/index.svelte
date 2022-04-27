@@ -21,7 +21,7 @@
     <!-- Sample list -->
     <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
       <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">Sample:</div>
-      <SampleList items={Object.keys($samples)} on:change={(e) => ($activeSample = e.detail)} />
+      <SampleList items={Object.keys($samples)} />
     </div>
     <!-- Upload your data -->
     <button
