@@ -80,7 +80,14 @@ def get_compressed_genes(
 
     ptr, outbytes = chunk_compressed(indices, indptr, data)
 
-    length = len(names)
+    match mode:
+        case "csr":
+            length = cs.shape[1]
+        case "csc":
+            length = cs.shape[0]
+        case _:
+            raise ValueError("Unknown mode")
+
     names = {name: i for i, name in enumerate(names)} if include_name else None
     return (
         ChunkedJSONHeader(
