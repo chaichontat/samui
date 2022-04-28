@@ -21,6 +21,12 @@ export async function byod() {
     alert('This browser does not support the File System API. Use Chrome/Safari.');
     return;
   }
+
+  // if (window.location.protocol == 'http:') {
+  //   alert('File system access requires HTTPS.');
+  //   return;
+  // }
+
   const directoryHandle = await window.showDirectoryPicker();
 
   let sp: SampleParams;

@@ -55,7 +55,7 @@
   {#if search && showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="bg-default absolute top-14 z-40 flex w-full flex-col rounded p-2 backdrop-blur"
+      class="picker absolute top-14 z-40 p-2"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setVal({ hover: null })}
@@ -63,7 +63,7 @@
     >
       {#each candidates as { raw, embellished }}
         <div
-          class="hover-default cursor-pointer rounded py-1.5 px-3"
+          class="picker-el py-1.5"
           on:mousemove={() => setVal({ hover: raw })}
           on:click={() => {
             showSearch = false;

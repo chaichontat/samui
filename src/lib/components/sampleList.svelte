@@ -9,6 +9,7 @@
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
   import { activeSample, samples } from '../store';
+  import { classNames } from '../utils';
   import Spinner from './spinner.svelte';
 
   export let items: string[];
@@ -37,10 +38,6 @@
       name: item
     }));
     _active = rows[0];
-  }
-
-  function classNames(...classes: (false | null | undefined | string)[]): string {
-    return classes.filter(Boolean).join(' ');
   }
 </script>
 

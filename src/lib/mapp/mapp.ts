@@ -37,6 +37,7 @@ export class Mapp extends Deferrable {
     };
 
     this.layers = [this.layerMap.background, this.layerMap.spots, this.layerMap.active];
+    this.draw = new Draww();
   }
 
   mount() {
@@ -47,12 +48,11 @@ export class Mapp extends Deferrable {
       layers: this.layers.map((l) => l.layer!)
     });
     if (!this.map) throw new Error('Map not initialized.');
+    this.draw!.mount(this.map);
 
     this.map.removeControl(this.map.getControls().getArray()[0]);
     this.map.addControl(new Zoom({ delta: 0.4 }));
     this.map.addControl(new ScaleLine({ text: true, minWidth: 140 }));
-
-    this.draw = new Draww(this.map);
 
     this.map.on('movestart', () => (this.map!.getViewport().style.cursor = 'grabbing'));
     this.map.on('moveend', () => (this.map!.getViewport().style.cursor = 'grab'));
