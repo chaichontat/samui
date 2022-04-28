@@ -29,9 +29,7 @@
     map.draw!.draw.on('drawend', () => (selecting = false));
     map.draw!.source.on('addfeature', () => {
       const name = prompt('Name of selection');
-      map.draw!.setPolygonName(-1, name ?? '');
-      console.log(map.draw?.source.getFeatures());
-
+      map.draw!.setPolygonName(-1, name ?? 'Selection');
       updateSelectionNames();
     });
 

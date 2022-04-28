@@ -8,7 +8,7 @@ import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource, { VectorSourceEvent } from 'ol/source/Vector';
-import { Fill, Stroke, Style } from 'ol/style';
+import { Fill, Stroke, Style, Text } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
 import type { SpotParams } from '../data/image';
 
@@ -84,17 +84,31 @@ export class Draww {
             color: '#fff',
             width: 1.5
           })
-        }),
-        zIndex: Infinity
+        })
       }),
       stopClick: true
     });
 
+    const selectedStyle = new Style({
+      stroke: new Stroke({ color: '#00ffe9', width: 2 }),
+      text: new Text({
+        font: '16px sans-serif',
+        fill: new Fill({
+          color: '#000'
+        }),
+        stroke: new Stroke({
+          color: '#fff',
+          width: 4
+        })
+      })
+    });
+
     this.layer = new VectorLayer({
       source: this.source,
-      style: new Style({
-        stroke: new Stroke({ color: '#00ffe9', width: 2 })
-      })
+      style: (feature) => {
+        selectedStyle.getText().setText(feature.get('name') as string);
+        return selectedStyle;
+      }
     });
 
     this.select = new _Selectt();
@@ -104,6 +118,7 @@ export class Draww {
   }
 
   mount(map: Map) {
+    this.layer.setZIndex(50);
     map.addLayer(this.layer);
     this.select.mount(map);
   }
