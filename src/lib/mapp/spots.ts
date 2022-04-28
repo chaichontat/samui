@@ -8,7 +8,7 @@ import { Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import type { SpotParams } from '../data/image';
 import { Deferrable } from '../utils';
-import type { MapComponent } from './mapp';
+import type { MapComponent, Mapp } from './mapp';
 
 export class WebGLSpots extends Deferrable implements MapComponent {
   readonly source: VectorSource<Point>;
@@ -28,8 +28,9 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  async updateIntensity(map: Map, intensity: number[] | Promise<number[]>) {
-    if (!intensity || !map) return;
+  async updateIntensity(map: Mapp, intensity: number[] | Promise<number[]>) {
+    await map.promise;
+    if (!intensity) throw new Error('No intensity provided');
     if (intensity instanceof Promise) {
       intensity = await intensity;
     }
