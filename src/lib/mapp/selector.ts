@@ -64,11 +64,20 @@ export class _Selectt {
             }),
             size: 10
           });
+          feat.set('origin', feature.getId());
 
           return feat;
         })
     );
     return ids;
+  }
+
+  remove(uid: number) {
+    this.source.getFeatures().forEach((f) => {
+      if (f.get('origin') === uid) {
+        this.source.removeFeature(f);
+      }
+    });
   }
 }
 
@@ -150,6 +159,7 @@ export class Draww {
       const feature = event.feature as Feature<Polygon>;
       const cid = this.source.getFeatures().length % tableau10arr.length;
       feature.set('color', tableau10arr[cid]);
+      feature.setId(Math.random());
 
       this._updatePolygonStyle(feature);
       this.select.updateSelect(feature);
@@ -187,7 +197,10 @@ export class Draww {
   }
 
   deletePolygon(i: number) {
-    this.source.removeFeature(this.source.getFeatures()[i]);
+    const feature = this.source.getFeatures()[i];
+    const uid = feature.getId() as number;
+    this.source.removeFeature(feature);
+    this.select.remove(uid);
   }
 
   dumpPolygons() {
