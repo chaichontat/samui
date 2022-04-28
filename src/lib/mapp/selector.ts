@@ -6,6 +6,7 @@ import { Circle, Point, Polygon } from 'ol/geom';
 import { Draw, Modify } from 'ol/interaction';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
+import Select from 'ol/interaction/Select.js';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource, { VectorSourceEvent } from 'ol/source/Vector';
 import { Fill, Stroke, Style, Text } from 'ol/style';
@@ -13,7 +14,7 @@ import CircleStyle from 'ol/style/Circle';
 import { tableau10arr } from '../colors';
 import type { SpotParams } from '../data/image';
 
-export class _Selectt {
+export class _Points {
   readonly features: Feature[];
   readonly source: VectorSource<Point>;
   readonly layer: VectorLayer<typeof this.source>;
@@ -84,9 +85,11 @@ export class _Selectt {
 export class Draww {
   readonly draw: Draw;
   readonly source: VectorSource<Polygon>;
-  readonly layer: VectorLayer<typeof this.source>;
-  readonly select: _Selectt;
+  readonly selectionLayer: VectorLayer<typeof this.source>;
+  readonly points: _Points;
   readonly modify: Modify;
+
+  _currHighlight: number | null = null;
 
   // Style for finished polygon.
   style: Style = new Style({
@@ -118,20 +121,21 @@ export class Draww {
       stopClick: true
     });
 
-    this.layer = new VectorLayer({
+    this.selectionLayer = new VectorLayer({
       source: this.source
     });
 
-    this.select = new _Selectt();
+    this.points = new _Points();
     this.modify = new Modify({ source: this.source });
+
     this._attachDraw();
     this._attachModify();
   }
 
   mount(map: Map) {
-    this.layer.setZIndex(50);
-    map.addLayer(this.layer);
-    this.select.mount(map);
+    this.selectionLayer.setZIndex(50);
+    map.addLayer(this.selectionLayer);
+    this.points.mount(map);
   }
 
   clear() {
@@ -140,7 +144,7 @@ export class Draww {
 
   update(template: Feature[]) {
     this.source.clear();
-    this.select.update(template);
+    this.points.update(template);
   }
 
   _attachDraw() {
@@ -162,7 +166,7 @@ export class Draww {
       feature.setId(Math.random());
 
       this._updatePolygonStyle(feature);
-      this.select.updateSelect(feature);
+      this.points.updateSelect(feature);
     });
   }
 
@@ -170,17 +174,36 @@ export class Draww {
     this.modify.on('modifyend', (e: ModifyEvent) => {
       const polygon = e.features.getArray()[0].getGeometry()!;
       if ('intersectsExtent' in polygon) {
-        this.select.updateSelect(e.features.getArray()[0] as Feature<Polygon>);
+        this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>);
       } else {
         console.error("Polygon doesn't have intersectsExtent");
       }
     });
   }
 
+  highlightPolygon(i: number | null) {
+    if (i === undefined) throw new Error('i is undefined');
+    this.unhighlightPolygon();
+    if (i === null) return;
+    const feat = this.source.getFeatures().at(i);
+    if (!feat) throw new Error('No feature at index ' + i.toString());
+    this._currHighlight = i;
+    this._updatePolygonStyle(feat, false);
+  }
+
+  unhighlightPolygon() {
+    if (this._currHighlight === null) return;
+    const feat = this.source.getFeatures().at(this._currHighlight);
+    if (!feat) throw new Error('No feature at index ' + this._currHighlight.toString());
+    this._updatePolygonStyle(feat);
+  }
+
   // Need to rerun on name change.
-  _updatePolygonStyle(feature: Feature<Polygon>) {
+  _updatePolygonStyle(feature: Feature<Polygon>, setStroke = true) {
     const st = this.style.clone();
-    st.setStroke(new Stroke({ color: feature.get('color') as `#{string}`, width: 2 }));
+    if (setStroke) {
+      st.setStroke(new Stroke({ color: feature.get('color') as `#{string}`, width: 2 }));
+    }
     st.getText().setText(feature.get('name') as string);
     feature.setStyle(st);
   }
@@ -200,7 +223,7 @@ export class Draww {
     const feature = this.source.getFeatures()[i];
     const uid = feature.getId() as number;
     this.source.removeFeature(feature);
-    this.select.remove(uid);
+    this.points.remove(uid);
   }
 
   dumpPolygons() {

@@ -7,8 +7,8 @@
   import { keyOneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { onMount } from 'svelte';
+  import MapTools from '../lib/mapp/mapTools.svelte';
   import { activeFeatures, activeSample, samples, store } from '../lib/store';
-  import MapTools from './mapTools.svelte';
 
   let image: Image;
   $: image = $samples[$activeSample].image;

@@ -3,8 +3,6 @@
   import { createEventDispatcher } from 'svelte';
 
   export let names: string[] = ['dd', 'fdf'];
-  export let hovering: string = names[0];
-
   const dispatch = createEventDispatcher();
 </script>
 
@@ -39,7 +37,11 @@
         <span class="italic text-slate-300"> No selections. </span>
       {/if}
       {#each names as name, i}
-        <div class="flex items-center justify-between">
+        <div
+          class="flex items-center justify-between"
+          on:mouseenter={() => dispatch('hover', { i })}
+          on:mouseleave={() => dispatch('hover', { i: null })}
+        >
           <div class="flex items-center gap-x-2">
             <button>
               <svg

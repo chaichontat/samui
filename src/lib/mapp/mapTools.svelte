@@ -42,6 +42,7 @@
         map.draw?.deletePolygon(evt.detail.i);
         updateSelectionNames();
       }}
+      on:hover={(evt) => map.draw?.highlightPolygon(evt.detail.i)}
     />
     <button
       class="rounded-lg bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-700/70 dark:text-slate-200 dark:hover:bg-sky-600/80"
