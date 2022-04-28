@@ -10,6 +10,7 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource, { VectorSourceEvent } from 'ol/source/Vector';
 import { Fill, Stroke, Style, Text } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
+import { tableau10arr } from '../colors';
 import type { SpotParams } from '../data/image';
 
 export class _Selectt {
@@ -38,22 +39,36 @@ export class _Selectt {
     this.template = template;
   }
 
-  updateSelect(polygon: Point) {
+  updateSelect(feature: Feature<Polygon>) {
     if (!this.template) {
-      console.warn('No template defined for select.');
-      return;
+      throw new Error('No template defined for select.');
     }
     const ids: number[] = [];
-    this.source.clear();
+    const polygon = feature.getGeometry()!;
+    // this.source.clear();
+
     this.source.addFeatures(
       this.template
         .filter((f) => polygon.intersectsExtent(f.getGeometry()!.getExtent()))
         .map((f) => {
           ids.push(f.getId() as number);
           const point = f.getGeometry()! as Point;
-          return new Feature({ geometry: new Point(point.getCoordinates()), size: 10 });
+          const feat = new Feature({
+            geometry: point.clone(),
+            style: new Style({
+              stroke: new Stroke({
+                color: feature.get('color') as `#${string}`,
+                width: 1
+              }),
+              fill: new Fill({ color: '#00000000' })
+            }),
+            size: 10
+          });
+
+          return feat;
         })
     );
+    return ids;
   }
 }
 
@@ -64,51 +79,38 @@ export class Draww {
   readonly select: _Selectt;
   readonly modify: Modify;
 
+  // Style for finished polygon.
+  style: Style = new Style({
+    stroke: new Stroke({ color: '#00ffe9', width: 2 }),
+    text: new Text({
+      font: '16px sans-serif',
+      fill: new Fill({
+        color: '#000'
+      }),
+      stroke: new Stroke({
+        color: '#fff',
+        width: 4
+      })
+    })
+  });
+
   constructor() {
     this.source = new VectorSource();
+    // Style for drawing polygons.
     this.draw = new Draw({
       type: 'Polygon',
       source: this.source,
       // condition: platformModifierKeyOnly,
       // freehandCondition: shiftKeyOnly,
-      // Style for drawing polygons.
       style: new Style({
-        fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' }),
-        stroke: new Stroke({ color: '#00ffe9', width: 2 }),
-        image: new CircleStyle({
-          radius: 6,
-          fill: new Fill({
-            color: [0, 153, 255, 1]
-          }),
-          stroke: new Stroke({
-            color: '#fff',
-            width: 1.5
-          })
-        })
+        fill: new Fill({ color: 'rgba(255, 255, 255, 0.1)' }),
+        stroke: new Stroke({ color: '#00ffe9', width: 2 })
       }),
       stopClick: true
     });
 
-    const selectedStyle = new Style({
-      stroke: new Stroke({ color: '#00ffe9', width: 2 }),
-      text: new Text({
-        font: '16px sans-serif',
-        fill: new Fill({
-          color: '#000'
-        }),
-        stroke: new Stroke({
-          color: '#fff',
-          width: 4
-        })
-      })
-    });
-
     this.layer = new VectorLayer({
-      source: this.source,
-      style: (feature) => {
-        selectedStyle.getText().setText(feature.get('name') as string);
-        return selectedStyle;
-      }
+      source: this.source
     });
 
     this.select = new _Selectt();
@@ -133,24 +135,24 @@ export class Draww {
   }
 
   _attachDraw() {
-    this.draw.on('drawstart', (event: DrawEvent) => {
-      event.feature.getGeometry()!.on(
-        'change',
-        debounce(
-          (e: BaseEvent) => {
-            const polygon = e.target as Point;
-            this.select.updateSelect(polygon);
-          },
-          10,
-          { leading: true, trailing: false }
-        )
-      );
-    });
+    // this.draw.on('drawstart', (event: DrawEvent) => {
+    //   event.feature.getGeometry()!.on(
+    //     'change',
+    //     debounce((e: BaseEvent) => this.select.updateSelect(e.target as Point), 10, {
+    //       leading: true,
+    //       trailing: false
+    //     })
+    //   );
+    // });
 
     this.draw.on('drawend', (event: DrawEvent) => {
       event.preventDefault();
-      const polygon = event.feature.getGeometry()! as Point;
-      this.select.updateSelect(polygon);
+      const feature = event.feature as Feature<Polygon>;
+      const cid = this.source.getFeatures().length % tableau10arr.length;
+      feature.set('color', tableau10arr[cid]);
+
+      this._updatePolygonStyle(feature);
+      this.select.updateSelect(feature);
     });
   }
 
@@ -158,11 +160,19 @@ export class Draww {
     this.modify.on('modifyend', (e: ModifyEvent) => {
       const polygon = e.features.getArray()[0].getGeometry()!;
       if ('intersectsExtent' in polygon) {
-        this.select.updateSelect(polygon as Point);
+        this.select.updateSelect(e.features.getArray()[0] as Feature<Polygon>);
       } else {
         console.error("Polygon doesn't have intersectsExtent");
       }
     });
+  }
+
+  // Need to rerun on name change.
+  _updatePolygonStyle(feature: Feature<Polygon>) {
+    const st = this.style.clone();
+    st.setStroke(new Stroke({ color: feature.get('color') as `#{string}`, width: 2 }));
+    st.getText().setText(feature.get('name') as string);
+    feature.setStyle(st);
   }
 
   getPolygonsName() {
@@ -173,6 +183,7 @@ export class Draww {
     const feat = this.source.getFeatures().at(i);
     if (!feat) throw new Error('No feature at index ' + i.toString());
     feat.set('name', name);
+    this._updatePolygonStyle(feat);
   }
 
   deletePolygon(i: number) {

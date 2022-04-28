@@ -11,6 +11,8 @@ export const tableau10: { [name: string]: `#${string}` } = {
   grey: '#b8b0ac'
 };
 
+export const tableau10arr = Object.values(tableau10);
+
 export const viridis = [
   '#440154, #482475, #414487, #355f8d, #2a788e, #21908d, #22a884, #42be71, #7ad151, #bddf26, #bddf26'
 ];
