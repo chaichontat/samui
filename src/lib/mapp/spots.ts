@@ -23,7 +23,8 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this.layer = new WebGLPointsLayer({
       source: this.source,
       // Placeholder
-      style: { symbol: { size: 12, symbolType: 'circle' } }
+      style: { symbol: { size: 12, symbolType: 'circle' } },
+      zIndex: 10
     });
     this._deferred.resolve();
   }
@@ -49,7 +50,8 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     const spotSize = spotDiam / mPerPx;
     const newLayer = new WebGLPointsLayer({
       source: this.source,
-      style: this.genStyle(spotSize)
+      style: this.genStyle(spotSize),
+      zIndex: 10
     });
 
     const prev = this.layer;
