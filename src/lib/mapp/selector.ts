@@ -1,3 +1,4 @@
+import { throttle } from 'lodash-es';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate';
 import { Point, Polygon } from 'ol/geom';
@@ -41,28 +42,30 @@ export class _Points {
       throw new Error('No template defined for select.');
     }
     const ids: number[] = [];
+    const origin = (polygonFeat.getId() ?? -1) as number;
     const polygon = polygonFeat.getGeometry()!;
     if (remove) {
-      this.remove(polygonFeat.getId() as number);
+      this.remove(origin);
     }
 
     this.source.addFeatures(
       this.template
         .filter((f) => polygon.intersectsExtent(f.getGeometry()!.getExtent()))
         .map((f) => {
+          // ID of spot.
           const id = f.getId() as number;
           ids.push(id);
           const point = f.getGeometry()! as Point;
           const feat = new Feature({
             geometry: point.clone()
           });
-          feat.set('origin', polygonFeat.getId());
+          feat.set('origin', origin);
           feat.setId(id);
           // https://openlayers.org/en/latest/examples/regularshape.html
           feat.setStyle(
             new Style({
               image: new RegularShape({
-                fill: new Fill({ color: polygonFeat.get('color') as string }),
+                fill: new Fill({ color: (polygonFeat.get('color') as string) ?? '#00ffe9' }),
                 // stroke: new Stroke({ color: feature.get('color') as string, width: 2 }),
                 points: 4,
                 radius: 5,
@@ -159,18 +162,19 @@ export class Draww {
   }
 
   _attachDraw() {
-    // this.draw.on('drawstart', (event: DrawEvent) => {
-    //   event.feature.getGeometry()!.on(
-    //     'change',
-    //     debounce((e: BaseEvent) => this.select.updateSelect(e.target as Point), 10, {
-    //       leading: true,
-    //       trailing: false
-    //     })
-    //   );
-    // });
+    this.draw.on('drawstart', (event: DrawEvent) => {
+      event.feature.getGeometry()!.on(
+        'change',
+        throttle(() => this.points.updateSelect(event.feature as Feature<Polygon>, true), 200, {
+          leading: true,
+          trailing: false
+        })
+      );
+    });
 
     this.draw.on('drawend', (event: DrawEvent) => {
       event.preventDefault();
+      this.points.remove(-1);
       this._afterDraw(event.feature as Feature<Polygon>);
     });
   }
