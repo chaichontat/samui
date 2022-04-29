@@ -1,13 +1,13 @@
 import { throttle } from 'lodash-es';
 import { Feature, type Map } from 'ol';
-import type { Coordinate } from 'ol/coordinate';
-import { Point, Polygon } from 'ol/geom';
-import { Draw, Modify } from 'ol/interaction';
+import type { Coordinate } from 'ol/coordinate.js';
+import { Point, Polygon } from 'ol/geom.js';
+import { Draw, Modify } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
-import VectorLayer from 'ol/layer/Vector';
-import VectorSource from 'ol/source/Vector';
-import { Fill, RegularShape, Stroke, Style, Text } from 'ol/style';
+import VectorLayer from 'ol/layer/Vector.js';
+import VectorSource from 'ol/source/Vector.js';
+import { Fill, RegularShape, Stroke, Style, Text } from 'ol/style.js';
 import { tableau10arr } from '../colors';
 
 export class _Points {

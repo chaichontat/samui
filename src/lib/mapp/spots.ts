@@ -1,8 +1,8 @@
 import type { Map } from 'ol';
 import Feature from 'ol/Feature.js';
 import { Circle, Point } from 'ol/geom.js';
-import VectorLayer from 'ol/layer/Vector';
-import WebGLPointsLayer from 'ol/layer/WebGLPoints';
+import VectorLayer from 'ol/layer/Vector.js';
+import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
