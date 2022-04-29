@@ -61,7 +61,7 @@
 
         <!-- <Scatter coordsSource="umap" intensitySource={$currRna.values} pointRadius={2} /> -->
       </div>
-      <div class:hidden={showing !== 1}><Bar /></div>
+      <div class:hidden={showing !== 1}><Bar showing={showing === 1} /></div>
       <!-- {#if vegaShown}
     <div class:hidden={showing !== 2}><Veg /></div>
     {/if} -->

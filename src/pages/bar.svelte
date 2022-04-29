@@ -7,6 +7,7 @@
   import { onMount } from 'svelte';
   import { activeSample, multipleSelect, samples, store } from '../lib/store';
 
+  export let showing: boolean;
   Chart.defaults.font.size = 14;
 
   let bar: Chart<'bar', Record<string, number>, string>;
@@ -81,7 +82,7 @@
   //     .catch(console.error);
   // }
 
-  $: if (bar && $store.currIdx.idx !== curr) {
+  $: if (bar && showing && $store.currIdx.idx !== curr) {
     getRow($store.currIdx.idx)
       .then((row) => {
         const filtered = row.sort((a, b) => b[1] - a[1]).slice(0, 10);
