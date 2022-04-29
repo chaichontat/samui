@@ -28,7 +28,6 @@
   let selectionNames: string[] = [];
   function updateSelectionNames() {
     selectionNames = map.draw?.getPolygonsName() ?? [];
-    console.log(selectionNames);
   }
 
   let colorOpacity = 0.8;
@@ -95,17 +94,27 @@
       }}
       on:export={(evt) => handleExport(evt.detail.name)}
       on:import={(evt) => fromJSON(evt.detail.e).catch(console.error)}
+      on:rename={(evt) => {
+        const newName = prompt('Enter new selection name.');
+        if (newName) {
+          draw?.setPolygonName(evt.detail.i, newName);
+          updateSelectionNames();
+        }
+      }}
     />
     <button
-      class="rounded-lg bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-700/70 dark:text-slate-200 dark:hover:bg-sky-600/80"
+      class="rounded-lg bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-600/90 dark:text-slate-200 dark:hover:bg-sky-600"
       class:bg-slate-600={selecting}
       class:hover:bg-slate-600={selecting}
       class:active:bg-slate-600={selecting}
+      class:dark:bg-slate-600={selecting}
+      class:dark:hover:bg-slate-600={selecting}
+      class:dark:active:bg-slate-600={selecting}
       on:click={() => (selecting = true)}
       disabled={selecting}
       ><svg
         xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5 stroke-current stroke-2"
+        class="h-5 w-5 stroke-current stroke-[2.5]"
         fill="none"
         viewBox="0 0 24 24"
       >

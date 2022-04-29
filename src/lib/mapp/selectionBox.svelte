@@ -8,7 +8,7 @@
 
 <Popover class="relative z-20">
   <PopoverButton
-    class="rounded-md bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+    class="rounded-md bg-sky-600/80  px-3 py-2 text-sm font-medium text-white transition-all hover:bg-sky-600/80 hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 active:bg-sky-500 dark:bg-sky-700/80 dark:text-slate-200 dark:hover:bg-sky-700 dark:active:bg-sky-600"
   >
     <slot name="button">
       <div class="flex items-center">
@@ -51,7 +51,7 @@
             on:mouseleave={() => dispatch('hover', { i: null })}
           >
             <div class="flex items-center gap-x-2">
-              <button>
+              <button on:click={() => dispatch('rename', { i })}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-4 w-4 stroke-current stroke-2 transition-all hover:stroke-[3]"
@@ -65,7 +65,7 @@
                   />
                 </svg>
               </button>
-              <span class="text-ellipsis">{name.length > 0 ? name : `Selection ${i + 1}`}</span>
+              <span class="text-ellipsis">{name}</span>
             </div>
 
             <button on:click={() => dispatch('delete', { i })}>
