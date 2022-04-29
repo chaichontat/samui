@@ -21,7 +21,7 @@
 @tailwind utilities;
 @layer utilities {
   .bg-default {
-    @apply bg-slate-100/80 text-slate-800  dark:bg-slate-800/80 dark:text-slate-100;
+    @apply bg-slate-100/90 text-slate-800  dark:bg-slate-800/90 dark:text-slate-100;
   }
 
   .border-default {
@@ -30,5 +30,13 @@
 
   .hover-default {
     @apply hover:bg-slate-300/80 active:bg-slate-400/80 dark:hover:bg-slate-700/80 dark:active:bg-slate-600/80;
+  }
+
+  .picker {
+    @apply bg-default flex w-full flex-col rounded-lg backdrop-blur;
+  }
+
+  .picker-el {
+    @apply hover-default cursor-pointer rounded px-3;
   }
 }

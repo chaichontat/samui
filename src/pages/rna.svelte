@@ -1,27 +1,39 @@
 <script lang="ts">
+  import SearchBox from '$src/lib/components/searchBox.svelte';
   // import Veg from '$src/lib/components/veg.svelte';
-  import { activeSample, currRna, samples } from '$src/lib/store';
+  import { activeFeatures, activeSample, samples, type HoverName } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
+  import type { ChartOptions } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
   import Bar from './bar.svelte';
   import Scatter from './scatter.svelte';
   let showing = 0;
 
   let vegaShown = false;
-  $: console.log(showing);
   $: if (showing === 1) vegaShown = true;
+
+  const hoverOptions: ChartOptions<'scatter'> = {
+    onHover: (evt) => {}
+  };
 </script>
 
 <div class="flex flex-col divide-y dark:divide-slate-700">
   <div class="mx-auto mt-6 hidden w-[90%] lg:block">
-    <Scatter />
+    <Scatter
+      coordsSource={{ name: $activeSample, values: $samples[$activeSample].image.coords }}
+      intensitySource={{
+        name: $activeFeatures.genes.active,
+        values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)
+      }}
+      {hoverOptions}
+    />
   </div>
 
   <section class="pt-4">
     <TabGroup on:change={(e) => (showing = e.detail)}>
       <TabList class="mx-4 flex space-x-1 rounded-xl  bg-indigo-50 p-1 dark:bg-slate-800/50">
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>UMAP</Tab>
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Scatter</Tab>
         <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
         <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
         <div
@@ -35,10 +47,19 @@
     </TabGroup>
 
     <div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
-      <div class:hidden={showing !== 0}>
+      <div class="flex flex-col gap-y-1" class:hidden={showing !== 0}>
         <!-- {#if $samples[$activeSample] && 'umap' in $samples[$activeSample].features} -->
-        <Scatter coordsSource="umap" pointRadius={2} />
-        <!-- {/if} -->
+        <div class="flex items-center gap-x-2">
+          x:
+          <SearchBox />
+          y: <SearchBox />
+        </div>
+
+        <div class="flex items-center gap-x-2">
+          Color: <div class="w-full"><SearchBox /></div>
+        </div>
+
+        <!-- <Scatter coordsSource="umap" intensitySource={$currRna.values} pointRadius={2} /> -->
       </div>
       <div class:hidden={showing !== 1}><Bar /></div>
       <!-- {#if vegaShown}

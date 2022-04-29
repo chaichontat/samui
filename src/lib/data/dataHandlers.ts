@@ -1,6 +1,6 @@
 import { browser } from '$app/env';
 import pako from 'pako';
-import { genLRU, getFile } from '../utils';
+import { Deferrable, genLRU, getFile } from '../utils';
 
 export interface Data {
   // retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
@@ -40,7 +40,7 @@ export type ChunkedJSONHeader = {
 export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
 export type Sparse = { index: number[]; value: number[] };
 
-export class PlainJSON implements Data {
+export class PlainJSON extends Deferrable implements Data {
   name: string;
   url?: Url;
   dataType?: DataType;
@@ -48,6 +48,7 @@ export class PlainJSON implements Data {
   hydrated = false;
 
   constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
+    super();
     this.name = name;
     this.url = url;
     this.values = values;
@@ -75,7 +76,7 @@ export class PlainJSON implements Data {
   }
 }
 
-export class ChunkedJSON implements Data {
+export class ChunkedJSON extends Deferrable implements Data {
   retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
   ptr?: number[];
   names?: Record<string, number> | null;
@@ -96,6 +97,7 @@ export class ChunkedJSON implements Data {
     { name, url, headerUrl, header, dataType, options }: ChunkedJSONParams,
     autoHydrate = false
   ) {
+    super();
     this.name = name;
     this.url = url;
     this.header = header;
@@ -153,6 +155,10 @@ export class ChunkedJSON implements Data {
             idx = selected;
           }
         }
+        if (idx === undefined) {
+          console.error("Couldn't find index for", selected);
+          return undefined;
+        }
 
         if (this.ptr![idx] === this.ptr![idx + 1]) {
           return zero;
@@ -166,9 +172,10 @@ export class ChunkedJSON implements Data {
         const blob = await raw.blob();
         const decomped = await this.decompressBlob(blob);
         const sparse = JSON.parse(decomped) as Sparse;
-        return this.genDense(sparse, this.length!, this.densify);
+        return this.densify ? this.genDense(sparse) : sparse;
       }
     );
+    this._deferred.resolve();
     this.hydrated = true;
     return this;
   }
@@ -191,15 +198,13 @@ export class ChunkedJSON implements Data {
           return pako.inflate((await blob.arrayBuffer()) as pako.Data, { to: 'string' });
         };
 
-  genDense(obj: Sparse, len: number, densify: false): Sparse;
-  genDense(obj: Sparse, len: number, densify: true): number[];
-  genDense(obj: Sparse, len: number, densify: boolean): number[] | Sparse;
-  genDense(obj: Sparse, len: number, densify: boolean): number[] | Sparse {
-    if (!densify) return obj;
-    const dense = new Array(len).fill(0) as number[];
+  genDense(obj: Sparse): number[] {
+    console.assert(obj.index.length === obj.value.length);
+    const dense = new Array(this.length).fill(0) as number[];
     for (let i = 0; i < obj.index.length; i++) {
       dense[obj.index[i]] = obj.value[i];
     }
+    console.assert(dense.every((x) => x !== undefined));
     return dense;
   }
 }

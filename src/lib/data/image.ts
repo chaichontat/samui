@@ -1,4 +1,5 @@
 import type { ImageMode } from '../mapp/imgControl';
+import { Deferrable } from '../utils';
 import { convertLocalToNetwork, type Data, type Url } from './dataHandlers';
 
 export type ImageParams = { urls: Url[]; headerUrl?: Url; header?: ImageHeader };
@@ -16,7 +17,7 @@ export type ImageHeader = {
   mode?: ImageMode;
 };
 
-export class Image implements Data {
+export class Image extends Deferrable implements Data {
   urls: readonly Url[];
   coords?: readonly { x: number; y: number }[];
   channel?: Record<string, number>;
@@ -26,6 +27,7 @@ export class Image implements Data {
   hydrated = false;
 
   constructor({ urls, headerUrl, header }: ImageParams, autoHydrate = false) {
+    super();
     this.urls = urls;
     this.headerUrl = headerUrl;
     this.header = header;
@@ -50,6 +52,7 @@ export class Image implements Data {
     ({ channel: this.channel, coords: this.coords } = this.header!);
     this.n_spot = this.coords.length;
     this.hydrated = true;
+    this._deferred.resolve();
     return this;
   }
 }

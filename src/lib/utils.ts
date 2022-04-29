@@ -140,6 +140,32 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
   };
 }
 
+export function keyOneLRU<T extends unknown[], R>(f: (...args: T) => R | false) {
+  let lastName: string;
+  let lastResult: R;
+
+  return ({ key, args }: { key: string; args: T }): R | false => {
+    if (key === lastName) return lastResult;
+    const res = f(...args);
+    if (res !== false) {
+      lastName = key;
+      lastResult = res;
+    }
+    return res;
+  };
+}
+
+export function keyLRU<T extends unknown[], R>(f: (...args: T) => R, max = 100) {
+  const cache = new LRU<string, R>({ max });
+
+  return ({ key, args }: { key: string; args: T }): R => {
+    if (cache.has(key)) return cache.get(key) as R; // Checked
+    const r = f(...args);
+    cache.set(key, r);
+    return r;
+  };
+}
+
 /**
  * Wraps the update function. Hydrates the sample if not already done then call update.
  * Also wrapped with oneLRU to prevent repeated calls on the same sample.
@@ -149,7 +175,7 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
  */
 export function genUpdate(
   store: Writable<{ [key: string]: Sample }>,
-  update: (sample: Sample) => void
+  update: (sample: Sample) => void | Promise<void>
 ): (s: string) => Promise<void> {
   return oneLRU(async (s: string) => {
     const sample = get(store)[s];
@@ -157,10 +183,47 @@ export function genUpdate(
     if (!sample.hydrated) {
       await sample.hydrate();
     }
-    return update(sample);
+    const res = update(sample);
+    return res instanceof Promise ? await res : res;
   });
 }
 
 export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
   return await handle.getFileHandle(name).then((fh) => fh.getFile());
+}
+
+export class Deferred<T extends unknown[] = [void], R = void> {
+  resolve!: (arg: R) => void;
+  reject!: () => void;
+  promise: Promise<R>;
+  f: (...args: T) => R;
+
+  // @ts-expect-error
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  constructor(f: (...args: T) => R = () => {}) {
+    this.f = f;
+    this.promise = new Promise(
+      (resolve, reject) => ([this.resolve, this.reject] = [resolve, reject])
+    );
+  }
+
+  run(...args: T) {
+    this.resolve(this.f(...args));
+  }
+}
+
+export class Deferrable {
+  readonly promise: Promise<void>;
+  readonly _deferred: Deferred<[void], void>;
+
+  constructor() {
+    this._deferred = new Deferred();
+    this.promise = this._deferred.promise;
+  }
+}
+
+export type Named<T> = { name: string; values: T };
+
+export function classNames(...classes: (false | null | undefined | string)[]): string {
+  return classes.filter(Boolean).join(' ');
 }

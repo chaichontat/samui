@@ -1,3 +1,4 @@
+import { Deferrable } from '../utils';
 import { ChunkedJSON, PlainJSON, type Data, type FeatureParams } from './dataHandlers';
 import { Image, type ImageParams } from './image';
 
@@ -8,7 +9,7 @@ export type SampleParams = {
   handle?: FileSystemDirectoryHandle;
 };
 
-export class Sample implements Data {
+export class Sample extends Deferrable implements Data {
   name: string;
   imgParams: ImageParams;
   featParams: FeatureParams[];
@@ -19,6 +20,7 @@ export class Sample implements Data {
   handle?: FileSystemDirectoryHandle;
 
   constructor({ name, imgParams, featParams, handle }: SampleParams, autoHydrate = false) {
+    super();
     this.name = name;
     this.imgParams = imgParams;
     this.image = new Image(this.imgParams, false);
@@ -51,6 +53,7 @@ export class Sample implements Data {
       ...Object.values(this.features).map((f) => f.hydrate(this.handle))
     ]);
     this.hydrated = true;
+    this._deferred.resolve();
     return this;
   }
 }

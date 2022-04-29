@@ -1,69 +1,95 @@
-import type { ImageCtrl, ImageMode } from '$src/lib/mapp/imgControl';
-import type { Style } from 'ol/layer/WebGLTile.js';
+import type { Map } from 'ol';
+import WebGLTileLayer, { type Style } from 'ol/layer/WebGLTile.js';
+import GeoTIFF from 'ol/source/GeoTIFF.js';
+import type { Image } from '../data/image';
+import { Deferrable } from '../utils';
+import type { ImageMode } from './imgControl';
+import type { MapComponent } from './mapp';
 
-export function colorVarFactory(mode: ImageMode, mapping?: { [key: string]: number }) {
-  if (mode === 'composite') {
-    if (!mapping) throw new Error('Missing mapping for composite mode');
-    return (imgCtrl: ImageCtrl) => {
-      if (imgCtrl.type !== 'composite') throw new Error('Expected composite image control');
-      const showing = imgCtrl.showing;
-      const max = imgCtrl.maxIntensity;
+export class Background extends Deferrable implements MapComponent {
+  source?: GeoTIFF;
+  layer?: WebGLTileLayer;
+  mode?: 'composite' | 'rgb';
+  mPerPx?: number;
 
-      return ['blue', 'green', 'red']
-        .map((c, i) => ({
-          [c]: showing[i] === 'none' ? 1 : mapping[showing[i]],
-          [c + 'Max']: 255 - max[i],
-          [c + 'Mask']: showing[i] === 'none' ? 0 : 1
-        }))
-        .reduce((acc, x) => Object.assign(acc, x), {});
-    };
-  } else if (mode === 'rgb') {
-    return (imgCtrl: ImageCtrl) => {
-      if (imgCtrl.type !== 'rgb') throw new Error('Expected RGB image control');
-      const ret: Omit<ImageCtrl, 'type'> = {
-        Exposure: imgCtrl.Exposure,
-        Contrast: imgCtrl.Contrast,
-        Saturation: imgCtrl.Saturation
-      };
-      return ret;
-    };
-  } else {
-    throw new Error(`Unknown mode`);
+  constructor() {
+    super();
   }
-}
 
-export function genBgStyle(mode: ImageMode): Style {
-  if (mode === 'composite') {
-    return {
-      variables: {
-        blue: 1,
-        green: 1,
-        red: 1,
-        blueMax: 128,
-        greenMax: 128,
-        redMax: 128,
-        blueMask: 1,
-        greenMask: 1,
-        redMask: 1
-      },
-      color: [
-        'array',
-        ['*', ['/', ['band', ['var', 'red']], ['var', 'redMax']], ['var', 'redMask']],
-        ['*', ['/', ['band', ['var', 'green']], ['var', 'greenMax']], ['var', 'greenMask']],
-        ['*', ['/', ['band', ['var', 'blue']], ['var', 'blueMax']], ['var', 'blueMask']],
-        1
-      ]
-    };
-  } else {
-    return {
-      variables: {
-        Exposure: 0,
-        Contrast: 0,
-        Saturation: 0
-      },
-      exposure: ['var', 'Exposure'],
-      contrast: ['var', 'Contrast'],
-      saturation: ['var', 'Saturation']
-    };
+  mount(): void {
+    if (!this.layer) {
+      this.layer = new WebGLTileLayer({});
+    }
+    this._deferred.resolve();
+  }
+
+  async update(map: Map, image: Image) {
+    await image.promise;
+    if (this.layer) {
+      map.removeLayer(this.layer);
+      this.layer.dispose();
+    }
+    if (this.source) {
+      this.source.dispose(); // Cannot reuse GeoTIFF.
+    }
+
+    const urls = image.urls.map((url) => ({ url: url.url }));
+    this.source = new GeoTIFF({
+      normalize: image.header!.mode === 'rgb',
+      sources: urls
+    });
+
+    this.mode = image.header!.mode ?? 'composite';
+    this.layer = new WebGLTileLayer({
+      style: this._genBgStyle(this.mode),
+      source: this.source
+    });
+
+    this.mPerPx = image.header!.spot.mPerPx;
+    map.addLayer(this.layer);
+    map.setView(this.source.getView());
+  }
+
+  updateStyle(variables: Record<string, number>) {
+    this.layer?.updateStyleVariables(variables);
+  }
+
+  _genBgStyle(mode: ImageMode): Style {
+    switch (mode) {
+      case 'composite':
+        return {
+          variables: {
+            blue: 1,
+            green: 1,
+            red: 1,
+            blueMax: 128,
+            greenMax: 128,
+            redMax: 128,
+            blueMask: 1,
+            greenMask: 1,
+            redMask: 1
+          },
+          color: [
+            'array',
+            ['*', ['/', ['band', ['var', 'red']], ['var', 'redMax']], ['var', 'redMask']],
+            ['*', ['/', ['band', ['var', 'green']], ['var', 'greenMax']], ['var', 'greenMask']],
+            ['*', ['/', ['band', ['var', 'blue']], ['var', 'blueMax']], ['var', 'blueMask']],
+            1
+          ]
+        };
+      case 'rgb':
+        return {
+          variables: {
+            Exposure: 0,
+            Contrast: 0,
+            Saturation: 0
+          },
+          exposure: ['var', 'Exposure'],
+          contrast: ['var', 'Contrast'],
+          saturation: ['var', 'Saturation']
+        };
+      default:
+        throw new Error(`Unknown image mode`);
+    }
   }
 }

@@ -8,8 +8,8 @@
   import { createEventDispatcher } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import type { Sample } from '../data/sample';
   import { activeSample, samples } from '../store';
+  import { classNames } from '../utils';
   import Spinner from './spinner.svelte';
 
   export let items: string[];
@@ -19,39 +19,39 @@
 
   let loading = false;
 
-  async function checkHydrate(s: Sample) {
-    if (!s.hydrated) {
+  async function checkHydrate(s: string) {
+    const sample = $samples[s];
+    if (!sample.hydrated) {
       loading = true;
-      await s.hydrate();
+      await sample.hydrate();
       loading = false;
     }
+    $activeSample = s;
+    dispatch('change', s);
+    _active = rows.find((r) => r.name === s)!;
   }
-  $: checkHydrate($samples[$activeSample]).catch(console.error);
-  $: rows = items?.sort().map((item, i) => ({
-    id: i,
-    name: item
-  }));
 
-  $: active = rows[0];
-  function classNames(...classes: (false | null | undefined | string)[]): string {
-    return classes.filter(Boolean).join(' ');
+  let _active: { id: number; name: string };
+  $: {
+    rows = items?.sort().map((item, i) => ({
+      id: i,
+      name: item
+    }));
+    _active = rows[0];
   }
 </script>
 
 <div class="relative min-w-[150px] max-w-lg md:min-w-[200px]">
   <span class="inline-block w-full rounded-md shadow-sm">
     <Listbox
-      value={active}
-      on:change={(e) => {
-        active = e.detail;
-        dispatch('change', e.detail.name);
-      }}
+      value={_active}
+      on:change={(e) => checkHydrate(e.detail.name).catch(console.error)}
       let:open
     >
       <ListboxButton
-        class="relative w-full max-w-md cursor-pointer rounded-md border bg-slate-100 py-2 pl-3 pr-10 text-left text-slate-800 transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-slate-800/80 dark:text-slate-100 sm:leading-5"
+        class="relative w-full max-w-md cursor-pointer rounded-md border bg-slate-100/90 py-2 pl-3 pr-10 text-left text-slate-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-slate-800/80 dark:text-slate-100 sm:leading-5"
       >
-        <span class="block truncate font-medium">{active?.name}</span>
+        <span class="block truncate font-medium">{_active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
           {#if loading}
             <Spinner />

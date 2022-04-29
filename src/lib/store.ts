@@ -2,9 +2,12 @@ import first from '$lib/data/first';
 import sampleList from '$lib/data/meh';
 import { writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
+
+export type Idx = { idx: number; source: string };
+
 export type State = {
-  lockedIdx: { idx: number; source: 'scatter' | 'map' };
-  currIdx: { idx: number; source: 'scatter' | 'map' };
+  lockedIdx: Idx;
+  currIdx: Idx;
   readonly locked: boolean;
 };
 
@@ -13,6 +16,37 @@ export const store: Writable<State> = writable({
   currIdx: { idx: 0, source: 'scatter' },
   get locked() {
     return this.lockedIdx.idx !== -1;
+  }
+});
+
+export type HoverName = {
+  hover: string | null;
+  selected: string | null;
+  get active(): string | null;
+};
+// export class HoverName {
+//   hover: string | null = null;
+//   selected: string | null = null;
+
+//   constructor({ hover, selected }: { hover?: string | null; selected?: string | null }) {
+//     this.hover = hover ?? null;
+//     this.selected = selected ?? null;
+//   }
+
+//   getActive() {
+//     if (this.hover) return this.hover;
+//     return this.selected;
+//   }
+// }
+
+export const activeFeatures: Writable<Record<string, HoverName>> = writable({
+  genes: {
+    hover: null,
+    selected: 'GFAP',
+    get active() {
+      if (this.hover) return this.hover;
+      return this.selected;
+    }
   }
 });
 
