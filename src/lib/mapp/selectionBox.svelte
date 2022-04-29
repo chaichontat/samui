@@ -36,6 +36,7 @@
       {#if names.length === 0}
         <span class="italic text-slate-300"> No selections. </span>
       {/if}
+
       {#each names as name, i}
         <div
           class="flex items-center justify-between"
@@ -74,13 +75,31 @@
       {/each}
     </section>
 
-    <section class="p-1">
+    <section id="selectionControls" class="p-1">
+      <input
+        class="visually-hidden"
+        name="file"
+        type="file"
+        id="selectionFileInput"
+        accept=".json"
+        on:click={(e) => (e.currentTarget.value = '')}
+        on:change={(e) => dispatch('import', { e })}
+      />
+      <label for="selectionFileInput" class="picker-el w-full py-1 text-left">
+        Import selections
+      </label>
       {#if names.length > 0}
-        <div class="picker-el py-1">Export selections</div>
-        <div class="picker-el py-1">Export selected spots</div>
-        <div class="picker-el py-1">Clear all</div>
-      {:else}
-        <div class="picker-el py-1">Import selections</div>
+        <button
+          class="picker-el py-1 text-left"
+          on:click={() => dispatch('export', { name: 'selections' })}>Export selections</button
+        >
+        <button
+          class="picker-el py-1 text-left"
+          on:click={() => dispatch('export', { name: 'spots' })}>Export spots</button
+        >
+        <button class="picker-el py-1 text-left" on:click={() => dispatch('clearall')}
+          >Clear all</button
+        >
       {/if}
     </section>
   </PopoverPanel>
@@ -89,5 +108,12 @@
 <style lang="postcss">
   section {
     @apply flex flex-col gap-y-1 py-1;
+  }
+
+  .visually-hidden {
+    @apply absolute overflow-hidden;
+    height: 1px;
+    width: 1px;
+    clip: rect(1px, 1px, 1px, 1px);
   }
 </style>

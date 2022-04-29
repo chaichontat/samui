@@ -3,19 +3,26 @@
   import type { Mapp } from '$src/lib/mapp/mapp';
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
+  import type { VectorSourceEvent } from 'ol/src/source/vector';
   import { onMount } from 'svelte';
+  import { activeSample } from '../store';
+  import type { Draww } from './selector';
 
   export let map: Mapp;
   export let selecting: boolean;
+  let draw: Draww | undefined;
 
   onMount(async () => {
     await map.promise;
     map.draw!.draw.on('drawend', () => (selecting = false));
-    map.draw!.source.on('addfeature', () => {
-      const name = prompt('Name of selection');
-      map.draw!.setPolygonName(-1, name ?? 'Selection');
+    map.draw!.source.on('addfeature', (evt) => {
+      if (!evt.feature!.get('name')) {
+        const name = prompt('Name of selection');
+        map.draw!.setPolygonName(-1, name ?? 'Selection');
+      }
       updateSelectionNames();
     });
+    draw = map.draw;
   });
 
   let selectionNames: string[] = [];
@@ -31,6 +38,45 @@
     await map.layerMap.spots.promise;
     map.layerMap.spots.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
+
+  function handleExport(t: 'spots' | 'selections') {
+    if (!map.mounted) return;
+    switch (t) {
+      case 'selections':
+        toJSON(draw!.dumpPolygons(), `selections_${$activeSample}.json`);
+        break;
+      case 'spots':
+        toJSON(draw!.dumpPoints(), `spots_${$activeSample}.json`);
+        break;
+      default:
+        throw new Error('Unknown export type');
+    }
+  }
+
+  function toJSON(t: object, name: string) {
+    const blob = new Blob([JSON.stringify(t)], { type: 'application/json' });
+    const elem = window.document.createElement('a');
+    elem.href = window.URL.createObjectURL(blob);
+    elem.download = name;
+    document.body.appendChild(elem);
+    elem.click();
+    document.body.removeChild(elem);
+  }
+
+  async function fromJSON(e: { currentTarget: EventTarget & HTMLInputElement }) {
+    if (!e.currentTarget.files) return;
+    const raw = await e.currentTarget.files[0].text();
+    console.log(raw);
+
+    try {
+      const parsed = JSON.parse(raw) as ReturnType<Draww['dumpPolygons']>;
+      console.log(parsed);
+
+      draw!.loadPolygons(parsed);
+    } catch (e) {
+      alert(e);
+    }
+  }
 </script>
 
 <section class="absolute top-16 right-4 z-20 flex flex-col items-end gap-3 md:top-4">
@@ -38,11 +84,17 @@
   <div class="flex space-x-2">
     <SelectionBox
       names={selectionNames}
+      on:hover={(evt) => map.draw?.highlightPolygon(evt.detail.i)}
       on:delete={(evt) => {
         map.draw?.deletePolygon(evt.detail.i);
         updateSelectionNames();
       }}
-      on:hover={(evt) => map.draw?.highlightPolygon(evt.detail.i)}
+      on:clearall={() => {
+        map.draw?.clear();
+        updateSelectionNames();
+      }}
+      on:export={(evt) => handleExport(evt.detail.name)}
+      on:import={(evt) => fromJSON(evt.detail.e).catch(console.error)}
     />
     <button
       class="rounded-lg bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-700/70 dark:text-slate-200 dark:hover:bg-sky-600/80"
