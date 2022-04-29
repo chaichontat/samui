@@ -8,7 +8,7 @@
 
 <Popover class="relative z-20">
   <PopoverButton
-    class="rounded-md bg-sky-600/80  px-3 py-2 text-sm font-medium text-white transition-all hover:bg-sky-600/80 hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 active:bg-sky-500 dark:bg-sky-700/80 dark:text-slate-200 dark:hover:bg-sky-700 dark:active:bg-sky-600"
+    class="rounded-md bg-sky-600/80 px-3 py-2 text-sm font-medium text-white backdrop-blur transition-all hover:bg-sky-600/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 active:bg-sky-500 dark:bg-sky-700/80 dark:text-sky-50 dark:hover:bg-sky-700 dark:active:bg-sky-600"
   >
     <slot name="button">
       <div class="flex items-center">
@@ -18,7 +18,7 @@
           viewBox="0 0 20 20"
           fill="currentColor"
           aria-hidden="true"
-          class="ml-2 h-5 w-5 text-sky-300 transition duration-150 ease-in-out group-hover:text-opacity-80"
+          class="ml-2 h-5 w-5 transition duration-150 ease-in-out"
           ><path
             fill-rule="evenodd"
             d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"

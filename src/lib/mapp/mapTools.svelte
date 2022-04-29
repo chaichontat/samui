@@ -3,7 +3,6 @@
   import type { Mapp } from '$src/lib/mapp/mapp';
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
-  import type { VectorSourceEvent } from 'ol/src/source/vector';
   import { onMount } from 'svelte';
   import { activeSample } from '../store';
   import type { Draww } from './selector';
@@ -114,7 +113,7 @@
       disabled={selecting}
       ><svg
         xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5 stroke-current stroke-[2.5]"
+        class="h-5 w-5 stroke-white stroke-[2.5]"
         fill="none"
         viewBox="0 0 24 24"
       >
@@ -125,12 +124,12 @@
 
   <!-- Show all spots -->
   <div
-    class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur-sm transition-all hover:bg-slate-200/80 dark:bg-neutral-600/70 dark:text-white/90 dark:hover:bg-neutral-600/90"
+    class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
   >
     <label class="cursor-pointer">
       <input
         type="checkbox"
-        class="mr-0.5 cursor-pointer opacity-80"
+        class="mr-0.5 cursor-pointer bg-opacity-80"
         checked
         on:change={(e) => setSpotVisible(e.currentTarget.checked)}
       />

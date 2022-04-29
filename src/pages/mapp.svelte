@@ -200,6 +200,13 @@
   }
 
   #map :global(.ol-zoom) {
-    @apply absolute left-auto right-4 bottom-6 top-auto;
+    @apply absolute left-auto right-4 bottom-6 top-auto backdrop-blur;
+  }
+
+  #map :global(.ol-zoom-in) {
+    @apply bg-sky-700/90;
+  }
+  #map :global(.ol-zoom-out) {
+    @apply bg-sky-700/90;
   }
 </style>

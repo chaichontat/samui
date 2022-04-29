@@ -21,7 +21,7 @@
 @tailwind utilities;
 @layer utilities {
   .bg-default {
-    @apply bg-slate-100/80 text-slate-800  dark:bg-slate-800/80 dark:text-slate-100;
+    @apply bg-slate-100/90 text-slate-800  dark:bg-slate-800/90 dark:text-slate-100;
   }
 
   .border-default {
