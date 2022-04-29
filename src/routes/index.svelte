@@ -30,9 +30,9 @@
       on:click={byod}
     >
       <span
-        class="relative rounded-md bg-slate-50/90 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900/80"
+        class="relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900"
       >
-        View your Data
+        Add Sample
       </span>
     </button>
   </section>
