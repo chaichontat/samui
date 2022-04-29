@@ -146,7 +146,7 @@
       <!-- Color indicator -->
       <div class="mt-2 flex flex-col">
         {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
+          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'none'}
             <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
           {/if}
         {/each}
@@ -158,7 +158,7 @@
 
   <!-- Buttons -->
   <div
-    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur transition-colors dark:bg-slate-800/70 lg:bottom-6 lg:left-4 xl:pr-4"
+    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
   >
     {#if mode === 'composite'}
       <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
