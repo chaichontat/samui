@@ -1,18 +1,13 @@
-import debounce from 'lodash-es/debounce';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate';
-import type BaseEvent from 'ol/events/Event';
-import { Circle, Point, Polygon } from 'ol/geom';
+import { Point, Polygon } from 'ol/geom';
 import { Draw, Modify } from 'ol/interaction';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
-import Select from 'ol/interaction/Select.js';
 import VectorLayer from 'ol/layer/Vector';
-import VectorSource, { VectorSourceEvent } from 'ol/source/Vector';
-import { Fill, Stroke, Style, Text } from 'ol/style';
-import CircleStyle from 'ol/style/Circle';
+import VectorSource from 'ol/source/Vector';
+import { Fill, RegularShape, Stroke, Style, Text } from 'ol/style';
 import { tableau10arr } from '../colors';
-import type { SpotParams } from '../data/image';
 
 export class _Points {
   readonly features: Feature[];
@@ -32,6 +27,7 @@ export class _Points {
   }
 
   mount(map: Map) {
+    this.layer.setZIndex(20);
     map.addLayer(this.layer);
   }
 
@@ -55,18 +51,22 @@ export class _Points {
           ids.push(f.getId() as number);
           const point = f.getGeometry()! as Point;
           const feat = new Feature({
-            geometry: point.clone(),
-            style: new Style({
-              stroke: new Stroke({
-                color: feature.get('color') as `#${string}`,
-                width: 1
-              }),
-              fill: new Fill({ color: '#00000000' })
-            }),
-            size: 10
+            geometry: point.clone()
           });
           feat.set('origin', feature.getId());
-
+          // Cross
+          // https://openlayers.org/en/latest/examples/regularshape.html
+          feat.setStyle(
+            new Style({
+              image: new RegularShape({
+                fill: new Fill({ color: feature.get('color') as string }),
+                // stroke: new Stroke({ color: feature.get('color') as string, width: 2 }),
+                points: 4,
+                radius: 5,
+                angle: Math.PI / 4
+              })
+            })
+          );
           return feat;
         })
     );
