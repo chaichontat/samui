@@ -36,13 +36,15 @@ export class _Points {
     this.template = template;
   }
 
-  updateSelect(feature: Feature<Polygon>) {
+  updateSelect(feature: Feature<Polygon>, remove = false) {
     if (!this.template) {
       throw new Error('No template defined for select.');
     }
     const ids: number[] = [];
     const polygon = feature.getGeometry()!;
-    // this.source.clear();
+    if (remove) {
+      this.remove(feature.getId() as number);
+    }
 
     this.source.addFeatures(
       this.template
@@ -129,10 +131,10 @@ export class Draww {
     this.modify = new Modify({ source: this.source });
 
     this._attachDraw();
-    this._attachModify();
   }
 
   mount(map: Map) {
+    this._attachModify(map);
     this.selectionLayer.setZIndex(50);
     map.addLayer(this.selectionLayer);
     this.points.mount(map);
@@ -170,11 +172,12 @@ export class Draww {
     });
   }
 
-  _attachModify() {
+  _attachModify(map: Map) {
+    map.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => {
       const polygon = e.features.getArray()[0].getGeometry()!;
       if ('intersectsExtent' in polygon) {
-        this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>);
+        this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>, true);
       } else {
         console.error("Polygon doesn't have intersectsExtent");
       }
@@ -203,6 +206,8 @@ export class Draww {
     const st = this.style.clone();
     if (setStroke) {
       st.setStroke(new Stroke({ color: feature.get('color') as `#{string}`, width: 2 }));
+    } else {
+      st.setFill(new Fill({ color: 'rgba(255, 255, 255, 0.1)' }));
     }
     st.getText().setText(feature.get('name') as string);
     feature.setStyle(st);
