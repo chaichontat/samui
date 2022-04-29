@@ -162,19 +162,19 @@ export class Draww {
   }
 
   _attachDraw() {
-    this.draw.on('drawstart', (event: DrawEvent) => {
-      event.feature.getGeometry()!.on(
-        'change',
-        throttle(() => this.points.updateSelect(event.feature as Feature<Polygon>, true), 200, {
-          leading: true,
-          trailing: false
-        })
-      );
-    });
+    // this.draw.on('drawstart', (event: DrawEvent) => {
+    //   event.feature.getGeometry()!.on(
+    //     'change',
+    //     throttle(() => this.points.updateSelect(event.feature as Feature<Polygon>, true), 200, {
+    //       leading: true,
+    //       trailing: false
+    //     })
+    //   );
+    // });
 
     this.draw.on('drawend', (event: DrawEvent) => {
       event.preventDefault();
-      this.points.remove(-1);
+      // this.points.remove(-1);
       this._afterDraw(event.feature as Feature<Polygon>);
     });
   }
