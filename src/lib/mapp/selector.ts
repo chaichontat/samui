@@ -65,11 +65,12 @@ export class _Points {
           feat.setStyle(
             new Style({
               image: new RegularShape({
-                fill: new Fill({ color: (polygonFeat.get('color') as string) ?? '#00ffe9' }),
-                // stroke: new Stroke({ color: feature.get('color') as string, width: 2 }),
+                fill: new Fill({
+                  color: (polygonFeat.get('color') as string) + 'aa' ?? '#00ffe9aa'
+                }),
                 points: 4,
-                radius: 5,
-                angle: Math.PI / 4
+                radius: 5
+                // angle: Math.PI / 4
               })
             })
           );
