@@ -25,6 +25,11 @@ export type HoverName<T> = {
   get active(): T | null;
 };
 
+export type FeatureName<T> = {
+  feature?: string;
+  name: T;
+};
+
 export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }): HoverName<T> {
   return {
     hover: hover ?? null,
@@ -36,14 +41,7 @@ export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }
   };
 }
 
-export const activeFeatures: Writable<Record<string, HoverName<string>>> = writable({
-  genes: genHoverName({ selected: 'GFAP' })
-});
-
-export const currRna: Writable<{ name: string; values: number[] }> = writable({
-  name: '',
-  values: []
-});
+export const activeFeatures: Writable<FeatureName<string>> = writable({ name: '' });
 
 export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> = writable({
   ptr: [],

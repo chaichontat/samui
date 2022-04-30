@@ -16,6 +16,8 @@
   const hoverOptions: ChartOptions<'scatter'> = {
     onHover: (evt) => {}
   };
+
+  $: ({ values, dataType, activeDefault } = $samples[$activeSample]?.getFeature($activeFeatures));
 </script>
 
 <div class="flex flex-col divide-y dark:divide-slate-700">
@@ -23,9 +25,9 @@
     <Scatter
       coordsSource={{ name: $activeSample, values: $samples[$activeSample]?.image.coords }}
       intensitySource={{
-        name: $activeFeatures.genes.active,
-        dataType: $samples[$activeSample]?.features?.genes?.dataType,
-        values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)
+        name: $activeFeatures.name,
+        dataType: dataType,
+        values: values
       }}
       {hoverOptions}
       colorbar

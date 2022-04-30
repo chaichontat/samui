@@ -1,9 +1,40 @@
 <script lang="ts">
   import Darkswitch from './components/darkswitch.svelte';
   import SearchBox from './components/searchBox.svelte';
-  import { activeFeatures, activeSample, samples } from './store';
+  import { ChunkedJSON, PlainJSON, type Data } from './data/dataHandlers';
+  import type { Sample } from './data/sample';
+  import { activeFeatures, activeSample, samples, type FeatureName, type HoverName } from './store';
 
+  let names: FeatureName<string>[] = [];
+  let sample: Sample;
+
+  async function updateNames(features: Record<string, Data>) {
+    names = [];
+    for (const [name, f] of Object.entries(features)) {
+      if (f instanceof PlainJSON) {
+        names.push({ name });
+      } else if (f instanceof ChunkedJSON) {
+        await f.promise;
+        if (f.header!.names) {
+          names = names.concat(
+            Object.keys(f.header!.names).map((name) => ({ feature: f.name, name }))
+          );
+        }
+      } else {
+        throw new Error('Unknown feature type');
+      }
+    }
+    names = names;
+  }
   $: sample = $samples[$activeSample];
+  $: if (sample) {
+    updateNames(sample.features).catch(console.error);
+  }
+
+  let active: HoverName<FeatureName<string>>;
+  $: if (active?.active) {
+    $activeFeatures = active.active;
+  }
 </script>
 
 <nav
@@ -11,10 +42,7 @@
 >
   <!-- <div class="over mt-2 text-ellipsis text-xl font-medium">Showing <i>{$currRna.name}</i>.</div> -->
   <div class="mt-1 mr-2 text-base lg:flex-grow xl:text-lg">
-    <SearchBox
-      names={sample ? Object.keys(sample.features.genes.names) : []}
-      bind:curr={$activeFeatures.genes}
-    />
+    <SearchBox {names} bind:curr={active} />
   </div>
   <!-- <div class="flex-grow" /> -->
   <Darkswitch />

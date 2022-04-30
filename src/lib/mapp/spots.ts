@@ -6,6 +6,7 @@ import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
+import { convertCategoricalToNumber } from '../data/dataHandlers';
 import type { SpotParams } from '../data/image';
 import { Deferrable } from '../utils';
 import type { MapComponent, Mapp } from './mapp';
@@ -29,16 +30,20 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  async updateIntensity(map: Mapp, intensity: number[] | Promise<number[]>) {
+  async updateIntensity(map: Mapp, intensity: number[] | string[] | Promise<number[] | string[]>) {
     await map.promise;
     if (!intensity) throw new Error('No intensity provided');
     if (intensity instanceof Promise) {
       intensity = await intensity;
     }
 
-    if (intensity.length !== this.source?.getFeatures().length) {
+    if (intensity?.length !== this.source?.getFeatures().length) {
       console.error("Intensity length doesn't match");
       return false;
+    }
+
+    if (typeof intensity[0] === 'string') {
+      ({ converted: intensity } = convertCategoricalToNumber(intensity));
     }
 
     for (let i = 0; i < intensity.length; i++) {

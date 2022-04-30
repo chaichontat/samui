@@ -65,7 +65,7 @@
   };
 
   const calcColor = keyLRU((intensity: number[], dataType: 'categorical' | 'quantitative') => {
-    const out = [];
+    let out = [];
     if (!intensity.every((x) => x !== undefined)) {
       throw new Error('Intensity source is not ready.');
     }
@@ -74,14 +74,11 @@
       case 'categorical':
         // eslint-disable-next-line no-case-declarations
         const unique = [...new Set(intensity)];
-        // eslint-disable-next-line no-case-declarations
         catLegend = {} as Record<number | string, `#${string}`>;
-        for (const [i] of unique.entries()) {
-          catLegend[i] = tableau10arr[i % tableau10arr.length];
+        for (const [i, x] of unique.entries()) {
+          catLegend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
         }
-        for (const x of intensity) {
-          out.push(catLegend[x]);
-        }
+        out = intensity.map((x) => catLegend[x]);
         break;
 
       case 'quantitative':

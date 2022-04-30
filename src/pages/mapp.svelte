@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { ChunkedJSON } from '$src/lib/data/dataHandlers';
   import type { Image } from '$src/lib/data/image';
   import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
@@ -8,7 +7,7 @@
   import 'ol/ol.css';
   import { onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, activeSample, samples, store } from '../lib/store';
+  import { activeFeatures, activeSample, samples, store, type FeatureName } from '../lib/store';
 
   let image: Image;
   $: image = $samples[$activeSample]?.image;
@@ -85,13 +84,12 @@
     await map.update({ image });
     mode = img.header!.mode ?? 'composite';
     convertImgCtrl = colorVarFactory(mode, img.channel);
-    console.log(`${$activeSample}${$activeFeatures.genes.active ?? 'null'}`);
 
     updateSpot({
-      key: `${$activeSample}${$activeFeatures.genes.active ?? 'null'}`,
-      args: [$activeFeatures.genes.active]
+      key: `${$activeSample}${$activeFeatures.name ?? 'null'}`,
+      args: [$activeFeatures]
     });
-    // updateSpot({ key: 'GFAP', args: [$activeFeatures.genes.active] });
+    // updateSpot({ key: 'GFAP', args: [$activeFeatures.name.active] });
   };
 
   $: update(image).catch(console.error);
@@ -106,24 +104,22 @@
 
   $: if (map.mounted) changeHover($store.currIdx.idx).catch(console.error);
 
-  const updateSpot = keyOneLRU((name: string | null) => {
-    if (name === null) return false;
+  const updateSpot = keyOneLRU((fn: FeatureName<string>) => {
     const sample = $samples[$activeSample];
     if (!sample) return false;
-    const x = (sample.features.genes as ChunkedJSON).retrieve!(name) as Promise<number[]>;
-
-    map.layerMap.spots.updateIntensity(map, x).catch(console.error);
+    const { values } = sample.getFeature(fn);
+    map.layerMap.spots.updateIntensity(map, values).catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
-  function updateSpotName(name: string | null) {
+  function updateSpotName(fn: FeatureName<string>) {
     updateSpot({
-      key: `${$activeSample}${name ?? 'null'}`,
-      args: [$activeFeatures.genes.active]
+      key: `${$activeSample}${JSON.stringify(fn)} ?? 'null'}`,
+      args: [$activeFeatures]
     });
   }
 
-  $: updateSpotName($activeFeatures.genes.active);
+  $: updateSpotName($activeFeatures);
 </script>
 
 <!-- For pane resize. -->
@@ -142,7 +138,7 @@
         class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
       >
         <!-- Spot indicator -->
-        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures.genes.active}</i></div>
+        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures.name}</i></div>
 
         <!-- Color indicator -->
         <div class="mt-2 flex flex-col">

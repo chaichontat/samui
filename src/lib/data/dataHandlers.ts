@@ -37,7 +37,7 @@ export type ChunkedJSONHeader = {
   length: number;
   names: Record<string, number> | null;
   ptr: number[];
-  activeDefault: string;
+  activeDefault?: string;
 };
 export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
 export type Sparse = { index: number[]; value: number[] };
@@ -231,6 +231,17 @@ export async function convertLocalToNetwork(
   }
   return url;
 }
+
+export function convertCategoricalToNumber(values: (string | number)[]) {
+  const unique = [...new Set(values)];
+  const legend = {} as Record<number | string, number>;
+  for (const [i, v] of unique.entries()) {
+    legend[v] = i;
+  }
+  const converted = values.map((v) => legend[v]);
+  return { legend, converted };
+}
+
 // export class Arrow implements Data {
 //   keys: (string | number | symbol)[] | undefined;
 //   private readonly data: Record<string, TypedArray>;
