@@ -57,7 +57,7 @@
       if (intensity.values) {
         colors = calcColor({
           key: coords.name + intensity.name,
-          args: [intensity.values, intensity.dataType]
+          args: [intensity.values, intensity.dataType ?? 'quantitative']
         });
         await updateColors({ key: coords.name + intensity.name, args: [colors] });
       }

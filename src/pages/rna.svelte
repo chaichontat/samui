@@ -24,6 +24,7 @@
       coordsSource={{ name: $activeSample, values: $samples[$activeSample]?.image.coords }}
       intensitySource={{
         name: $activeFeatures.genes.active,
+        dataType: $samples[$activeSample]?.features?.genes?.dataType,
         values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)
       }}
       {hoverOptions}
