@@ -41,18 +41,25 @@
     if (!map.mounted) return;
     switch (t) {
       case 'selections':
-        toJSON(draw!.dumpPolygons(), `selections_${$activeSample}.json`);
+        toJSON(
+          draw!.dumpPolygons(),
+          `selections_${$activeSample}.json`,
+          'selections',
+          $activeSample
+        );
         break;
       case 'spots':
-        toJSON(draw!.dumpPoints(), `spots_${$activeSample}.json`);
+        toJSON(draw!.dumpPoints(), `spots_${$activeSample}.json`, 'spots', $activeSample);
         break;
       default:
         throw new Error('Unknown export type');
     }
   }
 
-  function toJSON(t: object, name: string) {
-    const blob = new Blob([JSON.stringify(t)], { type: 'application/json' });
+  function toJSON(t: object, name: string, type: string, sample: string) {
+    const blob = new Blob([JSON.stringify({ sample, type, values: t })], {
+      type: 'application/json'
+    });
     const elem = window.document.createElement('a');
     elem.href = window.URL.createObjectURL(blob);
     elem.download = name;
@@ -64,13 +71,21 @@
   async function fromJSON(e: { currentTarget: EventTarget & HTMLInputElement }) {
     if (!e.currentTarget.files) return;
     const raw = await e.currentTarget.files[0].text();
-    console.log(raw);
 
     try {
-      const parsed = JSON.parse(raw) as ReturnType<Draww['dumpPolygons']>;
-      console.log(parsed);
+      const parsed = JSON.parse(raw) as {
+        sample: string;
+        type: string;
+        values: ReturnType<Draww['dumpPolygons']>;
+      };
+      if (parsed.type !== 'selections') {
+        alert('Not a polygon. Make sure that you have the correct file.');
+      }
+      if (parsed.sample !== $activeSample) {
+        alert('Sample does not match.');
+      }
 
-      draw!.loadPolygons(parsed);
+      draw!.loadPolygons(parsed.values);
     } catch (e) {
       alert(e);
     }

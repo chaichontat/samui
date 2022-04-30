@@ -1,4 +1,3 @@
-import { throttle } from 'lodash-es';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
 import { Point, Polygon } from 'ol/geom.js';
@@ -9,6 +8,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style, Text } from 'ol/style.js';
 import { tableau10arr } from '../colors';
+import type { Named } from '../utils';
 
 export class _Points {
   readonly features: Feature[];
@@ -248,29 +248,28 @@ export class Draww {
   }
 
   dumpPolygons() {
-    const out: Record<string, Coordinate[][]> = {};
+    const out: Named<Coordinate[][]>[] = [];
     for (const feature of this.source.getFeatures()) {
       const g = feature.getGeometry();
-      if (g) out[feature.get('name') as string] = g.getCoordinates();
+      if (g) out.push({ name: feature.get('name') as string, values: g.getCoordinates() });
     }
     return out;
   }
 
   dumpPoints() {
-    const out: Record<string, number[]> = {};
+    const out: Named<number[]>[] = [];
     for (const feature of this.source.getFeatures()) {
       const uid = feature.getId() as number;
-      out[feature.get('name') as string] = this.points.dump(uid);
-      console.log(out);
+      out.push({ name: feature.get('name') as string, values: this.points.dump(uid) });
     }
     return out;
   }
 
-  loadPolygons(cs: Record<string, Coordinate[][]>) {
+  loadPolygons(cs: Named<Coordinate[][]>[]) {
     this.clear();
-    for (const [k, v] of Object.entries(cs)) {
-      const feature = new Feature({ geometry: new Polygon(v) });
-      feature.set('name', k);
+    for (const { name, values } of cs) {
+      const feature = new Feature({ geometry: new Polygon(values) });
+      feature.set('name', name);
       this._afterDraw(feature);
       this.source.addFeature(feature);
     }
