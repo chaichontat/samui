@@ -257,7 +257,13 @@ export class Draww {
     return out;
   }
 
-  dumpPoints() {
+  getPoints(i: number) {
+    const feat = this.source.getFeatures()[i];
+    const uid = feat.getId() as number;
+    return this.points.dump(uid);
+  }
+
+  dumpAllPoints() {
     const out: Named<number[]>[] = [];
     for (const feature of this.source.getFeatures()) {
       const uid = feature.getId() as number;

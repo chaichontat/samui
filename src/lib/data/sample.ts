@@ -42,6 +42,13 @@ export class Sample extends Deferrable implements Data {
       }
     }
 
+    this.features._selections = new PlainJSON({
+      name: 'selections',
+      dataType: 'categorical',
+      values: [] as string[],
+      type: 'plainJSON'
+    });
+
     if (autoHydrate) {
       this.hydrate().catch(console.error);
     }
@@ -52,6 +59,7 @@ export class Sample extends Deferrable implements Data {
       this.image.hydrate(this.handle),
       ...Object.values(this.features).map((f) => f.hydrate(this.handle))
     ]);
+    (this.features._selections as PlainJSON).values = new Array(this.image.coords!.length).fill('');
     this.hydrated = true;
     this._deferred.resolve();
     return this;
