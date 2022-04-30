@@ -16,7 +16,7 @@ export class _Points {
   readonly layer: VectorLayer<typeof this.source>;
   template?: Feature[];
 
-  constructor() {
+  constructor(readonly parent: Draww) {
     this.features = [];
     this.source = new VectorSource({ features: this.features });
     this.layer = new VectorLayer({
@@ -25,6 +25,7 @@ export class _Points {
       //   fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' })
       // })
     });
+    this.parent = parent;
   }
 
   mount(map: Map) {
@@ -37,11 +38,36 @@ export class _Points {
     this.template = template;
   }
 
+  _updatePoint(
+    feat: Feature<Point>,
+    { id, oricolor }: { id?: number; oricolor?: { origin: number; color: string } }
+  ) {
+    if (id) feat.setId(id);
+    // https://openlayers.org/en/latest/examples/regularshape.html
+    if (oricolor) {
+      const { origin, color } = oricolor;
+      feat.set('origin', origin);
+      feat.setStyle(
+        new Style({
+          image: new RegularShape({
+            fill: new Fill({
+              color
+            }),
+            points: 4,
+            radius: 5
+            // angle: Math.PI / 4
+          })
+        })
+      );
+    }
+  }
+
+  // Remove === Get rid of all points, used when dragging things around.
   updateSelect(polygonFeat: Feature<Polygon>, remove = false) {
     if (!this.template) {
       throw new Error('No template defined for select.');
     }
-    const ids: number[] = [];
+    // const ids: number[] = [];
     const origin = (polygonFeat.getId() ?? -1) as number;
     const polygon = polygonFeat.getGeometry()!;
     if (remove) {
@@ -54,36 +80,39 @@ export class _Points {
         .map((f) => {
           // ID of spot.
           const id = f.getId() as number;
-          ids.push(id);
-          const point = f.getGeometry()! as Point;
-          const feat = new Feature({
-            geometry: point.clone()
+          let feat = this.source.getFeatureById(f.getId() as number);
+          if (feat === null) {
+            feat = new Feature({
+              geometry: (f.getGeometry()! as Point).clone()
+            });
+          }
+          // ids.push(id);
+          this._updatePoint(feat, {
+            id,
+            oricolor: {
+              origin,
+              color: (polygonFeat.get('color') as string) ?? '#00ffe9'
+            }
           });
-          feat.set('origin', origin);
-          feat.setId(id);
-          // https://openlayers.org/en/latest/examples/regularshape.html
-          feat.setStyle(
-            new Style({
-              image: new RegularShape({
-                fill: new Fill({
-                  color: (polygonFeat.get('color') as string) + 'aa' ?? '#00ffe9aa'
-                }),
-                points: 4,
-                radius: 5
-                // angle: Math.PI / 4
-              })
-            })
-          );
           return feat;
         })
     );
-    return ids;
+    // return ids;
   }
 
+  /// Update if the point is in other selections. Otherwise, delete.
   remove(uid: number) {
     this.source.getFeatures().forEach((f) => {
       if (f.get('origin') === uid) {
-        this.source.removeFeature(f);
+        const coord = f.getGeometry()!.getCoordinates()!;
+        const exists = this.parent.source.forEachFeatureAtCoordinateDirect(coord, (p) => {
+          this._updatePoint(f, {
+            oricolor: { origin: p.getId() as number, color: p.get('color') as string }
+          });
+          return true;
+        });
+
+        if (!exists) this.source.removeFeature(f);
       }
     });
   }
@@ -139,7 +168,7 @@ export class Draww {
       source: this.source
     });
 
-    this.points = new _Points();
+    this.points = new _Points(this);
     this.modify = new Modify({ source: this.source });
 
     this._attachDraw();
@@ -192,12 +221,7 @@ export class Draww {
   _attachModify(map: Map) {
     map.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => {
-      const polygon = e.features.getArray()[0].getGeometry()!;
-      if ('intersectsExtent' in polygon) {
-        this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>, true);
-      } else {
-        console.error("Polygon doesn't have intersectsExtent");
-      }
+      this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>, true);
     });
   }
 
