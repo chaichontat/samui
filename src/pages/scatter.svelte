@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { tableau10arr } from '$src/lib/colors';
   import Colorbar from '$src/lib/components/colorbar.svelte';
+  import Legend from '$src/lib/components/legend.svelte';
   import { Charts } from '$src/lib/scatter/scatterlib';
   import { store } from '$src/lib/store';
   import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
@@ -13,9 +15,15 @@
   export let coordsSource: Named<{ x: number; y: number }[]>;
   export let minmax: 'auto' | [number, number] = 'auto';
 
-  export let intensitySource: Named<number[] | Promise<number[]>>;
+  interface IntensitySource extends Named<number[] | Promise<number[]>> {
+    dataType: 'categorical' | 'quantitative';
+  }
+
+  export let intensitySource: IntensitySource;
   export let opacity = 'ff';
   export let pointRadius = 2.5;
+
+  let catLegend: Record<number | string, `#${string}`> = {};
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   // export let onHover: (idx: number) => void = () => {};
@@ -35,7 +43,7 @@
     intensity
   }: {
     coords: Named<{ x: number; y: number }[]>;
-    intensity: Named<number[] | Promise<number[]>>;
+    intensity: IntensitySource;
   }) => {
     if (coords) {
       await updateCoords({ key: coords.name, args: [coords.values] });
@@ -47,24 +55,49 @@
       }
 
       if (intensity.values) {
-        colors = calcColor({ key: coords.name + intensity.name, args: [intensity.values] });
+        colors = calcColor({
+          key: coords.name + intensity.name,
+          args: [intensity.values, intensity.dataType]
+        });
         await updateColors({ key: coords.name + intensity.name, args: [colors] });
       }
     }
   };
 
-  const calcColor = keyLRU((intensity: number[]) => {
+  const calcColor = keyLRU((intensity: number[], dataType: 'categorical' | 'quantitative') => {
     const out = [];
     if (!intensity.every((x) => x !== undefined)) {
       throw new Error('Intensity source is not ready.');
     }
 
-    // TODO get percentile
-    const thresh = 10; // minmax === 'auto' ? Math.max(...intensitySource) : minmax[1];
-    for (const d of intensity) {
-      const idx = Math.round(Math.min((d ?? 0) / thresh, 1) * 255);
-      out.push(_color256[idx] + opacity);
+    switch (dataType) {
+      case 'categorical':
+        // eslint-disable-next-line no-case-declarations
+        const unique = [...new Set(intensity)];
+        // eslint-disable-next-line no-case-declarations
+        catLegend = {} as Record<number | string, `#${string}`>;
+        for (const [i] of unique.entries()) {
+          catLegend[i] = tableau10arr[i % tableau10arr.length];
+        }
+        for (const x of intensity) {
+          out.push(catLegend[x]);
+        }
+        break;
+
+      case 'quantitative':
+        // TODO get percentile
+        // eslint-disable-next-line no-case-declarations
+        const thresh = 10; // minmax === 'auto' ? Math.max(...intensitySource) : minmax[1];
+        for (const d of intensity) {
+          const idx = Math.round(Math.min((d ?? 0) / thresh, 1) * 255);
+          out.push(_color256[idx] + opacity);
+        }
+        break;
+
+      default:
+        throw new Error('Unknown data type.');
     }
+
     return out;
   });
 
@@ -88,8 +121,11 @@
 </script>
 
 <div class="relative mx-auto w-full max-w-[400px]">
-  {#if colorbar}
+  {#if colorbar && intensitySource.dataType === 'quantitative'}
     <Colorbar min={0} max={10} />
+  {/if}
+  {#if colorbar && intensitySource.dataType === 'categorical'}
+    <Legend colormap={catLegend} />
   {/if}
   <canvas class="absolute" id={`${id}-hover`} />
   <canvas class="" id={`${id}-main`} />

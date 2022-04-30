@@ -246,7 +246,7 @@ export class Draww {
   _updatePolygonStyle(feature: Feature<Polygon>, setStroke = true) {
     const st = this.style.clone();
     if (setStroke) {
-      st.setStroke(new Stroke({ color: feature.get('color') as `#{string}`, width: 2 }));
+      st.setStroke(new Stroke({ color: feature.get('color') as `#${string}`, width: 2 }));
     } else {
       st.setFill(new Fill({ color: 'rgba(255, 255, 255, 0.1)' }));
     }

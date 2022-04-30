@@ -27,6 +27,7 @@
         values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)
       }}
       {hoverOptions}
+      colorbar
     />
   </div>
 
