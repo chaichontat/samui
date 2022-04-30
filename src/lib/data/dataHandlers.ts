@@ -16,6 +16,7 @@ export type PlainJSONParams = {
   dataType?: DataType;
   url?: Url;
   values?: unknown;
+  activeDefault: string;
 };
 
 export type ChunkedJSONParams = {
@@ -36,6 +37,7 @@ export type ChunkedJSONHeader = {
   length: number;
   names: Record<string, number> | null;
   ptr: number[];
+  activeDefault: string;
 };
 export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
 export type Sparse = { index: number[]; value: number[] };
@@ -45,14 +47,19 @@ export class PlainJSON extends Deferrable implements Data {
   url?: Url;
   dataType?: DataType;
   values?: unknown;
+  activeDefault?: string;
   hydrated = false;
 
-  constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
+  constructor(
+    { name, url, dataType, values, activeDefault }: PlainJSONParams,
+    autoHydrate = false
+  ) {
     super();
     this.name = name;
     this.url = url;
     this.values = values;
     this.dataType = dataType ?? 'quantitative';
+    this.activeDefault = activeDefault;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -85,6 +92,7 @@ export class ChunkedJSON extends Deferrable implements Data {
   dataType: DataType;
   headerUrl?: Url;
   header?: ChunkedJSONHeader;
+  activeDefault?: string;
   url: Url;
   name: string;
   hydrated = false;
@@ -135,7 +143,12 @@ export class ChunkedJSON extends Deferrable implements Data {
         (res) => res.json() as Promise<ChunkedJSONHeader>
       );
     }
-    ({ names: this.names, ptr: this.ptr, length: this.length } = this.header!);
+    ({
+      names: this.names,
+      ptr: this.ptr,
+      length: this.length,
+      activeDefault: this.activeDefault
+    } = this.header!);
 
     const zero = new Array(this.length).fill(0) as number[];
 
