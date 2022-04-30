@@ -106,9 +106,9 @@
 
   const updateSpot = keyOneLRU((fn: FeatureName<string>) => {
     const sample = $samples[$activeSample];
-    if (!sample) return false;
-    const { values } = sample.getFeature(fn);
-    map.layerMap.spots.updateIntensity(map, values).catch(console.error);
+    if (!sample || !fn) return false;
+    const { values, dataType } = sample.getFeature(fn);
+    map.layerMap.spots.updateIntensity(map, values, dataType).catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
@@ -138,7 +138,7 @@
         class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
       >
         <!-- Spot indicator -->
-        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures.name}</i></div>
+        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures?.name}</i></div>
 
         <!-- Color indicator -->
         <div class="mt-2 flex flex-col">

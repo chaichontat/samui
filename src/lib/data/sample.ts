@@ -78,6 +78,6 @@ export class Sample extends Deferrable implements Data {
       feature = this.features[fn.name] as PlainJSON;
       values = feature?.values as number[] | string[];
     }
-    return { values, dataType: feature?.dataType, activeDefault: feature?.activeDefault };
+    return { values, dataType: feature?.dataType ?? 'quantitative' };
   }
 }
