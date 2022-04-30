@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash-es';
 import LRU from 'lru-cache';
 import { get, type Writable } from 'svelte/store';
 import tippy from 'tippy.js';
@@ -133,7 +134,7 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
     if (args.some((a) => Array.isArray(a))) {
       throw new Error(`doNotRepeat: args must not be arrays.`);
     }
-    if (lastArgs && lastArgs.every((a, i) => a === args[i])) return lastResult;
+    if (lastArgs && lastArgs.every((a, i) => isEqual(a, args[i]))) return lastResult;
     lastArgs = args;
     lastResult = f(...args);
     return lastResult;
