@@ -19,35 +19,25 @@ export const store: Writable<State> = writable({
   }
 });
 
-export type HoverName = {
-  hover: string | null;
-  selected: string | null;
-  get active(): string | null;
+export type HoverName<T> = {
+  hover: T | null;
+  selected: T | null;
+  get active(): T | null;
 };
-// export class HoverName {
-//   hover: string | null = null;
-//   selected: string | null = null;
 
-//   constructor({ hover, selected }: { hover?: string | null; selected?: string | null }) {
-//     this.hover = hover ?? null;
-//     this.selected = selected ?? null;
-//   }
-
-//   getActive() {
-//     if (this.hover) return this.hover;
-//     return this.selected;
-//   }
-// }
-
-export const activeFeatures: Writable<Record<string, HoverName>> = writable({
-  genes: {
-    hover: null,
-    selected: 'GFAP',
+export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }): HoverName<T> {
+  return {
+    hover: hover ?? null,
+    selected: selected ?? null,
     get active() {
       if (this.hover) return this.hover;
       return this.selected;
     }
-  }
+  };
+}
+
+export const activeFeatures: Writable<Record<string, HoverName<string>>> = writable({
+  genes: genHoverName({ selected: 'GFAP' })
 });
 
 export const currRna: Writable<{ name: string; values: number[] }> = writable({
