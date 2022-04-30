@@ -41,12 +41,12 @@
       await updateCoords({ key: coords.name, args: [coords.values] });
     }
 
-    if (intensity) {
+    if (intensity.values) {
       if (intensity.values instanceof Promise) {
         intensity.values = await intensity.values;
       }
 
-      if (intensity) {
+      if (intensity.values) {
         colors = calcColor({ key: coords.name + intensity.name, args: [intensity.values] });
         await updateColors({ key: coords.name + intensity.name, args: [colors] });
       }

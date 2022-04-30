@@ -11,7 +11,7 @@
   import { activeFeatures, activeSample, samples, store } from '../lib/store';
 
   let image: Image;
-  $: image = $samples[$activeSample].image;
+  $: image = $samples[$activeSample]?.image;
 
   const map = new Mapp();
 
@@ -108,9 +108,9 @@
 
   const updateSpot = keyOneLRU((name: string | null) => {
     if (name === null) return false;
-    const x = ($samples[$activeSample].features.genes as ChunkedJSON).retrieve!(name) as Promise<
-      number[]
-    >;
+    const sample = $samples[$activeSample];
+    if (!sample) return false;
+    const x = (sample.features.genes as ChunkedJSON).retrieve!(name) as Promise<number[]>;
 
     map.layerMap.spots.updateIntensity(map, x).catch(console.error);
   });
@@ -134,40 +134,44 @@
   <div
     id="map"
     class="h-full w-full shadow-lg"
-    class:rgbmode={image.header?.mode === 'rgb'}
-    class:compositemode={image.header?.mode === 'composite'}
+    class:rgbmode={image?.header?.mode === 'rgb'}
+    class:compositemode={image?.header?.mode === 'composite'}
   >
-    <section
-      class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
-    >
-      <!-- Spot indicator -->
-      <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures.genes.active}</i></div>
+    {#if $samples[$activeSample]}
+      <section
+        class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
+      >
+        <!-- Spot indicator -->
+        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures.genes.active}</i></div>
 
-      <!-- Color indicator -->
-      <div class="mt-2 flex flex-col">
-        {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'none'}
-            <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
-          {/if}
-        {/each}
-      </div>
-    </section>
+        <!-- Color indicator -->
+        <div class="mt-2 flex flex-col">
+          {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
+            {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'none'}
+              <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
+            {/if}
+          {/each}
+        </div>
+      </section>
 
-    <MapTools {map} bind:selecting />
+      <MapTools {map} bind:selecting />
+    {/if}
   </div>
 
   <!-- Buttons -->
-  <div
-    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
-  >
-    {#if mode === 'composite'}
-      <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
-    {:else if mode === 'rgb'}
-      <svelte:component this={ImgControl} {mode} bind:imgCtrl />
-    {:else}
-      {console.warn('Unknown mode: ' + mode)}
-    {/if}
-  </div>
+  {#if $samples[$activeSample]}
+    <div
+      class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
+    >
+      {#if mode === 'composite'}
+        <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
+      {:else if mode === 'rgb'}
+        <svelte:component this={ImgControl} {mode} bind:imgCtrl />
+      {:else}
+        {console.warn('Unknown mode: ' + mode)}
+      {/if}
+    </div>
+  {/if}
 </section>
 
 <style lang="postcss">

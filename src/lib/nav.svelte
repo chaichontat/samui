@@ -2,6 +2,8 @@
   import Darkswitch from './components/darkswitch.svelte';
   import SearchBox from './components/searchBox.svelte';
   import { activeFeatures, activeSample, samples } from './store';
+
+  $: sample = $samples[$activeSample];
 </script>
 
 <nav
@@ -10,7 +12,7 @@
   <!-- <div class="over mt-2 text-ellipsis text-xl font-medium">Showing <i>{$currRna.name}</i>.</div> -->
   <div class="mt-1 mr-2 text-base lg:flex-grow xl:text-lg">
     <SearchBox
-      names={Object.keys($samples[$activeSample].features.genes.names)}
+      names={sample ? Object.keys(sample.features.genes.names) : []}
       bind:curr={$activeFeatures.genes}
     />
   </div>

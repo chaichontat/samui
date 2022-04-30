@@ -14,6 +14,7 @@
 
   export let items: string[];
   let rows: { id: number; name: string }[] = [];
+  let _active: { id: number; name: string };
 
   const dispatch = createEventDispatcher();
 
@@ -28,17 +29,18 @@
     }
     $activeSample = s;
     dispatch('change', s);
-    _active = rows.find((r) => r.name === s)!;
+    _active = rows.find((r) => r.name === $activeSample)!;
   }
 
-  let _active: { id: number; name: string };
-  $: {
-    rows = items?.sort().map((item, i) => ({
+  function handleSampleUpdate(it: typeof items) {
+    rows = it?.sort().map((item, i) => ({
       id: i,
       name: item
     }));
-    _active = rows[0];
+    _active = rows.find((r) => r.name === $activeSample)!;
   }
+
+  $: handleSampleUpdate(items);
 </script>
 
 <div class="relative min-w-[150px] max-w-lg md:min-w-[200px]">

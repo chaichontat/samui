@@ -21,7 +21,7 @@
 <div class="flex flex-col divide-y dark:divide-slate-700">
   <div class="mx-auto mt-6 hidden w-[90%] lg:block">
     <Scatter
-      coordsSource={{ name: $activeSample, values: $samples[$activeSample].image.coords }}
+      coordsSource={{ name: $activeSample, values: $samples[$activeSample]?.image.coords }}
       intensitySource={{
         name: $activeFeatures.genes.active,
         values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)
@@ -61,7 +61,9 @@
 
         <!-- <Scatter coordsSource="umap" intensitySource={$currRna.values} pointRadius={2} /> -->
       </div>
-      <div class:hidden={showing !== 1}><Bar showing={showing === 1} /></div>
+      <div class:hidden={showing !== 1}>
+        <!-- <Bar showing={showing === 1} /> -->
+      </div>
       <!-- {#if vegaShown}
     <div class:hidden={showing !== 2}><Veg /></div>
     {/if} -->
