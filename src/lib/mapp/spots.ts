@@ -99,7 +99,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
       coords.map(({ x, y }, i) => {
         const f = new Feature({
           geometry: new Point([x * mPerPx, -y * mPerPx]),
-          value: 10,
+          value: 0,
           id: i
         });
         f.setId(i);
