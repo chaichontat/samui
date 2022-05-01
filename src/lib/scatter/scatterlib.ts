@@ -3,7 +3,7 @@ import Chart, {
   type ChartDataset,
   type ChartEvent,
   type ChartOptions
-} from 'chart.js/auto';
+} from 'chart.js/auto/auto.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Deferrable } from '../utils';
 
