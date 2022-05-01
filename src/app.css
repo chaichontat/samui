@@ -20,6 +20,10 @@
 }
 @tailwind utilities;
 @layer utilities {
+  .text-default {
+    @apply text-slate-800  dark:text-slate-100;
+  }
+
   .bg-default {
     @apply bg-slate-100/90 text-slate-800  dark:bg-slate-800/90 dark:text-slate-100;
   }
@@ -38,5 +42,9 @@
 
   .picker-el {
     @apply hover-default cursor-pointer rounded px-3;
+  }
+
+  .center {
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
   }
 }

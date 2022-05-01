@@ -1,4 +1,3 @@
-import { throttle } from 'lodash-es';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
 import { Point, Polygon } from 'ol/geom.js';
@@ -9,6 +8,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style, Text } from 'ol/style.js';
 import { tableau10arr } from '../colors';
+import type { Named } from '../utils';
 
 export class _Points {
   readonly features: Feature[];
@@ -16,7 +16,7 @@ export class _Points {
   readonly layer: VectorLayer<typeof this.source>;
   template?: Feature[];
 
-  constructor() {
+  constructor(readonly parent: Draww) {
     this.features = [];
     this.source = new VectorSource({ features: this.features });
     this.layer = new VectorLayer({
@@ -25,6 +25,7 @@ export class _Points {
       //   fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' })
       // })
     });
+    this.parent = parent;
   }
 
   mount(map: Map) {
@@ -37,11 +38,36 @@ export class _Points {
     this.template = template;
   }
 
+  _updatePoint(
+    feat: Feature<Point>,
+    { id, oricolor }: { id?: number; oricolor?: { origin: number; color: string } }
+  ) {
+    if (id) feat.setId(id);
+    // https://openlayers.org/en/latest/examples/regularshape.html
+    if (oricolor) {
+      const { origin, color } = oricolor;
+      feat.set('origin', origin);
+      feat.setStyle(
+        new Style({
+          image: new RegularShape({
+            fill: new Fill({
+              color
+            }),
+            points: 4,
+            radius: 5
+            // angle: Math.PI / 4
+          })
+        })
+      );
+    }
+  }
+
+  // Remove === Get rid of all points, used when dragging things around.
   updateSelect(polygonFeat: Feature<Polygon>, remove = false) {
     if (!this.template) {
       throw new Error('No template defined for select.');
     }
-    const ids: number[] = [];
+    // const ids: number[] = [];
     const origin = (polygonFeat.getId() ?? -1) as number;
     const polygon = polygonFeat.getGeometry()!;
     if (remove) {
@@ -54,35 +80,39 @@ export class _Points {
         .map((f) => {
           // ID of spot.
           const id = f.getId() as number;
-          ids.push(id);
-          const point = f.getGeometry()! as Point;
-          const feat = new Feature({
-            geometry: point.clone()
+          let feat = this.source.getFeatureById(f.getId() as number);
+          if (feat === null) {
+            feat = new Feature({
+              geometry: (f.getGeometry()! as Point).clone()
+            });
+          }
+          // ids.push(id);
+          this._updatePoint(feat, {
+            id,
+            oricolor: {
+              origin,
+              color: (polygonFeat.get('color') as string) ?? '#00ffe9'
+            }
           });
-          feat.set('origin', origin);
-          feat.setId(id);
-          // https://openlayers.org/en/latest/examples/regularshape.html
-          feat.setStyle(
-            new Style({
-              image: new RegularShape({
-                fill: new Fill({ color: (polygonFeat.get('color') as string) ?? '#00ffe9' }),
-                // stroke: new Stroke({ color: feature.get('color') as string, width: 2 }),
-                points: 4,
-                radius: 5,
-                angle: Math.PI / 4
-              })
-            })
-          );
           return feat;
         })
     );
-    return ids;
+    // return ids;
   }
 
+  /// Update if the point is in other selections. Otherwise, delete.
   remove(uid: number) {
     this.source.getFeatures().forEach((f) => {
       if (f.get('origin') === uid) {
-        this.source.removeFeature(f);
+        const coord = f.getGeometry()!.getCoordinates()!;
+        const exists = this.parent.source.forEachFeatureAtCoordinateDirect(coord, (p) => {
+          this._updatePoint(f, {
+            oricolor: { origin: p.getId() as number, color: p.get('color') as string }
+          });
+          return true;
+        });
+
+        if (!exists) this.source.removeFeature(f);
       }
     });
   }
@@ -138,7 +168,7 @@ export class Draww {
       source: this.source
     });
 
-    this.points = new _Points();
+    this.points = new _Points(this);
     this.modify = new Modify({ source: this.source });
 
     this._attachDraw();
@@ -191,12 +221,7 @@ export class Draww {
   _attachModify(map: Map) {
     map.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => {
-      const polygon = e.features.getArray()[0].getGeometry()!;
-      if ('intersectsExtent' in polygon) {
-        this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>, true);
-      } else {
-        console.error("Polygon doesn't have intersectsExtent");
-      }
+      this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>, true);
     });
   }
 
@@ -221,7 +246,7 @@ export class Draww {
   _updatePolygonStyle(feature: Feature<Polygon>, setStroke = true) {
     const st = this.style.clone();
     if (setStroke) {
-      st.setStroke(new Stroke({ color: feature.get('color') as `#{string}`, width: 2 }));
+      st.setStroke(new Stroke({ color: feature.get('color') as `#${string}`, width: 2 }));
     } else {
       st.setFill(new Fill({ color: 'rgba(255, 255, 255, 0.1)' }));
     }
@@ -248,29 +273,34 @@ export class Draww {
   }
 
   dumpPolygons() {
-    const out: Record<string, Coordinate[][]> = {};
+    const out: Named<Coordinate[][]>[] = [];
     for (const feature of this.source.getFeatures()) {
       const g = feature.getGeometry();
-      if (g) out[feature.get('name') as string] = g.getCoordinates();
+      if (g) out.push({ name: feature.get('name') as string, values: g.getCoordinates() });
     }
     return out;
   }
 
-  dumpPoints() {
-    const out: Record<string, number[]> = {};
+  getPoints(i: number) {
+    const feat = this.source.getFeatures()[i];
+    const uid = feat.getId() as number;
+    return this.points.dump(uid);
+  }
+
+  dumpAllPoints() {
+    const out: Named<number[]>[] = [];
     for (const feature of this.source.getFeatures()) {
       const uid = feature.getId() as number;
-      out[feature.get('name') as string] = this.points.dump(uid);
-      console.log(out);
+      out.push({ name: feature.get('name') as string, values: this.points.dump(uid) });
     }
     return out;
   }
 
-  loadPolygons(cs: Record<string, Coordinate[][]>) {
+  loadPolygons(cs: Named<Coordinate[][]>[]) {
     this.clear();
-    for (const [k, v] of Object.entries(cs)) {
-      const feature = new Feature({ geometry: new Polygon(v) });
-      feature.set('name', k);
+    for (const { name, values } of cs) {
+      const feature = new Feature({ geometry: new Polygon(values) });
+      feature.set('name', name);
       this._afterDraw(feature);
       this.source.addFeature(feature);
     }

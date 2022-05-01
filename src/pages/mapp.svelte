@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { ChunkedJSON } from '$src/lib/data/dataHandlers';
   import type { Image } from '$src/lib/data/image';
   import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
@@ -8,10 +7,10 @@
   import 'ol/ol.css';
   import { onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, activeSample, samples, store } from '../lib/store';
+  import { activeFeatures, activeSample, samples, store, type FeatureName } from '../lib/store';
 
   let image: Image;
-  $: image = $samples[$activeSample].image;
+  $: image = $samples[$activeSample]?.image;
 
   const map = new Mapp();
 
@@ -85,13 +84,12 @@
     await map.update({ image });
     mode = img.header!.mode ?? 'composite';
     convertImgCtrl = colorVarFactory(mode, img.channel);
-    console.log(`${$activeSample}${$activeFeatures.genes.active ?? 'null'}`);
 
     updateSpot({
-      key: `${$activeSample}${$activeFeatures.genes.active ?? 'null'}`,
-      args: [$activeFeatures.genes.active]
+      key: `${$activeSample}${$activeFeatures.name ?? 'null'}`,
+      args: [$activeFeatures]
     });
-    // updateSpot({ key: 'GFAP', args: [$activeFeatures.genes.active] });
+    // updateSpot({ key: 'GFAP', args: [$activeFeatures.name.active] });
   };
 
   $: update(image).catch(console.error);
@@ -106,24 +104,22 @@
 
   $: if (map.mounted) changeHover($store.currIdx.idx).catch(console.error);
 
-  const updateSpot = keyOneLRU((name: string | null) => {
-    if (name === null) return false;
-    const x = ($samples[$activeSample].features.genes as ChunkedJSON).retrieve!(name) as Promise<
-      number[]
-    >;
-
-    map.layerMap.spots.updateIntensity(map, x).catch(console.error);
+  const updateSpot = keyOneLRU((fn: FeatureName<string>) => {
+    const sample = $samples[$activeSample];
+    if (!sample || !fn) return false;
+    const { values, dataType } = sample.getFeature(fn);
+    map.layerMap.spots.updateIntensity(map, values, dataType).catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
-  function updateSpotName(name: string | null) {
+  function updateSpotName(fn: FeatureName<string>) {
     updateSpot({
-      key: `${$activeSample}${name ?? 'null'}`,
-      args: [$activeFeatures.genes.active]
+      key: `${$activeSample}${JSON.stringify(fn)} ?? 'null'}`,
+      args: [$activeFeatures]
     });
   }
 
-  $: updateSpotName($activeFeatures.genes.active);
+  $: updateSpotName($activeFeatures);
 </script>
 
 <!-- For pane resize. -->
@@ -134,40 +130,44 @@
   <div
     id="map"
     class="h-full w-full shadow-lg"
-    class:rgbmode={image.header?.mode === 'rgb'}
-    class:compositemode={image.header?.mode === 'composite'}
+    class:rgbmode={image?.header?.mode === 'rgb'}
+    class:compositemode={image?.header?.mode === 'composite'}
   >
-    <section
-      class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
-    >
-      <!-- Spot indicator -->
-      <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures.genes.active}</i></div>
+    {#if $samples[$activeSample]}
+      <section
+        class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
+      >
+        <!-- Spot indicator -->
+        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures?.name}</i></div>
 
-      <!-- Color indicator -->
-      <div class="mt-2 flex flex-col">
-        {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'none'}
-            <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
-          {/if}
-        {/each}
-      </div>
-    </section>
+        <!-- Color indicator -->
+        <div class="mt-2 flex flex-col">
+          {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
+            {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'none'}
+              <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
+            {/if}
+          {/each}
+        </div>
+      </section>
 
-    <MapTools {map} bind:selecting />
+      <MapTools {map} bind:selecting />
+    {/if}
   </div>
 
   <!-- Buttons -->
-  <div
-    class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
-  >
-    {#if mode === 'composite'}
-      <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
-    {:else if mode === 'rgb'}
-      <svelte:component this={ImgControl} {mode} bind:imgCtrl />
-    {:else}
-      {console.warn('Unknown mode: ' + mode)}
-    {/if}
-  </div>
+  {#if $samples[$activeSample]}
+    <div
+      class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
+    >
+      {#if mode === 'composite'}
+        <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
+      {:else if mode === 'rgb'}
+        <svelte:component this={ImgControl} {mode} bind:imgCtrl />
+      {:else}
+        {console.warn('Unknown mode: ' + mode)}
+      {/if}
+    </div>
+  {/if}
 </section>
 
 <style lang="postcss">

@@ -9,13 +9,7 @@ from pydantic import BaseModel
 from scanpy import read_visium
 from tifffile import imread
 
-from loopy.feature import (
-    ChunkedJSONOptions,
-    ChunkedJSONParams,
-    FeatureParams,
-    PlainJSONParams,
-    get_compressed_genes,
-)
+from loopy.feature import ChunkedJSONParams, FeatureParams, PlainJSONParams, get_compressed_genes
 from loopy.image import ImageParams, SpotParams, compress, gen_geotiff, gen_header
 from loopy.utils import Url
 
@@ -26,9 +20,11 @@ class Sample(BaseModel):
     featParams: list[FeatureParams]
 
 
+#%%
+
 directory = Path("/Users/chaichontat/Documents/VIF")
 out = Path("/Users/chaichontat/GitHub/loopy-browser/static")
-samples = ["Br2720_Ant_IF", "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]
+samples = ["Br2720_Ant_IF"]  # , "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]
 
 channels = {
     "Lipofuscin": 1,
@@ -78,17 +74,14 @@ def run(s: str) -> None:
         featParams=[
             ChunkedJSONParams(name="genes", headerUrl=Url("gene_csc.json"), url=Url("gene_csc.bin")),
             ChunkedJSONParams(
-                name="spotGenes",
-                headerUrl=Url("gene_csr.json"),
-                url=Url("gene_csr.bin"),
-                options=ChunkedJSONOptions(densify=False),
+                name="spotGenes", headerUrl=Url("gene_csr.json"), url=Url("gene_csr.bin"), isFeature=False
             ),
             PlainJSONParams(name="umap", url=Url("umap.json"), dataType="coords"),
         ],
     )
 
     vis = better_visium(directory / s, features=analyses)
-    vis.X.data = np.log2(vis.X.data + 1)
+    vis.X.data = np.log2(vis.X.data + 1)  # type: ignore
     vis.var_names_make_unique()
 
     o = Path(out / s)

@@ -2,7 +2,7 @@
   import { Popover, PopoverButton, PopoverPanel, Transition } from '@rgossiaux/svelte-headlessui';
   import { createEventDispatcher } from 'svelte';
 
-  export let names: string[] = ['dd', 'fdf'];
+  export let names: string[] = [];
   const dispatch = createEventDispatcher();
 </script>
 

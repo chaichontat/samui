@@ -4,7 +4,8 @@
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
-  import { activeSample } from '../store';
+  import type { PlainJSON } from '../data/dataHandlers';
+  import { activeSample, samples } from '../store';
   import type { Draww } from './selector';
 
   export let map: Mapp;
@@ -19,7 +20,7 @@
         const name = prompt('Name of selection');
         map.draw!.setPolygonName(-1, name ?? 'Selection');
       }
-      updateSelectionNames();
+      updateSelection();
     });
     draw = map.draw;
   });
@@ -27,6 +28,20 @@
   let selectionNames: string[] = [];
   function updateSelectionNames() {
     selectionNames = map.draw?.getPolygonsName() ?? [];
+  }
+  function updateSelectionPoints() {
+    if (!map.mounted) return;
+    const names = map.draw?.getPolygonsName() ?? [];
+    const arr = ($samples[$activeSample].features._selections as PlainJSON).values as string[];
+    arr.fill('');
+    for (const [i, n] of names.entries()) {
+      map.draw!.getPoints(i).forEach((p) => (arr[p] = n));
+    }
+  }
+
+  function updateSelection() {
+    updateSelectionNames();
+    updateSelectionPoints();
   }
 
   let colorOpacity = 0.8;
@@ -41,18 +56,25 @@
     if (!map.mounted) return;
     switch (t) {
       case 'selections':
-        toJSON(draw!.dumpPolygons(), `selections_${$activeSample}.json`);
+        toJSON(
+          draw!.dumpPolygons(),
+          `selections_${$activeSample}.json`,
+          'selections',
+          $activeSample
+        );
         break;
       case 'spots':
-        toJSON(draw!.dumpPoints(), `spots_${$activeSample}.json`);
+        toJSON(draw!.dumpAllPoints(), `spots_${$activeSample}.json`, 'spots', $activeSample);
         break;
       default:
         throw new Error('Unknown export type');
     }
   }
 
-  function toJSON(t: object, name: string) {
-    const blob = new Blob([JSON.stringify(t)], { type: 'application/json' });
+  function toJSON(t: object, name: string, type: string, sample: string) {
+    const blob = new Blob([JSON.stringify({ sample, type, values: t })], {
+      type: 'application/json'
+    });
     const elem = window.document.createElement('a');
     elem.href = window.URL.createObjectURL(blob);
     elem.download = name;
@@ -64,13 +86,21 @@
   async function fromJSON(e: { currentTarget: EventTarget & HTMLInputElement }) {
     if (!e.currentTarget.files) return;
     const raw = await e.currentTarget.files[0].text();
-    console.log(raw);
 
     try {
-      const parsed = JSON.parse(raw) as ReturnType<Draww['dumpPolygons']>;
-      console.log(parsed);
+      const parsed = JSON.parse(raw) as {
+        sample: string;
+        type: string;
+        values: ReturnType<Draww['dumpPolygons']>;
+      };
+      if (parsed.type !== 'selections') {
+        alert('Not a polygon. Make sure that you have the correct file.');
+      }
+      if (parsed.sample !== $activeSample) {
+        alert('Sample does not match.');
+      }
 
-      draw!.loadPolygons(parsed);
+      draw!.loadPolygons(parsed.values);
     } catch (e) {
       alert(e);
     }
@@ -85,11 +115,11 @@
       on:hover={(evt) => map.draw?.highlightPolygon(evt.detail.i)}
       on:delete={(evt) => {
         map.draw?.deletePolygon(evt.detail.i);
-        updateSelectionNames();
+        updateSelection();
       }}
       on:clearall={() => {
         map.draw?.clear();
-        updateSelectionNames();
+        updateSelection();
       }}
       on:export={(evt) => handleExport(evt.detail.name)}
       on:import={(evt) => fromJSON(evt.detail.e).catch(console.error)}
@@ -97,7 +127,7 @@
         const newName = prompt('Enter new selection name.');
         if (newName) {
           draw?.setPolygonName(evt.detail.i, newName);
-          updateSelectionNames();
+          updateSelection();
         }
       }}
     />

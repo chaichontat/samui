@@ -1,3 +1,5 @@
+# pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
+
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -5,7 +7,6 @@ from typing import Annotated, Any, Literal, cast
 
 import click
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import rasterio
 import tifffile
@@ -57,7 +58,7 @@ def gen_header(
     )
 
 
-def gen_geotiff(img: npt.ArrayLike, path: Path, scale: float, rgb: bool = False) -> list[Path]:
+def gen_geotiff(img: np.ndarray, path: Path, scale: float, rgb: bool = False) -> list[Path]:
     if rgb:
         z = img.shape[2]
         assert z == 3
@@ -86,7 +87,7 @@ def gen_geotiff(img: npt.ArrayLike, path: Path, scale: float, rgb: bool = False)
             driver="GTiff",
             height=height,
             width=width,
-            count=3,
+            count=3 if i == 0 else 4,
             photometric="RGB" if rgb else "MINISBLACK",
             transform=rasterio.Affine(
                 scale, 0, 0, 0, -scale, 0

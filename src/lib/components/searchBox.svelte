@@ -3,41 +3,38 @@
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
-  import type { HoverName } from '../store';
+  import { genHoverName, type FeatureName, type HoverName } from '../store';
 
-  let fzf: Fzf<readonly string[]>;
-
-  export let names: string[];
-  export let curr: HoverName;
+  type Name = FeatureName<string>;
+  let fzf: Fzf<readonly Name[]>;
+  export let names: Name[];
+  export let curr: HoverName<Name>;
+  curr = genHoverName<Name>({});
 
   let showSearch = true;
 
   let search = '';
-  let candidates: { raw: string; embellished: string }[] = [{ raw: '', embellished: '' }];
+  let candidates: { raw: Name; embellished: string }[] = [];
 
   function highlightChars(str: string, indices: Set<number>): string {
     const chars = str.split('');
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
   }
 
-  const setVal = oneLRU(
-    ({ hover, selected }: { hover?: string | null; selected?: string | null }) => {
-      if (hover !== undefined) curr.hover = hover;
-      if (selected !== undefined) curr.selected = selected;
-    }
-  );
+  const setVal = oneLRU(({ hover, selected }: { hover?: Name | null; selected?: Name | null }) => {
+    if (hover !== undefined) curr.hover = hover;
+    if (selected !== undefined) curr.selected = selected;
+  });
 
   $: if (names) {
-    fzf = new Fzf(names, { limit: 8 });
-  } else {
-    console.warn('no names');
+    fzf = new Fzf(names, { limit: 8, selector: (item) => item.name });
   }
 
   $: if (fzf) {
     const res = fzf.find(search);
     candidates = res.map((x) => ({
       raw: x.item,
-      embellished: highlightChars(x.item, x.positions)
+      embellished: highlightChars(x.item.name, x.positions)
     }));
   }
 </script>
@@ -45,7 +42,6 @@
 <div class="relative">
   <input
     type="text"
-    id="search"
     class="w-full rounded-md border border-slate-400 bg-slate-100 py-2 px-4 shadow transition-colors dark:border-slate-600 dark:bg-slate-800"
     bind:value={search}
     on:click={() => (showSearch = true)}

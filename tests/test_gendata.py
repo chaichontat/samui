@@ -7,7 +7,7 @@ from anndata import AnnData
 from scanpy import read_visium
 from tifffile import imread
 
-from loopy.feature import ChunkedJSONOptions, ChunkedJSONParams, PlainJSONParams, get_compressed_genes
+from loopy.feature import ChunkedJSONParams, PlainJSONParams, get_compressed_genes
 from loopy.image import ImageParams, SpotParams, compress, gen_geotiff, gen_header
 from loopy.sample import Sample
 from loopy.utils import Url
@@ -30,7 +30,7 @@ def test_sample():
     analyses = {"umap": "projection.csv"}
 
     vis = better_visium(directory, features=analyses)
-    vis.X.data = np.log2(vis.X.data + 1)
+    vis.X.data = np.log2(vis.X.data + 1)  # type:ignore
     vis.var_names_make_unique()
 
     run(vis, directory, out, "Br8667_Post_IF", analyses)

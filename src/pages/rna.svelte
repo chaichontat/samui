@@ -16,18 +16,39 @@
   const hoverOptions: ChartOptions<'scatter'> = {
     onHover: (evt) => {}
   };
+
+  let values: number[] = [];
+  let dataType = 'quantitative';
+
+  $: sample = $samples[$activeSample];
+  $: if (sample?.hydrated) {
+    const f = sample.getFeature($activeFeatures);
+    values = f.values as number[];
+    dataType = f.dataType;
+  }
 </script>
 
 <div class="flex flex-col divide-y dark:divide-slate-700">
-  <div class="mx-auto mt-6 hidden w-[90%] lg:block">
-    <Scatter
-      coordsSource={{ name: $activeSample, values: $samples[$activeSample].image.coords }}
-      intensitySource={{
-        name: $activeFeatures.genes.active,
-        values: $samples[$activeSample]?.features?.genes?.retrieve($activeFeatures.genes.active)
-      }}
-      {hoverOptions}
-    />
+  <div class="relative mx-auto hidden w-[90%] lg:block" class:mt-6={sample}>
+    {#if sample}
+      <!-- content here -->
+      {#await $samples[$activeSample].promise then _}
+        <!-- promise was fulfilled -->
+        <Scatter
+          coordsSource={{ name: $activeSample, values: sample.image.coords }}
+          intensitySource={{
+            name: $activeFeatures.name,
+            dataType: dataType,
+            values: values
+          }}
+          {hoverOptions}
+          colorbar
+        />
+      {/await}
+    {:else}
+      <div class="h-20" />
+      <span class="center text-xl text-default">No sample</span>
+    {/if}
   </div>
 
   <section class="pt-4">
@@ -61,7 +82,9 @@
 
         <!-- <Scatter coordsSource="umap" intensitySource={$currRna.values} pointRadius={2} /> -->
       </div>
-      <div class:hidden={showing !== 1}><Bar showing={showing === 1} /></div>
+      <div class:hidden={showing !== 1}>
+        <!-- <Bar showing={showing === 1} /> -->
+      </div>
       <!-- {#if vegaShown}
     <div class:hidden={showing !== 2}><Veg /></div>
     {/if} -->

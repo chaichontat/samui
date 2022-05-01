@@ -1,6 +1,6 @@
 import type { ImageMode } from '../mapp/imgControl';
 import { Deferrable } from '../utils';
-import { convertLocalToNetwork, type Data, type Url } from './dataHandlers';
+import { convertLocalToNetwork, type Url } from './dataHandlers';
 
 export type ImageParams = { urls: Url[]; headerUrl?: Url; header?: ImageHeader };
 
@@ -17,7 +17,7 @@ export type ImageHeader = {
   mode?: ImageMode;
 };
 
-export class Image extends Deferrable implements Data {
+export class Image extends Deferrable {
   urls: readonly Url[];
   coords?: readonly { x: number; y: number }[];
   channel?: Record<string, number>;
