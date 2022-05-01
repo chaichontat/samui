@@ -1,6 +1,6 @@
 import { browser } from '$app/env';
 import pako from 'pako';
-import { Deferrable, genLRU, getFile } from '../utils';
+import { Deferrable, genLRU, getFile, oneLRU } from '../utils';
 
 export interface Data {
   // retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
@@ -8,58 +8,63 @@ export interface Data {
   hydrated: boolean;
 }
 export type Url = { url: string; type: 'local' | 'network' };
-export type DataType = 'categorical' | 'quantitative' | 'coords';
 
-export type PlainJSONParams = {
+type Coordinates = { x: number; y: number };
+
+export type DataType = 'coordinates' | 'categorical' | 'quantitative';
+export type RetrievedData = (number | string)[] | Record<string, number | string> | Coordinates[];
+type SparseMode = 'record' | 'array' | null;
+
+interface JSONParams {
+  name: string;
+  isFeature: boolean;
+  dataType: DataType;
+}
+
+export interface PlainJSONParams<Ret extends RetrievedData> extends JSONParams {
   type: 'plainJSON';
-  name: string;
-  dataType?: DataType;
   url?: Url;
-  values?: unknown;
-  activeDefault: string;
-};
+  values?: Ret;
+}
 
-export type ChunkedJSONParams = {
+export interface ChunkedJSONParams extends JSONParams {
   type: 'chunkedJSON';
-  name: string;
   url: Url;
-  dataType?: DataType;
   headerUrl?: Url;
   header?: ChunkedJSONHeader;
-  options?: ChunkedJSONOptions;
-};
-
-export type ChunkedJSONOptions = {
-  densify?: boolean;
-};
+}
 
 export type ChunkedJSONHeader = {
   length: number;
   names: Record<string, number> | null;
   ptr: number[];
   activeDefault?: string;
+  sparseMode?: SparseMode;
 };
-export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
+
+export type FeatureParams<T extends RetrievedData> = ChunkedJSONParams | PlainJSONParams<T>;
 export type Sparse = { index: number[]; value: number[] };
 
-export class PlainJSON extends Deferrable implements Data {
+export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements Data {
   name: string;
   url?: Url;
-  dataType?: DataType;
-  values?: unknown;
-  activeDefault?: string;
+
+  readonly dataType: DataType;
+  readonly isFeature: boolean;
+
+  values?: Ret;
   hydrated = false;
 
   constructor(
-    { name, url, dataType, values, activeDefault }: PlainJSONParams,
+    { name, url, dataType, values, isFeature }: PlainJSONParams<Ret>,
     autoHydrate = false
   ) {
     super();
     this.name = name;
     this.url = url;
     this.values = values;
-    this.dataType = dataType ?? 'quantitative';
-    this.activeDefault = activeDefault;
+    this.dataType = dataType;
+    this.isFeature = isFeature;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -72,57 +77,56 @@ export class PlainJSON extends Deferrable implements Data {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      this.values = (await fetch(this.url.url).then((r) => r.json())) as unknown;
+      this.values = (await fetch(this.url.url).then((r) => r.json())) as Ret;
     }
     this.hydrated = true;
     return this;
   }
-
-  retrieve(name: string | number) {
-    return this.values[name];
-  }
 }
 
-export class ChunkedJSON extends Deferrable implements Data {
-  retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
+export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable implements Data {
+  retrieve:
+    | ((
+        name: string | number
+      ) => Promise<Record<string, string | number> | number[] | Ret | null | undefined>)
+    | undefined;
   ptr?: number[];
   names?: Record<string, number> | null;
   length?: number;
+  readonly dataType: DataType;
+  readonly isFeature: boolean;
 
-  dataType: DataType;
   headerUrl?: Url;
   header?: ChunkedJSONHeader;
   activeDefault?: string;
+  sparseMode?: SparseMode;
   url: Url;
   name: string;
   hydrated = false;
 
   allData?: ArrayBuffer;
 
-  readonly densify: boolean;
-
   constructor(
-    { name, url, headerUrl, header, dataType, options }: ChunkedJSONParams,
+    { name, url, headerUrl, header, dataType, isFeature }: ChunkedJSONParams,
     autoHydrate = false
   ) {
     super();
     this.name = name;
     this.url = url;
     this.header = header;
-    this.dataType = dataType ?? 'quantitative';
     this.headerUrl = headerUrl;
-    this.densify = options?.densify ?? true;
+    this.dataType = dataType;
+    this.isFeature = isFeature;
 
     if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
     if (autoHydrate) {
       throw new Error('Not implemented');
-      // this.hydrate(handle).catch(console.error);
     }
   }
 
   get revNames(): Record<number, string> | undefined {
     if (!this.names) return undefined;
-    const f = genLRU(() => {
+    const f = oneLRU(() => {
       const out = {} as Record<number, string>;
       for (const [k, v] of Object.entries(this.names!)) {
         out[v] = k;
@@ -147,53 +151,69 @@ export class ChunkedJSON extends Deferrable implements Data {
       names: this.names,
       ptr: this.ptr,
       length: this.length,
-      activeDefault: this.activeDefault
+      activeDefault: this.activeDefault,
+      sparseMode: this.sparseMode
     } = this.header!);
 
-    const zero = new Array(this.length).fill(0) as number[];
+    let densify: (
+      obj: Sparse | null
+    ) =>
+      | ReturnType<ReturnType<typeof densifyToArray>>
+      | ReturnType<ReturnType<typeof densifyToRecords>>;
+    switch (this.sparseMode) {
+      case 'record':
+        densify = densifyToRecords(Object.keys(this.names!));
+        break;
+      case 'array':
+        densify = densifyToArray(this.length);
+        break;
+    }
 
-    this.retrieve = genLRU(
-      async (selected: string | number): Promise<number[] | Sparse | undefined> => {
-        if (!browser) return;
-        if (selected === -1) throw new Error('-1 sent to retrieve');
+    if (!this.activeDefault && this.names) {
+      this.activeDefault = Object.keys(this.names)[0];
+    }
 
-        let idx: number;
-        if (typeof selected === 'string') {
-          if (!this.names) throw new Error('Index must be number for ChunkedJSON without names.');
+    this.retrieve = genLRU(async (selected: string | number) => {
+      if (!browser) return;
+      if (selected === -1) throw new Error('-1 sent to retrieve');
+
+      let idx: number;
+      if (typeof selected === 'string') {
+        if (!this.names) throw new Error('Index must be number for ChunkedJSON without names.');
+        idx = this.names[selected];
+      } else {
+        if (this.names) {
           idx = this.names[selected];
         } else {
-          if (this.names) {
-            idx = this.names[selected];
-          } else {
-            idx = selected;
-          }
+          idx = selected;
         }
-        if (idx === undefined) {
-          console.error("Couldn't find index for", selected);
-          return undefined;
-        }
-
-        if (this.ptr![idx] === this.ptr![idx + 1]) {
-          return zero;
-        }
-
-        const raw = await fetch(this.url.url, {
-          headers: {
-            Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`
-          }
-        });
-        const blob = await raw.blob();
-        const decomped = await this.decompressBlob(blob);
-        const sparse = JSON.parse(decomped) as Sparse;
-        return this.densify ? this.genDense(sparse) : sparse;
       }
-    );
+      if (idx === undefined) {
+        console.error("Couldn't find index for", selected);
+        return undefined;
+      }
+
+      if (this.ptr![idx] === this.ptr![idx + 1]) {
+        return densify ? densify(null) : null;
+      }
+
+      const raw = await fetch(this.url.url, {
+        headers: {
+          Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`
+        }
+      });
+      const blob = await raw.blob();
+      const decomped = await ChunkedJSON.decompressBlob(blob);
+      const ret = JSON.parse(decomped) as Ret;
+      return densify ? densify(ret as Sparse) : ret;
+    });
+
     this._deferred.resolve();
     this.hydrated = true;
     return this;
   }
 
-  decompressBlob =
+  static decompressBlob =
     browser && 'CompressionStream' in window // Chromium
       ? async (blob: Blob) => {
           try {
@@ -204,22 +224,39 @@ export class ChunkedJSON extends Deferrable implements Data {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             return await new Response(decompressedStream).text();
           } catch (e) {
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             throw new Error(`Error decompressing blob: ${e}`);
           }
         }
       : async (blob: Blob): Promise<string> => {
           return pako.inflate((await blob.arrayBuffer()) as pako.Data, { to: 'string' });
         };
+}
 
-  genDense(obj: Sparse): number[] {
+export function densifyToArray(length: number) {
+  const zero = new Array(length).fill(0) as number[];
+  return (obj: Sparse | null) => {
+    if (!obj) return zero;
     console.assert(obj.index.length === obj.value.length);
-    const dense = new Array(this.length).fill(0) as number[];
+    const dense = new Array(length).fill(0) as number[];
     for (let i = 0; i < obj.index.length; i++) {
       dense[obj.index[i]] = obj.value[i];
     }
     console.assert(dense.every((x) => x !== undefined));
     return dense;
-  }
+  };
+}
+
+export function densifyToRecords(names: string[]) {
+  return (obj: Sparse | null) => {
+    if (!obj) return {};
+    console.assert(obj.index.length === obj.value.length);
+    const out = {} as Record<string, string | number>;
+    for (let i = 0; i < obj.index.length; i++) {
+      out[names[obj.index[i]]] = obj.value[i];
+    }
+    return out;
+  };
 }
 
 export async function convertLocalToNetwork(
