@@ -57,11 +57,19 @@ export const samples: Writable<{ [key: string]: Sample }> = writable({});
 
 const preload = true;
 if (preload) {
-  samples.set({ [s]: first });
-  activeSample.set(s);
-  const obj = sampleList ? Object.fromEntries(sampleList.map((s) => [s.name, s])) : {};
-  if (s in obj) {
-    console.warn('Duplicate sample name in first and meh:', s);
+  first.promise
+    .then(() => {
+      samples.set({ [s]: first });
+      activeSample.set(s);
+    })
+    .catch(console.error);
+
+  if (sampleList) {
+    sampleList
+      .then((ss) => {
+        const obj = Object.fromEntries(ss.map((s) => [s.name, s]));
+        samples.set(Object.assign({ [s]: first }, obj));
+      })
+      .catch(console.error);
   }
-  samples.set(Object.assign({ [s]: first }, obj));
 }

@@ -2,11 +2,6 @@ import { browser } from '$app/env';
 import pako from 'pako';
 import { Deferrable, genLRU, getFile, oneLRU } from '../utils';
 
-export interface Data {
-  // retrieve: ((name: string | number) => Promise<number[] | undefined | Sparse>) | undefined;
-  hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
-  hydrated: boolean;
-}
 export type Url = { url: string; type: 'local' | 'network' };
 
 type Coordinates = { x: number; y: number };
@@ -45,10 +40,18 @@ export type ChunkedJSONHeader = {
 export type FeatureParams<T extends RetrievedData> = ChunkedJSONParams | PlainJSONParams<T>;
 export type Sparse = { index: number[]; value: number[] };
 
+export interface Data {
+  readonly name: string;
+  readonly dataType: DataType;
+  readonly isFeature: boolean;
+  hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
+  hydrated: boolean;
+}
+
 export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements Data {
-  name: string;
   url?: Url;
 
+  readonly name: string;
   readonly dataType: DataType;
   readonly isFeature: boolean;
 
@@ -93,15 +96,16 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
   ptr?: number[];
   names?: Record<string, number> | null;
   length?: number;
+
+  url: Url;
   readonly dataType: DataType;
   readonly isFeature: boolean;
+  readonly name: string;
 
   headerUrl?: Url;
   header?: ChunkedJSONHeader;
   activeDefault?: string;
   sparseMode?: SparseMode;
-  url: Url;
-  name: string;
   hydrated = false;
 
   allData?: ArrayBuffer;

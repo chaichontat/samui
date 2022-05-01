@@ -127,6 +127,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
         spotPx
       ]
     };
+
     if (type === 'quantitative') {
       return {
         variables: { opacity: 0.9 },
@@ -143,8 +144,6 @@ export class WebGLSpots extends Deferrable implements MapComponent {
       for (let i = 0; i < tableau10arr.length; i++) {
         colors.push(['==', ['%', ['get', 'value'], tableau10arr.length], i], tableau10arr[i]);
       }
-      console.log(colors);
-
       return {
         variables: { opacity: 0.9 },
         symbol: {

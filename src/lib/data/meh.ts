@@ -1,58 +1,46 @@
 import { browser, dev } from '$app/env';
-import { Sample } from '$src/lib/data/sample';
+import { Sample, type SampleParams } from '$src/lib/data/sample';
+import { ChunkedJSON, PlainJSON } from './dataHandlers';
 
 export const names = ['Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 export const s3_url = dev
   ? ''
   : 'https://chaichontat-host.s3.us-west-004.backblazeb2.com/loopy-browser';
 
-function gen_samples(n: string[]): Sample[] {
-  const out = [];
-  for (const s of n) {
-    // const kmeans: FeatureParams[] = [...Array(8).keys()].map((i) => ({
-    //   name: `kmeans${i + 2}`,
-    //   type: 'plainJSON',
-    //   url: { url: `/${s}/kmeans${i + 2}.json`, type: 'network' }
-    // }));
+async function getSample(s: string) {
+  const r = await fetch(`${s3_url}/${s}/sample.json`)
+    .then((r) => r.json() as Promise<SampleParams>)
+    .then(convertSamplePreload);
+  return new Sample(r);
+}
 
-    const sam = new Sample({
-      name: s,
-      imgParams: {
-        headerUrl: { url: `/${s}/image.json`, type: 'network' },
-        urls: [`${s3_url}/${s}/${s}_1.tif`, `${s3_url}/${s}/${s}_2.tif`].map((url) => ({
-          url,
-          type: 'network'
-        }))
-      },
-      featParams: [
-        {
-          name: 'genes',
-          type: 'chunkedJSON',
-          headerUrl: { url: `/${s}/gene_csc.json`, type: 'network' },
-          url: { url: `${s3_url}/${s}/gene_csc.bin`, type: 'network' }
-        },
-        {
-          name: 'spotGenes',
-          type: 'chunkedJSON',
-          headerUrl: { url: `/${s}/gene_csr.json`, type: 'network' },
-          url: { url: `${s3_url}/${s}/gene_csr.bin`, type: 'network' },
-          options: { densify: false }
-        },
-        {
-          name: 'umap',
-          type: 'plainJSON',
-          url: { url: `/${s}/umap.json`, type: 'network' }
-        }
-        // {
-        //   name: 'tsne',
-        //   type: 'plainJSON',
-        //   url: { url: `/${s}/tsne.json`, type: 'network' }
-        // }
-      ]
-    });
-    out.push(sam);
-  }
-  return out;
+async function gen_samples(n: string[]) {
+  return await Promise.all(n.map((s) => getSample(s)));
 }
 
 export default browser ? gen_samples(names) : undefined;
+
+export function convertSamplePreload(r: SampleParams) {
+  if (r.imgParams.headerUrl) {
+    r.imgParams.headerUrl = {
+      url: `${s3_url}/${r.name}/${r.imgParams.headerUrl.url}`,
+      type: 'network'
+    };
+  }
+  for (const url of r.imgParams.urls) {
+    url.url = `${s3_url}/${r.name}/${url.url}`;
+    url.type = 'network';
+  }
+
+  for (const f of r.featParams) {
+    console.log(f);
+
+    if (f.url) {
+      f.url = { url: `${s3_url}/${r.name}/${f.url.url}`, type: 'network' };
+    }
+    if ('headerUrl' in f && f.headerUrl) {
+      f.headerUrl = { url: `${s3_url}/${r.name}/${f.headerUrl.url}`, type: 'network' };
+    }
+  }
+  return r;
+}

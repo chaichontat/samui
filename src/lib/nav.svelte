@@ -11,6 +11,8 @@
   async function updateNames(features: Record<string, Data>) {
     names = [];
     for (const [name, f] of Object.entries(features)) {
+      if (!f.isFeature) continue;
+
       if (f instanceof PlainJSON) {
         names.push({ name });
       } else if (f instanceof ChunkedJSON) {
@@ -28,6 +30,9 @@
   }
   $: sample = $samples[$activeSample];
   $: if (sample) {
+    if (!$activeFeatures.name) {
+      $activeFeatures = sample.activeDefault!;
+    }
     updateNames(sample.features).catch(console.error);
   }
 

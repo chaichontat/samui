@@ -17,7 +17,7 @@ export type SampleParams = {
   activeDefault?: FeatureName<string>;
 };
 
-export class Sample extends Deferrable implements Data {
+export class Sample extends Deferrable {
   name: string;
   imgParams: ImageParams;
   featParams: FeatureParams<RetrievedData>[];
@@ -83,9 +83,7 @@ export class Sample extends Deferrable implements Data {
         this.activeDefault.name = f;
       } else {
         this.activeDefault.feature = f;
-        this.activeDefault.name = (
-          this.features[f] as ChunkedJSON<RetrievedData>
-        ).header!.activeDefault;
+        this.activeDefault.name = (this.features[f] as ChunkedJSON<RetrievedData>).activeDefault;
       }
     }
     this.hydrated = true;

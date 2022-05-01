@@ -17,21 +17,38 @@
     onHover: (evt) => {}
   };
 
-  $: ({ values, dataType, activeDefault } = $samples[$activeSample]?.getFeature($activeFeatures));
+  let values: number[] = [];
+  let dataType = 'quantitative';
+
+  $: sample = $samples[$activeSample];
+  $: if (sample?.hydrated) {
+    const f = sample.getFeature($activeFeatures);
+    values = f.values as number[];
+    dataType = f.dataType;
+  }
 </script>
 
 <div class="flex flex-col divide-y dark:divide-slate-700">
-  <div class="mx-auto mt-6 hidden w-[90%] lg:block">
-    <Scatter
-      coordsSource={{ name: $activeSample, values: $samples[$activeSample]?.image.coords }}
-      intensitySource={{
-        name: $activeFeatures.name,
-        dataType: dataType,
-        values: values
-      }}
-      {hoverOptions}
-      colorbar
-    />
+  <div class="relative mx-auto hidden w-[90%] lg:block" class:mt-6={sample}>
+    {#if sample}
+      <!-- content here -->
+      {#await $samples[$activeSample].promise then _}
+        <!-- promise was fulfilled -->
+        <Scatter
+          coordsSource={{ name: $activeSample, values: sample.image.coords }}
+          intensitySource={{
+            name: $activeFeatures.name,
+            dataType: dataType,
+            values: values
+          }}
+          {hoverOptions}
+          colorbar
+        />
+      {/await}
+    {:else}
+      <div class="h-20" />
+      <span class="center text-xl text-default">No sample</span>
+    {/if}
   </div>
 
   <section class="pt-4">

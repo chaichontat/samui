@@ -52,7 +52,7 @@
     {:else}
       <!-- Splash import -->
       <div
-        class="flex items-center gap-x-2 lg:gap-x-3 cursor-pointer absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-800 dark:text-slate-400 text-2xl sm:text-3xl lg:text-4xl transition-colors dark:hover:text-slate-200"
+        class="flex items-center gap-x-2 lg:gap-x-3 cursor-pointer center text-slate-600 hover:text-slate-800 dark:text-slate-400 text-2xl sm:text-3xl lg:text-4xl transition-colors dark:hover:text-slate-200"
         on:click={byod}
       >
         <svg
