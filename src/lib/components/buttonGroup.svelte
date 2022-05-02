@@ -5,27 +5,35 @@
   export let names: string[];
   export let color: Color;
   export let curr: string | null = null;
-  export let cl = '';
-  export let addNone = false;
+  export let addNone = true;
+
+  let namesAdded: string[];
+  $: {
+    namesAdded = [...names];
+    if (addNone) namesAdded.push('None');
+    if (namesAdded.length < 2) {
+      throw new Error('names must have at least two elements');
+    }
+  }
 
   const dispatch = createEventDispatcher();
 
   function genClass(c: Color, active: boolean) {
     switch (c) {
       case 'blue':
-        return `border-slate-400 dark:border-blue-700/50 ${
+        return `border-blue-400 dark:border-blue-700/50 ${
           active
             ? 'bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600'
             : 'bg-slate-200/30 text-slate-600 dark:text-slate-100 dark:bg-blue-900/50 dark:hover:bg-blue-800 dark:active:bg-blue-700'
         }`;
       case 'green':
-        return `border-slate-400 dark:border-green-700/50 ${
+        return `border-green-400 dark:border-green-700/50 ${
           active
             ? 'bg-green-600 dark:bg-green-700 dark:hover:bg-green-700'
             : 'bg-slate-200/30 text-slate-600 dark:text-slate-100 dark:bg-green-900/50 dark:hover:bg-green-800 dark:active:bg-green-700'
         }`;
       case 'red':
-        return `border-slate-400 dark:border-red-700/50 ${
+        return `border-red-400 dark:border-red-700/50 ${
           active
             ? 'bg-red-700 dark:hover:bg-red-700 dark:active:bg-red-600'
             : 'bg-slate-200/30 text-slate-600 dark:text-slate-100 dark:bg-red-900/50 dark:hover:bg-red-800 dark:active:bg-red-700'
@@ -43,36 +51,17 @@
   }
 </script>
 
-<div class="inline-flex rounded-md shadow-sm" id="group" role="group">
-  <button
-    on:click={() => {
-      curr = names[0];
-      dispatch('change', { value: names[0] });
-    }}
-    class={`${genClass(color, curr === names[0])} button-base rounded-l-lg border `}
-    >{names[0]}</button
-  >
-
-  {#each names.slice(1) as pro}
+<div class="inline-flex rounded-md shadow-sm">
+  {#each namesAdded as n, i}
     <button
       on:click={() => {
-        curr = pro;
-        dispatch('change', { value: pro });
+        curr = n;
+        dispatch('change', { value: n });
       }}
-      class={`${genClass(color, curr === pro)} button-base border-t border-b border-r`}
-      >{pro}</button
+      class={`${genClass(color, curr === n)} button-base border-t border-b border-r`}
+      class:border-l={i === 0}
+      class:rounded-l-lg={i === 0}
+      class:rounded-r-lg={i === namesAdded.length - 1}>{n}</button
     >
   {/each}
-
-  <button
-    on:click={() => {
-      curr = 'none';
-      dispatch('change', { value: 'none' });
-    }}
-    class={`${genClass(
-      color,
-      curr === 'none'
-    )} button-base rounded-r-lg border-t border-b border-r`}
-    >None
-  </button>
 </div>
