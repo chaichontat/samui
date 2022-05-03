@@ -16,6 +16,8 @@
     "test:watch": "npm run test -- --watch"
   },
   "devDependencies": {
+    "@babel/core": "^7.17.10",
+    "@babel/preset-env": "^7.17.10",
     "@rgossiaux/svelte-headlessui": "^1.0.0-beta.12",
     "@sveltejs/adapter-static": "^1.0.0-next.29",
     "@sveltejs/kit": "next",
@@ -30,6 +32,7 @@
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
     "autoprefixer": "^10.4.4",
+    "babel-jest": "^27.5.1",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-svelte3": "^3.4.1",

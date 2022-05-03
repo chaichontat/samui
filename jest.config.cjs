@@ -4,6 +4,7 @@ module.exports = {
   testEnvironment: 'jsdom',
   transform: {
     '^.+\\.ts$': 'ts-jest',
+    '^.+\\.js?$': require.resolve('babel-jest'),
     '^.+\\.svelte$': [
       'svelte-jester',
       {
@@ -11,5 +12,6 @@ module.exports = {
       }
     ]
   },
+  transformIgnorePatterns: ['node_modules/(?!ol).+.js$'],
   moduleFileExtensions: ['js', 'svelte', 'ts']
 };
