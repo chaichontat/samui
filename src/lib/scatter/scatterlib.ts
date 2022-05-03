@@ -3,9 +3,9 @@ import Chart, {
   type ChartDataset,
   type ChartEvent,
   type ChartOptions
-} from 'chart.js/auto/auto.js';
+} from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { Deferrable } from '../utils';
+import { Deferrable, oneLRU } from '../utils';
 
 export const chartOptions: Readonly<ChartConfiguration<'scatter'>> = {
   animation: false,
@@ -230,14 +230,13 @@ export class Charts extends Deferrable {
     if (points.length === 0) return;
 
     const idx = points[0]?.index;
-    this.hoverChart.chart!.canvas.style.cursor = points.length > 0 ? 'pointer' : '';
     this.triggerHover(idx);
     this.onHover(idx);
   }
 
-  triggerHover(idx: number) {
+  triggerHover = oneLRU((idx: number) => {
     this.hoverChart.triggerHover(this.coords[idx], this.colors[idx]);
-  }
+  });
 
   set coords(coords: { x: number; y: number }[]) {
     this.mainChart.update({ coords }).catch(console.error);

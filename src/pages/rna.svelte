@@ -1,10 +1,9 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
   // import Veg from '$src/lib/components/veg.svelte';
-  import { activeFeatures, activeSample, samples, type HoverName } from '$src/lib/store';
+  import { activeFeatures, activeSample, samples, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
-  import type { ChartOptions } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
   import Bar from './bar.svelte';
   import Scatter from './scatter.svelte';
@@ -12,10 +11,6 @@
 
   let vegaShown = false;
   $: if (showing === 1) vegaShown = true;
-
-  const hoverOptions: ChartOptions<'scatter'> = {
-    onHover: (evt) => {}
-  };
 
   let values: number[] = [];
   let dataType = 'quantitative';
@@ -41,7 +36,7 @@
             dataType: dataType,
             values: values
           }}
-          {hoverOptions}
+          bind:currHover={$store.currIdx.idx}
           colorbar
         />
       {/await}

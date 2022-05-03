@@ -3,7 +3,6 @@
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import Legend from '$src/lib/components/legend.svelte';
   import { Charts } from '$src/lib/scatter/scatterlib';
-  import { store } from '$src/lib/store';
   import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
   import genColormap from 'colormap';
   import { onMount } from 'svelte';
@@ -14,6 +13,8 @@
   export let colorbar = false;
   export let coordsSource: Named<{ x: number; y: number }[]>;
   export let minmax: 'auto' | [number, number] = 'auto';
+  export let filter: number[] = [];
+  export let currHover: number | null = null;
 
   interface IntensitySource extends Named<number[] | Promise<number[]>> {
     dataType: 'categorical' | 'quantitative';
@@ -24,16 +25,7 @@
   export let pointRadius = 2.5;
 
   let catLegend: Record<number | string, `#${string}`> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  // export let onHover: (idx: number) => void = () => {};
-  // export let hoverOptions: ChartOptions<'scatter'> = {} as ChartOptions<'scatter'>;
-
-  const charts = new Charts({ onHover: handleHover });
-
-  function handleHover(idx: number) {
-    $store.currIdx = { idx, source: 'scatter' };
-  }
+  const charts = new Charts({ onHover: (idx) => (currHover = idx) });
 
   const _color256 = genColormap({ colormap, nshades: 256, format: 'hex' });
   let colors: string[];
@@ -113,7 +105,7 @@
     update({ coords: coordsSource, intensity: intensitySource }).catch(console.error);
   });
 
-  $: if ($store.currIdx.source !== 'scatter') charts.triggerHover($store.currIdx.idx);
+  $: if (currHover) charts.triggerHover(currHover);
   $: update({ coords: coordsSource, intensity: intensitySource }).catch(console.error);
 </script>
 
