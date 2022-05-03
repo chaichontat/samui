@@ -1,39 +1,20 @@
 <script lang="ts">
+  import { updateNames } from '$lib/data/searchBox';
   import Darkswitch from './components/darkswitch.svelte';
   import SearchBox from './components/searchBox.svelte';
-  import { ChunkedJSON, PlainJSON, type Data } from './data/dataHandlers';
   import type { Sample } from './data/sample';
   import { activeFeatures, activeSample, samples, type FeatureName, type HoverName } from './store';
-
   let names: FeatureName<string>[] = [];
   let sample: Sample;
 
-  async function updateNames(features: Record<string, Data>) {
-    names = [];
-    for (const [name, f] of Object.entries(features)) {
-      if (!f.isFeature) continue;
-
-      if (f instanceof PlainJSON) {
-        names.push({ name });
-      } else if (f instanceof ChunkedJSON) {
-        await f.promise;
-        if (f.header!.names) {
-          names = names.concat(
-            Object.keys(f.header!.names).map((name) => ({ feature: f.name, name }))
-          );
-        }
-      } else {
-        throw new Error('Unknown feature type');
-      }
-    }
-    names = names;
-  }
   $: sample = $samples[$activeSample];
   $: if (sample) {
     if (!$activeFeatures.name) {
       $activeFeatures = sample.activeDefault!;
     }
-    updateNames(sample.features).catch(console.error);
+    updateNames(sample.features)
+      .then((n) => (names = n))
+      .catch(console.error);
   }
 
   let active: HoverName<FeatureName<string>>;
