@@ -133,6 +133,7 @@ export class Draww {
   readonly modify: Modify;
 
   _currHighlight: number | null = null;
+  _colorCounter = 0; // Ensures that color increases when deleting older selections.
 
   // Style for finished polygon.
   style: Style = new Style({
@@ -210,7 +211,7 @@ export class Draww {
   }
 
   _afterDraw(feature: Feature<Polygon>) {
-    const cid = this.source.getFeatures().length % tableau10arr.length;
+    const cid = this._colorCounter++ % tableau10arr.length;
     feature.set('color', tableau10arr[cid]);
     feature.setId(Math.random());
 
