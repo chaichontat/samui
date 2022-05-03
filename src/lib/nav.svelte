@@ -1,21 +1,9 @@
 <script lang="ts">
-  import { updateNames } from '$lib/data/searchBox';
   import Darkswitch from './components/darkswitch.svelte';
   import SearchBox from './components/searchBox.svelte';
-  import type { Sample } from './data/sample';
-  import { activeFeatures, activeSample, samples, type FeatureName, type HoverName } from './store';
-  let names: FeatureName<string>[] = [];
-  let sample: Sample;
+  import { activeFeatures, currSample, type FeatureName, type HoverName } from './store';
 
-  $: sample = $samples[$activeSample];
-  $: if (sample) {
-    if (!$activeFeatures.name) {
-      $activeFeatures = sample.activeDefault!;
-    }
-    updateNames(sample.features)
-      .then((n) => (names = n))
-      .catch(console.error);
-  }
+  $: names = $currSample?.featureNames ?? [];
 
   let active: HoverName<FeatureName<string>>;
   $: if (active?.active) {

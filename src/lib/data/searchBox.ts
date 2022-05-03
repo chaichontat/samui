@@ -1,7 +1,7 @@
 import type { FeatureName } from '../store';
 import { ChunkedJSON, PlainJSON, type Data } from './dataHandlers';
 
-export async function updateNames(features: Record<string, Data>) {
+export function updateNames(features: Record<string, Data>) {
   let names: FeatureName<string>[] = [];
   for (const [name, f] of Object.entries(features)) {
     if (!f.isFeature) continue;
@@ -9,7 +9,6 @@ export async function updateNames(features: Record<string, Data>) {
     if (f instanceof PlainJSON) {
       names.push({ name });
     } else if (f instanceof ChunkedJSON) {
-      await f.promise;
       if (f.header!.names) {
         names = names.concat(
           Object.keys(f.header!.names).map((name) => ({ feature: f.name, name }))
