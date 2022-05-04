@@ -42,7 +42,7 @@
           intensitySource={{
             name: `${$currSample.sample.name}-${$activeFeatures.name}`,
             dataType: dataType,
-            values: values
+            values: $currSample.sample.getFeature($activeFeatures).values
           }}
           mainChartOptions={naviChartOptions}
           hoverChartOptions={naviChartOptions}
