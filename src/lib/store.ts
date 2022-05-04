@@ -97,7 +97,7 @@ const preload = true;
 if (preload) {
   first.promise
     .then(() => {
-      samples.set({ [s]: first });
+      samples.set({ [s]: first, ...get(samples) });
       activeSample.set(s);
     })
     .catch(console.error);
@@ -106,7 +106,7 @@ if (preload) {
     sampleList
       .then((ss) => {
         const obj = Object.fromEntries(ss.map((s) => [s.name, s]));
-        samples.set(Object.assign({ [s]: first }, obj));
+        samples.set({ ...obj, ...get(samples) });
       })
       .catch(console.error);
   }
