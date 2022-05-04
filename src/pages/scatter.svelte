@@ -27,7 +27,7 @@
   export let opacity = 'ff';
   export let pointRadius = 2.5;
 
-  let catLegend: Record<number | string, `#${string}`> = {};
+  let catLegend: Record<number | string, `#${string}`> | undefined;
   const charts = new Charts({
     onHover: (idx) => (currHover = idx),
     mainChartOptions,
@@ -54,10 +54,10 @@
       }
 
       if (intensity.values && coords) {
-        colors = calcColor({
+        ({ colors, legend: catLegend } = calcColor({
           key: coords.name + intensity.name,
           args: [intensity.values, intensity.dataType ?? 'quantitative']
-        });
+        }));
 
         await updateColors({ key: coords.name + intensity.name, args: [colors] });
       }
@@ -65,7 +65,7 @@
   };
 
   const calcColor = keyLRU((intensity: number[], dataType: 'categorical' | 'quantitative') => {
-    let out = [];
+    let _color = [];
     if (!intensity.every((x) => x !== undefined)) {
       throw new Error('Intensity source is not ready.');
     }
@@ -74,12 +74,13 @@
       case 'categorical':
         // eslint-disable-next-line no-case-declarations
         const unique = [...new Set(intensity)];
-        catLegend = {} as Record<number | string, `#${string}`>;
+        // eslint-disable-next-line no-case-declarations
+        const legend = {} as Record<number | string, `#${string}`>;
         for (const [i, x] of unique.entries()) {
-          catLegend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
+          legend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
         }
-        out = intensity.map((x) => catLegend[x]);
-        break;
+        _color = intensity.map((x) => legend[x]);
+        return { colors: _color, legend };
 
       case 'quantitative':
         // TODO get percentile
@@ -87,15 +88,13 @@
         const thresh = 10; // minmax === 'auto' ? Math.max(...intensitySource) : minmax[1];
         for (const d of intensity) {
           const idx = Math.round(Math.min((d ?? 0) / thresh, 1) * 255);
-          out.push(_color256[idx] + opacity);
+          _color.push(_color256[idx] + opacity);
         }
-        break;
+        return { colors: _color };
 
       default:
         throw new Error('Unknown data type.');
     }
-
-    return out;
   });
 
   const updateCoords = keyOneLRU(
@@ -122,7 +121,7 @@
   {#if colorbar && intensitySource.dataType === 'quantitative'}
     <Colorbar min={0} max={10} />
   {/if}
-  {#if colorbar && intensitySource.dataType === 'categorical'}
+  {#if colorbar && intensitySource.dataType === 'categorical' && catLegend}
     <Legend colormap={catLegend} />
   {/if}
   <canvas class="absolute" id={`${id}-hover`} />
