@@ -4,6 +4,7 @@
   import Legend from '$src/lib/components/legend.svelte';
   import { Charts } from '$src/lib/scatter/scatterlib';
   import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
+  import type { ChartConfiguration } from 'chart.js';
   import genColormap from 'colormap';
   import { onMount } from 'svelte';
 
@@ -15,6 +16,8 @@
   export let minmax: 'auto' | [number, number] = 'auto';
   export let filter: number[] = [];
   export let currHover: number | null = null;
+  export let mainChartOptions: ChartConfiguration<'scatter'> | undefined = undefined;
+  export let hoverChartOptions: ChartConfiguration<'scatter'> | undefined = undefined;
 
   interface IntensitySource extends Named<number[] | Promise<number[]>> {
     dataType: 'categorical' | 'quantitative';
@@ -25,7 +28,11 @@
   export let pointRadius = 2.5;
 
   let catLegend: Record<number | string, `#${string}`> = {};
-  const charts = new Charts({ onHover: (idx) => (currHover = idx) });
+  const charts = new Charts({
+    onHover: (idx) => (currHover = idx),
+    mainChartOptions,
+    hoverChartOptions
+  });
 
   const _color256 = genColormap({ colormap, nshades: 256, format: 'hex' });
   let colors: string[];
@@ -46,7 +53,7 @@
         intensity.values = await intensity.values;
       }
 
-      if (intensity.values) {
+      if (intensity.values && coords) {
         colors = calcColor({
           key: coords.name + intensity.name,
           args: [intensity.values, intensity.dataType ?? 'quantitative']

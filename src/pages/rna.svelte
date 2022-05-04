@@ -4,6 +4,7 @@
   import { activeFeatures, activeSample, samples, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
+  import type { ChartConfiguration } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
   import Bar from './bar.svelte';
   import Scatter from './scatter.svelte';
@@ -15,7 +16,18 @@
   let values: number[] = [];
   let dataType = 'quantitative';
 
-  $: sample = $samples[$activeSample];
+  const naviChartOptions: ChartConfiguration<'scatter'> = {
+    scales: {
+      x: {
+        display: false
+      },
+      y: {
+        display: false,
+        reverse: true
+      }
+    }
+  };
+
   $: if (sample?.hydrated) {
     const f = sample.getFeature($activeFeatures);
     values = f.values as number[];

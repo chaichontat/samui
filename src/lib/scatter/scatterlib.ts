@@ -1,7 +1,18 @@
-import type { ChartEvent } from 'chart.js/auto';
+import type { ChartConfiguration, ChartEvent } from 'chart.js/auto';
 import { Deferrable, oneLRU } from '../utils';
 import { HoverChart } from './hoverChart';
 import { MainChart } from './mainChart';
+
+export const defaultChartOptions: Readonly<ChartConfiguration<'scatter'>> = {
+  animation: false,
+  aspectRatio: 1,
+  plugins: {
+    // @ts-expect-error
+    legend: { display: false },
+    tooltip: { enabled: false }
+  },
+  resizeDelay: 50
+};
 
 export class Charts extends Deferrable {
   readonly mainChart: MainChart;
@@ -11,11 +22,22 @@ export class Charts extends Deferrable {
   _coords: { x: number; y: number }[] = [];
   _colors: string[] = [];
 
-  constructor({ onHover }: { onHover?: (idx: number) => void }) {
+  constructor({
+    onHover,
+    mainChartOptions,
+    hoverChartOptions
+  }: {
+    onHover?: (idx: number) => void;
+    mainChartOptions?: ChartConfiguration<'scatter'>;
+    hoverChartOptions?: ChartConfiguration<'scatter'>;
+  }) {
     super();
     this.onHover = onHover ?? (() => {});
-    this.mainChart = new MainChart();
-    this.hoverChart = new HoverChart({ onHover: (evt) => this.handleHover(evt) });
+    this.mainChart = new MainChart(mainChartOptions);
+    this.hoverChart = new HoverChart({
+      onHover: (evt) => this.handleHover(evt),
+      options: hoverChartOptions
+    });
   }
 
   mount(elMain: HTMLCanvasElement, elHov: HTMLCanvasElement) {

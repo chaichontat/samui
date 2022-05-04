@@ -1,32 +1,13 @@
 import Chart, { type ChartConfiguration, type ChartDataset, type ChartEvent } from 'chart.js/auto';
 import { Deferrable } from '../utils';
-
-export const chartOptions: Readonly<ChartConfiguration<'scatter'>> = {
-  animation: false,
-  aspectRatio: 1,
-  scales: {
-    x: {
-      display: false
-    },
-    y: {
-      display: false,
-      reverse: true
-    }
-  },
-  plugins: {
-    // @ts-expect-error
-    legend: { display: false },
-    tooltip: { enabled: false }
-  },
-  resizeDelay: 50
-};
+import { defaultChartOptions } from './scatterlib';
 
 export class MainChart extends Deferrable {
   chart?: Chart;
   dataset: ChartDataset<'scatter', { x: number; y: number }[]>;
   mounted = false;
 
-  constructor() {
+  constructor(readonly options?: ChartConfiguration<'scatter'>) {
     super();
     this.dataset = {
       type: 'scatter',
@@ -35,6 +16,7 @@ export class MainChart extends Deferrable {
       normalized: true,
       pointRadius: 1.5
     };
+    this.options = options;
   }
 
   mount(el: HTMLCanvasElement) {
@@ -43,7 +25,7 @@ export class MainChart extends Deferrable {
         datasets: [this.dataset]
       },
       // @ts-ignore
-      options: { ...chartOptions }
+      options: { ...defaultChartOptions, ...this.options }
     });
     this.mounted = true;
     this._deferred.resolve();

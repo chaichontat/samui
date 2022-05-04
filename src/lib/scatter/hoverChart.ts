@@ -1,18 +1,24 @@
-import Chart, { type ChartDataset, type ChartEvent, type ChartOptions } from 'chart.js/auto';
+import Chart, {
+  type ChartConfiguration,
+  type ChartDataset,
+  type ChartEvent,
+  type ChartOptions
+} from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { chartOptions, MainChart } from './mainChart';
+import { MainChart } from './mainChart';
+import { defaultChartOptions } from './scatterlib';
 
 export class HoverChart extends MainChart {
   mainChart?: MainChart;
   dataset: ChartDataset<'scatter', never[]>;
   readonly externalHover?: (evt: ChartEvent) => void;
-  readonly options: ChartOptions<'scatter'>;
+  readonly options: ChartConfiguration<'scatter'>;
 
   constructor({
     options,
     onHover: externalHover
   }: {
-    options?: ChartOptions<'scatter'>;
+    options?: ChartConfiguration<'scatter'>;
     onHover?: (evt: ChartEvent) => void;
   }) {
     super();
@@ -23,7 +29,7 @@ export class HoverChart extends MainChart {
       pointHoverRadius: 25,
       borderColor: '#eeeeeedd'
     };
-    this.options = options ?? {};
+    this.options = options;
     this.externalHover = externalHover;
   }
 
@@ -33,9 +39,9 @@ export class HoverChart extends MainChart {
       data: { datasets: [this.dataset] },
       // plugins: [ChartDataLabels],
       options: {
-        ...chartOptions,
+        ...defaultChartOptions,
         plugins: {
-          ...chartOptions.plugins
+          ...defaultChartOptions.plugins
           // datalabels: {
           //   formatter: (x: { x: number; y: number }): string => ,
           //   align: 'center',
@@ -44,6 +50,12 @@ export class HoverChart extends MainChart {
           //   color: '#FFFFFF',
           //   font: { size: 14 }
           // }
+        },
+        scales: {
+          x: {
+            display: false
+          },
+          y: { display: false, ...this.options.scales.y }
         },
         onHover: (evt) => this.handleHover(evt),
         ...this.options
