@@ -15,7 +15,7 @@ async function getSample(s: string) {
 }
 
 async function gen_samples(n: string[]) {
-  return await Promise.all(n.map((s) => getSample(s)));
+  return await Promise.all(n.map(getSample));
 }
 
 export default browser ? gen_samples(names) : undefined;

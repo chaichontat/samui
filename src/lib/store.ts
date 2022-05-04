@@ -55,6 +55,7 @@ const s = first.name;
 
 export const activeSample: Writable<string> = writable('');
 export const samples: Writable<{ [key: string]: Sample }> = writable({});
+
 export type CurrSample = {
   sample: Sample;
   featureNames?: FeatureName<string>[];
@@ -62,17 +63,9 @@ export type CurrSample = {
 
 export const currSample: Writable<CurrSample | undefined> = writable();
 
-function updateSample(s: Sample) {
-  if (!s.hydrated) {
-    s.hydrate()
-      .then(() => {
-        currSample.set({ featureNames: updateNames(s.features), sample: s });
-        console.log(get(currSample));
-      })
-      .catch(console.error);
-  } else {
-    currSample.set({ featureNames: updateNames(s.features), sample: s });
-  }
+export async function updateSample(s: Sample) {
+  if (!s.hydrated) await s.hydrate();
+  return { featureNames: updateNames(s.features), sample: s };
 }
 
 activeSample.subscribe((n) => {
@@ -81,15 +74,20 @@ activeSample.subscribe((n) => {
     currSample.set(undefined);
     return;
   }
-
-  updateSample(ss[n]);
+  updateSample(ss[n])
+    .then((r) => currSample.set(r))
+    .catch(console.error);
 });
 
 // In case that a new sample is added that matches the active sample.
 samples.subscribe((s) => {
   if (!get(currSample)) {
     const sample = s[get(activeSample)];
-    if (sample) updateSample(sample);
+    if (sample) {
+      updateSample(sample)
+        .then((r) => currSample.set(r))
+        .catch(console.error);
+    }
   }
 });
 

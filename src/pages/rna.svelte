@@ -47,7 +47,7 @@
         <Scatter
           coordsSource={{ name: $activeSample, values: sample.image.coords }}
           intensitySource={{
-            name: $activeFeatures.name,
+            name: `${$activeSample}-${$activeFeatures.name}`,
             dataType: dataType,
             values: values
           }}

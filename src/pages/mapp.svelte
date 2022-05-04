@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Image } from '$src/lib/data/image';
+  import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
@@ -7,10 +7,13 @@
   import 'ol/ol.css';
   import { onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, activeSample, samples, store, type FeatureName } from '../lib/store';
+  import { activeFeatures, store, type FeatureName } from '../lib/store';
 
-  let image: Image;
-  $: image = $samples[$activeSample]?.image;
+  export let sample: Sample;
+  export let trackHover = false;
+
+  $: image = sample?.image;
+
   const uid = Math.random();
   const mapName = `map-${uid}`;
   const map = new Mapp();
@@ -21,13 +24,13 @@
   let imgCtrl: ImageCtrl;
   let selecting = false;
 
-  onMount(async () => {
+  onMount(() => {
     map.mount(mapName);
-
     map.handlePointer({
-      pointermove: (idx: number) => ($store.currIdx = { idx, source: 'map' })
+      pointermove: (idx: number) => {
+        if (trackHover) $store.currIdx = { idx, source: 'map' };
+      }
     });
-    await update(image).catch(console.error);
 
     // const dapiLayer = new WebGLPointsLayer({
     //   // @ts-expect-error
@@ -81,32 +84,36 @@
 
   let mode: ImageMode;
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
-  const update = async (img: Image) => {
-    await map.update({ image });
+
+  const update = keyOneLRU(async (sample: Sample) => {
+    await sample.promise;
+    const img = sample.image;
+    await map.update({ image: img });
     mode = img.header!.mode ?? 'composite';
     convertImgCtrl = colorVarFactory(mode, img.channel);
 
     updateSpot({
-      key: `${$activeSample}${$activeFeatures.name ?? 'null'}`,
+      key: `${sample.name}-${$activeFeatures.name ?? 'null'}`,
       args: [$activeFeatures]
     });
-    // updateSpot({ key: 'GFAP', args: [$activeFeatures.name.active] });
-  };
+  });
 
-  $: update(image).catch(console.error);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  $: if (sample) update({ key: sample.name, args: [sample] });
+
   $: if (convertImgCtrl && imgCtrl) {
     map.layerMap.background.updateStyle(convertImgCtrl(imgCtrl));
   }
 
   const changeHover = async (idx: number) => {
+    if (!image) return;
     await image.promise;
     map.layerMap.active.update(image.coords![idx], image.header!.spot);
   };
 
-  $: if (map.mounted) changeHover($store.currIdx.idx).catch(console.error);
+  $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
 
   const updateSpot = keyOneLRU((fn: FeatureName<string>) => {
-    const sample = $samples[$activeSample];
     if (!sample || !fn) return false;
     const { values, dataType } = sample.getFeature(fn);
     map.layerMap.spots.updateIntensity(map, values, dataType).catch(console.error);
@@ -114,10 +121,12 @@
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
   function updateSpotName(fn: FeatureName<string>) {
-    updateSpot({
-      key: `${$activeSample}${JSON.stringify(fn)} ?? 'null'}`,
-      args: [$activeFeatures]
-    });
+    if (sample) {
+      updateSpot({
+        key: `${sample.name}${JSON.stringify(fn)} ?? 'null'}`,
+        args: [$activeFeatures]
+      });
+    }
   }
 
   $: updateSpotName($activeFeatures);
@@ -134,7 +143,7 @@
     class:rgbmode={image?.header?.mode === 'rgb'}
     class:compositemode={image?.header?.mode === 'composite'}
   >
-    {#if $samples[$activeSample]}
+    {#if sample}
       <section
         class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
       >
@@ -156,7 +165,7 @@
   </div>
 
   <!-- Buttons -->
-  {#if $samples[$activeSample]}
+  {#if sample}
     <div
       class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
     >
