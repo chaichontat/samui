@@ -46,7 +46,7 @@
     colorValues = { name: color.active!.name, values: c.values as number[], dataType: c.dataType };
   }
 
-  $: if ($currSample && color.active) {
+  $: if ($currSample && color?.active) {
     console.log(color);
 
     updateColors($currSample.sample, color).catch(console.error);
@@ -55,14 +55,23 @@
   let colorValues: Named<number[]> = { name: 'meh', values: [], dataType: 'quantitative' };
 </script>
 
-<div class="flex items-center gap-x-2">
-  x:
-  <SearchBox names={featureNames} bind:curr={x} />
-  y: <SearchBox names={featureNames} bind:curr={y} />
-</div>
+<div class="flex flex-col items-center gap-y-1">
+  <div class="flex max-w-md items-center gap-x-2">
+    x:
+    <SearchBox names={featureNames} bind:curr={x} />
+    y: <SearchBox names={featureNames} bind:curr={y} />
+  </div>
 
-<div class="flex items-center gap-x-2">
-  Color: <div class="w-full"><SearchBox names={featureNames} bind:curr={color} /></div>
-</div>
+  <div class="flex max-w-md items-center gap-x-2">
+    Color:
+    <div class="">
+      <SearchBox names={featureNames} bind:curr={color} />
+    </div>
+  </div>
 
-<Scatter coordsSource={coords} intensitySource={colorValues} bind:currHover={$store.currIdx.idx} />
+  <Scatter
+    coordsSource={coords}
+    intensitySource={colorValues}
+    bind:currHover={$store.currIdx.idx}
+  />
+</div>
