@@ -1,7 +1,8 @@
 import first from '$lib/data/first';
 import sampleList from '$lib/data/meh';
-import { writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
+import { updateNames } from './data/searchBox';
 
 export type Idx = { idx: number; source: string };
 
@@ -54,6 +55,43 @@ const s = first.name;
 
 export const activeSample: Writable<string> = writable('');
 export const samples: Writable<{ [key: string]: Sample }> = writable({});
+export type CurrSample = {
+  sample: Sample;
+  featureNames?: FeatureName<string>[];
+};
+
+export const currSample: Writable<CurrSample | undefined> = writable();
+
+function updateSample(s: Sample) {
+  if (!s.hydrated) {
+    s.hydrate()
+      .then(() => {
+        currSample.set({ featureNames: updateNames(s.features), sample: s });
+        console.log(get(currSample));
+      })
+      .catch(console.error);
+  } else {
+    currSample.set({ featureNames: updateNames(s.features), sample: s });
+  }
+}
+
+activeSample.subscribe((n) => {
+  const ss = get(samples);
+  if (!ss[n]) {
+    currSample.set(undefined);
+    return;
+  }
+
+  updateSample(ss[n]);
+});
+
+// In case that a new sample is added that matches the active sample.
+samples.subscribe((s) => {
+  if (!get(currSample)) {
+    const sample = s[get(activeSample)];
+    if (sample) updateSample(sample);
+  }
+});
 
 const preload = true;
 if (preload) {

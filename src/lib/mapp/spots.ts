@@ -172,6 +172,7 @@ export class ActiveSpots extends Deferrable implements MapComponent {
     });
     this.layer = new VectorLayer({
       source: this.source,
+      zIndex: 50,
       style
     });
   }

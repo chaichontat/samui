@@ -143,7 +143,7 @@
         <!-- Color indicator -->
         <div class="mt-2 flex flex-col">
           {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-            {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'none'}
+            {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
               <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
             {/if}
           {/each}

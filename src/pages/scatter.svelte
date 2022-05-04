@@ -3,8 +3,8 @@
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import Legend from '$src/lib/components/legend.svelte';
   import { Charts } from '$src/lib/scatter/scatterlib';
-  import { store } from '$src/lib/store';
   import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
+  import type { ChartConfiguration } from 'chart.js';
   import genColormap from 'colormap';
   import { onMount } from 'svelte';
 
@@ -14,6 +14,10 @@
   export let colorbar = false;
   export let coordsSource: Named<{ x: number; y: number }[]>;
   export let minmax: 'auto' | [number, number] = 'auto';
+  export let filter: number[] = [];
+  export let currHover: number | null = null;
+  export let mainChartOptions: ChartConfiguration<'scatter'> | undefined = undefined;
+  export let hoverChartOptions: ChartConfiguration<'scatter'> | undefined = undefined;
 
   interface IntensitySource extends Named<number[] | Promise<number[]>> {
     dataType: 'categorical' | 'quantitative';
@@ -23,17 +27,12 @@
   export let opacity = 'ff';
   export let pointRadius = 2.5;
 
-  let catLegend: Record<number | string, `#${string}`> = {};
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  // export let onHover: (idx: number) => void = () => {};
-  // export let hoverOptions: ChartOptions<'scatter'> = {} as ChartOptions<'scatter'>;
-
-  const charts = new Charts({ onHover: handleHover });
-
-  function handleHover(idx: number) {
-    $store.currIdx = { idx, source: 'scatter' };
-  }
+  let catLegend: Record<number | string, `#${string}`> | undefined;
+  const charts = new Charts({
+    onHover: (idx) => (currHover = idx),
+    mainChartOptions,
+    hoverChartOptions
+  });
 
   const _color256 = genColormap({ colormap, nshades: 256, format: 'hex' });
   let colors: string[];
@@ -54,18 +53,19 @@
         intensity.values = await intensity.values;
       }
 
-      if (intensity.values) {
-        colors = calcColor({
+      if (intensity.values && coords) {
+        ({ colors, legend: catLegend } = calcColor({
           key: coords.name + intensity.name,
           args: [intensity.values, intensity.dataType ?? 'quantitative']
-        });
+        }));
+
         await updateColors({ key: coords.name + intensity.name, args: [colors] });
       }
     }
   };
 
   const calcColor = keyLRU((intensity: number[], dataType: 'categorical' | 'quantitative') => {
-    let out = [];
+    let _color = [];
     if (!intensity.every((x) => x !== undefined)) {
       throw new Error('Intensity source is not ready.');
     }
@@ -74,12 +74,13 @@
       case 'categorical':
         // eslint-disable-next-line no-case-declarations
         const unique = [...new Set(intensity)];
-        catLegend = {} as Record<number | string, `#${string}`>;
+        // eslint-disable-next-line no-case-declarations
+        const legend = {} as Record<number | string, `#${string}`>;
         for (const [i, x] of unique.entries()) {
-          catLegend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
+          legend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
         }
-        out = intensity.map((x) => catLegend[x]);
-        break;
+        _color = intensity.map((x) => legend[x]);
+        return { colors: _color, legend };
 
       case 'quantitative':
         // TODO get percentile
@@ -87,22 +88,21 @@
         const thresh = 10; // minmax === 'auto' ? Math.max(...intensitySource) : minmax[1];
         for (const d of intensity) {
           const idx = Math.round(Math.min((d ?? 0) / thresh, 1) * 255);
-          out.push(_color256[idx] + opacity);
+          _color.push(_color256[idx] + opacity);
         }
-        break;
+        return { colors: _color };
 
       default:
         throw new Error('Unknown data type.');
     }
-
-    return out;
   });
 
   const updateCoords = keyOneLRU(
     async (c: { x: number; y: number }[]) => await charts.update({ coords: c })
   );
-  const updateColors = keyOneLRU(async (color: string[]) => {
+  const updateColors = keyOneLRU(async (color: string[] | string) => {
     await charts.update({ color });
+    if (typeof color === 'string') return false;
   });
 
   onMount(() => {
@@ -113,7 +113,7 @@
     update({ coords: coordsSource, intensity: intensitySource }).catch(console.error);
   });
 
-  $: if ($store.currIdx.source !== 'scatter') charts.triggerHover($store.currIdx.idx);
+  $: if (currHover) charts.triggerHover(currHover);
   $: update({ coords: coordsSource, intensity: intensitySource }).catch(console.error);
 </script>
 
@@ -121,7 +121,7 @@
   {#if colorbar && intensitySource.dataType === 'quantitative'}
     <Colorbar min={0} max={10} />
   {/if}
-  {#if colorbar && intensitySource.dataType === 'categorical'}
+  {#if colorbar && intensitySource.dataType === 'categorical' && catLegend}
     <Legend colormap={catLegend} />
   {/if}
   <canvas class="absolute" id={`${id}-hover`} />

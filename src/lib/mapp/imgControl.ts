@@ -17,9 +17,9 @@ export function colorVarFactory(
 
       return ['blue', 'green', 'red']
         .map((c, i) => ({
-          [c]: showing[i] === 'none' ? 1 : mapping[showing[i]],
+          [c]: showing[i] === 'None' ? 1 : mapping[showing[i]],
           [c + 'Max']: 255 - max[i],
-          [c + 'Mask']: showing[i] === 'none' ? 0 : 1
+          [c + 'Mask']: showing[i] === 'None' ? 0 : 1
         }))
         .reduce((acc, x) => Object.assign(acc, x), {});
     };

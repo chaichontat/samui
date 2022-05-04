@@ -6,7 +6,7 @@ Loopy Browser is a performant visualization tool for spatial transcriptomics exp
 
 ## Usage
 
-Head over to https://loopy-browser.pages.dev to see the Loopy Browser with example data.
+Head over to https://loopy-browser.pages.dev/ to see the Loopy Browser with example data.
 
 ## Data Preparation
 
@@ -18,7 +18,7 @@ conda create -n loopy -f loopy-browser/environment.yml
 pip install .
 ```
 
-An example script is available at `scripts/run_sample.py`.
+An example script is available at `scripts/run_sample.ipynb`.
 
 ## Nomenclature
 

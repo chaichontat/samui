@@ -1,26 +1,38 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
   // import Veg from '$src/lib/components/veg.svelte';
-  import { activeFeatures, activeSample, samples, type HoverName } from '$src/lib/store';
+  import { activeFeatures, activeSample, currSample, samples, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
-  import type { ChartOptions } from 'chart.js';
+  import type { ChartConfiguration } from 'chart.js';
+  import type { SvelteComponent } from 'svelte';
   import 'tippy.js/dist/tippy.css';
   import Bar from './bar.svelte';
   import Scatter from './scatter.svelte';
+  import Scatterxy from './scatterxy.svelte';
   let showing = 0;
+
+  let sections: typeof Scatterxy[] = [];
 
   let vegaShown = false;
   $: if (showing === 1) vegaShown = true;
 
-  const hoverOptions: ChartOptions<'scatter'> = {
-    onHover: (evt) => {}
-  };
-
   let values: number[] = [];
   let dataType = 'quantitative';
 
-  $: sample = $samples[$activeSample];
+  const naviChartOptions: ChartConfiguration<'scatter'> = {
+    scales: {
+      x: {
+        display: false
+      },
+      y: {
+        display: false,
+        reverse: true
+      }
+    }
+  };
+
+  $: sample = $currSample?.sample;
   $: if (sample?.hydrated) {
     const f = sample.getFeature($activeFeatures);
     values = f.values as number[];
@@ -28,12 +40,10 @@
   }
 </script>
 
-<div class="flex flex-col divide-y dark:divide-slate-700">
-  <div class="relative mx-auto hidden w-[90%] lg:block" class:mt-6={sample}>
+<div class="flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
+  <section class:mt-6={sample}>
     {#if sample}
-      <!-- content here -->
       {#await $samples[$activeSample].promise then _}
-        <!-- promise was fulfilled -->
         <Scatter
           coordsSource={{ name: $activeSample, values: sample.image.coords }}
           intensitySource={{
@@ -41,7 +51,9 @@
             dataType: dataType,
             values: values
           }}
-          {hoverOptions}
+          mainChartOptions={naviChartOptions}
+          hoverChartOptions={naviChartOptions}
+          bind:currHover={$store.currIdx.idx}
           colorbar
         />
       {/await}
@@ -49,13 +61,13 @@
       <div class="h-20" />
       <span class="center text-xl text-default">No sample</span>
     {/if}
-  </div>
+  </section>
 
-  <section class="pt-4">
-    <TabGroup on:change={(e) => (showing = e.detail)}>
+  <!-- <section class="pt-4"> -->
+  <!-- <TabGroup on:change={(e) => (showing = e.detail)}>
       <TabList class="mx-4 flex space-x-1 rounded-xl  bg-indigo-50 p-1 dark:bg-slate-800/50">
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Scatter</Tab>
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>+ Scatter</Tab>
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>+ bar</Tab>
         <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
         <div
         use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
@@ -64,35 +76,32 @@
         Intensity Correlation
       </div>
     </Tab> -->
-      </TabList>
-    </TabGroup>
+  <!-- </TabList>
+    </TabGroup> -->
+  <!-- </section> -->
 
-    <div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
-      <div class="flex flex-col gap-y-1" class:hidden={showing !== 0}>
-        <!-- {#if $samples[$activeSample] && 'umap' in $samples[$activeSample].features} -->
-        <div class="flex items-center gap-x-2">
-          x:
-          <SearchBox />
-          y: <SearchBox />
-        </div>
+  {#each sections as section}
+    <section>
+      <svelte:component this={section} featureNames={$currSample?.featureNames} />
+    </section>
+  {/each}
 
-        <div class="flex items-center gap-x-2">
-          Color: <div class="w-full"><SearchBox /></div>
-        </div>
-
-        <!-- <Scatter coordsSource="umap" intensitySource={$currRna.values} pointRadius={2} /> -->
-      </div>
-      <div class:hidden={showing !== 1}>
-        <!-- <Bar showing={showing === 1} /> -->
-      </div>
-      <!-- {#if vegaShown}
-    <div class:hidden={showing !== 2}><Veg /></div>
-    {/if} -->
-    </div>
+  <section class="flex w-full justify-around">
+    <button
+      class="button flex-grow py-3 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
+      on:click={() => {
+        sections.push(Scatterxy);
+        sections = sections;
+      }}>Add Scatter</button
+    >
   </section>
 </div>
 
 <style lang="postcss">
+  section {
+    @apply relative hidden w-[90%] px-4 pt-4 lg:block;
+  }
+
   :global(div > .tippy-box) {
     @apply rounded-lg bg-slate-700/80 py-0.5 px-1 text-center backdrop-blur;
   }

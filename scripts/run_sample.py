@@ -5,26 +5,25 @@ from typing import Literal, cast
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from pydantic import BaseModel
 from scanpy import read_visium
 from tifffile import imread
 
-from loopy.feature import ChunkedJSONParams, FeatureParams, PlainJSONParams, get_compressed_genes
+from loopy.feature import ChunkedJSONParams, PlainJSONParams, get_compressed_genes
 from loopy.image import ImageParams, SpotParams, compress, gen_geotiff, gen_header
+from loopy.sample import Sample
 from loopy.utils import Url
 
+#%% [markdown]
 
-class Sample(BaseModel):
-    name: str
-    imgParams: ImageParams
-    featParams: list[FeatureParams]
-
+# The directory contains spaceranger outputs.
+# The out directory contains folders of processed images and features.
+# These can be fed directly to "Add samples" in the Loopy Browser.
 
 #%%
 
 directory = Path("/Users/chaichontat/Documents/VIF")
 out = Path("/Users/chaichontat/GitHub/loopy-browser/static")
-samples = ["Br2720_Ant_IF"]  # , "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]
+samples = ["Br2720_Ant_IF", "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]
 
 channels = {
     "Lipofuscin": 1,
@@ -53,6 +52,8 @@ analyses = {
 
 
 def better_visium(d: Path, features: dict[str, str]) -> AnnData:
+    """Need to include spaceranger analyses into the the AnnData object
+    to make sure that the indices match."""
     vis = read_visium(d)
     for k, v in features.items():
         df = pd.read_csv(d / v, index_col=0)
@@ -77,7 +78,8 @@ def run(s: str) -> None:
                 name="spotGenes", headerUrl=Url("gene_csr.json"), url=Url("gene_csr.bin"), isFeature=False
             ),
             PlainJSONParams(name="umap", url=Url("umap.json"), dataType="coords"),
-        ],
+        ]
+        + [PlainJSONParams(name=k, url=Url(k + ".json"), dataType="categorical") for k in analyses],
     )
 
     vis = better_visium(directory / s, features=analyses)
@@ -104,7 +106,8 @@ def run(s: str) -> None:
             )
         else:
             (o / f"{k}.json").write_text(vis.obs[k].to_json(orient="records", double_precision=3))
-    spot = SpotParams()
+
+    spot = SpotParams(mPerPx=0.497e-6)
     (o / "image.json").write_text(gen_header(vis, s, channels, spot).json().replace(" ", ""))
     img = imread(directory / (s + ".tif"))
     tifs = gen_geotiff(img, o / s, spot.mPerPx)

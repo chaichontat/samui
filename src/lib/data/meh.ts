@@ -33,8 +33,6 @@ export function convertSamplePreload(r: SampleParams) {
   }
 
   for (const f of r.featParams) {
-    console.log(f);
-
     if (f.url) {
       f.url = { url: `${s3_url}/${r.name}/${f.url.url}`, type: 'network' };
     }
