@@ -20,7 +20,7 @@ export class Charts extends Deferrable {
   readonly onHover: (idx: number) => void;
   mounted = false;
   _coords: { x: number; y: number }[] = [];
-  _colors: string[] = [];
+  _colors: string[] | string = '#38bdf8';
 
   constructor({
     onHover,
@@ -72,7 +72,7 @@ export class Charts extends Deferrable {
     return this._coords;
   }
 
-  set colors(colors: string[]) {
+  set colors(colors: string[] | string) {
     this.mainChart.update({ color: colors }).catch(console.error);
     this._colors = colors;
   }
@@ -81,7 +81,13 @@ export class Charts extends Deferrable {
     return this._colors;
   }
 
-  async update({ coords, color }: { coords?: { x: number; y: number }[]; color?: string[] }) {
+  async update({
+    coords,
+    color
+  }: {
+    coords?: { x: number; y: number }[];
+    color?: string | string[];
+  }) {
     await this.mainChart.update({ coords, color });
     if (color) this.colors = color;
     if (coords) {

@@ -44,12 +44,14 @@ export class MainChart extends Deferrable {
     return points;
   }
 
-  async _updateIntensity(color: string[] | Promise<string[]>) {
+  async _updateIntensity(color: string[] | Promise<string[]> | string) {
     await this.promise;
     if (color instanceof Promise) {
       color = await color;
     }
-    console.assert(color.length === this.dataset.data.length);
+    if (color.length !== this.dataset.data.length) {
+      color = '#38bdf877';
+    }
     // @ts-expect-error
     this.dataset.backgroundColor = color;
   }
@@ -84,14 +86,19 @@ export class MainChart extends Deferrable {
     await this.promise;
     // @ts-ignore
     if (coords.length !== this.chart.data.datasets[0].backgroundColor?.length) {
-      // @ts-expect-error
-      this.dataset.backgroundColor = [];
+      this.dataset.backgroundColor = '#38bdf877';
     }
 
     this.dataset.data = coords;
   }
 
-  async update({ coords, color }: { coords?: { x: number; y: number }[]; color?: `${string}`[] }) {
+  async update({
+    coords,
+    color
+  }: {
+    coords?: { x: number; y: number }[];
+    color?: `${string}`[] | string;
+  }) {
     await this.promise;
     if (coords) {
       await this._updateBounds(coords);

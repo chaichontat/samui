@@ -58,6 +58,7 @@
           key: coords.name + intensity.name,
           args: [intensity.values, intensity.dataType ?? 'quantitative']
         });
+
         await updateColors({ key: coords.name + intensity.name, args: [colors] });
       }
     }
@@ -100,8 +101,9 @@
   const updateCoords = keyOneLRU(
     async (c: { x: number; y: number }[]) => await charts.update({ coords: c })
   );
-  const updateColors = keyOneLRU(async (color: string[]) => {
+  const updateColors = keyOneLRU(async (color: string[] | string) => {
     await charts.update({ color });
+    if (typeof color === 'string') return false;
   });
 
   onMount(() => {

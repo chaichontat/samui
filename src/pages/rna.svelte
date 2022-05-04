@@ -1,14 +1,17 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
   // import Veg from '$src/lib/components/veg.svelte';
-  import { activeFeatures, activeSample, samples, store } from '$src/lib/store';
+  import { activeFeatures, activeSample, currSample, samples, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
   import type { ChartConfiguration } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
   import Bar from './bar.svelte';
   import Scatter from './scatter.svelte';
+  import Scatterxy from './scatterxy.svelte';
   let showing = 0;
+
+  let sections: Scatter[] = [];
 
   let vegaShown = false;
   $: if (showing === 1) vegaShown = true;
@@ -28,6 +31,7 @@
     }
   };
 
+  $: sample = $currSample?.sample;
   $: if (sample?.hydrated) {
     const f = sample.getFeature($activeFeatures);
     values = f.values as number[];
@@ -38,9 +42,7 @@
 <div class="flex flex-col divide-y dark:divide-slate-700">
   <div class="relative mx-auto hidden w-[90%] lg:block" class:mt-6={sample}>
     {#if sample}
-      <!-- content here -->
       {#await $samples[$activeSample].promise then _}
-        <!-- promise was fulfilled -->
         <Scatter
           coordsSource={{ name: $activeSample, values: sample.image.coords }}
           intensitySource={{
@@ -48,6 +50,8 @@
             dataType: dataType,
             values: values
           }}
+          mainChartOptions={naviChartOptions}
+          hoverChartOptions={naviChartOptions}
           bind:currHover={$store.currIdx.idx}
           colorbar
         />
@@ -59,10 +63,10 @@
   </div>
 
   <section class="pt-4">
-    <TabGroup on:change={(e) => (showing = e.detail)}>
+    <!-- <TabGroup on:change={(e) => (showing = e.detail)}>
       <TabList class="mx-4 flex space-x-1 rounded-xl  bg-indigo-50 p-1 dark:bg-slate-800/50">
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Scatter</Tab>
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>Spot Values</Tab>
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>+ Scatter</Tab>
+        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>+ bar</Tab>
         <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
         <div
         use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
@@ -71,21 +75,13 @@
         Intensity Correlation
       </div>
     </Tab> -->
-      </TabList>
-    </TabGroup>
+    <!-- </TabList>
+    </TabGroup> -->
 
     <div class="mx-auto mt-6 w-[50vh] lg:w-[90%]">
       <div class="flex flex-col gap-y-1" class:hidden={showing !== 0}>
         <!-- {#if $samples[$activeSample] && 'umap' in $samples[$activeSample].features} -->
-        <div class="flex items-center gap-x-2">
-          x:
-          <SearchBox />
-          y: <SearchBox />
-        </div>
-
-        <div class="flex items-center gap-x-2">
-          Color: <div class="w-full"><SearchBox /></div>
-        </div>
+        <Scatterxy featureNames={$currSample?.featureNames} />
 
         <!-- <Scatter coordsSource="umap" intensitySource={$currRna.values} pointRadius={2} /> -->
       </div>

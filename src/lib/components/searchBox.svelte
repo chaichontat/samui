@@ -48,13 +48,14 @@
     class="w-full rounded-md border border-slate-400 bg-slate-100 py-2 px-4 shadow transition-colors dark:border-slate-600 dark:bg-slate-800"
     bind:value={search}
     on:click={() => (showSearch = true)}
+    on:input={() => (showSearch = true)}
     placeholder="Search features"
   />
 
   {#if search && showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="picker absolute top-14 z-40 p-2"
+      class="picker absolute top-12 z-40 p-2"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setVal({ hover: null })}
