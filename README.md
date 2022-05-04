@@ -18,7 +18,7 @@ conda create -n loopy -f loopy-browser/environment.yml
 pip install .
 ```
 
-An example script is available at `scripts/run_sample.ipynb`.
+An example script is available at [`scripts/run_sample.ipynb`](scripts/run_sample.ipynb).
 
 ## Nomenclature
 
