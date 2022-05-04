@@ -86,7 +86,9 @@
     <div class="">
       <SearchBox names={featureNames} bind:curr={color} />
     </div>
+  </div>
 
+  <div>
     <input
       type="range"
       min="0"

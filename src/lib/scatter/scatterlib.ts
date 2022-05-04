@@ -65,7 +65,7 @@ export class Charts extends Deferrable {
 
   set coords(coords: { x: number; y: number }[]) {
     this.mainChart.update({ coords }).catch(console.error);
-    this.hoverChart.update(coords).catch(console.error);
+    this.hoverChart.update({ coords }).catch(console.error);
     this._coords = coords;
   }
   get coords() {

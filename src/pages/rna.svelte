@@ -86,9 +86,9 @@
     </section>
   {/each}
 
-  <section class="flex w-full justify-evenly">
+  <section class="flex w-full justify-around">
     <button
-      class="button w-full py-3 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
+      class="button flex-grow py-3 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
       on:click={() => {
         sections.push(Scatterxy);
         sections = sections;

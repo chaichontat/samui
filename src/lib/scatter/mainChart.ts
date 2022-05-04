@@ -1,4 +1,8 @@
-import Chart, { type ChartConfiguration, type ChartDataset, type ChartEvent } from 'chart.js/auto';
+import Chart, {
+  type ChartConfiguration,
+  type ChartDataset,
+  type ChartEvent
+} from 'chart.js/auto/auto.js';
 import { Deferrable } from '../utils';
 import { defaultChartOptions } from './scatterlib';
 

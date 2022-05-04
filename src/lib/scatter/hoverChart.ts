@@ -1,9 +1,8 @@
 import Chart, {
   type ChartConfiguration,
   type ChartDataset,
-  type ChartEvent,
-  type ChartOptions
-} from 'chart.js/auto';
+  type ChartEvent
+} from 'chart.js/auto/auto.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { MainChart } from './mainChart';
 import { defaultChartOptions } from './scatterlib';
@@ -25,8 +24,8 @@ export class HoverChart extends MainChart {
     this.dataset = {
       data: [],
       normalized: true,
-      pointRadius: 25,
-      pointHoverRadius: 25,
+      pointRadius: 10,
+      pointHoverRadius: 10,
       borderColor: '#eeeeeedd'
     };
     this.options = options;
