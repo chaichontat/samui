@@ -9,7 +9,7 @@
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
   import { activeSample, samples } from '../store';
-  import { classNames } from '../utils';
+  import { classes } from '../utils';
   import Spinner from './spinner.svelte';
 
   export let items: string[];
@@ -88,7 +88,7 @@
                 <ListboxOption
                   value={name}
                   class={({ active }) => {
-                    return classNames(
+                    return classes(
                       'relative cursor-pointer select-none rounded py-2 pl-3 pr-9 focus:outline-none',
                       active ? 'hover-default' : ''
                     );
@@ -97,13 +97,13 @@
                   let:selected
                 >
                   <span
-                    class={classNames('block truncate', selected ? 'font-semibold' : 'font-normal')}
+                    class={classes('block truncate', selected ? 'font-semibold' : 'font-normal')}
                   >
                     {name.name}
                   </span>
                   {#if selected}
                     <span
-                      class={classNames(
+                      class={classes(
                         'absolute inset-y-0 right-0 flex items-center pr-4',
                         active ? '' : ''
                       )}

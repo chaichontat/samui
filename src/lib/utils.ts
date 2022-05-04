@@ -230,6 +230,6 @@ export class Deferrable {
 
 export type Named<T> = { name: string; values: T };
 
-export function classNames(...classes: (false | null | undefined | string)[]): string {
+export function classes(...classes: (false | null | undefined | string)[]): string {
   return classes.filter(Boolean).join(' ');
 }
