@@ -48,7 +48,10 @@
 
   <div class="relative h-[600px] w-full lg:h-full lg:w-[75%]">
     {#if sample}
-      <Mapp />
+      <div class="flex h-full w-full divide-x divide-y">
+        <Mapp />
+        <Mapp />
+      </div>
     {:else}
       <!-- Splash import -->
       <div

@@ -11,7 +11,8 @@
 
   let image: Image;
   $: image = $samples[$activeSample]?.image;
-
+  const uid = Math.random();
+  const mapName = `map-${uid}`;
   const map = new Mapp();
 
   //   // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
@@ -21,7 +22,7 @@
   let selecting = false;
 
   onMount(async () => {
-    map.mount();
+    map.mount(mapName);
 
     map.handlePointer({
       pointermove: (idx: number) => ($store.currIdx = { idx, source: 'map' })
@@ -128,8 +129,8 @@
 <section class="relative h-full w-full">
   <!-- Map -->
   <div
-    id="map"
-    class="h-full w-full shadow-lg"
+    id={mapName}
+    class="map h-full w-full shadow-lg"
     class:rgbmode={image?.header?.mode === 'rgb'}
     class:compositemode={image?.header?.mode === 'composite'}
   >
@@ -171,19 +172,19 @@
 </section>
 
 <style lang="postcss">
-  #map :global(.ol-zoomslider) {
+  .map :global(.ol-zoomslider) {
     @apply cursor-pointer rounded bg-neutral-500/50 backdrop-blur transition-all;
   }
 
-  #map :global(.ol-zoomslider:hover) {
+  .map :global(.ol-zoomslider:hover) {
     @apply bg-white/50;
   }
 
-  #map :global(.ol-zoomslider-thumb) {
+  .map :global(.ol-zoomslider-thumb) {
     @apply w-3;
   }
 
-  #map :global(.ol-scale-line) {
+  .map :global(.ol-scale-line) {
     @apply left-6 float-right w-3  bg-transparent text-right font-sans;
   }
 
@@ -195,18 +196,18 @@
     @apply bottom-48;
   }
 
-  #map :global(.ol-scale-line-inner) {
+  .map :global(.ol-scale-line-inner) {
     @apply pb-1 text-sm;
   }
 
-  #map :global(.ol-zoom) {
+  .map :global(.ol-zoom) {
     @apply absolute left-auto right-4 bottom-6 top-auto backdrop-blur;
   }
 
-  #map :global(.ol-zoom-in) {
+  .map :global(.ol-zoom-in) {
     @apply bg-sky-700/90;
   }
-  #map :global(.ol-zoom-out) {
+  .map :global(.ol-zoom-out) {
     @apply bg-sky-700/90;
   }
 </style>
