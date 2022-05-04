@@ -96,7 +96,6 @@ if (preload) {
   first.promise
     .then(() => {
       samples.set({ [s]: first, ...get(samples) });
-      activeSample.set(s);
     })
     .catch(console.error);
 

@@ -9,7 +9,6 @@
   let activeMap = 0;
 
   $: $activeSample = actives[activeMap];
-
   $: console.log($samples);
 </script>
 
@@ -28,7 +27,11 @@
         <div class:mt-1={i !== 0}>
           <SampleList
             items={Object.keys($samples)}
-            on:change={(ev) => updateSample($samples[ev.detail]).then((s) => (currSamples[i] = s))}
+            on:change={(ev) =>
+              updateSample($samples[ev.detail]).then((s) => {
+                currSamples[i] = s;
+                activeMap = i;
+              })}
             bind:active={actives[i]}
           />
         </div>

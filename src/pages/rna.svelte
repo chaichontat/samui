@@ -1,7 +1,7 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
   // import Veg from '$src/lib/components/veg.svelte';
-  import { activeFeatures, activeSample, currSample, samples, store } from '$src/lib/store';
+  import { activeFeatures, currSample, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import { Tab, TabGroup, TabList } from '@rgossiaux/svelte-headlessui';
   import type { ChartConfiguration } from 'chart.js';
@@ -31,23 +31,16 @@
       }
     }
   };
-
-  $: sample = $currSample?.sample;
-  $: if (sample?.hydrated) {
-    const f = sample.getFeature($activeFeatures);
-    values = f.values as number[];
-    dataType = f.dataType;
-  }
 </script>
 
 <div class="flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
-  <section class:mt-6={sample}>
-    {#if sample}
-      {#await $samples[$activeSample].promise then _}
+  <section class:mt-6={$currSample}>
+    {#if $currSample}
+      {#await $currSample.sample.promise then _}
         <Scatter
-          coordsSource={{ name: $activeSample, values: sample.image.coords }}
+          coordsSource={{ name: $currSample.sample.name, values: $currSample.sample.image.coords }}
           intensitySource={{
-            name: `${$activeSample}-${$activeFeatures.name}`,
+            name: `${$currSample.sample.name}-${$activeFeatures.name}`,
             dataType: dataType,
             values: values
           }}
