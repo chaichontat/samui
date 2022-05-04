@@ -23,7 +23,10 @@
 
   const setVal = oneLRU(({ hover, selected }: { hover?: Name | null; selected?: Name | null }) => {
     if (hover !== undefined) curr.hover = hover;
-    if (selected !== undefined) curr.selected = selected;
+    if (selected !== undefined) {
+      curr.selected = selected;
+      search = selected!.name;
+    }
   });
 
   $: if (names) {

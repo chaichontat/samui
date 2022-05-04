@@ -55,7 +55,7 @@ export class HoverChart extends MainChart {
           x: {
             display: false
           },
-          y: { display: false, ...this.options.scales.y }
+          y: { display: false, ...this.options?.scales?.y }
         },
         onHover: (evt) => this.handleHover(evt),
         ...this.options
