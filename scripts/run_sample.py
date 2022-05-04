@@ -13,6 +13,12 @@ from loopy.image import ImageParams, SpotParams, compress, gen_geotiff, gen_head
 from loopy.sample import Sample
 from loopy.utils import Url
 
+#%% [markdown]
+
+# The directory contains spaceranger outputs.
+# The out directory contains folders of processed images and features.
+# These can be fed directly to "Add samples" in the Loopy Browser.
+
 #%%
 
 directory = Path("/Users/chaichontat/Documents/VIF")
