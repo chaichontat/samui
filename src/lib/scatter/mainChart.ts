@@ -56,7 +56,7 @@ export class MainChart extends Deferrable {
     this.dataset.backgroundColor = color;
   }
 
-  async _updateBounds(coords: { x: number; y: number }[]) {
+  _updateBounds(coords: { x: number; y: number }[]) {
     if (!coords) {
       console.error('Undefined coords');
       return;
@@ -68,22 +68,20 @@ export class MainChart extends Deferrable {
     const max = coords
       .reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0])
       .map((x) => x);
-    const over = 0.05;
+    const over = 0.1;
     const range = [max[0] - min[0], max[1] - min[1]];
-    await this.promise;
+
     this.chart!.options.scales!.x!.min = min[0] - over * range[0];
     this.chart!.options.scales!.x!.max = max[0] + over * range[0];
     this.chart!.options.scales!.y!.min = min[1] - over * range[1];
     this.chart!.options.scales!.y!.max = max[1] + over * range[0];
   }
 
-  async _updateCoords(coords: { x: number; y: number }[]) {
+  _updateCoords(coords: { x: number; y: number }[]) {
     if (!coords) {
       console.error('Undefined coords');
       return;
     }
-
-    await this.promise;
     // @ts-ignore
     if (coords.length !== this.chart.data.datasets[0].backgroundColor?.length) {
       this.dataset.backgroundColor = '#38bdf877';
@@ -101,8 +99,8 @@ export class MainChart extends Deferrable {
   }) {
     await this.promise;
     if (coords) {
-      await this._updateBounds(coords);
-      await this._updateCoords(coords);
+      this._updateBounds(coords);
+      this._updateCoords(coords);
     }
     if (color) {
       await this._updateIntensity(color);

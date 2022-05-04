@@ -65,7 +65,7 @@ export class Charts extends Deferrable {
 
   set coords(coords: { x: number; y: number }[]) {
     this.mainChart.update({ coords }).catch(console.error);
-    this.hoverChart._updateBounds(coords).catch(console.error);
+    this.hoverChart.update(coords).catch(console.error);
     this._coords = coords;
   }
   get coords() {
@@ -91,8 +91,12 @@ export class Charts extends Deferrable {
     await this.mainChart.update({ coords, color });
     if (color) this.colors = color;
     if (coords) {
-      await this.hoverChart._updateBounds(coords);
+      this.hoverChart._updateBounds(coords);
       this.coords = coords;
     }
   }
+}
+
+export function boxMuller(s = 1) {
+  return s * Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
 }

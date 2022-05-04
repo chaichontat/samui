@@ -65,6 +65,25 @@ export class HoverChart extends MainChart {
     this.mounted = true;
   }
 
+  async update({
+    coords,
+    color
+  }: {
+    coords?: { x: number; y: number }[];
+    color?: `${string}`[] | string;
+  }) {
+    await this.promise;
+    if (coords) {
+      this._coords = coords;
+      this._updateBounds(coords);
+    }
+    if (color) {
+      await this._updateIntensity(color);
+    }
+
+    this.chart!.update();
+  }
+
   handleHover(evt: ChartEvent) {
     if (!(this.chart && this.mainChart)) return;
     const points = this.mainChart.getHoverPoint(evt);

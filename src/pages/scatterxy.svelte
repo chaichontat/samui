@@ -1,6 +1,7 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
   import type { Sample } from '$src/lib/data/sample';
+  import { boxMuller } from '$src/lib/scatter/scatterlib';
   import { currSample, store, type FeatureName, type HoverName } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
@@ -12,10 +13,18 @@
   let color: HoverName<Name>;
   let coords: Named<{ x: number; y: number }[]>;
 
+  let values: { x: number[]; y: number[] };
+  let range: { x: number; y: number } = { x: 0, y: 0 };
+
+  let jitterX = 0;
+  let jitterY = 0;
+
   async function getData(
     sample: Sample,
     x: HoverName<FeatureName<string>>,
-    y: HoverName<FeatureName<string>>
+    y: HoverName<FeatureName<string>>,
+    jitterX = 0,
+    jitterY = 0
   ) {
     let xf = sample.getFeature(x.active!);
     let yf = sample.getFeature(y.active!);
@@ -27,14 +36,24 @@
       yf.values = (await yf.values) as number[];
     }
 
+    values = { x: xf.values as number[], y: yf.values as number[] };
+    range = {
+      x: Math.max(...values.x) - Math.min(...values.x),
+      y: Math.max(...values.y) - Math.min(...values.y)
+    };
+    console.log(range);
+
     coords = {
-      name: x.active!.name! + y.active!.name!,
-      values: (xf.values as number[]).map((x, i) => ({ x, y: (yf.values as number[])[i] }))
+      name: `${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
+      values: (xf.values as number[]).map((x, i) => ({
+        x: x + (jitterX !== 0 ? boxMuller(jitterX) : 0),
+        y: values.y[i] + (jitterY !== 0 ? boxMuller(jitterY) : 0)
+      }))
     };
   }
 
   $: if ($currSample && x?.active && y?.active) {
-    getData($currSample.sample, x, y).catch(console.error);
+    getData($currSample.sample, x, y, jitterX, jitterY).catch(console.error);
   }
 
   async function updateColors(sample: Sample, color: HoverName<FeatureName<string>>) {
@@ -67,6 +86,21 @@
     <div class="">
       <SearchBox names={featureNames} bind:curr={color} />
     </div>
+
+    <input
+      type="range"
+      min="0"
+      max={0.1 * range.x}
+      step={(0.1 * range.x) / 100}
+      bind:value={jitterX}
+    />
+    <input
+      type="range"
+      min="0"
+      max={0.1 * range.y}
+      step={(0.1 * range.y) / 100}
+      bind:value={jitterY}
+    />
   </div>
 
   <Scatter
