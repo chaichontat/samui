@@ -20,7 +20,7 @@
 <main
   class="flex flex-col overflow-x-hidden bg-slate-50 dark:divide-slate-800 dark:bg-slate-900 lg:h-screen lg:flex-row"
 >
-  <div class="relative h-[600px] w-full lg:h-full lg:w-[75%]">
+  <div class="relative h-[600px] w-full overflow-hidden lg:h-full lg:w-[75%]">
     {#if Object.keys($samples).length > 0}
       <article class="h-full w-full">
         <MapSample {hie} />
