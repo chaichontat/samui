@@ -6,9 +6,10 @@
   import { keyOneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { onMount } from 'svelte';
+  import { cubicInOut } from 'svelte/easing';
+  import { fade } from 'svelte/transition';
   import MapTools from '../lib/mapp/mapTools.svelte';
   import { activeFeatures, store, type FeatureName } from '../lib/store';
-
   export let sample: Sample;
   export let trackHover = false;
 
@@ -23,6 +24,7 @@
 
   let imgCtrl: ImageCtrl;
   let selecting = false;
+  let showImgControl = true;
 
   onMount(() => {
     map.mount(mapName);
@@ -160,14 +162,15 @@
         </div>
       </section>
 
-      <MapTools {map} bind:selecting />
+      <MapTools {map} bind:selecting bind:showImgControl />
     {/if}
   </div>
 
   <!-- Buttons -->
-  {#if sample}
+  {#if sample && showImgControl}
     <div
       class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
+      transition:fade={{ easing: cubicInOut, duration: 100 }}
     >
       {#if mode === 'composite'}
         <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
@@ -202,7 +205,7 @@
   }
 
   .compositemode :global(.ol-scale-line) {
-    @apply bottom-48;
+    @apply bottom-40;
   }
 
   .map :global(.ol-scale-line-inner) {
