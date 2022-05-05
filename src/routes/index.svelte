@@ -1,16 +1,16 @@
 <script lang="ts">
   import { resizable } from '$lib/utils';
-  import SampleList from '$src/lib/components/sampleList.svelte';
   import { byod } from '$src/lib/data/byod';
-  import type { Sample } from '$src/lib/data/sample';
   import Nav from '$src/lib/nav.svelte';
-  import { activeSample, samples } from '$src/lib/store';
-  import Mapp from '$src/pages/mapp.svelte';
+  import { samples } from '$src/lib/store';
+  import type { Childmore } from '$src/lib/tiling';
+  import MapSample from '$src/pages/mapSample.svelte';
   import Rna from '$src/pages/rna.svelte';
 
-  let sample: Sample;
-  $: sample = $samples[$activeSample];
-  $: console.log($samples);
+  const hie: Childmore = {
+    split: 'h',
+    maps: [{ split: 'v', maps: [{ thisMap: 0 }, { thisMap: 2 }] }, { thisMap: 1 }]
+  };
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -20,35 +20,11 @@
 <main
   class="flex flex-col overflow-x-hidden bg-slate-50 dark:divide-slate-800 dark:bg-slate-900 lg:h-screen lg:flex-row"
 >
-  <section
-    class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-6 text-sm md:text-base"
-  >
-    {#if sample}
-      <!-- Sample list -->
-      <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
-        <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">Sample:</div>
-        <SampleList items={Object.keys($samples)} />
-      </div>
-
-      <!-- Upload your data -->
-      <button
-        class="group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
-        on:click={byod}
-      >
-        <span
-          class="relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900 dark:bg-opacity-80"
-        >
-          Add Sample
-        </span>
-      </button>
-    {:else}
-      <div class="text-xl lg:text-2xl text-yellow-600 dark:text-yellow-300/80">Loopy Browser</div>
-    {/if}
-  </section>
-
-  <div class="relative h-[600px] w-full lg:h-full lg:w-[75%]">
-    {#if sample}
-      <Mapp />
+  <div class="relative h-[600px] w-full overflow-hidden lg:h-full lg:w-[75%]">
+    {#if Object.keys($samples).length > 0}
+      <article class="h-full w-full">
+        <MapSample {hie} />
+      </article>
     {:else}
       <!-- Splash import -->
       <div

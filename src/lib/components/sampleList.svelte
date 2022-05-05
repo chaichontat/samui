@@ -5,73 +5,65 @@
     ListboxOption,
     ListboxOptions
   } from '@rgossiaux/svelte-headlessui';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import { activeSample, samples } from '../store';
-  import { classNames } from '../utils';
+  import { classes } from '../utils';
   import Spinner from './spinner.svelte';
 
   export let items: string[];
+  export let active: string;
+  export let loading = false;
+
   let rows: { id: number; name: string }[] = [];
   let _active: { id: number; name: string };
 
   const dispatch = createEventDispatcher();
-
-  let loading = false;
-
-  async function checkHydrate(s: string) {
-    const sample = $samples[s];
-    if (!sample.hydrated) {
-      loading = true;
-      await sample.hydrate();
-      loading = false;
-    }
-    $activeSample = s;
-    dispatch('change', s);
-    _active = rows.find((r) => r.name === $activeSample)!;
-  }
 
   function handleSampleUpdate(it: typeof items) {
     rows = it?.sort().map((item, i) => ({
       id: i,
       name: item
     }));
-    _active = rows.find((r) => r.name === $activeSample)!;
   }
 
+  function handleChange(name: string) {
+    dispatch('change', name);
+    active = name;
+    loading = true;
+  }
+
+  onMount(() => handleChange(items[0]));
+
   $: handleSampleUpdate(items);
+  $: _active = rows.find((r) => r.name === active)!;
 </script>
 
 <div class="relative min-w-[150px] max-w-lg md:min-w-[200px]">
   <span class="inline-block w-full rounded-md shadow-sm">
-    <Listbox
-      value={_active}
-      on:change={(e) => checkHydrate(e.detail.name).catch(console.error)}
-      let:open
-    >
+    <Listbox value={_active} on:change={(e) => handleChange(e.detail.name)} let:open>
       <ListboxButton
         class="relative w-full max-w-md cursor-pointer rounded-md border bg-slate-100/90 py-2 pl-3 pr-10 text-left text-slate-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-slate-800/80 dark:text-slate-100 sm:leading-5"
       >
         <span class="block truncate font-medium">{_active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          {#if loading}
-            <Spinner />
-          {:else}
-            <svg
-              class="h-5 w-5 text-slate-500 dark:text-slate-200"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path
-                d="M7 7l3-3 3 3m0 6l-3 3-3-3"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          {/if}
+          <!-- {#if loading} -->
+          <!-- <Spinner /> -->
+          <!-- {:else} -->
+          <svg
+            class="h-5 w-5 text-slate-500 dark:text-slate-200"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              d="M7 7l3-3 3 3m0 6l-3 3-3-3"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <!-- {/if} -->
         </span></ListboxButton
       >
       {#if open}
@@ -88,7 +80,7 @@
                 <ListboxOption
                   value={name}
                   class={({ active }) => {
-                    return classNames(
+                    return classes(
                       'relative cursor-pointer select-none rounded py-2 pl-3 pr-9 focus:outline-none',
                       active ? 'hover-default' : ''
                     );
@@ -97,13 +89,13 @@
                   let:selected
                 >
                   <span
-                    class={classNames('block truncate', selected ? 'font-semibold' : 'font-normal')}
+                    class={classes('block truncate', selected ? 'font-semibold' : 'font-normal')}
                   >
                     {name.name}
                   </span>
                   {#if selected}
                     <span
-                      class={classNames(
+                      class={classes(
                         'absolute inset-y-0 right-0 flex items-center pr-4',
                         active ? '' : ''
                       )}

@@ -53,13 +53,13 @@
         intensity.values = await intensity.values;
       }
 
-      if (intensity.values && coords) {
+      if (intensity.values) {
         ({ colors, legend: catLegend } = calcColor({
-          key: coords.name + intensity.name,
+          key: intensity.name,
           args: [intensity.values, intensity.dataType ?? 'quantitative']
         }));
 
-        await updateColors({ key: coords.name + intensity.name, args: [colors] });
+        await updateColors({ key: intensity.name, args: [colors] });
       }
     }
   };

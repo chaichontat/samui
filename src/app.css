@@ -12,7 +12,7 @@
 @tailwind components;
 @layer components {
   .button-base {
-    @apply px-3 py-2 text-xs font-medium text-white focus:outline-none focus:ring-1 xl:px-4 xl:text-sm 2xl:px-5 2xl:text-base;
+    @apply px-2 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 xl:px-4 xl:text-sm 2xl:px-5 2xl:text-base;
   }
   .button {
     @apply button-base mr-2 mb-2 rounded-lg;
@@ -46,5 +46,9 @@
 
   .center {
     @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+  }
+
+  .svg-icon {
+    @apply stroke-current stroke-2 transition-all hover:stroke-[3];
   }
 }

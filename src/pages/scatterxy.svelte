@@ -7,6 +7,7 @@
   import Scatter from './scatter.svelte';
 
   export let featureNames: FeatureName<string>[];
+
   type Name = FeatureName<string>;
   let x: HoverName<Name>;
   let y: HoverName<Name>;
@@ -41,19 +42,15 @@
       x: Math.max(...values.x) - Math.min(...values.x),
       y: Math.max(...values.y) - Math.min(...values.y)
     };
-    console.log(range);
 
     coords = {
-      name: `${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
+      name: `${$currSample?.sample.name}--${x.active!.name!}--${y.active!
+        .name!}--${jitterX}--${jitterY}`,
       values: (xf.values as number[]).map((x, i) => ({
         x: x + (jitterX !== 0 ? boxMuller(jitterX) : 0),
         y: values.y[i] + (jitterY !== 0 ? boxMuller(jitterY) : 0)
       }))
     };
-  }
-
-  $: if ($currSample && x?.active && y?.active) {
-    getData($currSample.sample, x, y, jitterX, jitterY).catch(console.error);
   }
 
   async function updateColors(sample: Sample, color: HoverName<FeatureName<string>>) {
@@ -62,12 +59,21 @@
       c.values = await c.values;
     }
 
-    colorValues = { name: color.active!.name, values: c.values as number[], dataType: c.dataType };
+    colorValues = {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      name: `${sample.name}-${color.active!.name}`,
+      values: c.values as number[],
+      dataType: c.dataType
+    };
+  }
+
+  $: if ($currSample && x?.active && y?.active) {
+    console.log('changed data');
+    getData($currSample.sample, x, y, jitterX, jitterY).catch(console.error);
   }
 
   $: if ($currSample && color?.active) {
     console.log(color);
-
     updateColors($currSample.sample, color).catch(console.error);
   }
 

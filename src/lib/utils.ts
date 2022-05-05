@@ -41,14 +41,19 @@ export function clickOutside(node: HTMLElement) {
   };
 }
 
-export function tooltip(node: HTMLElement, content: string) {
-  node.setAttribute('aria-label', content);
-  node.title = '';
-  const tip = tippy(node, { content, delay: [100, 0] });
-  return {
-    update: (newmsg: string): void => tip.setContent(newmsg),
-    destroy: (): void => tip.destroy()
-  };
+export function tooltip(
+  node: HTMLElement,
+  { content, enabled = true }: { content: string; enabled?: boolean }
+) {
+  if (enabled) {
+    node.setAttribute('aria-label', content);
+    node.title = '';
+    const tip = tippy(node, { content, delay: [100, 0] });
+    return {
+      update: (newmsg: string): void => tip.setContent(newmsg),
+      destroy: (): void => tip.destroy()
+    };
+  }
 }
 
 function interpolateTurbo(x: number) {
@@ -225,6 +230,6 @@ export class Deferrable {
 
 export type Named<T> = { name: string; values: T };
 
-export function classNames(...classes: (false | null | undefined | string)[]): string {
+export function classes(...classes: (false | null | undefined | string)[]): string {
   return classes.filter(Boolean).join(' ');
 }

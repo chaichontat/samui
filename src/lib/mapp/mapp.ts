@@ -40,11 +40,11 @@ export class Mapp extends Deferrable {
     this.draw = new Draww();
   }
 
-  mount() {
+  mount(target: string) {
     this.layers.map((l) => l.mount());
 
     this.map = new Map({
-      target: 'map',
+      target,
       layers: this.layers.map((l) => l.layer!)
     });
     if (!this.map) throw new Error('Map not initialized.');

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tooltip } from '$lib/utils';
   import { createEventDispatcher } from 'svelte';
 
   type Color = 'blue' | 'green' | 'red' | 'slate';
@@ -6,6 +7,7 @@
   export let color: Color;
   export let curr: string | null = null;
   export let addNone = true;
+  export let small = false;
 
   let namesAdded: string[];
   $: {
@@ -61,7 +63,10 @@
       class={`${genClass(color, curr === n)} button-base border-t border-b border-r`}
       class:border-l={i === 0}
       class:rounded-l-lg={i === 0}
-      class:rounded-r-lg={i === namesAdded.length - 1}>{n}</button
+      class:rounded-r-lg={i === namesAdded.length - 1}
+      use:tooltip={{ content: n, enabled: small }}
     >
+      {small ? n.slice(0, 2) : n}
+    </button>
   {/each}
 </div>
