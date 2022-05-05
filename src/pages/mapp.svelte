@@ -167,10 +167,10 @@
   </div>
 
   <!-- Buttons -->
-  {#if sample && showImgControl}
+  {#if sample}
     <div
       class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
-      transition:fade={{ easing: cubicInOut, duration: 100 }}
+      class:hidden={!showImgControl}
     >
       {#if mode === 'composite'}
         <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
