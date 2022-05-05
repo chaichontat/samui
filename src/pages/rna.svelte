@@ -92,7 +92,7 @@
 
 <style lang="postcss">
   section {
-    @apply relative hidden w-[90%] px-4 pt-4 lg:block;
+    @apply relative hidden w-[90%] pt-4 lg:block;
   }
 
   :global(div > .tippy-box) {
