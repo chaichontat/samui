@@ -110,7 +110,7 @@
 
 <section class="absolute top-16 right-4 z-20 flex flex-col items-end gap-3 md:top-4">
   <!-- Select button -->
-  <div class="flex space-x-2">
+  <div class="mt-1 flex space-x-2">
     <button class="z-20 -translate-x-1/2" on:click={() => (showImgControl = !showImgControl)}>
       <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-6 w-6" viewBox="0 0 24 24">
         <path
