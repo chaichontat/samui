@@ -142,8 +142,8 @@
   <div
     id={mapName}
     class="map h-full w-full shadow-lg"
-    class:rgbmode={image?.header?.mode === 'rgb'}
-    class:compositemode={image?.header?.mode === 'composite'}
+    class:rgbmode={showImgControl && image?.header?.mode === 'rgb'}
+    class:compositemode={showImgControl && image?.header?.mode === 'composite'}
   >
     {#if sample}
       <section
@@ -197,7 +197,7 @@
   }
 
   .map :global(.ol-scale-line) {
-    @apply left-6 float-right w-3  bg-transparent text-right font-sans;
+    @apply left-6 bottom-4 float-right w-3 bg-transparent text-right font-sans;
   }
 
   .rgbmode :global(.ol-scale-line) {
