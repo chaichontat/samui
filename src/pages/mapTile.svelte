@@ -34,14 +34,12 @@
   }
 
   function handleSplit(i: number, mode: 'h' | 'v') {
-    const newUId = Math.random();
-
     if (!hie || typeof hie === 'number') throw new Error('No hie');
-    if (!hie.split) {
-      console.assert(hie.maps.length === 1);
+    if (!hie.split || hie.maps.filter(Boolean).length === 1) {
       hie.split = mode;
     }
 
+    const newUId = Math.random();
     if (hie.split === mode) {
       if (hie.maps.at(-1) !== null) hie.maps.push(null);
       hie.maps[hie.maps.length - 1] = newUId;

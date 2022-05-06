@@ -6,9 +6,13 @@
   import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
   import Rna from '$src/pages/rna.svelte';
 
+  // Excess split to reduce rerender.
   const hie: Hie = {
     split: 'h',
-    maps: [{ split: 'v', maps: [0, 2] }, { maps: [1] }]
+    maps: [
+      { split: 'v', maps: [{ maps: [Math.random()] }, { maps: [Math.random()] }] },
+      { maps: [Math.random()] }
+    ]
   };
 </script>
 
