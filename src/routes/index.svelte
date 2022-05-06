@@ -3,13 +3,12 @@
   import { byod } from '$src/lib/data/byod';
   import Nav from '$src/lib/nav.svelte';
   import { samples } from '$src/lib/store';
-  import type { Childmore } from '$src/lib/tiling';
-  import MapSample from '$src/pages/mapSample.svelte';
+  import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
   import Rna from '$src/pages/rna.svelte';
 
-  const hie: Childmore = {
+  const hie: Hie = {
     split: 'h',
-    maps: [{ split: 'v', maps: [{ thisMap: 0 }, { thisMap: 2 }] }, { thisMap: 1 }]
+    maps: [{ split: 'v', maps: [0, 2] }, { maps: [1] }]
   };
 </script>
 
@@ -22,7 +21,7 @@
 >
   <div class="relative h-[600px] w-full overflow-hidden lg:h-full lg:w-[75%]">
     {#if Object.keys($samples).length > 0}
-      <article class="h-full w-full">
+      <article class="h-full w-full" id="allMaps">
         <MapSample {hie} />
       </article>
     {:else}
