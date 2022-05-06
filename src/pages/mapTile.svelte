@@ -49,8 +49,6 @@
   }
 
   function handleDelete(i: number) {
-    console.log('delete');
-
     if (!hie || typeof hie === 'number') throw new Error('No hie');
     hie.maps[i] = null;
     if (i === hie.maps.length - 1) {
@@ -61,6 +59,8 @@
     if (hie.maps.every((x) => x === null)) {
       dispatch('delete');
     }
+
+    setTimeout(() => document.body.dispatchEvent(new Event('resize')), 100);
   }
 </script>
 
