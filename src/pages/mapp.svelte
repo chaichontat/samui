@@ -142,8 +142,8 @@
   <div
     id={mapName}
     class="map h-full w-full shadow-lg"
-    class:rgbmode={image?.header?.mode === 'rgb'}
-    class:compositemode={image?.header?.mode === 'composite'}
+    class:rgbmode={showImgControl && image?.header?.mode === 'rgb'}
+    class:compositemode={showImgControl && image?.header?.mode === 'composite'}
   >
     {#if sample}
       <section
@@ -167,10 +167,10 @@
   </div>
 
   <!-- Buttons -->
-  {#if sample && showImgControl}
+  {#if sample}
     <div
       class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
-      transition:fade={{ easing: cubicInOut, duration: 100 }}
+      class:hidden={!showImgControl}
     >
       {#if mode === 'composite'}
         <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
@@ -197,7 +197,7 @@
   }
 
   .map :global(.ol-scale-line) {
-    @apply left-6 float-right w-3  bg-transparent text-right font-sans;
+    @apply left-6 bottom-4 float-right w-3 bg-transparent text-right font-sans;
   }
 
   .rgbmode :global(.ol-scale-line) {
