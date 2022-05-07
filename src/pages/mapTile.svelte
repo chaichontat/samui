@@ -69,6 +69,7 @@
   afterUpdate(() => {
     if (refreshPls) {
       document.body.dispatchEvent(new Event('resize'));
+      setTimeout(() => document.body.dispatchEvent(new Event('resize')), 50);
       refreshPls = false;
     }
   });
@@ -145,7 +146,7 @@
       class:border-slate-800={$activeMap !== hie}
       class:border-slate-100={$activeMap === hie}
     >
-      <Mapp sample={currSample?.sample} trackHover={$activeMap === hie} />
+      <Mapp sample={currSample?.sample} trackHover={$activeMap === hie} uid={hie} />
     </div>
   </section>
 {:else}

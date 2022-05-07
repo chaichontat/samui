@@ -4,6 +4,7 @@
 
   export let mode: ImageMode = 'composite';
   export let channels: Record<string, number> | null = null;
+  export let small = false;
 
   let names = channels ? Object.keys(channels) : null;
   const _ic: ImageCtrl =
@@ -23,7 +24,7 @@
   {#if mode === 'composite'}
     {#each ['blue', 'green', 'red'] as color, i}
       <div class="flex gap-x-4">
-        <ButtonGroup {names} bind:curr={imgCtrl.showing[i]} {color} addNone />
+        <ButtonGroup {names} bind:curr={imgCtrl.showing[i]} {color} {small} addNone />
         <input
           type="range"
           min="0"
@@ -36,7 +37,7 @@
   {:else}
     <div class="grid grid-cols-3 gap-y-1.5 gap-x-1">
       {#each ['Exposure', 'Contrast', 'Saturation'] as name}
-        <div class="px-1">{name}:</div>
+        <div class="px-1">{small ? name.slice(0, 3) : name}:</div>
         <input
           type="range"
           min="-0.5"
