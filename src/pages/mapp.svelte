@@ -20,6 +20,7 @@
 
   let width: number;
   let height: number;
+  let small = false;
   const dispatch = createEventDispatcher();
 
   //   // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
@@ -135,6 +136,8 @@
   }
 
   $: updateSpotName($activeFeatures);
+
+  $: small = width < 500;
 </script>
 
 <!-- For pane resize. -->
@@ -181,9 +184,15 @@
         class:hidden={!showImgControl}
       >
         {#if mode === 'composite'}
-          <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
+          <svelte:component
+            this={ImgControl}
+            {mode}
+            channels={image.channel}
+            bind:imgCtrl
+            {small}
+          />
         {:else if mode === 'rgb'}
-          <svelte:component this={ImgControl} {mode} bind:imgCtrl />
+          <svelte:component this={ImgControl} {mode} bind:imgCtrl {small} />
         {:else}
           {console.warn('Unknown mode: ' + mode)}
         {/if}

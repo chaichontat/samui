@@ -60,7 +60,11 @@
         curr = n;
         dispatch('change', { value: n });
       }}
-      class={classes(genClass(color, curr === n), 'button-base border-t border-b border-r')}
+      class={classes(
+        genClass(color, curr === n),
+        small ? 'py-1' : false,
+        'button-base border-t border-b border-r'
+      )}
       class:border-l={i === 0}
       class:rounded-l-lg={i === 0}
       class:rounded-r-lg={i === namesAdded.length - 1}

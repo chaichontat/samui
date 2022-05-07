@@ -23,15 +23,16 @@
 {#if imgCtrl}
   {#if mode === 'composite'}
     {#each ['blue', 'green', 'red'] as color, i}
-      <div class="flex gap-x-4">
+      <div class:gap-x-2={small} class:gap-x-4={!small} class="flex">
         <ButtonGroup {names} bind:curr={imgCtrl.showing[i]} {color} {small} addNone />
         <input
           type="range"
           min="0"
           max="254"
           bind:value={imgCtrl.maxIntensity[i]}
-          class="min-w-[4rem] max-w-[16rem] flex-grow cursor-pointer"
+          class="ml-1 min-w-[4rem] max-w-[12rem] cursor-pointer"
         />
+        <div>&nbsp;</div>
       </div>
     {/each}
   {:else}
