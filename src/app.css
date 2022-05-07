@@ -12,7 +12,7 @@
 @tailwind components;
 @layer components {
   .button-base {
-    @apply px-2 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 xl:px-4 xl:text-sm 2xl:px-5 2xl:text-base;
+    @apply px-3 py-1.5 text-sm font-medium text-white focus:outline-none focus:ring-1;
   }
   .button {
     @apply button-base mr-2 mb-2 rounded-lg;
