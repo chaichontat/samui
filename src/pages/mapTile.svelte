@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  export type Hie = { split?: 'h' | 'v'; maps: (Hie | number | null)[] };
+  export type Hie = { root?: true; split?: 'h' | 'v'; maps: (Hie | number | null)[] };
 </script>
 
 <script lang="ts">
@@ -36,7 +36,10 @@
 
   function handleSplit(i: number, mode: 'h' | 'v') {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
+    if (hie.maps.length > 1 && !('split' in hie)) throw new Error('No split');
+
     if (!hie.split || hie.maps.filter(Boolean).length === 1) {
+      console.debug(`Set mode to ${mode}`);
       hie.split = mode;
     }
 
