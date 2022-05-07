@@ -5,19 +5,23 @@
   import { Mapp } from '$src/lib/mapp/mapp';
   import { keyOneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
-  import { onMount } from 'svelte';
-  import { cubicInOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
+  import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
   import { activeFeatures, store, type FeatureName } from '../lib/store';
+
   export let sample: Sample;
   export let trackHover = false;
 
   $: image = sample?.image;
 
-  const uid = Math.random();
+  export let uid: number;
   const mapName = `map-${uid}`;
   const map = new Mapp();
+
+  let width: number;
+  let height: number;
+  let small = false;
+  const dispatch = createEventDispatcher();
 
   //   // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
   // }
@@ -132,53 +136,67 @@
   }
 
   $: updateSpotName($activeFeatures);
+
+  $: small = width < 500;
 </script>
 
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
 
-<section class="relative h-full w-full">
+<section class="relative h-full w-full" bind:clientHeight={height} bind:clientWidth={width}>
   <!-- Map -->
   <div
     id={mapName}
+    on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:rgbmode={showImgControl && image?.header?.mode === 'rgb'}
     class:compositemode={showImgControl && image?.header?.mode === 'composite'}
-  >
-    {#if sample}
-      <section
-        class="absolute left-4 top-16 z-10 text-lg font-medium opacity-90 lg:top-[5.5rem] xl:text-xl"
-      >
-        <!-- Spot indicator -->
-        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures?.name}</i></div>
+  />
 
-        <!-- Color indicator -->
-        <div class="mt-2 flex flex-col">
-          {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-            {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
-              <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
-            {/if}
-          {/each}
-        </div>
-      </section>
+  {#if sample}
+    <section
+      class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
+    >
+      <!-- Spot indicator -->
+      <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures?.name}</i></div>
 
-      <MapTools {map} bind:selecting bind:showImgControl />
-    {/if}
-  </div>
+      <!-- Color indicator -->
+      <div class="flex flex-col">
+        {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
+          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
+            <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
+          {/if}
+        {/each}
+      </div>
+    </section>
+
+    <MapTools {map} bind:selecting bind:showImgControl />
+  {/if}
 
   <!-- Buttons -->
   {#if sample}
     <div
-      class="absolute bottom-3 flex max-w-[48rem] flex-col rounded-lg bg-slate-200/80 p-2 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 lg:bottom-6 lg:left-4 xl:pr-4"
-      class:hidden={!showImgControl}
+      class="absolute bottom-3 left-1 z-40 lg:left-4 lg:bottom-6 xl:pr-4"
+      style="max-width: calc(100% - 20px);"
     >
-      {#if mode === 'composite'}
-        <svelte:component this={ImgControl} {mode} channels={image.channel} bind:imgCtrl />
-      {:else if mode === 'rgb'}
-        <svelte:component this={ImgControl} {mode} bind:imgCtrl />
-      {:else}
-        {console.warn('Unknown mode: ' + mode)}
-      {/if}
+      <div
+        class="flex flex-col overflow-x-scroll rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
+        class:hidden={!showImgControl}
+      >
+        {#if mode === 'composite'}
+          <svelte:component
+            this={ImgControl}
+            {mode}
+            channels={image.channel}
+            bind:imgCtrl
+            {small}
+          />
+        {:else if mode === 'rgb'}
+          <svelte:component this={ImgControl} {mode} bind:imgCtrl {small} />
+        {:else}
+          {console.warn('Unknown mode: ' + mode)}
+        {/if}
+      </div>
     </div>
   {/if}
 </section>

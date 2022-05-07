@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  export type Hie = { split?: 'h' | 'v'; maps: (Hie | number | null)[] };
+  export type Hie = { root?: true; split?: 'h' | 'v'; maps: (Hie | number | null)[] };
 </script>
 
 <script lang="ts">
@@ -7,11 +7,12 @@
   import SampleList from '$src/lib/components/sampleList.svelte';
   import { byod } from '$src/lib/data/byod';
   import { activeMap, activeSample, samples, updateSample, type CurrSample } from '$src/lib/store';
-  import { createEventDispatcher } from 'svelte';
+  import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
   let active: string;
   let currSample: CurrSample;
+  let refreshPls = false;
 
   const dispatch = createEventDispatcher();
 
@@ -35,7 +36,10 @@
 
   function handleSplit(i: number, mode: 'h' | 'v') {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
+    if (hie.maps.length > 1 && !('split' in hie)) throw new Error('No split');
+
     if (!hie.split || hie.maps.filter(Boolean).length === 1) {
+      console.debug(`Set mode to ${mode}`);
       hie.split = mode;
     }
 
@@ -59,20 +63,22 @@
     if (hie.maps.every((x) => x === null)) {
       dispatch('delete');
     }
-
-    setTimeout(() => document.body.dispatchEvent(new Event('resize')), 100);
+    refreshPls = true;
   }
+
+  afterUpdate(() => {
+    if (refreshPls) {
+      document.body.dispatchEvent(new Event('resize'));
+      setTimeout(() => document.body.dispatchEvent(new Event('resize')), 50);
+      refreshPls = false;
+    }
+  });
 </script>
 
 {#if typeof hie === 'number'}
-  <section
-    class="relative box-content h-full w-full flex-grow"
-    id={`view-${hieN}`}
-    on:click={() => setActive(hieN)}
-  >
+  <section class="relative box-content h-full w-full flex-grow" id={`view-${hieN}`}>
     <div
       class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-4 text-sm md:text-base"
-      on:click={() => setActive(hieN)}
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
@@ -135,7 +141,12 @@
       class:border-slate-800={$activeMap !== hie}
       class:border-slate-100={$activeMap === hie}
     >
-      <Mapp sample={currSample?.sample} trackHover={$activeMap === hie} />
+      <Mapp
+        on:mapClick={() => setActive(hieN)}
+        sample={currSample?.sample}
+        trackHover={$activeMap === hie}
+        uid={hie}
+      />
     </div>
   </section>
 {:else}

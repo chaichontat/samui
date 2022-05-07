@@ -7,11 +7,9 @@
   import Rna from '$src/pages/rna.svelte';
 
   const hie: Hie = {
+    root: true,
     split: 'h',
-    maps: [
-      { split: 'v', maps: [{ maps: [0] }, { maps: [Math.random()] }] },
-      { maps: [Math.random()] }
-    ]
+    maps: [{ split: 'v', maps: [0, { maps: [Math.random()] }] }, { maps: [Math.random()] }]
   };
 </script>
 

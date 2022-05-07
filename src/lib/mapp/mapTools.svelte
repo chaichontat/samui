@@ -11,6 +11,7 @@
   export let map: Mapp;
   export let selecting: boolean;
   export let showImgControl: boolean;
+  export let colorbar = false;
   let draw: Draww | undefined;
 
   onMount(async () => {
@@ -122,76 +123,82 @@
       </svg>
     </button>
 
-    <SelectionBox
-      names={selectionNames}
-      on:hover={(evt) => map.draw?.highlightPolygon(evt.detail.i)}
-      on:delete={(evt) => {
-        map.draw?.deletePolygon(evt.detail.i);
-        updateSelection();
-      }}
-      on:clearall={() => {
-        map.draw?.clear();
-        updateSelection();
-      }}
-      on:export={(evt) => handleExport(evt.detail.name)}
-      on:import={(evt) => fromJSON(evt.detail.e).catch(console.error)}
-      on:rename={(evt) => {
-        const newName = prompt('Enter new selection name.');
-        if (newName) {
-          draw?.setPolygonName(evt.detail.i, newName);
+    {#if showImgControl}
+      <SelectionBox
+        names={selectionNames}
+        on:hover={(evt) => map.draw?.highlightPolygon(evt.detail.i)}
+        on:delete={(evt) => {
+          map.draw?.deletePolygon(evt.detail.i);
           updateSelection();
-        }
-      }}
-    />
-    <button
-      class="rounded-lg bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-600/90 dark:text-slate-200 dark:hover:bg-sky-600"
-      class:bg-slate-600={selecting}
-      class:hover:bg-slate-600={selecting}
-      class:active:bg-slate-600={selecting}
-      class:dark:bg-slate-600={selecting}
-      class:dark:hover:bg-slate-600={selecting}
-      class:dark:active:bg-slate-600={selecting}
-      on:click={() => (selecting = true)}
-      disabled={selecting}
-      ><svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5 stroke-white stroke-[2.5]"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-      </svg>
-    </button>
+        }}
+        on:clearall={() => {
+          map.draw?.clear();
+          updateSelection();
+        }}
+        on:export={(evt) => handleExport(evt.detail.name)}
+        on:import={(evt) => fromJSON(evt.detail.e).catch(console.error)}
+        on:rename={(evt) => {
+          const newName = prompt('Enter new selection name.');
+          if (newName) {
+            draw?.setPolygonName(evt.detail.i, newName);
+            updateSelection();
+          }
+        }}
+      />
+      <button
+        class="rounded-lg bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-600/90 dark:text-slate-200 dark:hover:bg-sky-600"
+        class:bg-slate-600={selecting}
+        class:hover:bg-slate-600={selecting}
+        class:active:bg-slate-600={selecting}
+        class:dark:bg-slate-600={selecting}
+        class:dark:hover:bg-slate-600={selecting}
+        class:dark:active:bg-slate-600={selecting}
+        on:click={() => (selecting = true)}
+        disabled={selecting}
+        ><svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 stroke-white stroke-[2.5]"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      </button>
+    {/if}
   </div>
 
   <!-- Show all spots -->
-  <div
-    class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
-  >
-    <label class="cursor-pointer">
+  {#if showImgControl}
+    <div
+      class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
+    >
+      <label class="cursor-pointer">
+        <input
+          type="checkbox"
+          class="mr-0.5 cursor-pointer bg-opacity-80"
+          checked
+          on:change={(e) => setSpotVisible(e.currentTarget.checked)}
+        />
+        <span>Show all spots</span>
+      </label>
+
       <input
-        type="checkbox"
-        class="mr-0.5 cursor-pointer bg-opacity-80"
-        checked
-        on:change={(e) => setSpotVisible(e.currentTarget.checked)}
+        type="range"
+        min="0"
+        max="1"
+        value="0.9"
+        step="0.01"
+        on:change={(e) => setOpacity(e.currentTarget.value)}
+        on:mousemove={(e) => setOpacity(e.currentTarget.value)}
+        on:mousedown={() => setSpotVisible(true)}
+        class="max-w-[36rem] cursor-pointer opacity-80"
       />
-      <span>Show all spots</span>
-    </label>
+    </div>
+  {/if}
 
-    <input
-      type="range"
-      min="0"
-      max="1"
-      value="0.9"
-      step="0.01"
-      on:change={(e) => setOpacity(e.currentTarget.value)}
-      on:mousemove={(e) => setOpacity(e.currentTarget.value)}
-      on:mousedown={() => setSpotVisible(true)}
-      class="max-w-[36rem] cursor-pointer opacity-80"
-    />
-  </div>
-
-  <div class="relative mt-2">
-    <Colorbar class="right-6" bind:opacity={colorOpacity} color="yellow" min={0} max={10} />
-  </div>
+  {#if colorbar}
+    <div class="relative mt-2">
+      <Colorbar class="right-6" bind:opacity={colorOpacity} color="yellow" min={0} max={10} />
+    </div>
+  {/if}
 </section>
