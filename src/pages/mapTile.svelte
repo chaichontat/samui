@@ -76,14 +76,9 @@
 </script>
 
 {#if typeof hie === 'number'}
-  <section
-    class="relative box-content h-full w-full flex-grow"
-    id={`view-${hieN}`}
-    on:click={() => setActive(hieN)}
-  >
+  <section class="relative box-content h-full w-full flex-grow" id={`view-${hieN}`}>
     <div
       class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-4 text-sm md:text-base"
-      on:click={() => setActive(hieN)}
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
@@ -146,7 +141,12 @@
       class:border-slate-800={$activeMap !== hie}
       class:border-slate-100={$activeMap === hie}
     >
-      <Mapp sample={currSample?.sample} trackHover={$activeMap === hie} uid={hie} />
+      <Mapp
+        on:mapClick={() => setActive(hieN)}
+        sample={currSample?.sample}
+        trackHover={$activeMap === hie}
+        uid={hie}
+      />
     </div>
   </section>
 {:else}

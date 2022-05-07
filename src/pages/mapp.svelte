@@ -5,7 +5,7 @@
   import { Mapp } from '$src/lib/mapp/mapp';
   import { keyOneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
   import { activeFeatures, store, type FeatureName } from '../lib/store';
 
@@ -20,6 +20,7 @@
 
   let width: number;
   let height: number;
+  const dispatch = createEventDispatcher();
 
   //   // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
   // }
@@ -143,30 +144,31 @@
   <!-- Map -->
   <div
     id={mapName}
+    on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:rgbmode={showImgControl && image?.header?.mode === 'rgb'}
     class:compositemode={showImgControl && image?.header?.mode === 'composite'}
-  >
-    {#if sample}
-      <section
-        class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
-      >
-        <!-- Spot indicator -->
-        <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures?.name}</i></div>
+  />
 
-        <!-- Color indicator -->
-        <div class="flex flex-col">
-          {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-            {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
-              <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
-            {/if}
-          {/each}
-        </div>
-      </section>
+  {#if sample}
+    <section
+      class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
+    >
+      <!-- Spot indicator -->
+      <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures?.name}</i></div>
 
-      <MapTools {map} bind:selecting bind:showImgControl />
-    {/if}
-  </div>
+      <!-- Color indicator -->
+      <div class="flex flex-col">
+        {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
+          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
+            <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
+          {/if}
+        {/each}
+      </div>
+    </section>
+
+    <MapTools {map} bind:selecting bind:showImgControl />
+  {/if}
 
   <!-- Buttons -->
   {#if sample}
