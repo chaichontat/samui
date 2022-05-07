@@ -7,11 +7,12 @@
   import SampleList from '$src/lib/components/sampleList.svelte';
   import { byod } from '$src/lib/data/byod';
   import { activeMap, activeSample, samples, updateSample, type CurrSample } from '$src/lib/store';
-  import { createEventDispatcher } from 'svelte';
+  import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
   let active: string;
   let currSample: CurrSample;
+  let refreshPls = false;
 
   const dispatch = createEventDispatcher();
 
@@ -59,9 +60,15 @@
     if (hie.maps.every((x) => x === null)) {
       dispatch('delete');
     }
-
-    setTimeout(() => document.body.dispatchEvent(new Event('resize')), 100);
+    refreshPls = true;
   }
+
+  afterUpdate(() => {
+    if (refreshPls) {
+      document.body.dispatchEvent(new Event('resize'));
+      refreshPls = false;
+    }
+  });
 </script>
 
 {#if typeof hie === 'number'}
