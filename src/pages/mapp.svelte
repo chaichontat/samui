@@ -149,8 +149,9 @@
     id={mapName}
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
+    class:small={showImgControl && small}
+    class:compositemode={showImgControl && image?.header?.mode === 'composite' && !small}
     class:rgbmode={showImgControl && image?.header?.mode === 'rgb'}
-    class:compositemode={showImgControl && image?.header?.mode === 'composite'}
   />
 
   {#if sample}
@@ -218,12 +219,16 @@
     @apply left-6 bottom-4 float-right w-3 bg-transparent text-right font-sans;
   }
 
+  .small :global(.ol-scale-line) {
+    @apply bottom-[8.5rem];
+  }
+
   .rgbmode :global(.ol-scale-line) {
     @apply bottom-36;
   }
 
   .compositemode :global(.ol-scale-line) {
-    @apply bottom-40;
+    @apply bottom-[9.5rem];
   }
 
   .map :global(.ol-scale-line-inner) {
