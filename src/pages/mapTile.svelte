@@ -13,6 +13,7 @@
   let active: string;
   let currSample: CurrSample;
   let refreshPls = false;
+  let width = 0;
 
   const dispatch = createEventDispatcher();
 
@@ -76,9 +77,13 @@
 </script>
 
 {#if typeof hie === 'number'}
-  <section class="relative box-content h-full w-full flex-grow" id={`view-${hieN}`}>
+  <section
+    class="relative box-content h-full w-full flex-grow"
+    id={`view-${hieN}`}
+    bind:clientWidth={width}
+  >
     <div
-      class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-4 text-sm md:text-base"
+      class="absolute top-4 left-4 z-20 flex max-w-[48rem] flex-wrap items-center justify-between gap-x-4 text-sm md:text-base"
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
@@ -90,7 +95,7 @@
 
       <!-- Sample list -->
       <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
-        {#if hie === 0}
+        {#if hie === 0 && width > 400}
           <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">
             Sample:
           </div>
@@ -101,23 +106,10 @@
             items={Object.keys($samples)}
             bind:active
             loading={!currSample?.sample?.hydrated}
+            on:addSample={byod}
           />
         </div>
       </div>
-
-      {#if hie === 0}
-        <!-- Upload your data -->
-        <button
-          class="group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
-          on:click={byod}
-        >
-          <span
-            class="relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900 dark:bg-opacity-80"
-          >
-            Add Sample
-          </span>
-        </button>
-      {/if}
 
       <button use:tooltip={{ content: 'Split vertical' }} on:click={() => dispatch('split', 'v')}>
         <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
@@ -138,6 +130,20 @@
           />
         </svg>
       </button>
+
+      {#if hie === 0 && width > 800}
+        <!-- Upload your data -->
+        <button
+          class="group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
+          on:click={byod}
+        >
+          <span
+            class="relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900 dark:bg-opacity-80"
+          >
+            Add Sample
+          </span>
+        </button>
+      {/if}
     </div>
 
     <div
