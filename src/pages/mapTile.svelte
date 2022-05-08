@@ -78,12 +78,12 @@
 
 {#if typeof hie === 'number'}
   <section
-    class="relative box-content h-full w-full flex-grow"
+    class="relative box-content h-full w-full flex-grow overflow-x-hidden"
     id={`view-${hieN}`}
     bind:clientWidth={width}
   >
     <div
-      class="absolute top-4 left-4 z-20 flex max-w-[48rem] flex-wrap items-center justify-between gap-x-4 text-sm md:text-base"
+      class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-x-3 text-sm md:text-base"
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
@@ -94,7 +94,7 @@
       {/if}
 
       <!-- Sample list -->
-      <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
+      <div class="flex h-10 items-center gap-x-2 pr-4 lg:pr-0">
         {#if hie === 0 && width > 400}
           <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">
             Sample:
@@ -111,7 +111,11 @@
         </div>
       </div>
 
-      <button use:tooltip={{ content: 'Split vertical' }} on:click={() => dispatch('split', 'v')}>
+      <button
+        class="h-9"
+        use:tooltip={{ content: 'Split vertical' }}
+        on:click={() => dispatch('split', 'v')}
+      >
         <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -121,7 +125,11 @@
         </svg>
       </button>
 
-      <button use:tooltip={{ content: 'Split horizontal' }} on:click={() => dispatch('split', 'h')}>
+      <button
+        class="h-9"
+        use:tooltip={{ content: 'Split horizontal' }}
+        on:click={() => dispatch('split', 'h')}
+      >
         <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
