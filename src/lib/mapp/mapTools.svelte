@@ -117,7 +117,11 @@
 >
   <div class="mt-1 flex space-x-2">
     <!-- Show/hide -->
-    <button class="z-20 h-9 -translate-x-1/2" on:click={() => (showImgControl = !showImgControl)}>
+    <button
+      class="z-20 h-9"
+      class:pr-2={showImgControl}
+      on:click={() => (showImgControl = !showImgControl)}
+    >
       <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-6 w-6" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
