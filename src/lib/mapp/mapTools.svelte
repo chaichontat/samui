@@ -111,11 +111,10 @@
 </script>
 
 <section
-  class="absolute right-4 z-20 flex flex-col items-end gap-3"
-  class:top-4={width >= 500}
-  class:top-16={width < 500}
+  class="absolute right-4 top-4 z-20 flex flex-col items-end gap-3"
+  class:top-16={width < 500 && showImgControl}
 >
-  <div class="mt-1 flex space-x-2">
+  <div class="flex space-x-2">
     <!-- Show/hide -->
     <button
       class="z-20 h-9"
