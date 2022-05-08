@@ -69,6 +69,7 @@ export class Sample extends Deferrable {
   }
 
   async hydrate() {
+    console.debug(`Hydrating ${this.name}.`);
     await Promise.all([
       this.image.hydrate(this.handle),
       ...Object.values(this.features).map((f) => f.hydrate(this.handle))

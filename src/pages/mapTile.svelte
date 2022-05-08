@@ -97,7 +97,11 @@
         {/if}
 
         <div class:mt-1={hie !== 0}>
-          <SampleList items={Object.keys($samples)} bind:active />
+          <SampleList
+            items={Object.keys($samples)}
+            bind:active
+            loading={!currSample?.sample?.hydrated}
+          />
         </div>
       </div>
 
