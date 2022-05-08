@@ -12,6 +12,7 @@
   export let selecting: boolean;
   export let showImgControl: boolean;
   export let colorbar = false;
+  export let width = 0;
   let draw: Draww | undefined;
 
   onMount(async () => {
@@ -109,7 +110,11 @@
   }
 </script>
 
-<section class="absolute top-16 right-4 z-20 flex flex-col items-end gap-3 md:top-4">
+<section
+  class="absolute right-4 z-20 flex flex-col items-end gap-3"
+  class:top-4={width >= 500}
+  class:top-16={width < 500}
+>
   <!-- Select button -->
   <div class="mt-1 flex space-x-2">
     <button class="z-20 -translate-x-1/2" on:click={() => (showImgControl = !showImgControl)}>

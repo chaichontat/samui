@@ -170,7 +170,7 @@
       </div>
     </section>
 
-    <MapTools {map} bind:selecting bind:showImgControl />
+    <MapTools {map} {width} bind:selecting bind:showImgControl />
   {/if}
 
   <!-- Buttons -->
