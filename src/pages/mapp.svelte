@@ -177,7 +177,7 @@
   <!-- Buttons -->
   {#if sample}
     <div
-      class="absolute bottom-3 left-1 z-40 lg:left-4 lg:bottom-6 xl:pr-4"
+      class="absolute bottom-3 left-1 lg:left-4 lg:bottom-6 xl:pr-4"
       style="max-width: calc(100% - 20px);"
     >
       <div
