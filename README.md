@@ -12,9 +12,12 @@ Head over to https://loopy-browser.pages.dev/ to see the Loopy Browser with exam
 
 All data must be processed prior to being used in the Loopy Browser.
 
+This is run using a Jupyter notebook.
+
 ```sh
 git clone https://github.com/chaichontat/loopy-browser/
 conda create -n loopy -f loopy-browser/environment.yml
+conda install jupyter jupyterlab
 pip install .
 ```
 
