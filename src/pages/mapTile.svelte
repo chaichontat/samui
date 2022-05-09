@@ -13,6 +13,7 @@
   let active: string;
   let currSample: CurrSample;
   let refreshPls = false;
+  let width = 0;
 
   const dispatch = createEventDispatcher();
 
@@ -76,9 +77,13 @@
 </script>
 
 {#if typeof hie === 'number'}
-  <section class="relative box-content h-full w-full flex-grow" id={`view-${hieN}`}>
+  <section
+    class="relative box-content h-full w-full flex-grow overflow-x-hidden"
+    id={`view-${hieN}`}
+    bind:clientWidth={width}
+  >
     <div
-      class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-4 text-sm md:text-base"
+      class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-x-3 text-sm md:text-base"
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
@@ -89,19 +94,52 @@
       {/if}
 
       <!-- Sample list -->
-      <div class="flex items-center gap-x-2 pr-4 lg:pr-0">
-        {#if hie === 0}
+      <div class="flex h-10 items-center gap-x-2 pr-4 lg:pr-0">
+        {#if hie === 0 && width > 400}
           <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">
             Sample:
           </div>
         {/if}
 
         <div class:mt-1={hie !== 0}>
-          <SampleList items={Object.keys($samples)} bind:active />
+          <SampleList
+            items={Object.keys($samples)}
+            bind:active
+            loading={!currSample?.sample?.hydrated}
+            on:addSample={byod}
+          />
         </div>
       </div>
 
-      {#if hie === 0}
+      <button
+        class="h-9"
+        use:tooltip={{ content: 'Split vertical' }}
+        on:click={() => dispatch('split', 'v')}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          />
+        </svg>
+      </button>
+
+      <button
+        class="h-9"
+        use:tooltip={{ content: 'Split horizontal' }}
+        on:click={() => dispatch('split', 'h')}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+          />
+        </svg>
+      </button>
+
+      {#if hie === 0 && width > 800}
         <!-- Upload your data -->
         <button
           class="group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
@@ -114,26 +152,6 @@
           </span>
         </button>
       {/if}
-
-      <button use:tooltip={{ content: 'Split vertical' }} on:click={() => dispatch('split', 'v')}>
-        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          />
-        </svg>
-      </button>
-
-      <button use:tooltip={{ content: 'Split horizontal' }} on:click={() => dispatch('split', 'h')}>
-        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-          />
-        </svg>
-      </button>
     </div>
 
     <div

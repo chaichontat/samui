@@ -149,8 +149,9 @@
     id={mapName}
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
+    class:small={showImgControl && small}
+    class:compositemode={showImgControl && image?.header?.mode === 'composite' && !small}
     class:rgbmode={showImgControl && image?.header?.mode === 'rgb'}
-    class:compositemode={showImgControl && image?.header?.mode === 'composite'}
   />
 
   {#if sample}
@@ -170,13 +171,13 @@
       </div>
     </section>
 
-    <MapTools {map} bind:selecting bind:showImgControl />
+    <MapTools {map} {width} bind:selecting bind:showImgControl />
   {/if}
 
   <!-- Buttons -->
   {#if sample}
     <div
-      class="absolute bottom-3 left-1 z-40 lg:left-4 lg:bottom-6 xl:pr-4"
+      class="absolute bottom-3 left-1 lg:left-4 lg:bottom-6 xl:pr-4"
       style="max-width: calc(100% - 20px);"
     >
       <div
@@ -218,12 +219,16 @@
     @apply left-6 bottom-4 float-right w-3 bg-transparent text-right font-sans;
   }
 
+  .small :global(.ol-scale-line) {
+    @apply bottom-[8.5rem];
+  }
+
   .rgbmode :global(.ol-scale-line) {
     @apply bottom-36;
   }
 
   .compositemode :global(.ol-scale-line) {
-    @apply bottom-40;
+    @apply bottom-[9.5rem];
   }
 
   .map :global(.ol-scale-line-inner) {

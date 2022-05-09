@@ -12,6 +12,7 @@
   export let selecting: boolean;
   export let showImgControl: boolean;
   export let colorbar = false;
+  export let width = 0;
   let draw: Draww | undefined;
 
   onMount(async () => {
@@ -109,10 +110,17 @@
   }
 </script>
 
-<section class="absolute top-16 right-4 z-20 flex flex-col items-end gap-3 md:top-4">
-  <!-- Select button -->
-  <div class="mt-1 flex space-x-2">
-    <button class="z-20 -translate-x-1/2" on:click={() => (showImgControl = !showImgControl)}>
+<section
+  class="absolute right-4 top-4 z-20 flex flex-col items-end gap-3"
+  class:top-16={width < 500 && showImgControl}
+>
+  <div class="flex space-x-2">
+    <!-- Show/hide -->
+    <button
+      class="z-20 h-9"
+      class:pr-2={showImgControl}
+      on:click={() => (showImgControl = !showImgControl)}
+    >
       <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-6 w-6" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
@@ -123,6 +131,7 @@
       </svg>
     </button>
 
+    <!-- Select button -->
     {#if showImgControl}
       <SelectionBox
         names={selectionNames}
