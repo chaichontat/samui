@@ -21,7 +21,7 @@ conda install jupyter jupyterlab
 pip install .
 ```
 
-An example notebook is available at `scripts/run_sample.ipynb`.
+An example script is available at [`scripts/run_sample.ipynb`](scripts/run_sample.ipynb).
 
 ## Nomenclature
 
