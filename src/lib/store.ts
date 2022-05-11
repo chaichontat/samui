@@ -62,6 +62,7 @@ export type CurrSample = {
 };
 
 export const activeMap: Writable<number> = writable(0);
+export const mapList: Writable<number[]> = writable([]);
 export const currSample: Writable<CurrSample | undefined> = writable();
 
 export async function updateSample(s: Sample) {
@@ -92,8 +93,7 @@ samples.subscribe((s) => {
   }
 });
 
-const preload = true;
-if (preload) {
+export function preload() {
   first.promise
     .then(() => {
       samples.set({ [s]: first, ...get(samples) });

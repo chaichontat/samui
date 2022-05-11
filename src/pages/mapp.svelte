@@ -181,7 +181,7 @@
       style="max-width: calc(100% - 20px);"
     >
       <div
-        class="flex flex-col overflow-x-scroll rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
+        class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
         {#if mode === 'composite'}

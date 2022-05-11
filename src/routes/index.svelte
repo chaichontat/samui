@@ -2,15 +2,17 @@
   import { resizable } from '$lib/utils';
   import { byod } from '$src/lib/data/byod';
   import Nav from '$src/lib/nav.svelte';
-  import { samples } from '$src/lib/store';
+  import { mapList, preload, samples } from '$src/lib/store';
   import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
   import Rna from '$src/pages/rna.svelte';
 
+  const r = [0, Math.random(), Math.random()];
   const hie: Hie = {
     root: true,
     split: 'h',
-    maps: [{ split: 'v', maps: [0, { maps: [Math.random()] }] }, { maps: [Math.random()] }]
+    maps: [{ split: 'v', maps: [0, { maps: [r[1]] }] }, { maps: [r[2]] }]
   };
+  $mapList = r;
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -27,20 +29,38 @@
       </article>
     {:else}
       <!-- Splash import -->
-      <div
-        class="flex items-center gap-x-2 lg:gap-x-3 cursor-pointer center text-slate-600 hover:text-slate-800 dark:text-slate-400 text-2xl sm:text-3xl lg:text-4xl transition-colors dark:hover:text-slate-200"
-        on:click={byod}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4 lg:h-6 lg:w-6 translate-y-0.5 stroke-[4]"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      <div class="text-2xl font-medium text-yellow-300 p-3">Loopy Browser</div>
+      <div class="center flex flex-col items-center gap-y-3">
+        <button
+          class="text-xl group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 p-0.5 font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-pink-200 group-hover:from-purple-600 group-hover:to-pink-500 dark:text-slate-100 dark:focus:ring-pink-800"
+          on:click={byod}
         >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-        Import Sample
+          <span
+            class="flex gap-x-1 items-center relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-3 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900 dark:bg-opacity-80"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 stroke-[4]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Import Sample
+          </span>
+        </button>
+
+        <button
+          class="text-lg group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
+          on:click={preload}
+        >
+          <span
+            class="relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900 dark:bg-opacity-80"
+          >
+            Show Visium-IF Data
+          </span>
+        </button>
       </div>
     {/if}
   </div>
