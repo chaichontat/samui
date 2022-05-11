@@ -2,15 +2,17 @@
   import { resizable } from '$lib/utils';
   import { byod } from '$src/lib/data/byod';
   import Nav from '$src/lib/nav.svelte';
-  import { samples } from '$src/lib/store';
+  import { mapList, samples } from '$src/lib/store';
   import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
   import Rna from '$src/pages/rna.svelte';
 
+  const r = [0, Math.random(), Math.random()];
   const hie: Hie = {
     root: true,
     split: 'h',
-    maps: [{ split: 'v', maps: [0, { maps: [Math.random()] }] }, { maps: [Math.random()] }]
+    maps: [{ split: 'v', maps: [0, { maps: [r[1]] }] }, { maps: [r[2]] }]
   };
+  $mapList = r;
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>

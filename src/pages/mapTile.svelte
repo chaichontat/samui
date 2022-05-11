@@ -6,7 +6,14 @@
   import { tooltip } from '$lib/utils';
   import SampleList from '$src/lib/components/sampleList.svelte';
   import { byod } from '$src/lib/data/byod';
-  import { activeMap, activeSample, samples, updateSample, type CurrSample } from '$src/lib/store';
+  import {
+    activeMap,
+    activeSample,
+    mapList,
+    samples,
+    updateSample,
+    type CurrSample
+  } from '$src/lib/store';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
@@ -25,14 +32,13 @@
     updateSample($samples[active])
       .then((s) => {
         currSample = s;
-        setActive(hieN);
+        $activeMap = hie as number;
       })
       .catch(console.error);
   }
 
-  function setActive(i: number) {
-    $activeMap = i;
-    $activeSample = currSample.sample.name;
+  $: if ($activeMap === hie) {
+    $activeSample = currSample?.sample.name;
   }
 
   function handleSplit(i: number, mode: 'h' | 'v') {
@@ -51,10 +57,12 @@
     } else {
       hie.maps[i] = { split: mode, maps: [hie.maps[i], newUId] };
     }
+    $mapList.push(newUId);
   }
 
   function handleDelete(i: number) {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
+    const old = hie.maps[i];
     hie.maps[i] = null;
     if (i === hie.maps.length - 1) {
       /// Reduce memory leak.
@@ -64,7 +72,17 @@
     if (hie.maps.every((x) => x === null)) {
       dispatch('delete');
     }
+
     refreshPls = true;
+    if (typeof old === 'number') {
+      const idx = $mapList.findIndex((x) => x === old);
+      $mapList.splice(idx, 1);
+      if (idx > 0) {
+        $activeMap = $mapList[idx - 1];
+      } else {
+        throw new Error('Should be impossible to delete the first map');
+      }
+    }
   }
 
   afterUpdate(() => {
@@ -156,11 +174,11 @@
 
     <div
       class="h-full w-full border-2"
-      class:border-slate-800={$activeMap !== hie}
-      class:border-slate-100={$activeMap === hie}
+      class:border-slate-800={$activeMap !== hieN}
+      class:border-slate-100={$activeMap === hieN}
     >
       <Mapp
-        on:mapClick={() => setActive(hieN)}
+        on:mapClick={() => ($activeMap = hieN)}
         sample={currSample?.sample}
         trackHover={$activeMap === hie}
         uid={hie}

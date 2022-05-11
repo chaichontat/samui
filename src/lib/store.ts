@@ -62,6 +62,7 @@ export type CurrSample = {
 };
 
 export const activeMap: Writable<number> = writable(0);
+export const mapList: Writable<number[]> = writable([]);
 export const currSample: Writable<CurrSample | undefined> = writable();
 
 export async function updateSample(s: Sample) {
