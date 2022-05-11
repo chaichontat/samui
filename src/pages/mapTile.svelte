@@ -57,7 +57,8 @@
     } else {
       hie.maps[i] = { split: mode, maps: [hie.maps[i], newUId] };
     }
-    $mapList.push(newUId);
+    $mapList.push(-1);
+    $mapList[$mapList.length - 1] = newUId; // For reactivity.
   }
 
   function handleDelete(i: number) {
@@ -77,6 +78,7 @@
     if (typeof old === 'number') {
       const idx = $mapList.findIndex((x) => x === old);
       $mapList.splice(idx, 1);
+      $mapList = $mapList;
       if (idx > 0) {
         $activeMap = $mapList[idx - 1];
       } else {
@@ -175,7 +177,7 @@
     <div
       class="h-full w-full border-2"
       class:border-slate-800={$activeMap !== hieN}
-      class:border-slate-100={$activeMap === hieN}
+      class:border-slate-100={$activeMap === hieN && $mapList.length > 1}
     >
       <Mapp
         on:mapClick={() => ($activeMap = hieN)}
