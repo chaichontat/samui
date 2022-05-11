@@ -93,8 +93,7 @@ samples.subscribe((s) => {
   }
 });
 
-const preload = true;
-if (preload) {
+export function preload() {
   first.promise
     .then(() => {
       samples.set({ [s]: first, ...get(samples) });
