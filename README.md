@@ -17,6 +17,7 @@ This is run using a Jupyter notebook.
 ```sh
 git clone https://github.com/chaichontat/loopy-browser/
 conda env create -n loopy -f loopy-browser/environment.yml
+conda activate loopy
 conda install jupyter jupyterlab
 pip install .
 ```
