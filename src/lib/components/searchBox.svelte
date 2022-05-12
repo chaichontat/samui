@@ -3,18 +3,21 @@
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
-  import { genHoverName, type FeatureName, type HoverName } from '../store';
+  import { genHoverName, type FeatureName, type FeatureNames, type HoverName } from '../store';
 
-  type Name = FeatureName<string>;
-  let fzf: Fzf<readonly Name[]>;
-  export let names: Name[];
+  type Name = FeatureName;
+  let fzf: [string | undefined, Fzf<readonly string[]>][];
+  export let names: FeatureNames[];
   export let curr: HoverName<Name>;
   curr = genHoverName<Name>({});
 
   let showSearch = true;
 
   let search = '';
-  let candidates: { raw: Name; embellished: string }[] = [];
+  let candidates: {
+    feature: string | undefined;
+    values: { feature: string | undefined; raw: string; embellished: string }[];
+  }[] = [];
 
   function highlightChars(str: string, indices: Set<number>): string {
     const chars = str.split('');
@@ -30,15 +33,22 @@
   });
 
   $: if (names) {
-    fzf = new Fzf(names, { limit: 8, selector: (item) => item.name });
+    fzf = names.map((f) => [f.feature, new Fzf(f.names, { limit: 6 })]);
   }
 
   $: if (fzf) {
-    const res = fzf.find(search);
-    candidates = res.map((x) => ({
-      raw: x.item,
-      embellished: highlightChars(x.item.name, x.positions)
-    }));
+    candidates = [];
+    for (const [f, fz] of fzf) {
+      const res = fz.find(search);
+      candidates.push({
+        feature: f,
+        values: res.map((x) => ({
+          feature: f,
+          raw: x.item,
+          embellished: highlightChars(x.item, x.positions)
+        }))
+      });
+    }
   }
 </script>
 
@@ -55,28 +65,38 @@
   {#if search && showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="picker absolute top-12 z-40 p-2"
+      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setVal({ hover: null })}
       on:blur={() => setVal({ hover: null })}
     >
-      {#each candidates as { raw, embellished }}
-        <div
-          class="picker-el py-1.5"
-          on:mousemove={() => setVal({ hover: raw })}
-          on:click={() => {
-            showSearch = false;
-            setVal({ selected: raw });
-          }}
-          transition:slide={{ duration: 100, easing: cubicInOut }}
-        >
-          {@html embellished}
-        </div>
+      {#each candidates as { feature, values }}
+        {#if values.length > 0}
+          <div>
+            <span class="px-2 py-1.5 font-medium capitalize text-yellow-300"
+              >{feature ?? 'Misc.'}</span
+            >
+            {#each values as v}
+              <div
+                class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
+                on:mousemove={() => setVal({ hover: { feature: v.feature, name: v.raw } })}
+                on:click={() => {
+                  showSearch = false;
+                  setVal({ selected: { feature: v.feature, name: v.raw } });
+                }}
+                transition:slide={{ duration: 100, easing: cubicInOut }}
+              >
+                {@html v.embellished}
+              </div>
+            {/each}
+          </div>
+        {/if}
       {/each}
-      {#if candidates.length === 0}
+
+      <!-- {#if candidates.length === 0}
         <i class="py-1 px-3 text-slate-300">No genes found.</i>
-      {/if}
+      {/if} -->
     </div>
   {/if}
 </div>

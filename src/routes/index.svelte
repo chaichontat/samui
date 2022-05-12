@@ -6,13 +6,11 @@
   import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
   import Rna from '$src/pages/rna.svelte';
 
-  const r = [0, Math.random(), Math.random()];
-  const hie: Hie = {
+  $mapList = [0];
+  let hie: Hie = {
     root: true,
-    split: 'h',
-    maps: [{ split: 'v', maps: [0, { maps: [r[1]] }] }, { maps: [r[2]] }]
+    maps: [0]
   };
-  $mapList = r;
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -53,7 +51,16 @@
 
         <button
           class="text-lg group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
-          on:click={preload}
+          on:click={() => {
+            preload();
+            const r = [0, Math.random(), Math.random()];
+            hie = {
+              root: true,
+              split: 'h',
+              maps: [{ split: 'v', maps: [0, { maps: [r[1]] }] }, { maps: [r[2]] }]
+            };
+            $mapList = r;
+          }}
         >
           <span
             class="relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900 dark:bg-opacity-80"
