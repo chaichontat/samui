@@ -65,7 +65,7 @@
   {#if search && showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="picker absolute top-12 z-40 p-2"
+      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setVal({ hover: null })}
@@ -73,22 +73,24 @@
     >
       {#each candidates as { feature, values }}
         {#if values.length > 0}
-          <span class="mt-1 px-2 py-1 font-medium capitalize text-yellow-300"
-            >{feature ?? 'Misc.'}</span
-          >
-          {#each values as v}
-            <div
-              class="picker-el py-1.5"
-              on:mousemove={() => setVal({ hover: { feature: v.feature, name: v.raw } })}
-              on:click={() => {
-                showSearch = false;
-                setVal({ selected: { feature: v.feature, name: v.raw } });
-              }}
-              transition:slide={{ duration: 100, easing: cubicInOut }}
+          <div>
+            <span class="px-2 py-1.5 font-medium capitalize text-yellow-300"
+              >{feature ?? 'Misc.'}</span
             >
-              {@html v.embellished}
-            </div>
-          {/each}
+            {#each values as v}
+              <div
+                class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
+                on:mousemove={() => setVal({ hover: { feature: v.feature, name: v.raw } })}
+                on:click={() => {
+                  showSearch = false;
+                  setVal({ selected: { feature: v.feature, name: v.raw } });
+                }}
+                transition:slide={{ duration: 100, easing: cubicInOut }}
+              >
+                {@html v.embellished}
+              </div>
+            {/each}
+          </div>
         {/if}
       {/each}
 
