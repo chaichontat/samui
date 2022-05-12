@@ -41,7 +41,7 @@
   }
 
   .picker-el {
-    @apply hover-default cursor-pointer rounded px-3;
+    @apply hover-default cursor-pointer rounded px-4 text-base;
   }
 
   .center {

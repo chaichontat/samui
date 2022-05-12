@@ -2,13 +2,19 @@
   import SearchBox from '$src/lib/components/searchBox.svelte';
   import type { Sample } from '$src/lib/data/sample';
   import { boxMuller } from '$src/lib/scatter/scatterlib';
-  import { currSample, store, type FeatureName, type HoverName } from '$src/lib/store';
+  import {
+    currSample,
+    store,
+    type FeatureName,
+    type FeatureNames,
+    type HoverName
+  } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
 
-  export let featureNames: FeatureName<string>[];
+  export let featureNames: FeatureNames[];
 
-  type Name = FeatureName<string>;
+  type Name = FeatureName;
   let x: HoverName<Name>;
   let y: HoverName<Name>;
   let color: HoverName<Name>;
@@ -22,8 +28,8 @@
 
   async function getData(
     sample: Sample,
-    x: HoverName<FeatureName<string>>,
-    y: HoverName<FeatureName<string>>,
+    x: HoverName<FeatureName>,
+    y: HoverName<FeatureName>,
     jitterX = 0,
     jitterY = 0
   ) {
@@ -53,7 +59,7 @@
     };
   }
 
-  async function updateColors(sample: Sample, color: HoverName<FeatureName<string>>) {
+  async function updateColors(sample: Sample, color: HoverName<FeatureName>) {
     let c = sample.getFeature(color.active!);
     if (c.values instanceof Promise) {
       c.values = await c.values;

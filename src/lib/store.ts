@@ -26,9 +26,14 @@ export type HoverName<T> = {
   get active(): T | null;
 };
 
-export type FeatureName<T> = {
+export type FeatureNames = {
   feature?: string;
-  name?: T;
+  names: string[];
+};
+
+export type FeatureName = {
+  feature?: string;
+  name?: string;
 };
 
 export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }): HoverName<T> {
@@ -42,7 +47,7 @@ export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }
   };
 }
 
-export const activeFeatures: Writable<FeatureName<string>> = writable({});
+export const activeFeatures: Writable<FeatureName> = writable({});
 
 export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> = writable({
   ptr: [],
@@ -58,14 +63,14 @@ export const samples: Writable<{ [key: string]: Sample }> = writable({});
 
 export type CurrSample = {
   sample: Sample;
-  featureNames?: FeatureName<string>[];
+  featureNames?: FeatureNames[];
 };
 
 export const activeMap: Writable<number> = writable(0);
 export const mapList: Writable<number[]> = writable([]);
 export const currSample: Writable<CurrSample | undefined> = writable();
 
-export async function updateSample(s: Sample) {
+export async function updateSample(s: Sample): Promise<CurrSample> {
   if (!s.hydrated) await s.hydrate();
   return { featureNames: updateNames(s.features), sample: s };
 }
