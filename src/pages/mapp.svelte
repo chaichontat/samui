@@ -39,21 +39,6 @@
         if (trackHover) $store.currIdx = { idx, source: 'map' };
       }
     });
-
-    // const dapiLayer = new WebGLPointsLayer({
-    //   // @ts-expect-error
-    //   source: dapi,
-    //   style: {
-    //     symbol: {
-    //       symbolType: 'square',
-    //       size: 4,
-    //       color: '#ffffff',
-    //       opacity: 0.5
-    //     }
-    //   },
-    //   minZoom: 4
-    // });
-    // update($activeSample).catch(console.error);
   });
 
   // function moveView(idx: number) {
@@ -98,6 +83,7 @@
     await map.update({ image: img, spots });
     convertImgCtrl = colorVarFactory(img.mode, img.channel);
 
+    map.layerMap['cells']?.update(sample.overlays.cells);
     updateSpot({
       key: `${sample.name}-${$activeFeatures.name ?? 'null'}`,
       args: [$activeFeatures]

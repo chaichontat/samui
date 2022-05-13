@@ -22,7 +22,15 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     super();
     this.map = map;
     this.source = new VectorSource({ features: [] });
-    this._style = style ?? { symbol: { size: 12, symbolType: 'circle', color: '#fce652ff' } };
+    this._style = style ?? {
+      variables: { opacity: 1 },
+      symbol: {
+        size: ['interpolate', ['exponential', 2], ['zoom'], 1, 2, 4, 5],
+        symbolType: 'circle',
+        color: '#ef4444',
+        opacity: ['var', 'opacity']
+      }
+    };
   }
 
   mount(): void {
@@ -123,24 +131,28 @@ export function genSpotStyle(
         ...common,
         color: '#fce652ff',
         // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 5]], 0.1, 1]
+        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 5]], 0, 1]
         // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
       }
     };
   } else {
-    const colors = [];
-    for (let i = 0; i < tableau10arr.length; i++) {
-      colors.push(['==', ['%', ['get', 'value'], tableau10arr.length], i], tableau10arr[i]);
-    }
     return {
       variables: { opacity: 0.9 },
       symbol: {
         ...common,
-        color: ['case', ...colors, '#ffffff'],
+        color: ['case', ...genCategoricalColors(), '#ffffff'],
         opacity: ['clamp', ['var', 'opacity'], 0.1, 1]
       }
     };
   }
+}
+
+function genCategoricalColors() {
+  const colors = [];
+  for (let i = 0; i < tableau10arr.length; i++) {
+    colors.push(['==', ['%', ['get', 'value'], tableau10arr.length], i], tableau10arr[i]);
+  }
+  return colors;
 }
 
 export class ActiveSpots extends Deferrable implements MapComponent {

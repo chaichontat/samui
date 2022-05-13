@@ -27,7 +27,7 @@ export class Mapp extends Deferrable {
     background?: Background;
     spots?: WebGLSpots;
     active?: ActiveSpots;
-    points?: WebGLSpots;
+    cells?: WebGLSpots;
   };
   draw?: Draww;
   image?: Image;
@@ -51,11 +51,11 @@ export class Mapp extends Deferrable {
       background: background ? new Background() : undefined,
       spots: spots ? new WebGLSpots(this, { style: genSpotStyle('quantitative', 10) }) : undefined,
       active: active ? new ActiveSpots() : undefined,
-      points: points ? new WebGLSpots(this) : undefined
+      cells: points ? new WebGLSpots(this) : undefined
     };
 
     this.layers = [];
-    for (const k of ['background', 'spots', 'points', 'active']) {
+    for (const k of ['background', 'spots', 'cells', 'active']) {
       // @ts-ignore
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       if (this.layerMap[k]) this.layers.push(this.layerMap[k]);
