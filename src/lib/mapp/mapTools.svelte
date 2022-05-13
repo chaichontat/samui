@@ -49,10 +49,10 @@
 
   let colorOpacity = 0.8;
 
-  const setSpotVisible = (c: boolean | null) => map.layerMap.spots.layer?.setVisible(c ?? false);
+  const setSpotVisible = (c: boolean | null) => map.layerMap.spots?.layer?.setVisible(c ?? false);
   const setOpacity = oneLRU(async (opacity: string) => {
-    await map.layerMap.spots.promise;
-    map.layerMap.spots.layer!.updateStyleVariables({ opacity: Number(opacity) });
+    await map.layerMap.spots?.promise;
+    map.layerMap.spots?.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
 
   function handleExport(t: 'spots' | 'selections') {

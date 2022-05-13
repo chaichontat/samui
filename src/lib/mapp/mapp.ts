@@ -22,21 +22,37 @@ export interface MapComponent extends Deferrable {
 export class Mapp extends Deferrable {
   map?: Map;
   readonly layers: MapComponent[];
-  readonly layerMap: { background: Background; spots: WebGLSpots; active: ActiveSpots };
+  readonly layerMap: { background?: Background; spots?: WebGLSpots; active?: ActiveSpots };
   draw?: Draww;
   image?: Image;
 
   mounted = false;
 
-  constructor() {
+  constructor(
+    enabled: {
+      background?: boolean;
+      spots?: boolean;
+      active?: boolean;
+    } = {}
+  ) {
+    const { background, spots, active } = {
+      ...{ background: true, spots: true, active: true },
+      ...enabled
+    };
     super();
     this.layerMap = {
-      background: new Background(),
-      spots: new WebGLSpots(),
-      active: new ActiveSpots()
+      background: background ? new Background() : undefined,
+      spots: spots ? new WebGLSpots() : undefined,
+      active: active ? new ActiveSpots() : undefined
     };
 
-    this.layers = [this.layerMap.background, this.layerMap.spots, this.layerMap.active];
+    this.layers = [];
+    for (const k of ['background', 'spots', 'active']) {
+      // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      if (this.layerMap[k]) this.layers.push(this.layerMap[k]);
+    }
+
     this.draw = new Draww();
   }
 
@@ -65,15 +81,16 @@ export class Mapp extends Deferrable {
     await this.promise;
     await image.promise;
     await Promise.all([
-      this.layerMap.background.update(this.map!, image),
-      this.layerMap.spots.update(
+      this.layerMap.background?.update(this.map!, image),
+      this.layerMap.spots?.update(
         this.map!,
         image.coords!,
         image.header!.spot.spotDiam,
         image.header!.spot.mPerPx
       )
     ]);
-    this.draw!.update(this.layerMap.spots.source.getFeatures());
+
+    if (this.layerMap.spots) this.draw!.update(this.layerMap.spots.source.getFeatures());
     this.image = image;
   }
 
@@ -92,6 +109,7 @@ export class Mapp extends Deferrable {
 
   handlePointer(funs: { pointermove?: (id: number) => void; click?: (id: number) => void }) {
     if (!this.map) throw new Error('Map not initialized.');
+    if (!this.layerMap.spots) return;
     for (const [k, v] of Object.entries(funs)) {
       this.map.on(k as 'pointermove' | 'click', (e) => {
         // Cannot use layer.getFeatures for WebGL.
@@ -107,7 +125,7 @@ export class Mapp extends Deferrable {
             v(idx);
             return true; // Terminates search.
           },
-          { layerFilter: (layer) => layer === this.layerMap.spots.layer, hitTolerance: 10 }
+          { layerFilter: (layer) => layer === this.layerMap.spots!.layer, hitTolerance: 10 }
         );
       });
     }

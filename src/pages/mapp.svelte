@@ -108,25 +108,25 @@
   $: if (sample) update({ key: sample.name, args: [sample] });
 
   $: if (convertImgCtrl && imgCtrl) {
-    map.layerMap.background.updateStyle(convertImgCtrl(imgCtrl));
+    map.layerMap.background?.updateStyle(convertImgCtrl(imgCtrl));
   }
 
   const changeHover = async (idx: number) => {
     if (!image) return;
     await image.promise;
-    map.layerMap.active.update(image.coords![idx], image.header!.spot);
+    map.layerMap.active?.update(image.coords![idx], image.header!.spot);
   };
 
   $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
 
-  const updateSpot = keyOneLRU((fn: FeatureName<string>) => {
+  const updateSpot = keyOneLRU((fn: FeatureName) => {
     if (!sample || !fn) return false;
     const { values, dataType } = sample.getFeature(fn);
-    map.layerMap.spots.updateIntensity(map, values, dataType).catch(console.error);
+    map.layerMap.spots?.updateIntensity(map, values, dataType).catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
-  function updateSpotName(fn: FeatureName<string>) {
+  function updateSpotName(fn: FeatureName) {
     if (sample) {
       updateSpot({
         key: `${sample.name}${JSON.stringify(fn)} ?? 'null'}`,
