@@ -1,4 +1,5 @@
 #%%
+import json
 from pathlib import Path
 from typing import Literal, cast
 
@@ -8,8 +9,8 @@ from anndata import AnnData
 from scanpy import read_visium
 from tifffile import imread
 
-from loopy.feature import ChunkedJSONParams, PlainJSONParams, get_compressed_genes
-from loopy.image import ImageParams, SpotParams, compress, gen_geotiff, gen_header
+from loopy.feature import ChunkedJSONParams, Coords, OverlayParams, PlainJSONParams, get_compressed_genes
+from loopy.image import ImageParams, compress, gen_geotiff
 from loopy.sample import Sample
 from loopy.utils import Url
 
@@ -65,21 +66,44 @@ def better_visium(d: Path, features: dict[str, str]) -> AnnData:
     return vis
 
 
+def gen_coords(vis: AnnData) -> list[dict[str, float]]:
+    spatial = cast(pd.DataFrame, vis.obsm["spatial"])
+    coords = pd.DataFrame(spatial, columns=["x", "y"], dtype="uint32")
+    return [Coords(x=row.x, y=row.y).dict() for row in coords.itertuples()]
+
+
 def run(s: str) -> None:
+    mPerPx = 0.497e-6
     sample = Sample(
         name=s,
         imgParams=ImageParams(
             urls=[Url(f"{s}_1.tif"), Url(f"{s}_2.tif")],
-            headerUrl=Url("image.json"),
+            channel=channels,
+            mPerPx=mPerPx,
+            mode="composite",
         ),
+        overlayParams=[
+            OverlayParams(
+                name="spots", shape="circle", mPerPx=mPerPx, size=130e-6, url=Url("spotCoords.json")
+            )
+        ],
         featParams=[
-            ChunkedJSONParams(name="genes", headerUrl=Url("gene_csc.json"), url=Url("gene_csc.bin")),
             ChunkedJSONParams(
-                name="spotGenes", headerUrl=Url("gene_csr.json"), url=Url("gene_csr.bin"), isFeature=False
+                name="genes", headerUrl=Url("gene_csc.json"), url=Url("gene_csc.bin"), overlay="spots"
             ),
-            PlainJSONParams(name="umap", url=Url("umap.json"), dataType="coords"),
+            ChunkedJSONParams(
+                name="spotGenes",
+                headerUrl=Url("gene_csr.json"),
+                url=Url("gene_csr.bin"),
+                isFeature=False,
+                overlay=None,
+            ),
+            PlainJSONParams(name="umap", url=Url("umap.json"), dataType="coords", overlay="spots"),
         ]
-        + [PlainJSONParams(name=k, url=Url(k + ".json"), dataType="categorical") for k in analyses],
+        + [
+            PlainJSONParams(name=k, url=Url(k + ".json"), dataType="categorical", overlay="spots")
+            for k in analyses
+        ],
     )
 
     vis = better_visium(directory / s, features=analyses)
@@ -107,10 +131,9 @@ def run(s: str) -> None:
         else:
             (o / f"{k}.json").write_text(vis.obs[k].to_json(orient="records", double_precision=3))
 
-    spot = SpotParams(mPerPx=0.497e-6)
-    (o / "image.json").write_text(gen_header(vis, s, channels, spot).json().replace(" ", ""))
+    (o / "spotCoords.json").write_text(json.dumps(gen_coords(vis)).replace(" ", ""))
     img = imread(directory / (s + ".tif"))
-    tifs = gen_geotiff(img, o / s, spot.mPerPx)
+    tifs = gen_geotiff(img, o / s, mPerPx)
     compress(tifs)
 
 

@@ -7,6 +7,7 @@ import type { Layer } from 'ol/layer';
 import type WebGLPointsLayer from 'ol/layer/WebGLPoints';
 import type GeoTIFFSource from 'ol/source/GeoTIFF';
 import type VectorSource from 'ol/source/Vector';
+import type { Overlay } from '../data/overlay';
 import { Deferrable } from '../utils';
 import { Background } from './background';
 import { Draww } from './selector';
@@ -84,15 +85,17 @@ export class Mapp extends Deferrable {
     this.mounted = true;
   }
 
-  async update({ image }: { image: Image }) {
+  async update({ image, spots }: { image: Image; spots?: Overlay }) {
     await this.promise;
     await image.promise;
-    this.layerMap.spots?.updateStyle(
-      genSpotStyle('quantitative', image.header!.spot.spotDiam / image.header!.spot.mPerPx)
-    );
+    if (spots) {
+      await spots.promise;
+      this.layerMap.spots?.updateStyle(genSpotStyle('quantitative', spots.sizePx));
+    }
+
     await Promise.all([
       this.layerMap.background?.update(this.map!, image),
-      this.layerMap.spots?.update(image.coords!, image.header!.spot.mPerPx)
+      spots ? this.layerMap.spots?.update(spots) : undefined
     ]);
 
     if (this.layerMap.spots) this.draw!.update(this.layerMap.spots.source.getFeatures());
@@ -105,7 +108,7 @@ export class Mapp extends Deferrable {
 
     const view = this.map.getView();
     const currZoom = view.getZoom();
-    const mPerPx = this.image.header!.spot.mPerPx;
+    const mPerPx = this.image.mPerPx;
 
     if (currZoom && currZoom > 2) {
       view.animate({ center: [x * mPerPx, y * mPerPx], duration: 100, zoom: zoom ?? currZoom });

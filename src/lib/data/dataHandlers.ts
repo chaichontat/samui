@@ -14,6 +14,7 @@ interface JSONParams {
   name: string;
   isFeature: boolean;
   dataType: DataType;
+  overlay?: string;
 }
 
 export interface PlainJSONParams<Ret extends RetrievedData> extends JSONParams {
@@ -54,12 +55,13 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
   readonly name: string;
   readonly dataType: DataType;
   readonly isFeature: boolean;
+  readonly overlay?: string;
 
   values?: Ret;
   hydrated = false;
 
   constructor(
-    { name, url, dataType, values, isFeature }: PlainJSONParams<Ret>,
+    { name, url, dataType, values, isFeature, overlay }: PlainJSONParams<Ret>,
     autoHydrate = false
   ) {
     super();
@@ -68,6 +70,7 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
     this.values = values;
     this.dataType = dataType;
     this.isFeature = isFeature;
+    this.overlay = overlay;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -83,6 +86,7 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
       this.values = (await fetch(this.url.url).then((r) => r.json())) as Ret;
     }
     this.hydrated = true;
+    this._deferred.resolve();
     return this;
   }
 }
@@ -107,11 +111,11 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
   activeDefault?: string;
   sparseMode?: SparseMode;
   hydrated = false;
-
+  overlay?: string;
   allData?: ArrayBuffer;
 
   constructor(
-    { name, url, headerUrl, header, dataType, isFeature }: ChunkedJSONParams,
+    { name, url, headerUrl, header, dataType, isFeature, overlay }: ChunkedJSONParams,
     autoHydrate = false
   ) {
     super();
@@ -121,6 +125,7 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
     this.headerUrl = headerUrl;
     this.dataType = dataType;
     this.isFeature = isFeature;
+    this.overlay = overlay;
 
     if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
     if (autoHydrate) {

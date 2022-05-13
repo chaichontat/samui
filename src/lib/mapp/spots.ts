@@ -7,7 +7,7 @@ import { Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
 import { convertCategoricalToNumber } from '../data/dataHandlers';
-import type { SpotParams } from '../data/image';
+import type { Overlay } from '../data/overlay';
 import { Deferrable } from '../utils';
 import type { MapComponent, Mapp } from './mapp';
 
@@ -76,11 +76,11 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this.layer = newLayer;
   }
 
-  update(coords: readonly { x: number; y: number }[], mPerPx: number) {
-    this._mPerPx = mPerPx;
+  update(overlay: Overlay) {
+    this._mPerPx = overlay.mPerPx;
     this.source.clear();
     this.source.addFeatures(
-      coords.map(({ x, y }, i) => {
+      overlay.pos!.map(({ x, y }, i) => {
         const f = new Feature({
           geometry: new Point([x * this._mPerPx!, -y * this._mPerPx!]),
           value: 0,
@@ -93,7 +93,10 @@ export class WebGLSpots extends Deferrable implements MapComponent {
   }
 }
 
-export function genSpotStyle(type: 'quantitative' | 'categorical', spotPx: number): LiteralStyle {
+export function genSpotStyle(
+  type: 'quantitative' | 'categorical',
+  spotDiamPx: number
+): LiteralStyle {
   const common = {
     symbolType: 'circle',
     size: [
@@ -101,15 +104,15 @@ export function genSpotStyle(type: 'quantitative' | 'categorical', spotPx: numbe
       ['exponential', 2],
       ['zoom'],
       1,
-      spotPx / 32,
+      spotDiamPx / 64,
       2,
-      spotPx / 16,
+      spotDiamPx / 32,
       3,
-      spotPx / 8,
+      spotDiamPx / 16,
       4,
-      spotPx / 4,
+      spotDiamPx / 8,
       5,
-      spotPx
+      spotDiamPx / 2
     ]
   };
 
@@ -165,9 +168,9 @@ export class ActiveSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  update({ x, y }: { x: number; y: number }, sp: SpotParams) {
-    this.feature
-      .getGeometry()
-      ?.setCenterAndRadius([x * sp.mPerPx, -y * sp.mPerPx], sp.spotDiam / 2);
+  update(ov: Overlay, idx: number) {
+    if (!ov.mPerPx || !ov.size) throw new Error('No mPerPx or spotDiam provided');
+    const { x, y } = ov.pos![idx];
+    this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], ov.size / 4);
   }
 }

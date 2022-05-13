@@ -11,12 +11,26 @@ from scipy.sparse import csc_matrix, csr_matrix
 from .utils import ReadonlyModel, Url
 
 
+class Coords(ReadonlyModel):
+    x: int
+    y: int
+
+
+class OverlayParams(ReadonlyModel):
+    name: str
+    shape: Literal["circle"]
+    url: Url
+    mPerPx: float | None = None
+    size: float | None = None
+
+
 class PlainJSONParams(ReadonlyModel):
     type: Literal["plainJSON"] = "plainJSON"
     name: str
     url: Url
     isFeature: bool = True
     dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
+    overlay: str | None = None
 
 
 class ChunkedJSONParams(ReadonlyModel):
@@ -26,6 +40,7 @@ class ChunkedJSONParams(ReadonlyModel):
     headerUrl: Url
     isFeature: bool = True
     dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
+    overlay: str | None = None
 
 
 class ChunkedJSONHeader(ReadonlyModel):

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Sample } from '$src/lib/data/sample';
-  import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
+  import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
   import { genSpotStyle } from '$src/lib/mapp/spots';
@@ -14,6 +14,7 @@
   export let trackHover = false;
 
   $: image = sample?.image;
+  $: spots = sample?.overlays.spots;
 
   export let uid: number;
   const mapName = `map-${uid}`;
@@ -89,15 +90,13 @@
     }
   }
 
-  let mode: ImageMode;
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
 
   const update = keyOneLRU(async (sample: Sample) => {
     await sample.promise;
     const img = sample.image;
-    await map.update({ image: img });
-    mode = img.header!.mode ?? 'composite';
-    convertImgCtrl = colorVarFactory(mode, img.channel);
+    await map.update({ image: img, spots });
+    convertImgCtrl = colorVarFactory(img.mode, img.channel);
 
     updateSpot({
       key: `${sample.name}-${$activeFeatures.name ?? 'null'}`,
@@ -115,24 +114,21 @@
   const changeHover = async (idx: number) => {
     if (!image) return;
     await image.promise;
-    map.layerMap.active?.update(image.coords![idx], image.header!.spot);
+    map.layerMap.active?.update(spots, idx);
   };
 
   $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
 
-  let currMode: 'quantitative' | 'categorical';
+  let currimage: 'quantitative' | 'categorical';
 
   const updateSpot = keyOneLRU((fn: FeatureName) => {
     if (!sample || !fn) return false;
     const { values, dataType } = sample.getFeature(fn);
-    if (dataType !== currMode) {
+    if (dataType !== currimage) {
       map.layerMap.spots?.updateStyle(
-        genSpotStyle(
-          dataType as 'quantitative' | 'categorical',
-          image.header!.spot.spotDiam / image.header!.spot.mPerPx
-        )
+        genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
       );
-      currMode = dataType as 'quantitative' | 'categorical';
+      currimage = dataType as 'quantitative' | 'categorical';
     }
     map.layerMap.spots?.updateIntensity(map, values).catch(console.error);
   });
@@ -162,8 +158,8 @@
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:small={showImgControl && small}
-    class:compositemode={showImgControl && image?.header?.mode === 'composite' && !small}
-    class:rgbmode={showImgControl && image?.header?.mode === 'rgb'}
+    class:composite={showImgControl && image?.mode === 'composite' && !small}
+    class:rgb={showImgControl && image?.mode === 'rgb'}
   />
 
   {#if sample}
@@ -196,18 +192,18 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if mode === 'composite'}
+        {#if image.mode === 'composite'}
           <svelte:component
             this={ImgControl}
-            {mode}
+            mode={image.mode}
             channels={image.channel}
             bind:imgCtrl
             {small}
           />
-        {:else if mode === 'rgb'}
-          <svelte:component this={ImgControl} {mode} bind:imgCtrl {small} />
+        {:else if image.mode === 'rgb'}
+          <svelte:component this={ImgControl} mode={image.mode} bind:imgCtrl {small} />
         {:else}
-          {console.warn('Unknown mode: ' + mode)}
+          {console.warn('Unknown image.mode: ' + image.mode)}
         {/if}
       </div>
     </div>
@@ -235,11 +231,11 @@
     @apply bottom-[8.5rem];
   }
 
-  .rgbmode :global(.ol-scale-line) {
+  .rgb :global(.ol-scale-line) {
     @apply bottom-36;
   }
 
-  .compositemode :global(.ol-scale-line) {
+  .composite :global(.ol-scale-line) {
     @apply bottom-[9.5rem];
   }
 
