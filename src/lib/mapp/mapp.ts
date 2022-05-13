@@ -10,7 +10,7 @@ import type VectorSource from 'ol/source/Vector';
 import { Deferrable } from '../utils';
 import { Background } from './background';
 import { Draww } from './selector';
-import { ActiveSpots, WebGLSpots } from './spots';
+import { ActiveSpots, genSpotStyle, WebGLSpots } from './spots';
 
 export interface MapComponent extends Deferrable {
   readonly source?: VectorSource<Geometry> | GeoTIFFSource;
@@ -22,7 +22,12 @@ export interface MapComponent extends Deferrable {
 export class Mapp extends Deferrable {
   map?: Map;
   readonly layers: MapComponent[];
-  readonly layerMap: { background?: Background; spots?: WebGLSpots; active?: ActiveSpots };
+  readonly layerMap: {
+    background?: Background;
+    spots?: WebGLSpots;
+    active?: ActiveSpots;
+    points?: WebGLSpots;
+  };
   draw?: Draww;
   image?: Image;
 
@@ -33,21 +38,23 @@ export class Mapp extends Deferrable {
       background?: boolean;
       spots?: boolean;
       active?: boolean;
+      points?: boolean;
     } = {}
   ) {
-    const { background, spots, active } = {
-      ...{ background: true, spots: true, active: true },
+    const { background, spots, active, points } = {
+      ...{ background: true, spots: true, active: true, points: true },
       ...enabled
     };
     super();
     this.layerMap = {
       background: background ? new Background() : undefined,
-      spots: spots ? new WebGLSpots() : undefined,
-      active: active ? new ActiveSpots() : undefined
+      spots: spots ? new WebGLSpots(this, { style: genSpotStyle('quantitative', 10) }) : undefined,
+      active: active ? new ActiveSpots() : undefined,
+      points: points ? new WebGLSpots(this) : undefined
     };
 
     this.layers = [];
-    for (const k of ['background', 'spots', 'active']) {
+    for (const k of ['background', 'spots', 'points', 'active']) {
       // @ts-ignore
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       if (this.layerMap[k]) this.layers.push(this.layerMap[k]);
@@ -80,14 +87,12 @@ export class Mapp extends Deferrable {
   async update({ image }: { image: Image }) {
     await this.promise;
     await image.promise;
+    this.layerMap.spots?.updateStyle(
+      genSpotStyle('quantitative', image.header!.spot.spotDiam / image.header!.spot.mPerPx)
+    );
     await Promise.all([
       this.layerMap.background?.update(this.map!, image),
-      this.layerMap.spots?.update(
-        this.map!,
-        image.coords!,
-        image.header!.spot.spotDiam,
-        image.header!.spot.mPerPx
-      )
+      this.layerMap.spots?.update(image.coords!, image.header!.spot.mPerPx)
     ]);
 
     if (this.layerMap.spots) this.draw!.update(this.layerMap.spots.source.getFeatures());

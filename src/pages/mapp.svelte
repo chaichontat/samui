@@ -3,6 +3,7 @@
   import { colorVarFactory, type ImageCtrl, type ImageMode } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
+  import { genSpotStyle } from '$src/lib/mapp/spots';
   import { keyOneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
@@ -119,10 +120,21 @@
 
   $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
 
+  let currMode: 'quantitative' | 'categorical';
+
   const updateSpot = keyOneLRU((fn: FeatureName) => {
     if (!sample || !fn) return false;
     const { values, dataType } = sample.getFeature(fn);
-    map.layerMap.spots?.updateIntensity(map, values, dataType).catch(console.error);
+    if (dataType !== currMode) {
+      map.layerMap.spots?.updateStyle(
+        genSpotStyle(
+          dataType as 'quantitative' | 'categorical',
+          image.header!.spot.spotDiam / image.header!.spot.mPerPx
+        )
+      );
+      currMode = dataType as 'quantitative' | 'categorical';
+    }
+    map.layerMap.spots?.updateIntensity(map, values).catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
