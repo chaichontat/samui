@@ -121,7 +121,7 @@
           </div>
         {/if}
 
-        <div class:mt-1={hie !== 0}>
+        <div class:mt-1={hie !== 0} class="min-w-[200px]">
           <SampleList
             items={Object.keys($samples)}
             bind:active

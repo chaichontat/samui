@@ -58,6 +58,7 @@ export const multipleSelect: Writable<number[]> = writable([]);
 
 const s = first.name;
 
+export const activeOverlay: Writable<string> = writable('');
 export const activeSample: Writable<string> = writable('');
 export const samples: Writable<{ [key: string]: Sample }> = writable({});
 

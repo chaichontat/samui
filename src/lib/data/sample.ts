@@ -119,7 +119,8 @@ export class Sample extends Deferrable {
     return {
       values,
       dataType: feature?.dataType ?? 'quantitative',
-      activeDefault: 'activeDefault' in feature ? feature?.activeDefault : undefined
+      activeDefault: 'activeDefault' in feature ? feature?.activeDefault : undefined,
+      overlay: feature?.overlay
     };
   }
 }

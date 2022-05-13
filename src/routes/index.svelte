@@ -1,7 +1,6 @@
 <script lang="ts">
   import { resizable } from '$lib/utils';
   import { byod } from '$src/lib/data/byod';
-  import Nav from '$src/lib/nav.svelte';
   import { mapList, preload, samples } from '$src/lib/store';
   import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
   import Rna from '$src/pages/rna.svelte';
@@ -53,13 +52,13 @@
           class="text-lg group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
           on:click={() => {
             preload();
-            const r = [0, Math.random(), Math.random()];
-            hie = {
-              root: true,
-              split: 'h',
-              maps: [{ split: 'v', maps: [0, { maps: [r[1]] }] }, { maps: [r[2]] }]
-            };
-            $mapList = r;
+            // const r = [0, Math.random(), Math.random()];
+            // hie = {
+            //   root: true,
+            //   split: 'h',
+            //   maps: [{ split: 'v', maps: [0, { maps: [r[1]] }] }, { maps: [r[2]] }]
+            // };
+            // $mapList = r;
           }}
         >
           <span
@@ -73,12 +72,6 @@
   </div>
 
   <div class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800" use:resizable />
-  <aside class="relative flex h-full flex-1 flex-col pt-2">
-    <section class="z-10">
-      <Nav />
-    </section>
-    <section class="h-full overflow-y-auto">
-      <Rna />
-    </section>
-  </aside>
+
+  <Rna />
 </main>

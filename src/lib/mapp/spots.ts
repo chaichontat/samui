@@ -181,8 +181,9 @@ export class ActiveSpots extends Deferrable implements MapComponent {
   }
 
   update(ov: Overlay, idx: number) {
-    if (!ov.mPerPx || !ov.size) throw new Error('No mPerPx or spotDiam provided');
+    if (!ov.mPerPx) throw new Error('No mPerPx or spotDiam provided');
     const { x, y } = ov.pos![idx];
-    this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], ov.size / 4);
+    const size = ov.size ? ov.size / 4 : ov.mPerPx * 20;
+    this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
   }
 }

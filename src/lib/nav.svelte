@@ -1,24 +1,39 @@
 <script lang="ts">
   import Darkswitch from './components/darkswitch.svelte';
+  import SampleList from './components/sampleList.svelte';
   import SearchBox from './components/searchBox.svelte';
-  import { activeFeatures, currSample, type FeatureName, type HoverName } from './store';
+  import {
+    activeFeatures,
+    activeOverlay,
+    activeSample,
+    currSample,
+    samples,
+    type FeatureName,
+    type HoverName
+  } from './store';
 
   $: names = $currSample?.featureNames ?? [];
 
-  let active: HoverName<FeatureName<string>>;
+  let active: HoverName<FeatureName>;
   $: if (active?.active) {
     $activeFeatures = active.active;
   }
+  $: sample = $samples[$activeSample];
 </script>
 
-<nav
-  class="hidden gap-x-3 bg-gray-100 px-6 pb-3 shadow backdrop-blur dark:bg-gray-900 lg:flex lg:items-center"
->
+<nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">
   <!-- <div class="over mt-2 text-ellipsis text-xl font-medium">Showing <i>{$currRna.name}</i>.</div> -->
-  <div class="mt-1 mr-2 text-base lg:flex-grow xl:text-lg">
-    <SearchBox {names} bind:curr={active} />
+  <div class="gap-x-2 pt-1 text-base">
+    <SampleList
+      items={sample ? Object.keys(sample.overlays) : []}
+      bind:active={$activeOverlay}
+      loading={false}
+      showArrow={false}
+      addSample={false}
+      useSpinner={false}
+    />
   </div>
-  <!-- <div class="flex-grow" /> -->
+  <div class="mt-1  flex-grow"><SearchBox {names} bind:curr={active} /></div>
   <Darkswitch />
   <div title="GitHub" class="">
     <a

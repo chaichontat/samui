@@ -48,7 +48,7 @@
       await updateCoords({ key: coords.name, args: [coords.values] });
     }
 
-    if (intensity.values) {
+    if (intensity) {
       if (intensity.values instanceof Promise) {
         intensity.values = await intensity.values;
       }
@@ -118,10 +118,10 @@
 </script>
 
 <div class="relative mx-auto w-full max-w-[400px]">
-  {#if colorbar && intensitySource.dataType === 'quantitative'}
+  {#if colorbar && intensitySource?.dataType === 'quantitative'}
     <Colorbar min={0} max={10} />
   {/if}
-  {#if colorbar && intensitySource.dataType === 'categorical' && catLegend}
+  {#if colorbar && intensitySource?.dataType === 'categorical' && catLegend}
     <Legend colormap={catLegend} />
   {/if}
   <canvas class="absolute" id={`${id}-hover`} />

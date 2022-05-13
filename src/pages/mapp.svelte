@@ -8,7 +8,7 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, store, type FeatureName } from '../lib/store';
+  import { activeFeatures, activeOverlay, store, type FeatureName } from '../lib/store';
 
   export let sample: Sample;
   export let trackHover = false;
@@ -100,7 +100,7 @@
   const changeHover = async (idx: number) => {
     if (!image) return;
     await image.promise;
-    map.layerMap.active?.update(spots, idx);
+    map.layerMap.active?.update(sample.overlays[$activeOverlay], idx);
   };
 
   $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
