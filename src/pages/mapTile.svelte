@@ -6,19 +6,13 @@
   import { tooltip } from '$lib/utils';
   import SampleList from '$src/lib/components/sampleList.svelte';
   import { byod } from '$src/lib/data/byod';
-  import {
-    activeMap,
-    activeSample,
-    mapList,
-    samples,
-    updateSample,
-    type CurrSample
-  } from '$src/lib/store';
+  import type { Sample } from '$src/lib/data/sample';
+  import { activeMap, activeSample, mapList, samples, updateSample } from '$src/lib/store';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
   let active: string;
-  let currSample: CurrSample;
+  let currSample: Sample;
   let refreshPls = false;
   let width = 0;
 
@@ -30,15 +24,16 @@
 
   $: if (typeof hie === 'number' && $samples[active]) {
     updateSample($samples[active])
-      .then((s) => {
-        currSample = s;
+      .then(() => {
+        $activeSample = active;
+        currSample = $samples[active];
         $activeMap = hie as number;
       })
       .catch(console.error);
   }
 
   $: if ($activeMap === hie) {
-    $activeSample = currSample?.sample.name;
+    $activeSample = currSample?.name;
   }
 
   function handleSplit(i: number, mode: 'h' | 'v') {
@@ -125,7 +120,7 @@
           <SampleList
             items={Object.keys($samples)}
             bind:active
-            loading={!currSample?.sample?.hydrated}
+            loading={!currSample?.hydrated}
             on:addSample={byod}
           />
         </div>
@@ -181,7 +176,7 @@
     >
       <Mapp
         on:mapClick={() => ($activeMap = hieN)}
-        sample={currSample?.sample}
+        sample={currSample}
         trackHover={$activeMap === hie}
         uid={hie}
       />

@@ -1,13 +1,6 @@
 <script lang="ts">
   import Nav from '$src/lib/nav.svelte';
-  import {
-    activeFeatures,
-    activeOverlay,
-    activeSample,
-    currSample,
-    samples,
-    store
-  } from '$src/lib/store';
+  import { activeFeatures, activeOverlay, activeSample, samples, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
@@ -59,9 +52,9 @@
   </div>
 
   <div class="flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
-    <section class:mt-6={$currSample}>
-      {#if $currSample}
-        {#await $currSample.sample.promise then _}
+    <section class:mt-6={sample}>
+      {#if sample}
+        {#await sample.promise then _}
           <Scatter
             coordsSource={{
               name: `${sample.name}-${$activeOverlay}`,
@@ -97,11 +90,12 @@
     </TabGroup> -->
     <!-- </section> -->
 
+    <!--
     {#each sections as section}
       <section>
-        <svelte:component this={section} featureNames={$currSample?.featureNames} />
+        <svelte:component this={section} featureNames={.featureNames} />
       </section>
-    {/each}
+    {/each} -->
 
     <section class="flex w-full justify-around">
       <button

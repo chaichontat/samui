@@ -12,7 +12,6 @@ type SparseMode = 'record' | 'array' | null;
 
 interface JSONParams {
   name: string;
-  isFeature: boolean;
   dataType: DataType;
   overlay?: string;
 }
@@ -44,7 +43,7 @@ export type Sparse = { index: number[]; value: number[] };
 export interface Data {
   readonly name: string;
   readonly dataType: DataType;
-  readonly isFeature: boolean;
+  readonly overlay?: string;
   hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
   hydrated: boolean;
 }
@@ -54,22 +53,17 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
 
   readonly name: string;
   readonly dataType: DataType;
-  readonly isFeature: boolean;
   readonly overlay?: string;
 
   values?: Ret;
   hydrated = false;
 
-  constructor(
-    { name, url, dataType, values, isFeature, overlay }: PlainJSONParams<Ret>,
-    autoHydrate = false
-  ) {
+  constructor({ name, url, dataType, values, overlay }: PlainJSONParams<Ret>, autoHydrate = false) {
     super();
     this.name = name;
     this.url = url;
     this.values = values;
     this.dataType = dataType;
-    this.isFeature = isFeature;
     this.overlay = overlay;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
@@ -103,7 +97,6 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
 
   url: Url;
   readonly dataType: DataType;
-  readonly isFeature: boolean;
   readonly name: string;
 
   headerUrl?: Url;
@@ -115,7 +108,7 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
   allData?: ArrayBuffer;
 
   constructor(
-    { name, url, headerUrl, header, dataType, isFeature, overlay }: ChunkedJSONParams,
+    { name, url, headerUrl, header, dataType, overlay }: ChunkedJSONParams,
     autoHydrate = false
   ) {
     super();
@@ -124,7 +117,6 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
     this.header = header;
     this.headerUrl = headerUrl;
     this.dataType = dataType;
-    this.isFeature = isFeature;
     this.overlay = overlay;
 
     if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');

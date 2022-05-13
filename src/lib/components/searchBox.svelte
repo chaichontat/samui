@@ -7,6 +7,8 @@
 
   type Name = FeatureName;
   let fzf: [string | undefined, Fzf<readonly string[]>][];
+
+  export let overlayFilter: string;
   export let names: FeatureNames[];
   export let curr: HoverName<Name>;
   curr = genHoverName<Name>({});

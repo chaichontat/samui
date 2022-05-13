@@ -72,7 +72,6 @@ export class Sample extends Deferrable {
     //   dataType: 'categorical',
     //   values: [] as string[],
     //   type: 'plainJSON',
-    //   isFeature: false
     // });
 
     if (autoHydrate) {

@@ -28,7 +28,6 @@ class PlainJSONParams(ReadonlyModel):
     type: Literal["plainJSON"] = "plainJSON"
     name: str
     url: Url
-    isFeature: bool = True
     dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
     overlay: str | None = None
 
@@ -38,7 +37,6 @@ class ChunkedJSONParams(ReadonlyModel):
     name: str
     url: Url
     headerUrl: Url
-    isFeature: bool = True
     dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
     overlay: str | None = None
 

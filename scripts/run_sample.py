@@ -95,7 +95,6 @@ def run(s: str) -> None:
                 name="spotGenes",
                 headerUrl=Url("gene_csr.json"),
                 url=Url("gene_csr.bin"),
-                isFeature=False,
                 overlay=None,
             ),
             PlainJSONParams(name="umap", url=Url("umap.json"), dataType="coords", overlay="spots"),

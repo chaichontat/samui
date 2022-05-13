@@ -3,7 +3,8 @@
   import type { Sample } from '$src/lib/data/sample';
   import { boxMuller } from '$src/lib/scatter/scatterlib';
   import {
-    currSample,
+    activeSample,
+    samples,
     store,
     type FeatureName,
     type FeatureNames,
@@ -50,8 +51,7 @@
     };
 
     coords = {
-      name: `${$currSample?.sample.name}--${x.active!.name!}--${y.active!
-        .name!}--${jitterX}--${jitterY}`,
+      name: `${sample.name}--${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
       values: (xf.values as number[]).map((x, i) => ({
         x: x + (jitterX !== 0 ? boxMuller(jitterX) : 0),
         y: values.y[i] + (jitterY !== 0 ? boxMuller(jitterY) : 0)
@@ -73,14 +73,16 @@
     };
   }
 
-  $: if ($currSample && x?.active && y?.active) {
+  $: sample = $samples[$activeSample];
+
+  $: if (sample && x?.active && y?.active) {
     console.log('changed data');
-    getData($currSample.sample, x, y, jitterX, jitterY).catch(console.error);
+    getData(sample, x, y, jitterX, jitterY).catch(console.error);
   }
 
-  $: if ($currSample && color?.active) {
+  $: if (sample && color?.active) {
     console.log(color);
-    updateColors($currSample.sample, color).catch(console.error);
+    updateColors(sample, color).catch(console.error);
   }
 
   let colorValues: Named<number[]> = { name: 'meh', values: [], dataType: 'quantitative' };

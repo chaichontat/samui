@@ -2,23 +2,23 @@
   import Darkswitch from './components/darkswitch.svelte';
   import SampleList from './components/sampleList.svelte';
   import SearchBox from './components/searchBox.svelte';
+  import { updateNames } from './data/searchBox';
   import {
     activeFeatures,
     activeOverlay,
     activeSample,
-    currSample,
     samples,
     type FeatureName,
     type HoverName
   } from './store';
-
-  $: names = $currSample?.featureNames ?? [];
 
   let active: HoverName<FeatureName>;
   $: if (active?.active) {
     $activeFeatures = active.active;
   }
   $: sample = $samples[$activeSample];
+  let names;
+  $: names = updateNames(sample?.features, $activeOverlay);
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">
@@ -33,7 +33,9 @@
       useSpinner={false}
     />
   </div>
-  <div class="mt-1  flex-grow"><SearchBox {names} bind:curr={active} /></div>
+  <div class="mt-1  flex-grow">
+    <SearchBox {names} bind:curr={active} overlayFilter={$activeOverlay} />
+  </div>
   <Darkswitch />
   <div title="GitHub" class="">
     <a
