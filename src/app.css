@@ -36,6 +36,14 @@
     @apply hover:bg-slate-300/80 active:bg-slate-400/80 dark:hover:bg-slate-700/80 dark:active:bg-slate-600/80;
   }
 
+  .picker {
+    @apply bg-default flex w-full flex-col rounded-lg backdrop-blur;
+  }
+
+  .picker-el {
+    @apply hover-default cursor-pointer rounded px-4 text-base;
+  }
+
   .center {
     @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
   }
