@@ -1,3 +1,4 @@
+// import ChartWorker from '$lib/scatter/chartWorker.js?url';
 import Chart, {
   type ChartConfiguration,
   type ChartDataset,
@@ -8,6 +9,9 @@ import { defaultChartOptions } from './scatterlib';
 
 export class MainChart extends Deferrable {
   chart?: Chart;
+  // Working webworker version but cannot run getHoverPoint, Chart.js implementation relies on window,
+  // which does not exist in a webworker. Also need to send resize command.
+  worker?: Worker;
   dataset: ChartDataset<'scatter', { x: number; y: number }[]>;
   mounted = false;
 
@@ -24,6 +28,16 @@ export class MainChart extends Deferrable {
   }
 
   mount(el: HTMLCanvasElement) {
+    // this.worker = new Worker(ChartWorker, { type: 'module' });
+    // const canvas = el.transferControlToOffscreen();
+    // const config = {
+    //   data: {
+    //     datasets: [this.dataset]
+    //   },
+    //   options: { ...defaultChartOptions, ...this.options }
+    // };
+    // this.worker.postMessage({ msg: 'init', config, canvas }, [canvas]);
+
     this.chart = new Chart(el.getContext('2d')!, {
       data: {
         datasets: [this.dataset]
@@ -31,6 +45,7 @@ export class MainChart extends Deferrable {
       // @ts-ignore
       options: { ...defaultChartOptions, ...this.options }
     });
+
     this.mounted = true;
     this._deferred.resolve();
   }
@@ -46,6 +61,19 @@ export class MainChart extends Deferrable {
       true
     );
     return points;
+
+    // const listener = (evt: MessageEvent) => {
+    //   out = evt.data;
+    // };
+
+    // this.worker.addEventListener('message', listener);
+    // this.worker.postMessage({ msg: 'getHoverPoint', detail: JSON.stringify(evt.native) });
+
+    // while (!out) {
+    //   await new Promise((resolve) => setTimeout(resolve, 10));
+    // }
+    // this.worker.removeEventListener('message', listener);
+    // return out;
   }
 
   async _updateIntensity(color: string[] | Promise<string[]> | string) {
@@ -111,5 +139,7 @@ export class MainChart extends Deferrable {
     }
 
     this.chart!.update();
+
+    // this.worker?.postMessage({ msg: 'update', detail: { coords, color } });
   }
 }
