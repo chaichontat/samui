@@ -273,11 +273,13 @@ export async function convertLocalToNetwork(
 export function convertCategoricalToNumber(values: (string | number)[]) {
   const unique = [...new Set(values)];
   const legend = {} as Record<number | string, number>;
-  for (const [i, v] of unique.entries()) {
+  const legendArr = [] as (number | string)[];
+  for (const [i, v] of unique.sort().entries()) {
     legend[v] = i;
+    legendArr.push(v);
   }
   const converted = values.map((v) => legend[v]);
-  return { legend, converted };
+  return { legend: legendArr, converted };
 }
 
 // export class Arrow implements Data {

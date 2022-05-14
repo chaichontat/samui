@@ -16,21 +16,17 @@
 
   $: sample = $samples[$activeSample];
 
-  let values: number[] = [];
-  let dataType = 'quantitative';
-
   let intensity;
 
   $: {
-    if (sample?.getFeature($activeFeatures).overlay === activeOverlay) {
-      intensity = {
-        name: `${sample?.name}-${activeOverlay}-${$activeFeatures.name}`,
-        dataType: dataType,
-        values: sample?.getFeature($activeFeatures).values
-      };
-    } else {
-      intensity = undefined;
-    }
+    const f = sample?.getFeature($activeFeatures);
+    intensity = f
+      ? {
+          name: `${sample?.name}-${$activeOverlay}-${$activeFeatures.name}`,
+          dataType: f.dataType,
+          values: f.values
+        }
+      : undefined;
   }
 
   const naviChartOptions: ChartConfiguration<'scatter'> = {
