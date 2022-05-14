@@ -7,10 +7,11 @@ import type { Layer } from 'ol/layer';
 import type WebGLPointsLayer from 'ol/layer/WebGLPoints';
 import type GeoTIFFSource from 'ol/source/GeoTIFF';
 import type VectorSource from 'ol/source/Vector';
+import type { Overlay } from '../data/overlay';
 import { Deferrable } from '../utils';
 import { Background } from './background';
 import { Draww } from './selector';
-import { ActiveSpots, WebGLSpots } from './spots';
+import { ActiveSpots, genSpotStyle, WebGLSpots } from './spots';
 
 export interface MapComponent extends Deferrable {
   readonly source?: VectorSource<Geometry> | GeoTIFFSource;
@@ -22,21 +23,44 @@ export interface MapComponent extends Deferrable {
 export class Mapp extends Deferrable {
   map?: Map;
   readonly layers: MapComponent[];
-  readonly layerMap: { background: Background; spots: WebGLSpots; active: ActiveSpots };
+  readonly layerMap: {
+    background?: Background;
+    spots?: WebGLSpots;
+    active?: ActiveSpots;
+    cells?: WebGLSpots;
+  };
   draw?: Draww;
   image?: Image;
 
   mounted = false;
 
-  constructor() {
+  constructor(
+    enabled: {
+      background?: boolean;
+      spots?: boolean;
+      active?: boolean;
+      points?: boolean;
+    } = {}
+  ) {
+    const { background, spots, active, points } = {
+      ...{ background: true, spots: true, active: true, points: true },
+      ...enabled
+    };
     super();
     this.layerMap = {
-      background: new Background(),
-      spots: new WebGLSpots(),
-      active: new ActiveSpots()
+      background: background ? new Background() : undefined,
+      spots: spots ? new WebGLSpots(this, { style: genSpotStyle('quantitative', 10) }) : undefined,
+      active: active ? new ActiveSpots() : undefined,
+      cells: points ? new WebGLSpots(this) : undefined
     };
 
-    this.layers = [this.layerMap.background, this.layerMap.spots, this.layerMap.active];
+    this.layers = [];
+    for (const k of ['background', 'spots', 'cells', 'active']) {
+      // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      if (this.layerMap[k]) this.layers.push(this.layerMap[k]);
+    }
+
     this.draw = new Draww();
   }
 
@@ -61,19 +85,20 @@ export class Mapp extends Deferrable {
     this.mounted = true;
   }
 
-  async update({ image }: { image: Image }) {
+  async update({ image, spots }: { image: Image; spots?: Overlay }) {
     await this.promise;
     await image.promise;
+    if (spots) {
+      await spots.promise;
+      this.layerMap.spots?.updateStyle(genSpotStyle('quantitative', spots.sizePx));
+    }
+
     await Promise.all([
-      this.layerMap.background.update(this.map!, image),
-      this.layerMap.spots.update(
-        this.map!,
-        image.coords!,
-        image.header!.spot.spotDiam,
-        image.header!.spot.mPerPx
-      )
+      this.layerMap.background?.update(this.map!, image),
+      spots ? this.layerMap.spots?.update(spots) : undefined
     ]);
-    this.draw!.update(this.layerMap.spots.source.getFeatures());
+
+    if (this.layerMap.spots) this.draw!.update(this.layerMap.spots.source.getFeatures());
     this.image = image;
   }
 
@@ -83,7 +108,7 @@ export class Mapp extends Deferrable {
 
     const view = this.map.getView();
     const currZoom = view.getZoom();
-    const mPerPx = this.image.header!.spot.mPerPx;
+    const mPerPx = this.image.mPerPx;
 
     if (currZoom && currZoom > 2) {
       view.animate({ center: [x * mPerPx, y * mPerPx], duration: 100, zoom: zoom ?? currZoom });
@@ -92,6 +117,7 @@ export class Mapp extends Deferrable {
 
   handlePointer(funs: { pointermove?: (id: number) => void; click?: (id: number) => void }) {
     if (!this.map) throw new Error('Map not initialized.');
+    if (!this.layerMap.spots) return;
     for (const [k, v] of Object.entries(funs)) {
       this.map.on(k as 'pointermove' | 'click', (e) => {
         // Cannot use layer.getFeatures for WebGL.
@@ -107,7 +133,7 @@ export class Mapp extends Deferrable {
             v(idx);
             return true; // Terminates search.
           },
-          { layerFilter: (layer) => layer === this.layerMap.spots.layer, hitTolerance: 10 }
+          { layerFilter: (layer) => layer === this.layerMap.spots!.layer, hitTolerance: 10 }
         );
       });
     }

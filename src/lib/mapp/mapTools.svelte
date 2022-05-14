@@ -49,10 +49,12 @@
 
   let colorOpacity = 0.8;
 
-  const setSpotVisible = (c: boolean | null) => map.layerMap.spots.layer?.setVisible(c ?? false);
-  const setOpacity = oneLRU(async (opacity: string) => {
-    await map.layerMap.spots.promise;
-    map.layerMap.spots.layer!.updateStyleVariables({ opacity: Number(opacity) });
+  const setVisible = (name: string, c: boolean | null) =>
+    map.layerMap[name]?.layer?.setVisible(c ?? false);
+
+  const setOpacity = oneLRU(async (name: string, opacity: string) => {
+    await map.layerMap[name]?.promise;
+    map.layerMap[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
 
   function handleExport(t: 'spots' | 'selections') {
@@ -181,27 +183,37 @@
     <div
       class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
     >
-      <label class="cursor-pointer">
-        <input
-          type="checkbox"
-          class="mr-0.5 cursor-pointer bg-opacity-80"
-          checked
-          on:change={(e) => setSpotVisible(e.currentTarget.checked)}
-        />
-        <span>Show all spots</span>
-      </label>
+      <table>
+        {#each Object.keys($samples[$activeSample].overlays) as ovName}
+          <tr>
+            <td class="pr-2">
+              <label class="flex cursor-pointer items-center gap-x-1">
+                <input
+                  type="checkbox"
+                  class="mr-0.5 cursor-pointer bg-opacity-80"
+                  checked
+                  on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
+                />
+                <span class="max-w-[10rem] select-none text-ellipsis capitalize">{ovName}</span>
+              </label>
+            </td>
 
-      <input
-        type="range"
-        min="0"
-        max="1"
-        value="0.9"
-        step="0.01"
-        on:change={(e) => setOpacity(e.currentTarget.value)}
-        on:mousemove={(e) => setOpacity(e.currentTarget.value)}
-        on:mousedown={() => setSpotVisible(true)}
-        class="max-w-[36rem] cursor-pointer opacity-80"
-      />
+            <td>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                value="0.9"
+                step="0.01"
+                on:change={(e) => setOpacity(ovName, e.currentTarget.value)}
+                on:mousemove={(e) => setOpacity(ovName, e.currentTarget.value)}
+                on:mousedown={() => setVisible(ovName, true)}
+                class="max-w-[5rem] translate-y-[2px] cursor-pointer opacity-80"
+              />
+            </td>
+          </tr>
+        {/each}
+      </table>
     </div>
   {/if}
 

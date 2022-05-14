@@ -8,28 +8,32 @@ import {
   type RetrievedData
 } from './dataHandlers';
 import { Image, type ImageParams } from './image';
+import { Overlay, type OverlayParams } from './overlay';
 
 export type SampleParams = {
   name: string;
   imgParams: ImageParams;
+  overlayParams: OverlayParams[];
   featParams: FeatureParams<RetrievedData>[];
   handle?: FileSystemDirectoryHandle;
-  activeDefault?: FeatureName<string>;
+  activeDefault?: FeatureName;
 };
 
 export class Sample extends Deferrable {
   name: string;
   imgParams: ImageParams;
+  overlayParams: OverlayParams[];
   featParams: FeatureParams<RetrievedData>[];
 
   image: Image;
   features: Record<string, Data>;
+  overlays: Record<string, Overlay>;
   hydrated: boolean;
   handle?: FileSystemDirectoryHandle;
-  activeDefault: FeatureName<string>;
+  activeDefault: FeatureName;
 
   constructor(
-    { name, imgParams, featParams, handle, activeDefault }: SampleParams,
+    { name, imgParams, featParams, overlayParams, handle, activeDefault }: SampleParams,
     autoHydrate = false
   ) {
     super();
@@ -37,9 +41,17 @@ export class Sample extends Deferrable {
     this.imgParams = imgParams;
     this.image = new Image(this.imgParams, false);
     this.featParams = featParams;
+    this.overlayParams = overlayParams;
     this.hydrated = false;
     this.handle = handle;
     this.activeDefault = activeDefault ?? {};
+
+    this.overlays = {} as Record<string, Overlay>;
+    console.log(overlayParams);
+
+    for (const o of overlayParams) {
+      this.overlays[o.name] = new Overlay(o);
+    }
 
     this.features = {} as Record<string, Data>;
     for (const f of featParams) {
@@ -55,13 +67,12 @@ export class Sample extends Deferrable {
       }
     }
 
-    this.features._selections = new PlainJSON({
-      name: 'selections',
-      dataType: 'categorical',
-      values: [] as string[],
-      type: 'plainJSON',
-      isFeature: false
-    });
+    // this.features._selections = new PlainJSON({
+    //   name: 'selections',
+    //   dataType: 'categorical',
+    //   values: [] as string[],
+    //   type: 'plainJSON',
+    // });
 
     if (autoHydrate) {
       this.hydrate().catch(console.error);
@@ -72,11 +83,12 @@ export class Sample extends Deferrable {
     console.debug(`Hydrating ${this.name}.`);
     await Promise.all([
       this.image.hydrate(this.handle),
-      ...Object.values(this.features).map((f) => f.hydrate(this.handle))
+      ...Object.values(this.features).map((f) => f.hydrate(this.handle)),
+      ...Object.values(this.overlays).map((o) => o.hydrate(this.handle))
     ]);
-    (this.features._selections as PlainJSON<string[]>).values = new Array(
-      this.image.coords!.length
-    ).fill('');
+    // (this.features._selections as PlainJSON<string[]>).values = new Array(
+    //   this.image.coords!.length
+    // ).fill('');
 
     if (!this.activeDefault.name) {
       const f = this.featParams[0].name;
@@ -92,10 +104,10 @@ export class Sample extends Deferrable {
     return this;
   }
 
-  getFeature<T extends RetrievedData>(fn: FeatureName<string>) {
+  getFeature<T extends RetrievedData>(fn: FeatureName) {
     let values;
     let feature;
-    if (!fn.name) return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
+    if (!fn?.name) return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
     if (fn.feature) {
       feature = this.features[fn.feature] as ChunkedJSON<T>;
       values = feature?.retrieve!(fn.name);
@@ -106,7 +118,8 @@ export class Sample extends Deferrable {
     return {
       values,
       dataType: feature?.dataType ?? 'quantitative',
-      activeDefault: 'activeDefault' in feature ? feature?.activeDefault : undefined
+      activeDefault: 'activeDefault' in feature ? feature?.activeDefault : undefined,
+      overlay: feature?.overlay
     };
   }
 }

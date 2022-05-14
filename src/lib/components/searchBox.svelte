@@ -7,6 +7,8 @@
 
   type Name = FeatureName;
   let fzf: [string | undefined, Fzf<readonly string[]>][];
+
+  export let overlayFilter: string;
   export let names: FeatureNames[];
   export let curr: HoverName<Name>;
   curr = genHoverName<Name>({});
@@ -55,14 +57,14 @@
 <div class="relative w-full">
   <input
     type="text"
-    class="w-full rounded-md border border-slate-400 bg-slate-100 py-2 px-4 shadow transition-colors dark:border-slate-600 dark:bg-slate-800"
+    class="w-full rounded-md border border-slate-400 bg-slate-100 py-[7px] px-4 shadow transition-colors dark:border-slate-600 dark:bg-slate-800"
     bind:value={search}
     on:click={() => (showSearch = true)}
     on:input={() => (showSearch = true)}
     placeholder="Search features"
   />
 
-  {#if search && showSearch}
+  {#if showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
       class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"

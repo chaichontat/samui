@@ -14,6 +14,9 @@
   export let items: string[];
   export let active: string;
   export let loading = false;
+  export let useSpinner = true;
+  export let showArrow = true;
+  export let addSample = true;
 
   let rows: { id: number; name: string }[] = [];
   let _active: { id: number; name: string };
@@ -34,16 +37,17 @@
     }
     dispatch('change', name);
     active = name;
-    loading = true;
+    if (useSpinner) loading = true;
   }
 
   onMount(() => handleChange(items[0]));
 
   $: handleSampleUpdate(items);
   $: _active = rows.find((r) => r.name === active)!;
+  $: if (!active) active = items[0];
 </script>
 
-<div class="relative min-w-[150px] max-w-lg md:min-w-[200px]">
+<div class="relative w-full">
   <span class="inline-block w-full rounded-md shadow-sm">
     <Listbox value={_active} on:change={(e) => handleChange(e.detail.name ?? e.detail)} let:open>
       <ListboxButton
@@ -92,12 +96,10 @@
                   let:active
                   let:selected
                 >
-                  <span
-                    class={classes('block truncate', selected ? 'font-semibold' : 'font-normal')}
-                  >
+                  <span class={classes(selected ? 'font-semibold' : 'font-normal')}>
                     {name.name}
                   </span>
-                  {#if selected}
+                  {#if selected && showArrow}
                     <span
                       class={classes(
                         'absolute inset-y-0 right-0 flex items-center pr-4',
@@ -117,14 +119,16 @@
               </div>
             {/each}
 
-            <div class="mt-1 border-t border-gray-500 px-1 pt-1">
-              <ListboxOption
-                value="addSample"
-                class="hover-default relative cursor-pointer select-none rounded py-2 pl-3 pr-9 italic focus:outline-none"
-              >
-                Add Sample
-              </ListboxOption>
-            </div>
+            {#if addSample}
+              <div class="mt-1 border-t border-gray-500 px-1 pt-1">
+                <ListboxOption
+                  value="addSample"
+                  class="hover-default relative cursor-pointer select-none rounded py-2 pl-3 pr-9 italic focus:outline-none"
+                >
+                  Add Sample
+                </ListboxOption>
+              </div>
+            {/if}
           </ListboxOptions>
         </div>
       {/if}

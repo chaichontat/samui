@@ -2,7 +2,6 @@ import first from '$lib/data/first';
 import sampleList from '$lib/data/meh';
 import { get, writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
-import { updateNames } from './data/searchBox';
 
 export type Idx = { idx: number; source: string };
 
@@ -47,7 +46,7 @@ export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }
   };
 }
 
-export const activeFeatures: Writable<FeatureName> = writable({});
+export const activeFeatures: Writable<Record<string, FeatureName>> = writable({});
 
 export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> = writable({
   ptr: [],
@@ -58,45 +57,34 @@ export const multipleSelect: Writable<number[]> = writable([]);
 
 const s = first.name;
 
+export const activeOverlay: Writable<string> = writable('');
 export const activeSample: Writable<string> = writable('');
 export const samples: Writable<{ [key: string]: Sample }> = writable({});
 
-export type CurrSample = {
-  sample: Sample;
-  featureNames?: FeatureNames[];
-};
-
 export const activeMap: Writable<number> = writable(0);
 export const mapList: Writable<number[]> = writable([]);
-export const currSample: Writable<CurrSample | undefined> = writable();
 
-export async function updateSample(s: Sample): Promise<CurrSample> {
+export async function updateSample(s: Sample) {
   if (!s.hydrated) await s.hydrate();
-  return { featureNames: updateNames(s.features), sample: s };
 }
 
 activeSample.subscribe((n) => {
   const ss = get(samples);
   if (!ss[n]) {
-    currSample.set(undefined);
     return;
   }
-  updateSample(ss[n])
-    .then((r) => currSample.set(r))
-    .catch(console.error);
+  updateSample(ss[n]).catch(console.error);
 });
 
 // In case that a new sample is added that matches the active sample.
-samples.subscribe((s) => {
-  if (!get(currSample)) {
-    const sample = s[get(activeSample)];
-    if (sample) {
-      updateSample(sample)
-        .then((r) => currSample.set(r))
-        .catch(console.error);
-    }
-  }
-});
+// samples.subscribe((s) => {
+//   if (!get(currSample)) {
+//     const sample = s[get(activeSample)];
+//     if (sample) {
+//       updateSample(sample).catch(console.error);
+//     }
+//   }
+// });
 
 export function preload() {
   first.promise

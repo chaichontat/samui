@@ -64,9 +64,8 @@ export class _Points {
 
   // Remove === Get rid of all points, used when dragging things around.
   updateSelect(polygonFeat: Feature<Polygon>, remove = false) {
-    if (!this.template) {
-      throw new Error('No template defined for select.');
-    }
+    if (!this.template) return;
+
     // const ids: number[] = [];
     const origin = (polygonFeat.getId() ?? -1) as number;
     const polygon = polygonFeat.getGeometry()!;

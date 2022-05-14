@@ -1,4 +1,3 @@
-import type { Map } from 'ol';
 import Feature from 'ol/Feature.js';
 import { Circle, Point } from 'ol/geom.js';
 import VectorLayer from 'ol/layer/Vector.js';
@@ -8,39 +7,42 @@ import { Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
 import { convertCategoricalToNumber } from '../data/dataHandlers';
-import type { SpotParams } from '../data/image';
+import type { Overlay } from '../data/overlay';
 import { Deferrable } from '../utils';
 import type { MapComponent, Mapp } from './mapp';
 
 export class WebGLSpots extends Deferrable implements MapComponent {
   readonly source: VectorSource<Point>;
   layer?: WebGLPointsLayer<typeof this.source>;
+  map: Mapp;
+  _style: LiteralStyle;
+  _mPerPx?: number;
 
-  _currDataType?: 'categorical' | 'quantitative';
-  _currSpotDiam?: number;
-  _currMperPx?: number;
-  _currMap?: Map;
-
-  constructor() {
+  constructor(map: Mapp, { style }: { style?: LiteralStyle } = {}) {
     super();
+    this.map = map;
     this.source = new VectorSource({ features: [] });
+    this._style = style ?? {
+      variables: { opacity: 1 },
+      symbol: {
+        size: ['interpolate', ['exponential', 2], ['zoom'], 1, 3, 4, 10],
+        symbolType: 'circle',
+        color: ['case', ...genCategoricalColors(), '#ffffff'],
+        opacity: ['var', 'opacity']
+      }
+    };
   }
 
   mount(): void {
     this.layer = new WebGLPointsLayer({
       source: this.source,
-      // Placeholder
-      style: { symbol: { size: 12, symbolType: 'circle' } },
+      style: this._style,
       zIndex: 10
     });
     this._deferred.resolve();
   }
 
-  async updateIntensity(
-    map: Mapp,
-    intensity: number[] | string[] | Promise<number[] | string[]>,
-    dataType: 'quantitative' | 'categorical'
-  ) {
+  async updateIntensity(map: Mapp, intensity: number[] | string[] | Promise<number[] | string[]>) {
     await map.promise;
     if (!intensity) throw new Error('No intensity provided');
     if (intensity instanceof Promise) {
@@ -59,46 +61,36 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     for (let i = 0; i < intensity.length; i++) {
       this.source.getFeatureById(i)?.setProperties({ value: intensity[i] });
     }
-
-    if (dataType !== this._currDataType && this._currMap) {
-      this._currDataType = dataType;
-      this.rebuildLayer(this._currMap, dataType, this._currSpotDiam!, this._currMperPx!);
-    }
   }
 
-  rebuildLayer(
-    map: Map,
-    dataType: 'quantitative' | 'categorical',
-    spotDiam: number,
-    mPerPx: number
-  ) {
-    const spotSize = spotDiam / mPerPx;
+  updateStyle(style: LiteralStyle) {
+    this._style = style;
+    this._rebuildLayer();
+  }
+
+  _rebuildLayer() {
     const newLayer = new WebGLPointsLayer({
       source: this.source,
-      style: this.genStyle(dataType, spotSize),
+      style: this._style,
       zIndex: 10
     });
 
     const prev = this.layer;
-    map.addLayer(newLayer);
+    this.map.map!.addLayer(newLayer);
     if (prev) {
-      map.removeLayer(prev);
+      this.map.map!.removeLayer(prev);
       prev.dispose();
     }
     this.layer = newLayer;
   }
 
-  update(map: Map, coords: readonly { x: number; y: number }[], spotDiam: number, mPerPx: number) {
-    this.rebuildLayer(map, 'quantitative', spotDiam, mPerPx);
-    this._currSpotDiam = spotDiam;
-    this._currMperPx = mPerPx;
-    this._currMap = map;
-
+  update(overlay: Overlay) {
+    this._mPerPx = overlay.mPerPx;
     this.source.clear();
     this.source.addFeatures(
-      coords.map(({ x, y }, i) => {
+      overlay.pos!.map(({ x, y }, i) => {
         const f = new Feature({
-          geometry: new Point([x * mPerPx, -y * mPerPx]),
+          geometry: new Point([x * this._mPerPx!, -y * this._mPerPx!]),
           value: 0,
           id: i
         });
@@ -107,53 +99,60 @@ export class WebGLSpots extends Deferrable implements MapComponent {
       })
     );
   }
+}
 
-  genStyle(type: 'quantitative' | 'categorical', spotPx: number): LiteralStyle {
-    const common = {
-      symbolType: 'circle',
-      size: [
-        'interpolate',
-        ['exponential', 2],
-        ['zoom'],
-        1,
-        spotPx / 32,
-        2,
-        spotPx / 16,
-        3,
-        spotPx / 8,
-        4,
-        spotPx / 4,
-        5,
-        spotPx
-      ]
-    };
+export function genSpotStyle(
+  type: 'quantitative' | 'categorical',
+  spotDiamPx: number
+): LiteralStyle {
+  const common = {
+    symbolType: 'circle',
+    size: [
+      'interpolate',
+      ['exponential', 2],
+      ['zoom'],
+      1,
+      spotDiamPx / 64,
+      2,
+      spotDiamPx / 32,
+      3,
+      spotDiamPx / 16,
+      4,
+      spotDiamPx / 8,
+      5,
+      spotDiamPx / 2
+    ]
+  };
 
-    if (type === 'quantitative') {
-      return {
-        variables: { opacity: 0.9 },
-        symbol: {
-          ...common,
-          color: '#fce652ff',
-          // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-          opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 5]], 0.1, 1]
-          // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
-        }
-      };
-    } else {
-      const colors = [];
-      for (let i = 0; i < tableau10arr.length; i++) {
-        colors.push(['==', ['%', ['get', 'value'], tableau10arr.length], i], tableau10arr[i]);
+  if (type === 'quantitative') {
+    return {
+      variables: { opacity: 0.9 },
+      symbol: {
+        ...common,
+        color: '#fce652ff',
+        // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
+        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 5]], 0, 1]
+        // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
       }
-      return {
-        variables: { opacity: 0.9 },
-        symbol: {
-          ...common,
-          color: ['case', ...colors, '#ffffff'],
-          opacity: ['clamp', ['var', 'opacity'], 0.1, 1]
-        }
-      };
-    }
+    };
+  } else {
+    return {
+      variables: { opacity: 0.9 },
+      symbol: {
+        ...common,
+        color: ['case', ...genCategoricalColors(), '#ffffff'],
+        opacity: ['clamp', ['var', 'opacity'], 0.1, 1]
+      }
+    };
   }
+}
+
+function genCategoricalColors() {
+  const colors = [];
+  for (let i = 0; i < tableau10arr.length; i++) {
+    colors.push(['==', ['%', ['get', 'value'], tableau10arr.length], i], tableau10arr[i]);
+  }
+  return colors;
 }
 
 export class ActiveSpots extends Deferrable implements MapComponent {
@@ -181,9 +180,10 @@ export class ActiveSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  update({ x, y }: { x: number; y: number }, sp: SpotParams) {
-    this.feature
-      .getGeometry()
-      ?.setCenterAndRadius([x * sp.mPerPx, -y * sp.mPerPx], sp.spotDiam / 2);
+  update(ov: Overlay, idx: number) {
+    if (!ov.mPerPx) throw new Error('No mPerPx or spotDiam provided');
+    const { x, y } = ov.pos![idx];
+    const size = ov.size ? ov.size / 4 : ov.mPerPx * 20;
+    this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
   }
 }

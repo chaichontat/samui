@@ -2,6 +2,7 @@
   import { tableau10arr } from '$src/lib/colors';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import Legend from '$src/lib/components/legend.svelte';
+  import { convertCategoricalToNumber } from '$src/lib/data/dataHandlers';
   import { Charts } from '$src/lib/scatter/scatterlib';
   import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';
@@ -48,7 +49,7 @@
       await updateCoords({ key: coords.name, args: [coords.values] });
     }
 
-    if (intensity.values) {
+    if (intensity) {
       if (intensity.values instanceof Promise) {
         intensity.values = await intensity.values;
       }
@@ -73,13 +74,14 @@
     switch (dataType) {
       case 'categorical':
         // eslint-disable-next-line no-case-declarations
-        const unique = [...new Set(intensity)];
+        const conv = convertCategoricalToNumber(intensity);
         // eslint-disable-next-line no-case-declarations
         const legend = {} as Record<number | string, `#${string}`>;
-        for (const [i, x] of unique.entries()) {
+        for (const [i, x] of conv.legend.entries()) {
           legend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
         }
-        _color = intensity.map((x) => legend[x]);
+        _color = conv.converted.map((x) => tableau10arr[x % tableau10arr.length] + opacity);
+
         return { colors: _color, legend };
 
       case 'quantitative':
@@ -118,10 +120,10 @@
 </script>
 
 <div class="relative mx-auto w-full max-w-[400px]">
-  {#if colorbar && intensitySource.dataType === 'quantitative'}
+  {#if colorbar && intensitySource?.dataType === 'quantitative'}
     <Colorbar min={0} max={10} />
   {/if}
-  {#if colorbar && intensitySource.dataType === 'categorical' && catLegend}
+  {#if colorbar && intensitySource?.dataType === 'categorical' && catLegend}
     <Legend colormap={catLegend} />
   {/if}
   <canvas class="absolute" id={`${id}-hover`} />

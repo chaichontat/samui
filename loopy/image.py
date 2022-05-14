@@ -3,14 +3,12 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated, Any, Literal
 
 import click
 import numpy as np
-import pandas as pd
 import rasterio
 import tifffile
-from anndata import AnnData
 from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
 
@@ -19,43 +17,11 @@ from loopy.utils import ReadonlyModel, Url
 Meter = Annotated[float, "meter"]
 
 
-class Coords(ReadonlyModel):
-    x: int
-    y: int
-
-
-class SpotParams(ReadonlyModel):
-    spotDiam: Meter = 65e-6
-    mPerPx: float = 0.497e-6
-
-
 class ImageParams(ReadonlyModel):
     urls: list[Url]
-    headerUrl: Url
-
-
-class ImageHeader(ReadonlyModel):
-    sample: str
-    coords: list[Coords]
     channel: dict[str, int]
-    spot: SpotParams
+    mPerPx: float
     mode: Literal["composite", "rgb"]
-
-
-def gen_header(
-    vis: AnnData, sample: str, channels: dict[str, int], spot: SpotParams, is_rgb: bool = False
-) -> ImageHeader:
-    spatial = cast(pd.DataFrame, vis.obsm["spatial"])
-    coords = pd.DataFrame(spatial, columns=["x", "y"], dtype="uint32")
-    coords = [Coords(x=row.x, y=row.y) for row in coords.itertuples()]  # type: ignore
-
-    return ImageHeader(
-        sample=sample,
-        coords=coords,
-        channel=channels,
-        spot=spot,
-        mode="rgb" if is_rgb else "composite",
-    )
 
 
 def gen_geotiff(img: np.ndarray, path: Path, scale: float, rgb: bool = False) -> list[Path]:

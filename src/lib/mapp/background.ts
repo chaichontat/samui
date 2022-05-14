@@ -24,6 +24,7 @@ export class Background extends Deferrable implements MapComponent {
   }
 
   async update(map: Map, image: Image) {
+    console.log(image);
     await image.promise;
     if (this.layer) {
       map.removeLayer(this.layer);
@@ -35,17 +36,17 @@ export class Background extends Deferrable implements MapComponent {
 
     const urls = image.urls.map((url) => ({ url: url.url }));
     this.source = new GeoTIFF({
-      normalize: image.header!.mode === 'rgb',
+      normalize: image.mode === 'rgb',
       sources: urls
     });
 
-    this.mode = image.header!.mode ?? 'composite';
+    this.mode = image.mode ?? 'composite';
     this.layer = new WebGLTileLayer({
       style: this._genBgStyle(this.mode),
       source: this.source
     });
 
-    this.mPerPx = image.header!.spot.mPerPx;
+    this.mPerPx = image.mPerPx;
     map.addLayer(this.layer);
     map.setView(this.source.getView());
   }

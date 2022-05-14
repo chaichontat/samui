@@ -1,6 +1,5 @@
 import { browser, dev } from '$app/env';
 import { Sample, type SampleParams } from '$src/lib/data/sample';
-import { ChunkedJSON, PlainJSON } from './dataHandlers';
 
 export const names = ['Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 export const s3_url = dev
@@ -21,12 +20,6 @@ async function gen_samples(n: string[]) {
 export default browser ? gen_samples(names) : undefined;
 
 export function convertSamplePreload(r: SampleParams) {
-  if (r.imgParams.headerUrl) {
-    r.imgParams.headerUrl = {
-      url: `${s3_url}/${r.name}/${r.imgParams.headerUrl.url}`,
-      type: 'network'
-    };
-  }
   for (const url of r.imgParams.urls) {
     url.url = `${s3_url}/${r.name}/${url.url}`;
     url.type = 'network';
@@ -38,6 +31,12 @@ export function convertSamplePreload(r: SampleParams) {
     }
     if ('headerUrl' in f && f.headerUrl) {
       f.headerUrl = { url: `${s3_url}/${r.name}/${f.headerUrl.url}`, type: 'network' };
+    }
+  }
+
+  for (const o of r.overlayParams) {
+    if (o.url) {
+      o.url = { url: `${s3_url}/${r.name}/${o.url.url}`, type: 'network' };
     }
   }
   return r;

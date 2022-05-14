@@ -12,8 +12,8 @@ type SparseMode = 'record' | 'array' | null;
 
 interface JSONParams {
   name: string;
-  isFeature: boolean;
   dataType: DataType;
+  overlay?: string;
 }
 
 export interface PlainJSONParams<Ret extends RetrievedData> extends JSONParams {
@@ -43,7 +43,7 @@ export type Sparse = { index: number[]; value: number[] };
 export interface Data {
   readonly name: string;
   readonly dataType: DataType;
-  readonly isFeature: boolean;
+  readonly overlay?: string;
   hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
   hydrated: boolean;
 }
@@ -53,21 +53,18 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
 
   readonly name: string;
   readonly dataType: DataType;
-  readonly isFeature: boolean;
+  readonly overlay?: string;
 
   values?: Ret;
   hydrated = false;
 
-  constructor(
-    { name, url, dataType, values, isFeature }: PlainJSONParams<Ret>,
-    autoHydrate = false
-  ) {
+  constructor({ name, url, dataType, values, overlay }: PlainJSONParams<Ret>, autoHydrate = false) {
     super();
     this.name = name;
     this.url = url;
     this.values = values;
     this.dataType = dataType;
-    this.isFeature = isFeature;
+    this.overlay = overlay;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -83,6 +80,7 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
       this.values = (await fetch(this.url.url).then((r) => r.json())) as Ret;
     }
     this.hydrated = true;
+    this._deferred.resolve();
     return this;
   }
 }
@@ -99,7 +97,6 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
 
   url: Url;
   readonly dataType: DataType;
-  readonly isFeature: boolean;
   readonly name: string;
 
   headerUrl?: Url;
@@ -107,11 +104,11 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
   activeDefault?: string;
   sparseMode?: SparseMode;
   hydrated = false;
-
+  overlay?: string;
   allData?: ArrayBuffer;
 
   constructor(
-    { name, url, headerUrl, header, dataType, isFeature }: ChunkedJSONParams,
+    { name, url, headerUrl, header, dataType, overlay }: ChunkedJSONParams,
     autoHydrate = false
   ) {
     super();
@@ -120,7 +117,7 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
     this.header = header;
     this.headerUrl = headerUrl;
     this.dataType = dataType;
-    this.isFeature = isFeature;
+    this.overlay = overlay;
 
     if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
     if (autoHydrate) {
@@ -276,11 +273,13 @@ export async function convertLocalToNetwork(
 export function convertCategoricalToNumber(values: (string | number)[]) {
   const unique = [...new Set(values)];
   const legend = {} as Record<number | string, number>;
-  for (const [i, v] of unique.entries()) {
+  const legendArr = [] as (number | string)[];
+  for (const [i, v] of unique.sort().entries()) {
     legend[v] = i;
+    legendArr.push(v);
   }
   const converted = values.map((v) => legend[v]);
-  return { legend, converted };
+  return { legend: legendArr, converted };
 }
 
 // export class Arrow implements Data {

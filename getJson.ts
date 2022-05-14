@@ -4,7 +4,7 @@ import * as path from 'path';
 
 const dir = 'static';
 const defaultDir = 'src/lib/data/default';
-const samples = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF', '151508'];
+const samples = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 
 const s3_url = 'https://f004.backblazeb2.com/file/chaichontat-host/loopy-browser';
 
@@ -22,7 +22,17 @@ async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
   });
 }
 
-const toGet = ['gene_csr.json', 'gene_csc.json', 'image.json', 'umap.json', 'sample.json'];
+const toGet = [
+  'gene_csr.json',
+  'gene_csc.json',
+  'umap.json',
+  'sample.json',
+  'cluster_graph.json',
+  'cellCoords.json',
+  'cellType.json',
+  ...[...Array(10).keys()].map((i) => `kmeans${i + 1}.json`)
+];
+
 async function run() {
   const ps: Promise<unknown>[] = samples.flatMap(async (s) => {
     return await getFiles(
