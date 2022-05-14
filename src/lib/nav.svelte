@@ -4,15 +4,21 @@
   import SampleList from './components/sampleList.svelte';
   import SearchBox from './components/searchBox.svelte';
   import type { NameWithFeature } from './data/features';
-  import { HoverSelect, updateNames } from './data/searchBox';
+  import { HoverSelect, updateNames, type FeatureNamesGroup } from './data/searchBox';
   import { activeFeatures, activeOverlay, sample } from './store';
 
   let active: HoverSelect<NameWithFeature>;
   $: if (active?.active) {
     $activeFeatures[$activeOverlay] = active.active;
+    console.log($activeFeatures);
   }
-  let names;
+  let names: FeatureNamesGroup[];
   $: if ($sample) names = updateNames($sample.features, $activeOverlay);
+
+  activeOverlay.subscribe((v: string) => {
+    if (!active) return;
+    active.selected = $activeFeatures[v];
+  });
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">
@@ -28,7 +34,7 @@
     />
   </div>
   <div class="mt-1  flex-grow">
-    <SearchBox featureNamesGroup={names} bind:curr={active} overlayFilter={$activeOverlay} />
+    <SearchBox featureNamesGroup={names} bind:curr={active} />
   </div>
   <Darkswitch />
   <Github />

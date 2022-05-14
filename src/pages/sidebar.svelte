@@ -61,9 +61,6 @@
             colorbar
           />
         {/await}
-      {:else}
-        <div class="h-20" />
-        <span class="center text-xl text-default">No sample</span>
       {/if}
     </section>
 
