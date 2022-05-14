@@ -15,6 +15,7 @@
   let currSample: Sample;
   let refreshPls = false;
   let width = 0;
+  let sampleList: SampleList;
 
   const dispatch = createEventDispatcher();
 
@@ -85,6 +86,9 @@
       refreshPls = false;
     }
   });
+
+  $: currSample?.promise.then(() => sampleList.stopSpinner()).catch(console.error);
+  $: console.log(currSample?.hydrated);
 </script>
 
 {#if typeof hie === 'number'}
@@ -114,9 +118,9 @@
 
         <div class:mt-1={hie !== 0} class="min-w-[200px]">
           <SampleList
+            bind:this={sampleList}
             items={Object.keys($samples)}
             bind:active
-            loading={!currSample?.hydrated}
             on:addSample={byod}
           />
         </div>
