@@ -19,10 +19,7 @@ export const store: Writable<State> = writable({
   }
 });
 
-type OverlayName = string;
-export const activeFeatures: Writable<Record<OverlayName, NameWithFeature>> = writable({});
-export const activeOverlay: Writable<string> = writable('');
-
+// Samples
 export const samples: Writable<Record<string, Sample>> = writable({});
 // Changed in mapTile and byod.
 // Automatically hydrates on change.
@@ -37,6 +34,12 @@ activeSample.subscribe((n) => {
 });
 export const sample: Writable<Sample | undefined> = writable();
 
+// Overlays and Features
+type OverlayName = string;
+export const activeFeatures: Writable<Record<OverlayName, NameWithFeature>> = writable({});
+export const activeOverlay: Writable<string> = writable('');
+
+// Maps
 export const activeMap: Writable<number> = writable(0);
 export const mapList: Writable<number[]> = writable([]);
 

@@ -83,14 +83,14 @@
 <div class="flex flex-col items-center gap-y-1">
   <div class="flex max-w-md items-center gap-x-2">
     x:
-    <SearchBox {names} bind:curr={x} />
-    y: <SearchBox {names} bind:curr={y} />
+    <SearchBox featureNamesGroup={names} bind:curr={x} />
+    y: <SearchBox featureNamesGroup={names} bind:curr={y} />
   </div>
 
   <div class="flex max-w-md items-center gap-x-2">
     Color:
     <div class="">
-      <SearchBox {names} bind:curr={color} />
+      <SearchBox featureNamesGroup={names} bind:curr={color} />
     </div>
   </div>
 

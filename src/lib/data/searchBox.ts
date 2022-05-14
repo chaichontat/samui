@@ -1,18 +1,22 @@
+import { oneLRU } from '../utils';
 import { ChunkedJSON, PlainJSON, type Data } from './features';
 
 export class HoverSelect<T> {
-  hover: T | null;
-  selected: T | null;
+  hover: T | null = null;
+  selected: T | null = null;
 
-  constructor({ hover, selected }: { hover?: T; selected?: T } = {}) {
-    this.hover = hover ?? null;
-    this.selected = selected ?? null;
+  constructor(initial: { hover?: T; selected?: T } = {}) {
+    this.update(initial);
   }
 
   get active() {
-    if (this.hover) return this.hover;
-    return this.selected;
+    return this.hover ?? this.selected;
   }
+
+  update = oneLRU(({ hover, selected }: { hover?: T | null; selected?: T | null }) => {
+    if (hover !== undefined) this.hover = hover;
+    if (selected !== undefined) this.selected = selected;
+  });
 }
 
 export type FeatureNamesGroup = {

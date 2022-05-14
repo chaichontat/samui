@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clickOutside, oneLRU } from '$src/lib/utils';
+  import { clickOutside } from '$src/lib/utils';
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
@@ -8,7 +8,7 @@
 
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
-  export let names: FeatureNamesGroup[];
+  export let featureNamesGroup: FeatureNamesGroup[];
   export let curr: HoverSelect<NameWithFeature>;
   curr = new HoverSelect<NameWithFeature>();
 
@@ -25,34 +25,24 @@
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
   }
 
-  const setVal = oneLRU(
-    ({
-      hover,
-      selected
-    }: {
-      hover?: NameWithFeature | null;
-      selected?: NameWithFeature | null;
-    }) => {
-      if (hover !== undefined) curr.hover = hover;
-      if (selected !== undefined) {
-        curr.selected = selected;
-        search = selected!.name;
-      }
-    }
-  );
+  function setVal(v: { hover?: NameWithFeature | null; selected?: NameWithFeature | null }) {
+    curr.update(v);
+    curr = curr;
+    if (v.selected) search = v.selected.name!;
+  }
 
-  $: if (names) {
-    fzf = names.map((f) => [f.feature, new Fzf(f.names, { limit: 6 })]);
+  $: if (featureNamesGroup) {
+    fzf = featureNamesGroup.map((f) => [f.feature, new Fzf(f.names, { limit: 6 })]);
   }
 
   $: if (fzf) {
     candidates = [];
-    for (const [f, fz] of fzf) {
+    for (const [feature, fz] of fzf) {
       const res = fz.find(search);
       candidates.push({
-        feature: f,
+        feature,
         values: res.map((x) => ({
-          feature: f,
+          feature,
           raw: x.item,
           embellished: highlightChars(x.item, x.positions)
         }))

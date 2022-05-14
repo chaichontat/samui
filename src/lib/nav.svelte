@@ -27,7 +27,7 @@
     />
   </div>
   <div class="mt-1  flex-grow">
-    <SearchBox {names} bind:curr={active} overlayFilter={$activeOverlay} />
+    <SearchBox featureNamesGroup={names} bind:curr={active} overlayFilter={$activeOverlay} />
   </div>
   <Darkswitch />
   <div title="GitHub" class="">
