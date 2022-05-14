@@ -54,9 +54,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
       return false;
     }
 
-    if (typeof intensity[0] === 'string') {
-      ({ converted: intensity } = convertCategoricalToNumber(intensity));
-    }
+    ({ converted: intensity } = convertCategoricalToNumber(intensity));
 
     for (let i = 0; i < intensity.length; i++) {
       this.source.getFeatureById(i)?.setProperties({ value: intensity[i] });
