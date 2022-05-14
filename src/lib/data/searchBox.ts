@@ -1,9 +1,12 @@
-import type { FeatureNames } from '../store';
-import { ChunkedJSON, PlainJSON, type Data } from './dataHandlers';
+import type { NameWithFeatures } from '../store';
+import { ChunkedJSON, PlainJSON, type Data } from './features';
 
-export function updateNames(features: Record<string, Data>, filterOverlay: string): FeatureNames[] {
+export function updateNames(
+  features: Record<string, Data>,
+  filterOverlay: string
+): NameWithFeatures[] {
   if (!features) return [];
-  const out: FeatureNames[] = [{ feature: undefined, names: [] }];
+  const out: NameWithFeatures[] = [{ feature: undefined, names: [] }];
   for (const [name, f] of Object.entries(features)) {
     if (f.overlay !== filterOverlay) continue;
 

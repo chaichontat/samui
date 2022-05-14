@@ -7,7 +7,7 @@
   import SampleList from '$src/lib/components/sampleList.svelte';
   import { byod } from '$src/lib/data/byod';
   import type { Sample } from '$src/lib/data/sample';
-  import { activeMap, activeSample, mapList, samples, updateSample } from '$src/lib/store';
+  import { activeMap, activeSample, mapList, samples } from '$src/lib/store';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
@@ -23,13 +23,9 @@
   $: hieN = typeof hie === 'number' ? hie : -1;
 
   $: if (typeof hie === 'number' && $samples[active]) {
-    updateSample($samples[active])
-      .then(() => {
-        $activeSample = active;
-        currSample = $samples[active];
-        $activeMap = hie as number;
-      })
-      .catch(console.error);
+    $activeSample = active;
+    currSample = $samples[active];
+    $activeMap = hie;
   }
 
   $: if ($activeMap === hie) {

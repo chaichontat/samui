@@ -39,10 +39,8 @@ export async function byod() {
 
   sp.handle = directoryHandle;
   const sample = new Sample(sp);
-  await sample.hydrate();
-
-  samples.set({ ...get(samples), [sample.name]: sample });
   activeSample.set(sample.name);
+  samples.set({ ...get(samples), [sample.name]: sample });
   // for await  (const entry of directoryHandle.values()) {
   //   console.log(entry.kind, entry.name);
   // }

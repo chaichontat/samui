@@ -4,7 +4,7 @@
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
-  import type { PlainJSON } from '../data/dataHandlers';
+  import type { PlainJSON } from '../data/features';
   import { activeSample, samples } from '../store';
   import type { Draww } from './selector';
 

@@ -6,7 +6,7 @@ import VectorSource from 'ol/source/Vector.js';
 import { Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
-import { convertCategoricalToNumber } from '../data/dataHandlers';
+import { convertCategoricalToNumber } from '../data/features';
 import type { Overlay } from '../data/overlay';
 import { Deferrable } from '../utils';
 import type { MapComponent, Mapp } from './mapp';

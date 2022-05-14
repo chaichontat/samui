@@ -89,7 +89,7 @@
     <!--
     {#each sections as section}
       <section>
-        <svelte:component this={section} featureNames={.featureNames} />
+        <svelte:component this={section} NameWithFeatures={.NameWithFeatures} />
       </section>
     {/each} -->
 

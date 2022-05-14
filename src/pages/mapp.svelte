@@ -8,7 +8,7 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, activeOverlay, store, type FeatureName } from '../lib/store';
+  import { activeFeatures, activeOverlay, store, type NameWithFeature } from '../lib/store';
 
   export let sample: Sample;
   export let trackHover = false;
@@ -107,7 +107,7 @@
 
   let currimage: 'quantitative' | 'categorical';
 
-  const updateSpot = keyOneLRU((ov: string, fn: FeatureName) => {
+  const updateSpot = keyOneLRU((ov: string, fn: NameWithFeature) => {
     if (!sample || !fn) return false;
     const { values, dataType } = sample.getFeature(fn);
     if (ov === 'spots' && dataType !== currimage) {
@@ -120,7 +120,7 @@
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
-  function updateSpotName(fn: FeatureName) {
+  function updateSpotName(fn: NameWithFeature) {
     if (sample) {
       updateSpot({
         key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,

@@ -3,13 +3,14 @@
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
-  import { genHoverName, type FeatureName, type FeatureNames, type HoverName } from '../store';
+  import type { NameWithFeature } from '../data/features';
+  import { genHoverName, type HoverName, type NameWithFeatures } from '../store';
 
-  type Name = FeatureName;
+  type Name = NameWithFeature;
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
   export let overlayFilter: string;
-  export let names: FeatureNames[];
+  export let names: NameWithFeatures[];
   export let curr: HoverName<Name>;
   curr = genHoverName<Name>({});
 

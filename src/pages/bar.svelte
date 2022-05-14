@@ -1,11 +1,11 @@
 <script lang="ts">
   import { browser } from '$app/env';
-  import type { ChunkedJSON, Sparse } from '$src/lib/data/dataHandlers';
+  import type { ChunkedJSON, Sparse } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import { genUpdate, oneLRU } from '$src/lib/utils';
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
-  import { activeSample, multipleSelect, samples, store } from '../lib/store';
+  import { activeSample, samples, store } from '../lib/store';
 
   export let showing: boolean;
   Chart.defaults.font.size = 14;

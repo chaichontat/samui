@@ -2,17 +2,11 @@
   import Darkswitch from './components/darkswitch.svelte';
   import SampleList from './components/sampleList.svelte';
   import SearchBox from './components/searchBox.svelte';
+  import type { NameWithFeature } from './data/features';
   import { updateNames } from './data/searchBox';
-  import {
-    activeFeatures,
-    activeOverlay,
-    activeSample,
-    samples,
-    type FeatureName,
-    type HoverName
-  } from './store';
+  import { activeFeatures, activeOverlay, activeSample, samples, type HoverName } from './store';
 
-  let active: HoverName<FeatureName>;
+  let active: HoverName<NameWithFeature>;
   $: if (active?.active) {
     $activeFeatures[$activeOverlay] = active.active;
   }

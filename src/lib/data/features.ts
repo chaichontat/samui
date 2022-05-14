@@ -3,11 +3,17 @@ import pako from 'pako';
 import { Deferrable, genLRU, getFile, oneLRU } from '../utils';
 
 export type Url = { url: string; type: 'local' | 'network' };
+export type Coord = { x: number; y: number };
 
-type Coordinates = { x: number; y: number };
+// If ChunkedJSON, feature and name.
+// If PlainJSON, only name.
+export type NameWithFeature = {
+  feature?: string;
+  name?: string;
+};
 
-export type DataType = 'coordinates' | 'categorical' | 'quantitative';
-export type RetrievedData = (number | string)[] | Record<string, number | string> | Coordinates[];
+export type DataType = 'coords' | 'categorical' | 'quantitative';
+export type RetrievedData = (number | string)[] | Record<string, number | string> | Coord[];
 type SparseMode = 'record' | 'array' | null;
 
 interface JSONParams {

@@ -1,21 +1,21 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
+  import type { NameWithFeature } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import { boxMuller } from '$src/lib/scatter/scatterlib';
   import {
     activeSample,
     samples,
     store,
-    type FeatureName,
-    type FeatureNames,
-    type HoverName
+    type HoverName,
+    type NameWithFeatures
   } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
 
-  export let featureNames: FeatureNames[];
+  export let names: NameWithFeatures[];
 
-  type Name = FeatureName;
+  type Name = NameWithFeature;
   let x: HoverName<Name>;
   let y: HoverName<Name>;
   let color: HoverName<Name>;
@@ -29,8 +29,8 @@
 
   async function getData(
     sample: Sample,
-    x: HoverName<FeatureName>,
-    y: HoverName<FeatureName>,
+    x: HoverName<NameWithFeature>,
+    y: HoverName<NameWithFeature>,
     jitterX = 0,
     jitterY = 0
   ) {
@@ -59,7 +59,7 @@
     };
   }
 
-  async function updateColors(sample: Sample, color: HoverName<FeatureName>) {
+  async function updateColors(sample: Sample, color: HoverName<NameWithFeature>) {
     let c = sample.getFeature(color.active!);
     if (c.values instanceof Promise) {
       c.values = await c.values;
@@ -91,14 +91,14 @@
 <div class="flex flex-col items-center gap-y-1">
   <div class="flex max-w-md items-center gap-x-2">
     x:
-    <SearchBox names={featureNames} bind:curr={x} />
-    y: <SearchBox names={featureNames} bind:curr={y} />
+    <SearchBox {names} bind:curr={x} />
+    y: <SearchBox {names} bind:curr={y} />
   </div>
 
   <div class="flex max-w-md items-center gap-x-2">
     Color:
     <div class="">
-      <SearchBox names={featureNames} bind:curr={color} />
+      <SearchBox {names} bind:curr={color} />
     </div>
   </div>
 

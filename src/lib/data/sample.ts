@@ -1,12 +1,12 @@
-import type { FeatureName } from '../store';
 import { Deferrable } from '../utils';
 import {
   ChunkedJSON,
   PlainJSON,
   type Data,
   type FeatureParams,
+  type NameWithFeature,
   type RetrievedData
-} from './dataHandlers';
+} from './features';
 import { Image, type ImageParams } from './image';
 import { Overlay, type OverlayParams } from './overlay';
 
@@ -16,7 +16,7 @@ export type SampleParams = {
   overlayParams: OverlayParams[];
   featParams: FeatureParams<RetrievedData>[];
   handle?: FileSystemDirectoryHandle;
-  activeDefault?: FeatureName;
+  activeDefault?: NameWithFeature;
 };
 
 export class Sample extends Deferrable {
@@ -30,7 +30,7 @@ export class Sample extends Deferrable {
   overlays: Record<string, Overlay>;
   hydrated: boolean;
   handle?: FileSystemDirectoryHandle;
-  activeDefault: FeatureName;
+  activeDefault: NameWithFeature;
 
   constructor(
     { name, imgParams, featParams, overlayParams, handle, activeDefault }: SampleParams,
@@ -104,7 +104,7 @@ export class Sample extends Deferrable {
     return this;
   }
 
-  getFeature<T extends RetrievedData>(fn: FeatureName) {
+  getFeature<T extends RetrievedData>(fn: NameWithFeature) {
     let values;
     let feature;
     if (!fn?.name) return { values: undefined, dataType: 'quantitative', activeDefault: undefined };

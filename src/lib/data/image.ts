@@ -1,6 +1,6 @@
 import type { ImageMode } from '../mapp/imgControl';
 import { Deferrable } from '../utils';
-import { convertLocalToNetwork, type Url } from './dataHandlers';
+import { convertLocalToNetwork, type Url } from './features';
 
 export type ImageParams = {
   urls: Url[];
