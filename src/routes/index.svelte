@@ -3,7 +3,7 @@
   import { byod } from '$src/lib/data/byod';
   import { mapList, preload, samples } from '$src/lib/store';
   import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
-  import Rna from '$src/pages/rna.svelte';
+  import Sidebar from '$src/pages/sidebar.svelte';
 
   $mapList = [0];
   let hie: Hie = {
@@ -73,5 +73,5 @@
 
   <div class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800" use:resizable />
 
-  <Rna />
+  <Sidebar />
 </main>

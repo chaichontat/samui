@@ -1,4 +1,3 @@
-import type { NameWithFeatures } from '../store';
 import { ChunkedJSON, PlainJSON, type Data } from './features';
 
 export class HoverSelect<T> {
@@ -16,12 +15,17 @@ export class HoverSelect<T> {
   }
 }
 
+export type FeatureNamesGroup = {
+  feature?: string;
+  names: string[];
+};
+
 export function updateNames(
   features: Record<string, Data>,
   filterOverlay: string
-): NameWithFeatures[] {
+): FeatureNamesGroup[] {
   if (!features) return [];
-  const out: NameWithFeatures[] = [{ feature: undefined, names: [] }];
+  const out: FeatureNamesGroup[] = [{ feature: undefined, names: [] }];
   for (const [name, f] of Object.entries(features)) {
     if (f.overlay !== filterOverlay) continue;
 

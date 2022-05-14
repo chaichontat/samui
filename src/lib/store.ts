@@ -19,11 +19,6 @@ export const store: Writable<State> = writable({
   }
 });
 
-export type NameWithFeatures = {
-  feature?: string;
-  names: string[];
-};
-
 type OverlayName = string;
 export const activeFeatures: Writable<Record<OverlayName, NameWithFeature>> = writable({});
 export const activeOverlay: Writable<string> = writable('');
@@ -35,8 +30,12 @@ export const activeSample: Writable<string> = writable('');
 activeSample.subscribe((n) => {
   const s = get(samples)[n];
   if (!s) return;
-  if (!s.hydrated) s.hydrate().catch(console.error);
+  if (!s.hydrated)
+    s.hydrate()
+      .then(() => sample.set(s))
+      .catch(console.error);
 });
+export const sample: Writable<Sample | undefined> = writable();
 
 export const activeMap: Writable<number> = writable(0);
 export const mapList: Writable<number[]> = writable([]);

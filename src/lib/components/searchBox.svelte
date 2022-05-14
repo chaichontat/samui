@@ -4,16 +4,13 @@
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
   import type { NameWithFeature } from '../data/features';
-  import { HoverSelect } from '../data/searchBox';
-  import type { NameWithFeatures } from '../store';
+  import { HoverSelect, type FeatureNamesGroup } from '../data/searchBox';
 
-  type Name = NameWithFeature;
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
-  export let overlayFilter: string;
-  export let names: NameWithFeatures[];
-  export let curr: HoverSelect<Name>;
-  curr = new HoverSelect<Name>();
+  export let names: FeatureNamesGroup[];
+  export let curr: HoverSelect<NameWithFeature>;
+  curr = new HoverSelect<NameWithFeature>();
 
   let showSearch = true;
 
@@ -28,13 +25,21 @@
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
   }
 
-  const setVal = oneLRU(({ hover, selected }: { hover?: Name | null; selected?: Name | null }) => {
-    if (hover !== undefined) curr.hover = hover;
-    if (selected !== undefined) {
-      curr.selected = selected;
-      search = selected!.name;
+  const setVal = oneLRU(
+    ({
+      hover,
+      selected
+    }: {
+      hover?: NameWithFeature | null;
+      selected?: NameWithFeature | null;
+    }) => {
+      if (hover !== undefined) curr.hover = hover;
+      if (selected !== undefined) {
+        curr.selected = selected;
+        search = selected!.name;
+      }
     }
-  });
+  );
 
   $: if (names) {
     fzf = names.map((f) => [f.feature, new Fzf(f.names, { limit: 6 })]);

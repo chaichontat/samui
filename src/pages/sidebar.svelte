@@ -1,6 +1,6 @@
 <script lang="ts">
   import Nav from '$src/lib/nav.svelte';
-  import { activeFeatures, activeOverlay, activeSample, samples, store } from '$src/lib/store';
+  import { activeFeatures, activeOverlay, sample, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
@@ -14,15 +14,13 @@
   let vegaShown = false;
   $: if (showing === 1) vegaShown = true;
 
-  $: sample = $samples[$activeSample];
-
   let intensity;
 
-  $: {
-    const f = sample?.getFeature($activeFeatures[$activeOverlay]);
+  $: if ($sample) {
+    const f = $sample.getFeature($activeFeatures[$activeOverlay]);
     intensity = f
       ? {
-          name: `${sample?.name}-${$activeOverlay}-${$activeFeatures[$activeOverlay]?.name}`,
+          name: `${$sample.name}-${$activeOverlay}-${$activeFeatures[$activeOverlay]?.name}`,
           dataType: f.dataType,
           values: f.values
         }
@@ -49,12 +47,12 @@
 
   <div class="flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
     <section class:mt-6={sample}>
-      {#if sample}
-        {#await sample.promise then _}
+      {#if $sample}
+        {#await $sample.promise then _}
           <Scatter
             coordsSource={{
-              name: `${sample.name}-${$activeOverlay}`,
-              values: sample.overlays[$activeOverlay]?.pos
+              name: `${$sample.name}-${$activeOverlay}`,
+              values: $sample.overlays[$activeOverlay]?.pos
             }}
             intensitySource={intensity}
             mainChartOptions={naviChartOptions}
@@ -89,7 +87,7 @@
     <!--
     {#each sections as section}
       <section>
-        <svelte:component this={section} NameWithFeatures={.NameWithFeatures} />
+        <svelte:component this={section} FeatureNamesGroup={.FeatureNamesGroup} />
       </section>
     {/each} -->
 

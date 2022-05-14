@@ -2,18 +2,13 @@
   import SearchBox from '$src/lib/components/searchBox.svelte';
   import type { NameWithFeature } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
+  import type { FeatureNamesGroup, HoverSelect } from '$src/lib/data/searchBox';
   import { boxMuller } from '$src/lib/scatter/scatterlib';
-  import {
-    activeSample,
-    samples,
-    store,
-    type HoverSelect,
-    type NameWithFeatures
-  } from '$src/lib/store';
+  import { sample, store } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
 
-  export let names: NameWithFeatures[];
+  export let names: FeatureNamesGroup[];
 
   type Name = NameWithFeature;
   let x: HoverSelect<Name>;
@@ -28,14 +23,14 @@
   let jitterY = 0;
 
   async function getData(
-    sample: Sample,
+    s: Sample,
     x: HoverSelect<NameWithFeature>,
     y: HoverSelect<NameWithFeature>,
     jitterX = 0,
     jitterY = 0
   ) {
-    let xf = sample.getFeature(x.active!);
-    let yf = sample.getFeature(y.active!);
+    let xf = s.getFeature(x.active!);
+    let yf = s.getFeature(y.active!);
 
     if (xf.values instanceof Promise) {
       xf.values = (await xf.values) as number[];
@@ -51,7 +46,7 @@
     };
 
     coords = {
-      name: `${sample.name}--${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
+      name: `${s.name}--${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
       values: (xf.values as number[]).map((x, i) => ({
         x: x + (jitterX !== 0 ? boxMuller(jitterX) : 0),
         y: values.y[i] + (jitterY !== 0 ? boxMuller(jitterY) : 0)
@@ -59,30 +54,27 @@
     };
   }
 
-  async function updateColors(sample: Sample, color: HoverSelect<NameWithFeature>) {
-    let c = sample.getFeature(color.active!);
+  async function updateColors(s: Sample, color: HoverSelect<NameWithFeature>) {
+    let c = s.getFeature(color.active!);
     if (c.values instanceof Promise) {
       c.values = await c.values;
     }
 
     colorValues = {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      name: `${sample.name}-${color.active!.name}`,
+      name: `${s.name}-${color.active!.name}`,
       values: c.values as number[],
       dataType: c.dataType
     };
   }
 
-  $: sample = $samples[$activeSample];
-
-  $: if (sample && x?.active && y?.active) {
+  $: if ($sample && x?.active && y?.active) {
     console.log('changed data');
-    getData(sample, x, y, jitterX, jitterY).catch(console.error);
+    getData($sample, x, y, jitterX, jitterY).catch(console.error);
   }
 
-  $: if (sample && color?.active) {
-    console.log(color);
-    updateColors(sample, color).catch(console.error);
+  $: if ($sample && color?.active) {
+    updateColors($sample, color).catch(console.error);
   }
 
   let colorValues: Named<number[]> = { name: 'meh', values: [], dataType: 'quantitative' };
