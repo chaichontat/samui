@@ -7,7 +7,7 @@
     activeSample,
     samples,
     store,
-    type HoverName,
+    type HoverSelect,
     type NameWithFeatures
   } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
@@ -16,9 +16,9 @@
   export let names: NameWithFeatures[];
 
   type Name = NameWithFeature;
-  let x: HoverName<Name>;
-  let y: HoverName<Name>;
-  let color: HoverName<Name>;
+  let x: HoverSelect<Name>;
+  let y: HoverSelect<Name>;
+  let color: HoverSelect<Name>;
   let coords: Named<{ x: number; y: number }[]>;
 
   let values: { x: number[]; y: number[] };
@@ -29,8 +29,8 @@
 
   async function getData(
     sample: Sample,
-    x: HoverName<NameWithFeature>,
-    y: HoverName<NameWithFeature>,
+    x: HoverSelect<NameWithFeature>,
+    y: HoverSelect<NameWithFeature>,
     jitterX = 0,
     jitterY = 0
   ) {
@@ -59,7 +59,7 @@
     };
   }
 
-  async function updateColors(sample: Sample, color: HoverName<NameWithFeature>) {
+  async function updateColors(sample: Sample, color: HoverSelect<NameWithFeature>) {
     let c = sample.getFeature(color.active!);
     if (c.values instanceof Promise) {
       c.values = await c.values;

@@ -3,10 +3,10 @@
   import SampleList from './components/sampleList.svelte';
   import SearchBox from './components/searchBox.svelte';
   import type { NameWithFeature } from './data/features';
-  import { updateNames } from './data/searchBox';
-  import { activeFeatures, activeOverlay, activeSample, samples, type HoverName } from './store';
+  import { HoverSelect, updateNames } from './data/searchBox';
+  import { activeFeatures, activeOverlay, activeSample, samples } from './store';
 
-  let active: HoverName<NameWithFeature>;
+  let active: HoverSelect<NameWithFeature>;
   $: if (active?.active) {
     $activeFeatures[$activeOverlay] = active.active;
   }

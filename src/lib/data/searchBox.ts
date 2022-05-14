@@ -1,6 +1,21 @@
 import type { NameWithFeatures } from '../store';
 import { ChunkedJSON, PlainJSON, type Data } from './features';
 
+export class HoverSelect<T> {
+  hover: T | null;
+  selected: T | null;
+
+  constructor({ hover, selected }: { hover?: T; selected?: T } = {}) {
+    this.hover = hover ?? null;
+    this.selected = selected ?? null;
+  }
+
+  get active() {
+    if (this.hover) return this.hover;
+    return this.selected;
+  }
+}
+
 export function updateNames(
   features: Record<string, Data>,
   filterOverlay: string

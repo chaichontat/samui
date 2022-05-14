@@ -19,34 +19,16 @@ export const store: Writable<State> = writable({
   }
 });
 
-export type HoverName<T> = {
-  hover: T | null;
-  selected: T | null;
-  get active(): T | null;
-};
-
 export type NameWithFeatures = {
   feature?: string;
   names: string[];
 };
 
-export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }): HoverName<T> {
-  return {
-    hover: hover ?? null,
-    selected: selected ?? null,
-    get active() {
-      if (this.hover) return this.hover;
-      return this.selected;
-    }
-  };
-}
-
-export const samples: Writable<Record<string, Sample>> = writable({});
-
 type OverlayName = string;
 export const activeFeatures: Writable<Record<OverlayName, NameWithFeature>> = writable({});
 export const activeOverlay: Writable<string> = writable('');
 
+export const samples: Writable<Record<string, Sample>> = writable({});
 // Changed in mapTile and byod.
 // Automatically hydrates on change.
 export const activeSample: Writable<string> = writable('');
