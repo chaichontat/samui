@@ -84,10 +84,14 @@
     convertImgCtrl = colorVarFactory(img.mode, img.channel);
 
     map.layerMap['cells']?.update(sample.overlays.cells);
-    updateSpot({
-      key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
-      args: [$activeOverlay, $activeFeatures[$activeOverlay]]
-    });
+
+    // Update overlay properties.
+    for (const [ol, v] of Object.entries($activeFeatures)) {
+      updateSpot({
+        key: `${sample.name}-${v?.name ?? 'null'}`,
+        args: [ol, v]
+      });
+    }
   });
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
