@@ -92,7 +92,7 @@
           on:click={(e) => (e.currentTarget.value = '')}
           on:change={(e) => dispatch('import', { e })}
         />
-        <label for="selectionFileInput" class="picker-el w-full py-1 text-left">
+        <label for="selectionFileInput" class="picker-el w-full select-none py-1 text-left">
           Import selections
         </label>
         {#if names.length > 0}

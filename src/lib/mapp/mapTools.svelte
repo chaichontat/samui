@@ -194,7 +194,7 @@
                   checked
                   on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
                 />
-                <span class="max-w-[10rem] text-ellipsis capitalize">{ovName}</span>
+                <span class="max-w-[10rem] select-none text-ellipsis capitalize">{ovName}</span>
               </label>
             </td>
 
