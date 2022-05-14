@@ -2,7 +2,7 @@
   import { tableau10arr } from '$src/lib/colors';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import Legend from '$src/lib/components/legend.svelte';
-  import { convertCategoricalToNumber } from '$src/lib/data/dataHandlers';
+  import { convertCategoricalToNumber } from '$src/lib/data/features';
   import { Charts } from '$src/lib/scatter/scatterlib';
   import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';

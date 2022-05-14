@@ -1,5 +1,5 @@
 import { Deferrable } from '../utils';
-import { convertLocalToNetwork, type Url } from './dataHandlers';
+import { convertLocalToNetwork, type Url } from './features';
 type Coord = { x: number; y: number };
 type Shape = 'circle';
 

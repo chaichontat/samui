@@ -8,7 +8,7 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, activeOverlay, store, type FeatureName } from '../lib/store';
+  import { activeFeatures, activeOverlay, store, type NameWithFeature } from '../lib/store';
 
   export let sample: Sample;
   export let trackHover = false;
@@ -84,10 +84,14 @@
     convertImgCtrl = colorVarFactory(img.mode, img.channel);
 
     map.layerMap['cells']?.update(sample.overlays.cells);
-    updateSpot({
-      key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
-      args: [$activeOverlay, $activeFeatures[$activeOverlay]]
-    });
+
+    // Update overlay properties.
+    for (const [ol, v] of Object.entries($activeFeatures)) {
+      updateSpot({
+        key: `${sample.name}-${v?.name ?? 'null'}`,
+        args: [ol, v]
+      });
+    }
   });
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -107,7 +111,7 @@
 
   let currimage: 'quantitative' | 'categorical';
 
-  const updateSpot = keyOneLRU((ov: string, fn: FeatureName) => {
+  const updateSpot = keyOneLRU((ov: string, fn: NameWithFeature) => {
     if (!sample || !fn) return false;
     const { values, dataType } = sample.getFeature(fn);
     if (ov === 'spots' && dataType !== currimage) {
@@ -120,7 +124,7 @@
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
-  function updateSpotName(fn: FeatureName) {
+  function updateSpotName(fn: NameWithFeature) {
     if (sample) {
       updateSpot({
         key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
@@ -152,11 +156,6 @@
     <section
       class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
     >
-      <!-- Spot indicator -->
-      <div class="mix-blend-difference">
-        Spots: <i>{@html $activeFeatures[$activeOverlay]?.name}</i>
-      </div>
-
       <!-- Color indicator -->
       <div class="flex flex-col">
         {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}

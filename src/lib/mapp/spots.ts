@@ -6,7 +6,7 @@ import VectorSource from 'ol/source/Vector.js';
 import { Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
-import { convertCategoricalToNumber } from '../data/dataHandlers';
+import { convertCategoricalToNumber } from '../data/features';
 import type { Overlay } from '../data/overlay';
 import { Deferrable } from '../utils';
 import type { MapComponent, Mapp } from './mapp';
@@ -54,9 +54,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
       return false;
     }
 
-    if (typeof intensity[0] === 'string') {
-      ({ converted: intensity } = convertCategoricalToNumber(intensity));
-    }
+    ({ converted: intensity } = convertCategoricalToNumber(intensity));
 
     for (let i = 0; i < intensity.length; i++) {
       this.source.getFeatureById(i)?.setProperties({ value: intensity[i] });

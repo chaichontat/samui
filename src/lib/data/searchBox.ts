@@ -1,9 +1,35 @@
-import type { FeatureNames } from '../store';
-import { ChunkedJSON, PlainJSON, type Data } from './dataHandlers';
+import { oneLRU } from '../utils';
+import { ChunkedJSON, PlainJSON, type Data } from './features';
 
-export function updateNames(features: Record<string, Data>, filterOverlay: string): FeatureNames[] {
+export class HoverSelect<T> {
+  hover: T | null = null;
+  selected: T | null = null;
+
+  constructor(initial: { hover?: T; selected?: T } = {}) {
+    this.update(initial);
+  }
+
+  get active() {
+    return this.hover ?? this.selected;
+  }
+
+  update = oneLRU(({ hover, selected }: { hover?: T | null; selected?: T | null }) => {
+    if (hover !== undefined) this.hover = hover;
+    if (selected !== undefined) this.selected = selected;
+  });
+}
+
+export type FeatureNamesGroup = {
+  feature?: string;
+  names: string[];
+};
+
+export function updateNames(
+  features: Record<string, Data>,
+  filterOverlay: string
+): FeatureNamesGroup[] {
   if (!features) return [];
-  const out: FeatureNames[] = [{ feature: undefined, names: [] }];
+  const out: FeatureNamesGroup[] = [{ feature: undefined, names: [] }];
   for (const [name, f] of Object.entries(features)) {
     if (f.overlay !== filterOverlay) continue;
 

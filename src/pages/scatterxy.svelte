@@ -1,24 +1,19 @@
 <script lang="ts">
   import SearchBox from '$src/lib/components/searchBox.svelte';
+  import type { NameWithFeature } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
+  import type { FeatureNamesGroup, HoverSelect } from '$src/lib/data/searchBox';
   import { boxMuller } from '$src/lib/scatter/scatterlib';
-  import {
-    activeSample,
-    samples,
-    store,
-    type FeatureName,
-    type FeatureNames,
-    type HoverName
-  } from '$src/lib/store';
+  import { sample, store } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
 
-  export let featureNames: FeatureNames[];
+  export let names: FeatureNamesGroup[];
 
-  type Name = FeatureName;
-  let x: HoverName<Name>;
-  let y: HoverName<Name>;
-  let color: HoverName<Name>;
+  type Name = NameWithFeature;
+  let x: HoverSelect<Name>;
+  let y: HoverSelect<Name>;
+  let color: HoverSelect<Name>;
   let coords: Named<{ x: number; y: number }[]>;
 
   let values: { x: number[]; y: number[] };
@@ -28,14 +23,14 @@
   let jitterY = 0;
 
   async function getData(
-    sample: Sample,
-    x: HoverName<FeatureName>,
-    y: HoverName<FeatureName>,
+    s: Sample,
+    x: HoverSelect<NameWithFeature>,
+    y: HoverSelect<NameWithFeature>,
     jitterX = 0,
     jitterY = 0
   ) {
-    let xf = sample.getFeature(x.active!);
-    let yf = sample.getFeature(y.active!);
+    let xf = s.getFeature(x.active!);
+    let yf = s.getFeature(y.active!);
 
     if (xf.values instanceof Promise) {
       xf.values = (await xf.values) as number[];
@@ -51,7 +46,7 @@
     };
 
     coords = {
-      name: `${sample.name}--${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
+      name: `${s.name}--${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
       values: (xf.values as number[]).map((x, i) => ({
         x: x + (jitterX !== 0 ? boxMuller(jitterX) : 0),
         y: values.y[i] + (jitterY !== 0 ? boxMuller(jitterY) : 0)
@@ -59,30 +54,27 @@
     };
   }
 
-  async function updateColors(sample: Sample, color: HoverName<FeatureName>) {
-    let c = sample.getFeature(color.active!);
+  async function updateColors(s: Sample, color: HoverSelect<NameWithFeature>) {
+    let c = s.getFeature(color.active!);
     if (c.values instanceof Promise) {
       c.values = await c.values;
     }
 
     colorValues = {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      name: `${sample.name}-${color.active!.name}`,
+      name: `${s.name}-${color.active!.name}`,
       values: c.values as number[],
       dataType: c.dataType
     };
   }
 
-  $: sample = $samples[$activeSample];
-
-  $: if (sample && x?.active && y?.active) {
+  $: if ($sample && x?.active && y?.active) {
     console.log('changed data');
-    getData(sample, x, y, jitterX, jitterY).catch(console.error);
+    getData($sample, x, y, jitterX, jitterY).catch(console.error);
   }
 
-  $: if (sample && color?.active) {
-    console.log(color);
-    updateColors(sample, color).catch(console.error);
+  $: if ($sample && color?.active) {
+    updateColors($sample, color).catch(console.error);
   }
 
   let colorValues: Named<number[]> = { name: 'meh', values: [], dataType: 'quantitative' };
@@ -91,14 +83,14 @@
 <div class="flex flex-col items-center gap-y-1">
   <div class="flex max-w-md items-center gap-x-2">
     x:
-    <SearchBox names={featureNames} bind:curr={x} />
-    y: <SearchBox names={featureNames} bind:curr={y} />
+    <SearchBox featureNamesGroup={names} bind:curr={x} />
+    y: <SearchBox featureNamesGroup={names} bind:curr={y} />
   </div>
 
   <div class="flex max-w-md items-center gap-x-2">
     Color:
     <div class="">
-      <SearchBox names={featureNames} bind:curr={color} />
+      <SearchBox featureNamesGroup={names} bind:curr={color} />
     </div>
   </div>
 

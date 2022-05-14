@@ -30,6 +30,10 @@
     }));
   }
 
+  export function stopSpinner() {
+    loading = false;
+  }
+
   function handleChange(name: string) {
     if (name === 'addSample') {
       dispatch('addSample');

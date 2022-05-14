@@ -3,15 +3,13 @@
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
-  import { genHoverName, type FeatureName, type FeatureNames, type HoverName } from '../store';
+  import type { NameWithFeature } from '../data/features';
+  import { HoverSelect, type FeatureNamesGroup } from '../data/searchBox';
 
-  type Name = FeatureName;
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
-  export let overlayFilter: string;
-  export let names: FeatureNames[];
-  export let curr: HoverName<Name>;
-  curr = genHoverName<Name>({});
+  export let featureNamesGroup: FeatureNamesGroup[];
+  export let curr = new HoverSelect<NameWithFeature>();
 
   let showSearch = true;
 
@@ -26,32 +24,35 @@
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
   }
 
-  const setVal = oneLRU(({ hover, selected }: { hover?: Name | null; selected?: Name | null }) => {
-    if (hover !== undefined) curr.hover = hover;
-    if (selected !== undefined) {
-      curr.selected = selected;
-      search = selected!.name;
+  const setVal = oneLRU(
+    (v: { hover?: NameWithFeature | null; selected?: NameWithFeature | null }) => {
+      curr.update(v);
+      curr = curr;
     }
-  });
+  );
 
-  $: if (names) {
-    fzf = names.map((f) => [f.feature, new Fzf(f.names, { limit: 6 })]);
+  $: if (featureNamesGroup) {
+    fzf = featureNamesGroup.map((f) => [f.feature, new Fzf(f.names, { limit: 6 })]);
   }
 
   $: if (fzf) {
     candidates = [];
-    for (const [f, fz] of fzf) {
+    for (const [feature, fz] of fzf) {
       const res = fz.find(search);
       candidates.push({
-        feature: f,
+        feature,
         values: res.map((x) => ({
-          feature: f,
+          feature,
           raw: x.item,
           embellished: highlightChars(x.item, x.positions)
         }))
       });
     }
   }
+
+  // Top-down update of the search box.
+  const setSearch = oneLRU((v: string) => (search = v));
+  $: curr.selected?.name && setSearch(curr.selected?.name);
 </script>
 
 <div class="relative w-full">

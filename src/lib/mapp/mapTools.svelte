@@ -4,8 +4,8 @@
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
-  import type { PlainJSON } from '../data/dataHandlers';
-  import { activeSample, samples } from '../store';
+  import type { PlainJSON } from '../data/features';
+  import { activeFeatures, activeSample, samples } from '../store';
   import type { Draww } from './selector';
 
   export let map: Mapp;
@@ -198,6 +198,10 @@
               </label>
             </td>
 
+            <td class="pr-3 text-yellow-400">
+              {$activeFeatures[ovName]?.name ?? 'None'}
+            </td>
+
             <td>
               <input
                 type="range"
@@ -207,7 +211,6 @@
                 step="0.01"
                 on:change={(e) => setOpacity(ovName, e.currentTarget.value)}
                 on:mousemove={(e) => setOpacity(ovName, e.currentTarget.value)}
-                on:mousedown={() => setVisible(ovName, true)}
                 class="max-w-[5rem] translate-y-[2px] cursor-pointer opacity-80"
               />
             </td>

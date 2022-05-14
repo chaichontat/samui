@@ -1,6 +1,6 @@
-import first from '$lib/data/first';
 import sampleList from '$lib/data/meh';
 import { get, writable, type Writable } from 'svelte/store';
+import type { NameWithFeature } from './data/features';
 import type { Sample } from './data/sample';
 
 export type Idx = { idx: number; source: string };
@@ -19,80 +19,29 @@ export const store: Writable<State> = writable({
   }
 });
 
-export type HoverName<T> = {
-  hover: T | null;
-  selected: T | null;
-  get active(): T | null;
-};
-
-export type FeatureNames = {
-  feature?: string;
-  names: string[];
-};
-
-export type FeatureName = {
-  feature?: string;
-  name?: string;
-};
-
-export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }): HoverName<T> {
-  return {
-    hover: hover ?? null,
-    selected: selected ?? null,
-    get active() {
-      if (this.hover) return this.hover;
-      return this.selected;
-    }
-  };
-}
-
-export const activeFeatures: Writable<Record<string, FeatureName>> = writable({});
-
-export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> = writable({
-  ptr: [],
-  names: {}
-});
-
-export const multipleSelect: Writable<number[]> = writable([]);
-
-const s = first.name;
-
-export const activeOverlay: Writable<string> = writable('');
+// Samples
+export const samples: Writable<Record<string, Sample>> = writable({});
+// Changed in mapTile and byod.
+// Automatically hydrates on change.
 export const activeSample: Writable<string> = writable('');
-export const samples: Writable<{ [key: string]: Sample }> = writable({});
+activeSample.subscribe((n) => {
+  const s = get(samples)[n];
+  if (!s) return;
+  if (!s.hydrated) s.hydrate().catch(console.error);
+  sample.set(s);
+});
+export const sample: Writable<Sample | undefined> = writable();
 
+// Overlays and Features
+type OverlayName = string;
+export const activeFeatures: Writable<Record<OverlayName, NameWithFeature>> = writable({});
+export const activeOverlay: Writable<string> = writable('');
+
+// Maps
 export const activeMap: Writable<number> = writable(0);
 export const mapList: Writable<number[]> = writable([]);
 
-export async function updateSample(s: Sample) {
-  if (!s.hydrated) await s.hydrate();
-}
-
-activeSample.subscribe((n) => {
-  const ss = get(samples);
-  if (!ss[n]) {
-    return;
-  }
-  updateSample(ss[n]).catch(console.error);
-});
-
-// In case that a new sample is added that matches the active sample.
-// samples.subscribe((s) => {
-//   if (!get(currSample)) {
-//     const sample = s[get(activeSample)];
-//     if (sample) {
-//       updateSample(sample).catch(console.error);
-//     }
-//   }
-// });
-
 export function preload() {
-  first.promise
-    .then(() => {
-      samples.set({ [s]: first, ...get(samples) });
-    })
-    .catch(console.error);
-
   if (sampleList) {
     sampleList
       .then((ss) => {
