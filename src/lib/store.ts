@@ -27,10 +27,8 @@ export const activeSample: Writable<string> = writable('');
 activeSample.subscribe((n) => {
   const s = get(samples)[n];
   if (!s) return;
-  if (!s.hydrated)
-    s.hydrate()
-      .then(() => sample.set(s))
-      .catch(console.error);
+  if (!s.hydrated) s.hydrate().catch(console.error);
+  sample.set(s);
 });
 export const sample: Writable<Sample | undefined> = writable();
 

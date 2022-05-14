@@ -156,11 +156,6 @@
     <section
       class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
     >
-      <!-- Spot indicator -->
-      <div class="mix-blend-difference">
-        Spots: <i>{@html $activeFeatures[$activeOverlay]?.name}</i>
-      </div>
-
       <!-- Color indicator -->
       <div class="flex flex-col">
         {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
