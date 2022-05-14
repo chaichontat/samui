@@ -85,8 +85,8 @@
 
     map.layerMap['cells']?.update(sample.overlays.cells);
     updateSpot({
-      key: `${sample.name}-${$activeFeatures.name ?? 'null'}`,
-      args: [$activeFeatures]
+      key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
+      args: [$activeOverlay, $activeFeatures[$activeOverlay]]
     });
   });
 
@@ -107,29 +107,29 @@
 
   let currimage: 'quantitative' | 'categorical';
 
-  const updateSpot = keyOneLRU((fn: FeatureName) => {
+  const updateSpot = keyOneLRU((ov: string, fn: FeatureName) => {
     if (!sample || !fn) return false;
     const { values, dataType } = sample.getFeature(fn);
-    if (dataType !== currimage) {
-      map.layerMap.spots?.updateStyle(
+    if (ov === 'spots' && dataType !== currimage) {
+      map.layerMap[ov]?.updateStyle(
         genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
       );
       currimage = dataType as 'quantitative' | 'categorical';
     }
-    map.layerMap.spots?.updateIntensity(map, values).catch(console.error);
+    map.layerMap[ov]?.updateIntensity(map, values).catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
   function updateSpotName(fn: FeatureName) {
     if (sample) {
       updateSpot({
-        key: `${sample.name}${JSON.stringify(fn)} ?? 'null'}`,
-        args: [$activeFeatures]
+        key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
+        args: [$activeOverlay, $activeFeatures[$activeOverlay]]
       });
     }
   }
 
-  $: updateSpotName($activeFeatures);
+  $: updateSpotName($activeFeatures[$activeOverlay]);
 
   $: small = width < 500;
 </script>
@@ -153,7 +153,9 @@
       class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
     >
       <!-- Spot indicator -->
-      <div class="mix-blend-difference">Spots: <i>{@html $activeFeatures?.name}</i></div>
+      <div class="mix-blend-difference">
+        Spots: <i>{@html $activeFeatures[$activeOverlay]?.name}</i>
+      </div>
 
       <!-- Color indicator -->
       <div class="flex flex-col">

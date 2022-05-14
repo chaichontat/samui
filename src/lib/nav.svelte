@@ -14,7 +14,7 @@
 
   let active: HoverName<FeatureName>;
   $: if (active?.active) {
-    $activeFeatures = active.active;
+    $activeFeatures[$activeOverlay] = active.active;
   }
   $: sample = $samples[$activeSample];
   let names;

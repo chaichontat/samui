@@ -107,7 +107,7 @@ export class Sample extends Deferrable {
   getFeature<T extends RetrievedData>(fn: FeatureName) {
     let values;
     let feature;
-    if (!fn.name) return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
+    if (!fn?.name) return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
     if (fn.feature) {
       feature = this.features[fn.feature] as ChunkedJSON<T>;
       values = feature?.retrieve!(fn.name);

@@ -25,9 +25,9 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this._style = style ?? {
       variables: { opacity: 1 },
       symbol: {
-        size: ['interpolate', ['exponential', 2], ['zoom'], 1, 2, 4, 5],
+        size: ['interpolate', ['exponential', 2], ['zoom'], 1, 3, 4, 10],
         symbolType: 'circle',
-        color: '#ef4444',
+        color: ['case', ...genCategoricalColors(), '#ffffff'],
         opacity: ['var', 'opacity']
       }
     };

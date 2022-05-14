@@ -80,7 +80,8 @@
         for (const [i, x] of conv.legend.entries()) {
           legend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
         }
-        _color = intensity.map((x) => tableau10arr[x % tableau10arr.length] + opacity);
+        _color = conv.converted.map((x) => tableau10arr[x % tableau10arr.length] + opacity);
+
         return { colors: _color, legend };
 
       case 'quantitative':

@@ -19,10 +19,10 @@
   let intensity;
 
   $: {
-    const f = sample?.getFeature($activeFeatures);
+    const f = sample?.getFeature($activeFeatures[$activeOverlay]);
     intensity = f
       ? {
-          name: `${sample?.name}-${$activeOverlay}-${$activeFeatures.name}`,
+          name: `${sample?.name}-${$activeOverlay}-${$activeFeatures[$activeOverlay]?.name}`,
           dataType: f.dataType,
           values: f.values
         }

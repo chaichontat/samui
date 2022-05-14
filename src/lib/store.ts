@@ -46,7 +46,7 @@ export function genHoverName<T>({ hover, selected }: { hover?: T; selected?: T }
   };
 }
 
-export const activeFeatures: Writable<FeatureName> = writable({});
+export const activeFeatures: Writable<Record<string, FeatureName>> = writable({});
 
 export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> = writable({
   ptr: [],

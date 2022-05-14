@@ -44,6 +44,7 @@
 
   $: handleSampleUpdate(items);
   $: _active = rows.find((r) => r.name === active)!;
+  $: if (!active) active = items[0];
 </script>
 
 <div class="relative w-full">

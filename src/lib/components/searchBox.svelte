@@ -64,7 +64,7 @@
     placeholder="Search features"
   />
 
-  {#if search && showSearch}
+  {#if showSearch}
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
       class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"
