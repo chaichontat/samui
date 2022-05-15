@@ -2,15 +2,31 @@
   import { resizable } from '$lib/utils';
   import Github from '$src/lib/components/github.svelte';
   import { byod } from '$src/lib/data/byod';
+  import { getSample } from '$src/lib/data/meh';
   import { mapList, preload, samples } from '$src/lib/store';
   import MapSample, { type Hie } from '$src/pages/mapTile.svelte';
   import Sidebar from '$src/pages/sidebar.svelte';
+  import { onMount } from 'svelte';
 
   $mapList = [0];
   let hie: Hie = {
     root: true,
     maps: [0]
   };
+
+  onMount(() => {
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get('url');
+    const s = params.getAll('s');
+
+    if (s.length > 0) {
+      Promise.all(
+        s.map((ss) =>
+          getSample('https://' + (url ?? '') + ss).then((sa) => ($samples[sa.name] = sa))
+        )
+      ).catch(alert);
+    }
+  });
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>

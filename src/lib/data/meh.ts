@@ -6,37 +6,37 @@ export const s3_url = dev
   ? ''
   : 'https://chaichontat-host.s3.us-west-004.backblazeb2.com/loopy-browser';
 
-async function getSample(s: string) {
-  const r = await fetch(`${s3_url}/${s}/sample.json`)
-    .then((r) => r.json() as Promise<SampleParams>)
-    .then(convertSamplePreload);
-  return new Sample(r);
-}
-
 async function gen_samples(n: string[]) {
-  return await Promise.all(n.map(getSample));
+  return await Promise.all(n.map((u) => getSample(`${s3_url}/${u}`)));
 }
 
 export default browser ? gen_samples(names) : undefined;
 
-export function convertSamplePreload(r: SampleParams) {
+export async function getSample(s: string) {
+  const r = await fetch(`${s}/sample.json`)
+    .then((r) => r.json() as Promise<SampleParams>)
+    .then((r) => convertSamplePreload(r, s));
+  return new Sample(r);
+}
+
+export function convertSamplePreload(r: SampleParams, dirUrl: string) {
   for (const url of r.imgParams.urls) {
-    url.url = `${s3_url}/${r.name}/${url.url}`;
+    url.url = `${dirUrl}/${url.url}`;
     url.type = 'network';
   }
 
   for (const f of r.featParams) {
     if (f.url) {
-      f.url = { url: `${s3_url}/${r.name}/${f.url.url}`, type: 'network' };
+      f.url = { url: `${dirUrl}/${f.url.url}`, type: 'network' };
     }
     if ('headerUrl' in f && f.headerUrl) {
-      f.headerUrl = { url: `${s3_url}/${r.name}/${f.headerUrl.url}`, type: 'network' };
+      f.headerUrl = { url: `${dirUrl}/${f.headerUrl.url}`, type: 'network' };
     }
   }
 
   for (const o of r.overlayParams) {
     if (o.url) {
-      o.url = { url: `${s3_url}/${r.name}/${o.url.url}`, type: 'network' };
+      o.url = { url: `${dirUrl}/${o.url.url}`, type: 'network' };
     }
   }
   return r;
