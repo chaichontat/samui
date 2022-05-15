@@ -36,7 +36,7 @@ export function updateNames(
     if (f instanceof PlainJSON) {
       out[0].names.push(name);
     } else if (f instanceof ChunkedJSON) {
-      if (f.header!.names) {
+      if (f.header?.names) {
         out.push({ feature: name, names: Object.keys(f.header!.names) });
       }
     } else {
