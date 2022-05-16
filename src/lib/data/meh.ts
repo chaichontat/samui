@@ -13,31 +13,37 @@ async function gen_samples(n: string[]) {
 export default browser ? gen_samples(names) : undefined;
 
 export async function getSample(s: string) {
-  const r = await fetch(`${s}/sample.json`)
+  return await fetch(`${s}/sample.json`)
     .then((r) => r.json() as Promise<SampleParams>)
-    .then((r) => convertSamplePreload(r, s));
-  return new Sample(r);
+    .then((r) => convertSamplePreload(r, s))
+    .then((r) => new Sample(r))
+    .catch(alert);
 }
 
-export function convertSamplePreload(r: SampleParams, dirUrl: string) {
+export function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
+  if (!r.imgParams) throw new Error(`No imgParams in ${r.name!}`);
   for (const url of r.imgParams.urls) {
     url.url = `${dirUrl}/${url.url}`;
     url.type = 'network';
   }
 
-  for (const f of r.featParams) {
-    if (f.url) {
-      f.url = { url: `${dirUrl}/${f.url.url}`, type: 'network' };
-    }
-    if ('headerUrl' in f && f.headerUrl) {
-      f.headerUrl = { url: `${dirUrl}/${f.headerUrl.url}`, type: 'network' };
+  if (r.featParams) {
+    for (const f of r.featParams) {
+      if (f.url) {
+        f.url = { url: `${dirUrl}/${f.url.url}`, type: 'network' };
+      }
+      if ('headerUrl' in f && f.headerUrl) {
+        f.headerUrl = { url: `${dirUrl}/${f.headerUrl.url}`, type: 'network' };
+      }
     }
   }
 
-  for (const o of r.overlayParams) {
-    if (o.url) {
-      o.url = { url: `${dirUrl}/${o.url.url}`, type: 'network' };
+  if (r.overlayParams) {
+    for (const o of r.overlayParams) {
+      if (o.url) {
+        o.url = { url: `${dirUrl}/${o.url.url}`, type: 'network' };
+      }
     }
   }
-  return r;
+  return r as SampleParams;
 }
