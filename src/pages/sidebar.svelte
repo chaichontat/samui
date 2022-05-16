@@ -10,8 +10,8 @@
   let showing = 0;
 
   let sections: typeof Scatterxy[] = [];
+  let showNavigator = false;
 
-  let vegaShown = false;
   $: if (showing === 1) vegaShown = true;
 
   let intensity;
@@ -46,8 +46,18 @@
   </div>
 
   <div class="flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
-    <section class:mt-6={sample}>
-      {#if $sample}
+    <section>
+      <label
+        use:tooltip={{ content: 'Can be slow if there are many points.' }}
+        class="cursor-pointer"
+      >
+        <input
+          type="checkbox"
+          class="mb-2 mr-1 translate-y-0.5 cursor-pointer"
+          bind:checked={showNavigator}
+        /><span>Show Navigator</span>
+      </label>
+      {#if $sample && showNavigator}
         {#await $sample.promise then _}
           <Scatter
             coordsSource={{

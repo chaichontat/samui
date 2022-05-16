@@ -11,7 +11,7 @@
   export let map: Mapp;
   export let selecting: boolean;
   export let showImgControl: boolean;
-  export let colorbar = false;
+  export let colorbar = true;
   export let width = 0;
   let draw: Draww | undefined;
 
@@ -47,13 +47,14 @@
     updateSelectionPoints();
   }
 
-  let colorOpacity = 0.8;
+  let colorOpacity = 1;
 
   const setVisible = (name: string, c: boolean | null) =>
     map.layerMap[name]?.layer?.setVisible(c ?? false);
 
   const setOpacity = oneLRU(async (name: string, opacity: string) => {
     await map.layerMap[name]?.promise;
+    if (name === 'spots') colorOpacity = Number(opacity);
     map.layerMap[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
 
@@ -222,7 +223,7 @@
 
   {#if colorbar}
     <div class="relative mt-2">
-      <Colorbar class="right-6" bind:opacity={colorOpacity} color="yellow" min={0} max={10} />
+      <Colorbar class="right-6" bind:opacity={colorOpacity} color="turbo" min={0} max={10} />
     </div>
   {/if}
 </section>

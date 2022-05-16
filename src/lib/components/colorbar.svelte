@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { viridis } from '../colors';
+  import { turbo, viridis } from '../colors';
 
-  type Color = 'viridis' | 'yellow';
-  export let color: Color = 'viridis';
+  type Color = 'viridis' | 'yellow' | 'turbo';
+  export let color: Color = 'turbo';
   export let min: number;
   export let max: number;
   export let opacity = 1;
@@ -11,6 +11,7 @@
 
   const mapping: { [color in Color]: string } = {
     viridis: viridis.join(', '),
+    turbo: turbo.join(', '),
     yellow: '#000000, #fce652'
   };
 </script>

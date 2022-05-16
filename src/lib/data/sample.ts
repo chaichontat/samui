@@ -13,8 +13,8 @@ import { Overlay, type OverlayParams } from './overlay';
 export type SampleParams = {
   name: string;
   imgParams: ImageParams;
-  overlayParams: OverlayParams[];
-  featParams: FeatureParams<RetrievedData>[];
+  overlayParams?: OverlayParams[];
+  featParams?: FeatureParams<RetrievedData>[];
   handle?: FileSystemDirectoryHandle;
   activeDefault?: NameWithFeature;
 };
@@ -22,8 +22,8 @@ export type SampleParams = {
 export class Sample extends Deferrable {
   name: string;
   imgParams: ImageParams;
-  overlayParams: OverlayParams[];
-  featParams: FeatureParams<RetrievedData>[];
+  overlayParams?: OverlayParams[];
+  featParams?: FeatureParams<RetrievedData>[];
 
   image: Image;
   features: Record<string, Data>;
@@ -49,21 +49,25 @@ export class Sample extends Deferrable {
     this.overlays = {} as Record<string, Overlay>;
     console.log(overlayParams);
 
-    for (const o of overlayParams) {
-      this.overlays[o.name] = new Overlay(o);
+    if (overlayParams) {
+      for (const o of overlayParams) {
+        this.overlays[o.name] = new Overlay(o);
+      }
     }
 
     this.features = {} as Record<string, Data>;
-    for (const f of featParams) {
-      switch (f.type) {
-        case 'chunkedJSON':
-          this.features[f.name] = new ChunkedJSON(f, false);
-          break;
-        case 'plainJSON':
-          this.features[f.name] = new PlainJSON(f, false);
-          break;
-        default:
-          throw new Error('Unsupported feature type at Sample.constructor');
+    if (featParams) {
+      for (const f of featParams) {
+        switch (f.type) {
+          case 'chunkedJSON':
+            this.features[f.name] = new ChunkedJSON(f, false);
+            break;
+          case 'plainJSON':
+            this.features[f.name] = new PlainJSON(f, false);
+            break;
+          default:
+            throw new Error('Unsupported feature type at Sample.constructor');
+        }
       }
     }
 
@@ -90,7 +94,7 @@ export class Sample extends Deferrable {
     //   this.image.coords!.length
     // ).fill('');
 
-    if (!this.activeDefault.name) {
+    if (!this.activeDefault.name && this.featParams) {
       const f = this.featParams[0].name;
       if (this.features[f] instanceof PlainJSON) {
         this.activeDefault.name = f;
