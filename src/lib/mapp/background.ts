@@ -1,4 +1,4 @@
-import type { Map } from 'ol';
+import { View, type Map } from 'ol';
 import WebGLTileLayer, { type Style } from 'ol/layer/WebGLTile.js';
 import GeoTIFF from 'ol/source/GeoTIFF.js';
 import type { Image } from '../data/image';
@@ -48,7 +48,16 @@ export class Background extends Deferrable implements MapComponent {
 
     this.mPerPx = image.mPerPx;
     map.addLayer(this.layer);
-    map.setView(this.source.getView());
+    const view = this.source.getView();
+    view
+      .then((v) => {
+        return new View({
+          ...v,
+          resolutions: [...v.resolutions!, v.resolutions!.at(-1)! / 2, v.resolutions!.at(-1)! / 4]
+        });
+      })
+      .then((v) => map.setView(v))
+      .catch(console.error);
   }
 
   updateStyle(variables: Record<string, number>) {

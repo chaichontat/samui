@@ -56,7 +56,7 @@ export function tooltip(
   }
 }
 
-function interpolateTurbo(x: number) {
+export function interpolateTurbo(x: number) {
   x = Math.max(0, Math.min(1, x));
   return (
     '#' +

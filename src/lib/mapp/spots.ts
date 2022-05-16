@@ -8,7 +8,7 @@ import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
 import { convertCategoricalToNumber } from '../data/features';
 import type { Overlay } from '../data/overlay';
-import { Deferrable } from '../utils';
+import { Deferrable, interpolateTurbo } from '../utils';
 import type { MapComponent, Mapp } from './mapp';
 
 export class WebGLSpots extends Deferrable implements MapComponent {
@@ -107,7 +107,7 @@ export function genSpotStyle(
     symbolType: 'circle',
     size: [
       'interpolate',
-      ['exponential', 2],
+      ['exponential', 1.2],
       ['zoom'],
       1,
       spotDiamPx / 64,
@@ -118,18 +118,24 @@ export function genSpotStyle(
       4,
       spotDiamPx / 8,
       5,
-      spotDiamPx / 2
+      spotDiamPx / 2,
+      6,
+      spotDiamPx,
+      7,
+      spotDiamPx * 2
     ]
   };
 
   if (type === 'quantitative') {
+    const colors = [...Array(10).keys()].flatMap((i) => [i, interpolateTurbo(i / 10)]);
+    colors[1] += '00';
     return {
-      variables: { opacity: 0.9 },
+      variables: { opacity: 1 },
       symbol: {
         ...common,
-        color: '#fce652ff',
-        // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-        opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 5]], 0, 1]
+        // color: '#fce652ff',
+        color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
+        opacity: ['var', 'opacity']
         // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
       }
     };
