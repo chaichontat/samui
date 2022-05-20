@@ -9,7 +9,7 @@ packages = [
 version = "0.0.1"
 
 [tool.poetry.dependencies]
-GDAL = "^3.4.2"
+# GDAL = "^3.4.2" GDAL is a build disaster.
 anndata = "^0.8.0"
 click = "^8.1.2"
 python = ">=3.10,<3.11"
