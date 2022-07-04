@@ -14,8 +14,7 @@ const config = {
       resolve: {
         alias: {
           $src: path.resolve('./src'),
-          $comps: path.resolve('./src/lib/components'),
-          $lib: path.resolve('./src/lib')
+          $comps: path.resolve('./src/lib/components')
         }
       },
       server: {
