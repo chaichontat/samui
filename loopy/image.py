@@ -19,9 +19,8 @@ Meter = Annotated[float, "meter"]
 
 class ImageParams(ReadonlyModel):
     urls: list[Url]
-    channel: dict[str, int]
+    channel: list[str] | Literal["rgb"]
     mPerPx: float
-    mode: Literal["composite", "rgb"]
 
 
 def gen_geotiff(img: np.ndarray, path: Path, scale: float, rgb: bool = False) -> list[Path]:

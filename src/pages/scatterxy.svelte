@@ -29,8 +29,8 @@
     jitterX = 0,
     jitterY = 0
   ) {
-    let xf = s.getFeature(x.active!);
-    let yf = s.getFeature(y.active!);
+    let xf = await s.getFeature(x.active!);
+    let yf = await s.getFeature(y.active!);
 
     if (xf.values instanceof Promise) {
       xf.values = (await xf.values) as number[];
@@ -55,7 +55,7 @@
   }
 
   async function updateColors(s: Sample, color: HoverSelect<NameWithFeature>) {
-    let c = s.getFeature(color.active!);
+    let c = await s.getFeature(color.active!);
     if (c.values instanceof Promise) {
       c.values = await c.values;
     }

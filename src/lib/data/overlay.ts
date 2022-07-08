@@ -1,6 +1,7 @@
+import Papa from 'papaparse';
 import { Deferrable } from '../utils';
 import { convertLocalToNetwork, type Url } from './features';
-type Coord = { x: number; y: number };
+type Coord = { x: number; y: number; id?: string };
 type Shape = 'circle';
 
 export interface OverlayParams {
@@ -46,7 +47,20 @@ export class Overlay extends Deferrable {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      this.pos = (await fetch(this.url.url).then((r) => r.json())) as Coord[];
+      let res: () => void;
+      const promise: Promise<void> = new Promise((resolve) => (res = resolve));
+
+      await Papa.parse(this.url.url, {
+        download: true,
+        dynamicTyping: true,
+        header: true,
+        complete: (results: Papa.ParseResult<Coord>) => {
+          this.pos = results.data;
+          res();
+        },
+        skipEmptyLines: 'greedy'
+      });
+      await promise;
     }
     this.hydrated = true;
     this._deferred.resolve();

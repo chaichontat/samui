@@ -4,7 +4,7 @@
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
   import { genSpotStyle } from '$src/lib/mapp/spots';
-  import { keyOneLRU } from '$src/lib/utils';
+  import { keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
@@ -18,6 +18,8 @@
 
   export let uid: number;
   const mapName = `map-${uid}`;
+  let mapElem: HTMLDivElement;
+  let tippyElem: HTMLDivElement;
   const map = new Mapp();
 
   let width: number;
@@ -33,11 +35,11 @@
   let showImgControl = true;
 
   onMount(() => {
-    map.mount(mapName);
+    map.mount(mapElem, tippyElem);
     map.handlePointer({
-      pointermove: (idx: number) => {
+      pointermove: oneLRU((idx: number) => {
         if (trackHover) $store.currIdx = { idx, source: 'map' };
-      }
+      })
     });
   });
 
@@ -81,7 +83,7 @@
     await sample.promise;
     const img = sample.image;
     await map.update({ image: img, spots });
-    convertImgCtrl = colorVarFactory(img.mode, img.channel);
+    convertImgCtrl = colorVarFactory(img.channel);
 
     map.layerMap['cells']?.update(sample.overlays.cells);
 
@@ -101,11 +103,21 @@
     map.layerMap.background?.updateStyle(convertImgCtrl(imgCtrl));
   }
 
-  const changeHover = async (idx: number) => {
+  const setTippy = (idx: number) => {
+    const ov = sample.overlays[$activeOverlay];
+    const pos = ov.pos![idx];
+    if (map.tippy) {
+      map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
+      map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+    }
+  };
+
+  const changeHover = oneLRU(async (idx: number) => {
     if (!image) return;
     await image.promise;
     map.layerMap.active?.update(sample.overlays[$activeOverlay], idx);
-  };
+    setTippy(idx);
+  });
 
   $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
 
@@ -113,14 +125,18 @@
 
   const updateSpot = keyOneLRU((ov: string, fn: NameWithFeature) => {
     if (!sample || !fn) return false;
-    const { values, dataType } = sample.getFeature(fn);
-    if (ov === 'spots' && dataType !== currimage) {
-      map.layerMap[ov]?.updateStyle(
-        genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
-      );
-      currimage = dataType as 'quantitative' | 'categorical';
-    }
-    map.layerMap[ov]?.updateIntensity(map, values).catch(console.error);
+    sample
+      .getFeature(fn)
+      .then(({ values, dataType }) => {
+        if (ov === 'spots' && dataType !== currimage) {
+          map.layerMap[ov]?.updateStyle(
+            genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
+          );
+          currimage = dataType as 'quantitative' | 'categorical';
+        }
+        map.layerMap[ov]?.updateIntensity(map, values).catch(console.error);
+      })
+      .catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
@@ -141,15 +157,26 @@
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
 
-<section class="relative h-full w-full" bind:clientHeight={height} bind:clientWidth={width}>
+<section
+  class="relative h-full w-full overflow-hidden"
+  bind:clientHeight={height}
+  bind:clientWidth={width}
+>
   <!-- Map -->
   <div
     id={mapName}
+    bind:this={mapElem}
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:small={showImgControl && small}
-    class:composite={showImgControl && image?.mode === 'composite' && !small}
-    class:rgb={showImgControl && image?.mode === 'rgb'}
+    class:composite={showImgControl && image?.channel !== 'rgb' && !small}
+    class:rgb={showImgControl && image?.channel === 'rgb'}
+  />
+
+  <!-- Map tippy -->
+  <div
+    bind:this={tippyElem}
+    class="ol-tippy pointer-events-none max-w-sm -translate-x-1/2 translate-y-4 rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
 
   {#if sample}
@@ -179,18 +206,10 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if image.mode === 'composite'}
-          <svelte:component
-            this={ImgControl}
-            mode={image.mode}
-            channels={image.channel}
-            bind:imgCtrl
-            {small}
-          />
-        {:else if image.mode === 'rgb'}
-          <svelte:component this={ImgControl} mode={image.mode} bind:imgCtrl {small} />
+        {#if image.channel !== 'rgb'}
+          <svelte:component this={ImgControl} channels={image.channel} bind:imgCtrl {small} />
         {:else}
-          {console.warn('Unknown image.mode: ' + image.mode)}
+          <svelte:component this={ImgControl} bind:imgCtrl {small} />
         {/if}
       </div>
     </div>

@@ -47,7 +47,6 @@ export class Sample extends Deferrable {
     this.activeDefault = activeDefault ?? {};
 
     this.overlays = {} as Record<string, Overlay>;
-    console.log(overlayParams);
 
     if (overlayParams) {
       for (const o of overlayParams) {
@@ -108,12 +107,13 @@ export class Sample extends Deferrable {
     return this;
   }
 
-  getFeature<T extends RetrievedData>(fn: NameWithFeature) {
+  async getFeature<T extends RetrievedData>(fn: NameWithFeature) {
     let values;
     let feature;
     if (!fn?.name) return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
     if (fn.feature) {
       feature = this.features[fn.feature] as ChunkedJSON<T>;
+      await feature.promise;
       values = feature?.retrieve!(fn.name);
     } else {
       feature = this.features[fn.name] as PlainJSON<T>;

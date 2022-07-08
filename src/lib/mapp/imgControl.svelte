@@ -1,27 +1,26 @@
 <script lang="ts">
   import ButtonGroup from '../components/buttonGroup.svelte';
-  import type { ImageCtrl, ImageMode } from './imgControl';
+  import type { ImageCtrl } from './imgControl';
 
-  export let mode: ImageMode = 'composite';
-  export let channels: Record<string, number> | null = null;
+  export let channels: string[] | 'rgb' | null = null;
   export let small = false;
 
-  let names = channels ? Object.keys(channels) : null;
+  let names = channels;
   const _ic: ImageCtrl =
-    mode === 'composite'
-      ? {
+    channels === 'rgb'
+      ? { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 }
+      : {
           type: 'composite',
           showing: [names![0], names![0], names![0]],
           maxIntensity: [128, 128, 128]
-        }
-      : { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
+        };
 
   export let imgCtrl: ImageCtrl = _ic;
   imgCtrl = _ic; // Override from upstream.
 </script>
 
 {#if imgCtrl}
-  {#if mode === 'composite'}
+  {#if channels !== 'rgb'}
     {#each ['blue', 'green', 'red'] as color, i}
       <div class:gap-x-2={small} class:gap-x-4={!small} class="flex">
         <ButtonGroup {names} bind:curr={imgCtrl.showing[i]} {color} {small} addNone />
@@ -45,7 +44,7 @@
           step="0.01"
           max="0.5"
           bind:value={imgCtrl[name]}
-          class="min-w-[4rem] max-w-[12rem] cursor-pointer col-span-2"
+          class="col-span-2 min-w-[4rem] max-w-[12rem] cursor-pointer"
         />
       {/each}
     </div>

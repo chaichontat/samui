@@ -50,7 +50,11 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     }
 
     if (intensity?.length !== this.source?.getFeatures().length) {
-      console.error("Intensity length doesn't match");
+      console.error(
+        `Intensity length doesn't match. Expected: ${this.source?.getFeatures().length}, got: ${
+          intensity?.length
+        }`
+      );
       return false;
     }
 
@@ -82,7 +86,8 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this.layer = newLayer;
   }
 
-  update(overlay: Overlay) {
+  update(overlay?: Overlay) {
+    if (!overlay) return;
     this._mPerPx = overlay.mPerPx;
     this.source.clear();
     this.source.addFeatures(
@@ -128,7 +133,7 @@ export function genSpotStyle(
 
   if (type === 'quantitative') {
     const colors = [...Array(10).keys()].flatMap((i) => [i, interpolateTurbo(i / 10)]);
-    colors[1] += '00';
+    colors[1] += 'ff';
     return {
       variables: { opacity: 1 },
       symbol: {

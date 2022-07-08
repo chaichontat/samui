@@ -29,6 +29,7 @@ const toGet = [
   'sample.json',
   'cluster_graph.json',
   'cellCoords.json',
+  'spotCoords.csv',
   'cellType.json',
   ...[...Array(10).keys()].map((i) => `kmeans${i + 1}.json`)
 ];

@@ -1,28 +1,24 @@
-import type { ImageMode } from '../mapp/imgControl';
 import { Deferrable } from '../utils';
 import { convertLocalToNetwork, type Url } from './features';
 
 export type ImageParams = {
   urls: Url[];
-  channel: Record<string, number>;
+  channel: string[] | 'rgb';
   mPerPx: number;
-  mode: ImageMode;
 };
 
 export class Image extends Deferrable {
   urls: readonly Url[];
-  channel: Record<string, number>;
+  channel: string[] | 'rgb';
   mPerPx: number;
-  mode: ImageMode;
 
   hydrated = false;
 
-  constructor({ urls, channel, mPerPx, mode }: ImageParams, autoHydrate = false) {
+  constructor({ urls, channel, mPerPx }: ImageParams, autoHydrate = false) {
     super();
     this.urls = urls;
     this.channel = channel;
     this.mPerPx = mPerPx;
-    this.mode = mode;
 
     if (autoHydrate) {
       this.hydrate().catch(console.error);
