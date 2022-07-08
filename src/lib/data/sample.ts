@@ -47,7 +47,6 @@ export class Sample extends Deferrable {
     this.activeDefault = activeDefault ?? {};
 
     this.overlays = {} as Record<string, Overlay>;
-    console.log(overlayParams);
 
     if (overlayParams) {
       for (const o of overlayParams) {

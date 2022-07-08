@@ -23,7 +23,6 @@ export class Background extends Deferrable implements MapComponent {
   }
 
   async update(map: Map, image: Image) {
-    console.log(image);
     await image.promise;
     if (this.layer) {
       map.removeLayer(this.layer);
@@ -60,8 +59,6 @@ export class Background extends Deferrable implements MapComponent {
   }
 
   updateStyle(variables: Record<string, number>) {
-    console.log(variables);
-
     this.layer?.updateStyleVariables(variables);
   }
 

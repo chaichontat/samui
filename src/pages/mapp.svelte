@@ -100,8 +100,6 @@
   $: if (sample) update({ key: sample.name, args: [sample] });
 
   $: if (convertImgCtrl && imgCtrl) {
-    console.log(imgCtrl);
-
     map.layerMap.background?.updateStyle(convertImgCtrl(imgCtrl));
   }
 
@@ -109,8 +107,6 @@
     const ov = sample.overlays[$activeOverlay];
     const pos = ov.pos![idx];
     if (map.tippy) {
-      console.log(pos.x);
-      console.log('setTippy', idx);
       map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
       map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
     }

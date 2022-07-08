@@ -13,7 +13,13 @@
     console.log($activeFeatures);
   }
   let names: FeatureNamesGroup[];
-  $: if ($sample) names = updateNames($sample.features, $activeOverlay);
+  $: {
+    if ($sample) {
+      updateNames($sample.features, $activeOverlay)
+        .then((v) => (names = v))
+        .catch(console.error);
+    }
+  }
 
   activeOverlay.subscribe((v: string) => {
     if (!active) return;
