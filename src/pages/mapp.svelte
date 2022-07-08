@@ -4,7 +4,7 @@
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
   import { genSpotStyle } from '$src/lib/mapp/spots';
-  import { keyOneLRU } from '$src/lib/utils';
+  import { keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
@@ -18,6 +18,8 @@
 
   export let uid: number;
   const mapName = `map-${uid}`;
+  let mapElem: HTMLDivElement;
+  let tippyElem: HTMLDivElement;
   const map = new Mapp();
 
   let width: number;
@@ -33,11 +35,11 @@
   let showImgControl = true;
 
   onMount(() => {
-    map.mount(mapName);
+    map.mount(mapElem, tippyElem);
     map.handlePointer({
-      pointermove: (idx: number) => {
+      pointermove: oneLRU((idx: number) => {
         if (trackHover) $store.currIdx = { idx, source: 'map' };
-      }
+      })
     });
   });
 
@@ -101,11 +103,23 @@
     map.layerMap.background?.updateStyle(convertImgCtrl(imgCtrl));
   }
 
-  const changeHover = async (idx: number) => {
+  const setTippy = (idx: number) => {
+    const ov = sample.overlays[$activeOverlay];
+    const pos = ov.pos![idx];
+    if (map.tippy) {
+      console.log(pos.x);
+      console.log('setTippy', idx);
+      map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
+      map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+    }
+  };
+
+  const changeHover = oneLRU(async (idx: number) => {
     if (!image) return;
     await image.promise;
     map.layerMap.active?.update(sample.overlays[$activeOverlay], idx);
-  };
+    setTippy(idx);
+  });
 
   $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
 
@@ -141,15 +155,26 @@
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
 
-<section class="relative h-full w-full" bind:clientHeight={height} bind:clientWidth={width}>
+<section
+  class="relative h-full w-full overflow-hidden"
+  bind:clientHeight={height}
+  bind:clientWidth={width}
+>
   <!-- Map -->
   <div
     id={mapName}
+    bind:this={mapElem}
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:small={showImgControl && small}
     class:composite={showImgControl && image?.mode === 'composite' && !small}
     class:rgb={showImgControl && image?.mode === 'rgb'}
+  />
+
+  <!-- Map tippy -->
+  <div
+    bind:this={tippyElem}
+    class="ol-tippy pointer-events-none max-w-sm -translate-x-1/2 translate-y-4 rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
 
   {#if sample}

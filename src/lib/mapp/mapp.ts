@@ -1,5 +1,5 @@
 import type { Image } from '$lib/data/image';
-import { Map } from 'ol';
+import { Map, MapBrowserEvent, Overlay } from 'ol';
 import ScaleLine from 'ol/control/ScaleLine.js';
 import Zoom from 'ol/control/Zoom.js';
 import type { Geometry, Point } from 'ol/geom';
@@ -7,7 +7,8 @@ import type { Layer } from 'ol/layer';
 import type WebGLPointsLayer from 'ol/layer/WebGLPoints';
 import type GeoTIFFSource from 'ol/source/GeoTIFF';
 import type VectorSource from 'ol/source/Vector';
-import type { Overlay } from '../data/overlay';
+import type { Overlay as OverlayClass } from '../data/overlay';
+
 import { Deferrable } from '../utils';
 import { Background } from './background';
 import { Draww } from './selector';
@@ -31,6 +32,7 @@ export class Mapp extends Deferrable {
   };
   draw?: Draww;
   image?: Image;
+  tippy?: { overlay: Overlay; elem: HTMLElement };
 
   mounted = false;
 
@@ -64,13 +66,13 @@ export class Mapp extends Deferrable {
     this.draw = new Draww();
   }
 
-  mount(target: string) {
+  mount(target: HTMLElement, tippyElem: HTMLElement) {
     this.layers.map((l) => l.mount());
-
     this.map = new Map({
       target,
       layers: this.layers.map((l) => l.layer!)
     });
+
     if (!this.map) throw new Error('Map not initialized.');
     this.draw!.mount(this.map);
 
@@ -81,11 +83,13 @@ export class Mapp extends Deferrable {
     this.map.on('movestart', () => (this.map!.getViewport().style.cursor = 'grabbing'));
     this.map.on('moveend', () => (this.map!.getViewport().style.cursor = 'grab'));
 
+    this.tippy = { overlay: new Overlay({ element: tippyElem }), elem: tippyElem };
+    this.map.addOverlay(this.tippy.overlay);
     this._deferred.resolve();
     this.mounted = true;
   }
 
-  async update({ image, spots }: { image: Image; spots?: Overlay }) {
+  async update({ image, spots }: { image: Image; spots?: OverlayClass }) {
     await this.promise;
     await image.promise;
     if (spots) {
@@ -115,7 +119,10 @@ export class Mapp extends Deferrable {
     }
   }
 
-  handlePointer(funs: { pointermove?: (id: number) => void; click?: (id: number) => void }) {
+  handlePointer(funs: {
+    pointermove?: (id: number, ev?: MapBrowserEvent<UIEvent>) => void;
+    click?: (id: number) => void;
+  }) {
     if (!this.map) throw new Error('Map not initialized.');
     if (!this.layerMap.spots) return;
     for (const [k, v] of Object.entries(funs)) {
@@ -130,7 +137,7 @@ export class Mapp extends Deferrable {
               console.error("Feature doesn't have an id.");
               return true;
             }
-            v(idx);
+            v(idx, e);
             return true; // Terminates search.
           },
           { layerFilter: (layer) => layer === this.layerMap.spots!.layer, hitTolerance: 10 }
