@@ -3,7 +3,6 @@ import WebGLTileLayer, { type Style } from 'ol/layer/WebGLTile.js';
 import GeoTIFF from 'ol/source/GeoTIFF.js';
 import type { Image } from '../data/image';
 import { Deferrable } from '../utils';
-import type { ImageMode } from './imgControl';
 import type { MapComponent } from './mapp';
 
 export class Background extends Deferrable implements MapComponent {
@@ -36,11 +35,11 @@ export class Background extends Deferrable implements MapComponent {
 
     const urls = image.urls.map((url) => ({ url: url.url }));
     this.source = new GeoTIFF({
-      normalize: image.mode === 'rgb',
+      normalize: image.channel === 'rgb',
       sources: urls
     });
 
-    this.mode = image.mode ?? 'composite';
+    this.mode = image.channel === 'rgb' ? 'rgb' : 'composite';
     this.layer = new WebGLTileLayer({
       style: this._genBgStyle(this.mode),
       source: this.source
@@ -61,10 +60,12 @@ export class Background extends Deferrable implements MapComponent {
   }
 
   updateStyle(variables: Record<string, number>) {
+    console.log(variables);
+
     this.layer?.updateStyleVariables(variables);
   }
 
-  _genBgStyle(mode: ImageMode): Style {
+  _genBgStyle(mode: 'composite' | 'rgb'): Style {
     switch (mode) {
       case 'composite':
         return {

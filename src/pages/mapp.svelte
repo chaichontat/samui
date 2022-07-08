@@ -83,7 +83,7 @@
     await sample.promise;
     const img = sample.image;
     await map.update({ image: img, spots });
-    convertImgCtrl = colorVarFactory(img.mode, img.channel);
+    convertImgCtrl = colorVarFactory(img.channel);
 
     map.layerMap['cells']?.update(sample.overlays.cells);
 
@@ -100,6 +100,8 @@
   $: if (sample) update({ key: sample.name, args: [sample] });
 
   $: if (convertImgCtrl && imgCtrl) {
+    console.log(imgCtrl);
+
     map.layerMap.background?.updateStyle(convertImgCtrl(imgCtrl));
   }
 
@@ -167,8 +169,8 @@
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:small={showImgControl && small}
-    class:composite={showImgControl && image?.mode === 'composite' && !small}
-    class:rgb={showImgControl && image?.mode === 'rgb'}
+    class:composite={showImgControl && image?.channel !== 'rgb' && !small}
+    class:rgb={showImgControl && image?.channel === 'rgb'}
   />
 
   <!-- Map tippy -->
@@ -204,18 +206,10 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if image.mode === 'composite'}
-          <svelte:component
-            this={ImgControl}
-            mode={image.mode}
-            channels={image.channel}
-            bind:imgCtrl
-            {small}
-          />
-        {:else if image.mode === 'rgb'}
-          <svelte:component this={ImgControl} mode={image.mode} bind:imgCtrl {small} />
+        {#if image.channel !== 'rgb'}
+          <svelte:component this={ImgControl} channels={image.channel} bind:imgCtrl {small} />
         {:else}
-          {console.warn('Unknown image.mode: ' + image.mode)}
+          <svelte:component this={ImgControl} bind:imgCtrl {small} />
         {/if}
       </div>
     </div>

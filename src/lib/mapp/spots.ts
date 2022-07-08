@@ -86,7 +86,8 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this.layer = newLayer;
   }
 
-  update(overlay: Overlay) {
+  update(overlay?: Overlay) {
+    if (!overlay) return;
     this._mPerPx = overlay.mPerPx;
     this.source.clear();
     this.source.addFeatures(

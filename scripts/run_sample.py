@@ -25,14 +25,14 @@ directory = Path("/Users/chaichontat/Documents/VIF")
 out = Path("/Users/chaichontat/GitHub/loopy-browser/static")
 samples = ["Br2720_Ant_IF", "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]
 
-channels = {
-    "Lipofuscin": 1,
-    "DAPI": 2,
-    "GFAP": 3,
-    "NeuN": 4,
-    "OLIG2": 5,
-    "TMEM119": 6,
-}
+channels = [
+    "Lipofuscin",
+    "DAPI",
+    "GFAP",
+    "NeuN",
+    "OLIG2",
+    "TMEM119",
+]
 
 
 analyses = {
