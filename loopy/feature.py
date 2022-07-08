@@ -11,12 +11,25 @@ from scipy.sparse import csc_matrix, csr_matrix
 from .utils import ReadonlyModel, Url
 
 
-class Coords(ReadonlyModel):
+class Coord(ReadonlyModel):
     x: int
     y: int
 
 
+class CoordId(Coord):
+    id: str
+
+
 class OverlayParams(ReadonlyModel):
+    """
+    name: Name of the overlay
+    shape: Shape of the overlay (currently only circle)
+    url: points to a json file with the coordinates of the overlay
+        in {x: number, y: number, id?: string}[].
+    mPerPx: micrometers per pixel
+    size: size of the overlay in micrometers
+    """
+
     name: str
     shape: Literal["circle"]
     url: Url
@@ -52,7 +65,13 @@ class ChunkedJSONHeader(ReadonlyModel):
 FeatureParams = ChunkedJSONParams | PlainJSONParams
 
 
-def chunk(objs: list[Any]) -> tuple[np.ndarray, bytearray]:
+def concat(objs: list[Any]) -> tuple[np.ndarray, bytearray]:
+    """Concatenate a list of JSON serializable objects into a single gzipped binary
+    along with pointers to the start of each object.
+
+    Returns:
+        tuple[np.ndarray, bytearray]: Pointer array and binary data
+    """
     ptr = np.zeros(len(objs) + 1, dtype=int)
     curr = 0
     outbytes = bytearray()
@@ -66,7 +85,7 @@ def chunk(objs: list[Any]) -> tuple[np.ndarray, bytearray]:
 
 
 def get_compressed_genes(
-    vis: AnnData, mode: Literal["csr", "csc"] = "csc", include_name: bool = True
+    vis: AnnData, mode: Literal["csr", "csc"] = "csc"
 ) -> tuple[ChunkedJSONHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(vis.X)  # csR
@@ -94,16 +113,8 @@ def get_compressed_genes(
                 }
             )
 
-    # if mode == "csr":
-    #     objs = [
-    #         None if o is None else {vis.var_names[i]: v for i, v in zip(o["index"], o["value"])} for o in objs
-    #     ]
-
-    # if mode == "csc":
     names = {name: i for i, name in enumerate(names)}
-
-    ptr, outbytes = chunk(objs)
-
+    ptr, outbytes = concat(objs)
     match mode:
         case "csr":
             length = cs.shape[1]
