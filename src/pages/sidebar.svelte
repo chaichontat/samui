@@ -69,6 +69,7 @@
             hoverChartOptions={naviChartOptions}
             bind:currHover={$store.currIdx.idx}
             colorbar
+            showScatter={showNavigator}
           />
         {/await}
       {/if}

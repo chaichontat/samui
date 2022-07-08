@@ -19,6 +19,7 @@
   export let currHover: number | null = null;
   export let mainChartOptions: ChartConfiguration<'scatter'> | undefined = undefined;
   export let hoverChartOptions: ChartConfiguration<'scatter'> | undefined = undefined;
+  export let showScatter = true;
 
   interface IntensitySource extends Named<number[] | Promise<number[]>> {
     dataType: 'categorical' | 'quantitative';
@@ -126,8 +127,10 @@
   {#if colorbar && intensitySource?.dataType === 'categorical' && catLegend}
     <Legend colormap={catLegend} />
   {/if}
-  <canvas class="absolute" id={`${id}-hover`} />
-  <canvas class="" id={`${id}-main`} />
+  {#if showScatter}
+    <canvas class="absolute" id={`${id}-hover`} />
+    <canvas class="" id={`${id}-main`} />
+  {/if}
   <!-- <div
     class="absolute left-10 top-10 z-10 rounded-lg bg-white/10 px-3 py-1 text-lg font-medium text-white opacity-90 backdrop-blur-sm"
   >
