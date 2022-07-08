@@ -125,14 +125,18 @@
 
   const updateSpot = keyOneLRU((ov: string, fn: NameWithFeature) => {
     if (!sample || !fn) return false;
-    const { values, dataType } = sample.getFeature(fn);
-    if (ov === 'spots' && dataType !== currimage) {
-      map.layerMap[ov]?.updateStyle(
-        genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
-      );
-      currimage = dataType as 'quantitative' | 'categorical';
-    }
-    map.layerMap[ov]?.updateIntensity(map, values).catch(console.error);
+    sample
+      .getFeature(fn)
+      .then(({ values, dataType }) => {
+        if (ov === 'spots' && dataType !== currimage) {
+          map.layerMap[ov]?.updateStyle(
+            genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
+          );
+          currimage = dataType as 'quantitative' | 'categorical';
+        }
+        map.layerMap[ov]?.updateIntensity(map, values).catch(console.error);
+      })
+      .catch(console.error);
   });
 
   /// To remove $activeSample dependency since updateSpot must run after updateSample.
