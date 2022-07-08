@@ -1,31 +1,34 @@
 <script lang="ts">
-  import { turbo, viridis } from '../colors';
+  import * as d3 from 'd3';
+  import { onMount } from 'svelte';
+  import { Legend } from './legend';
 
-  type Color = 'viridis' | 'yellow' | 'turbo';
+  type Color = 'viridis' | 'turbo';
   export let color: Color = 'turbo';
   export let min: number;
   export let max: number;
   export let opacity = 1;
-  let cl = 'top-6 right-6';
+  export let title = '';
   export { cl as class };
 
-  const mapping: { [color in Color]: string } = {
-    viridis: viridis.join(', '),
-    turbo: turbo.join(', '),
-    yellow: '#000000, #fce652'
-  };
+  let cl = 'top-6 right-6';
+  let svg: SVGSVGElement;
+
+  onMount(() => {
+    Legend(
+      d3.select(svg),
+      d3.scaleSequential(
+        [min, max],
+        // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        d3[`interpolate${color.charAt(0).toUpperCase() + color.slice(1)}`]
+      ),
+      {
+        title,
+        legendAnchor: 'end'
+      }
+    );
+  });
 </script>
 
-<div class={`absolute z-10 h-36 w-4 rounded border border-slate-600 font-medium ${cl}`}>
-  <div class="absolute -right-5 -top-2 text-sm text-slate-800 dark:text-slate-200">{max}</div>
-  <div class="absolute -right-5 top-[42.5%] text-sm text-slate-800 dark:text-slate-200">
-    {(min + max) / 2}
-  </div>
-  <div class="absolute -right-5 -bottom-2 text-sm text-slate-800 dark:text-slate-200">{min}</div>
-  <div class="h-full w-full" style={`opacity: ${opacity};`}>
-    <div
-      class="h-full w-full rounded"
-      style={`background-image: linear-gradient(0deg, ${mapping[color]});`}
-    />
-  </div>
-</div>
+<svg bind:this={svg} />
