@@ -3,7 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import type { NameWithFeature } from './data/features';
 import type { Sample } from './data/sample';
 
-export type Idx = { idx: number; source: string };
+export type Idx = { idx: number | null; source: string };
 
 export type State = {
   lockedIdx: Idx;

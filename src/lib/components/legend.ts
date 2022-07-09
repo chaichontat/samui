@@ -17,10 +17,11 @@ export type LegendOptions = {
   tickFormat?: (d: number) => string;
   tickValues?: number[];
   legendAnchor?: 'start' | 'end';
+  opacity?: number;
 };
 
 export type Scales =
-  | d3.ScaleSequential<string, never>
+  | d3.ScaleSequential<unknown, never>
   | d3.ScaleThreshold<string, never>
   | d3.ScaleOrdinal<string, never>
   | d3.ScaleLinear<number, never>
@@ -32,7 +33,7 @@ export function Legend<S extends Scales>(
   color: S,
   {
     title,
-    tickSize = 6,
+    tickSize = 8,
     width = 240,
     height = 44 + tickSize,
     marginTop = 18,
@@ -42,7 +43,8 @@ export function Legend<S extends Scales>(
     ticks = width / 64,
     tickFormat = undefined,
     tickValues = undefined,
-    legendAnchor = 'start'
+    legendAnchor = 'start',
+    opacity = 1
   }: LegendOptions = {}
 ) {
   function ramp(color: (t: number) => string, n = 256) {
@@ -113,6 +115,7 @@ export function Legend<S extends Scales>(
       .attr('y', marginTop)
       .attr('width', width - marginLeft - marginRight)
       .attr('height', height - marginTop - marginBottom)
+      .attr('opacity', opacity)
       .attr('preserveAspectRatio', 'none')
       .attr('xlink:href', ramp(color.interpolator()).toDataURL());
 
@@ -203,11 +206,10 @@ export function Legend<S extends Scales>(
       g
         .append('text')
         .attr('x', legendAnchor === 'start' ? marginLeft : width - marginRight)
-        .attr('y', marginTop + marginBottom - height - 6)
+        .attr('y', marginTop + marginBottom - height - 8)
         .attr('fill', 'currentColor')
         .attr('text-anchor', legendAnchor === 'start' ? 'start' : 'end')
-        .attr('font-weight', 'bold')
-        .attr('class', 'title')
+        .attr('class', 'text-sm font-semibold')
         .text(title ?? null)
     );
 

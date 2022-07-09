@@ -120,28 +120,32 @@ export class Mapp extends Deferrable {
   }
 
   handlePointer(funs: {
-    pointermove?: (id: number, ev?: MapBrowserEvent<UIEvent>) => void;
-    click?: (id: number) => void;
+    pointermove?: (id: number | null, ev?: MapBrowserEvent<UIEvent>) => void;
+    click?: (id: number | null) => void;
   }) {
     if (!this.map) throw new Error('Map not initialized.');
     if (!this.layerMap.spots) return;
     for (const [k, v] of Object.entries(funs)) {
       this.map.on(k as 'pointermove' | 'click', (e) => {
         // Cannot use layer.getFeatures for WebGL.
-        this.map!.forEachFeatureAtPixel(
-          e.pixel,
-          (f) => {
-            const idx = f.getId() as number | undefined;
-            // 0 is falsy.
-            if (idx === undefined) {
-              console.error("Feature doesn't have an id.");
-              return true;
-            }
-            v(idx, e);
-            return true; // Terminates search.
-          },
-          { layerFilter: (layer) => layer === this.layerMap.spots!.layer, hitTolerance: 10 }
-        );
+        if (this.map!.hasFeatureAtPixel(e.pixel)) {
+          this.map!.forEachFeatureAtPixel(
+            e.pixel,
+            (f) => {
+              const idx = f.getId() as number | undefined;
+              // 0 is falsy.
+              if (idx === undefined) {
+                console.error("Feature doesn't have an id.");
+                return true;
+              }
+              v(idx, e);
+              return true; // Terminates search.
+            },
+            { layerFilter: (layer) => layer === this.layerMap.spots!.layer, hitTolerance: 10 }
+          );
+        } else {
+          v(null, e);
+        }
       });
     }
   }
