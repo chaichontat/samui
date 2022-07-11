@@ -2,7 +2,7 @@
   import { resizable } from '$lib/utils';
   import Github from '$src/lib/components/github.svelte';
   import { byod } from '$src/lib/data/byod';
-  import { getSample } from '$src/lib/data/meh';
+  import { getSample, getSampleList } from '$src/lib/data/preload';
   import { mapList, preload, samples } from '$src/lib/store';
   import MapSample, { type Hierarchy } from '$src/pages/mapTile.svelte';
   import Sidebar from '$src/pages/sidebar.svelte';
@@ -13,18 +13,10 @@
 
   // Load data from URL.
   onMount(() => {
-    const params = new URLSearchParams(window.location.search);
-    const url = params.get('url');
-    const s = params.getAll('s');
-
-    if (s.length > 0) {
-      for (const ss of s) {
-        getSample('https://' + (url ?? '') + ss)
-          .then((sa) => {
-            if (sa) $samples[sa.name] = sa;
-          })
-          .catch(console.error);
-      }
+    for (const url of getSampleList(window.location.search)) {
+      getSample(url)
+        .then((sample) => ($samples[sample.name] = sample))
+        .catch(console.error);
     }
   });
 </script>
