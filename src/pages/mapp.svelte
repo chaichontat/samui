@@ -37,7 +37,7 @@
   onMount(() => {
     map.mount(mapElem, tippyElem);
     map.handlePointer({
-      pointermove: oneLRU((idx: number) => {
+      pointermove: oneLRU((idx: number | null) => {
         if (trackHover) $store.currIdx = { idx, source: 'map' };
       })
     });
@@ -106,17 +106,25 @@
   const setTippy = (idx: number) => {
     const ov = sample.overlays[$activeOverlay];
     const pos = ov.pos![idx];
-    if (map.tippy) {
+    if (map.tippy && pos.id) {
       map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
+      map.tippy.elem.removeAttribute('hidden');
       map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
     }
   };
 
-  const changeHover = oneLRU(async (idx: number) => {
+  const changeHover = oneLRU(async (idx: number | null) => {
     if (!image) return;
     await image.promise;
-    map.layerMap.active?.update(sample.overlays[$activeOverlay], idx);
-    setTippy(idx);
+    if (idx !== null) {
+      map.layerMap.active?.layer.setVisible(true);
+      map.layerMap.active?.update(sample.overlays[$activeOverlay], idx);
+      setTippy(idx);
+    } else {
+      map.layerMap.active?.layer.setVisible(false);
+      map.tippy?.elem.setAttribute('hidden', '');
+      // map.tippy?.overlay.
+    }
   });
 
   $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
@@ -250,12 +258,13 @@
   }
 
   .map :global(.ol-zoom) {
-    @apply absolute left-auto right-4 bottom-6 top-auto backdrop-blur;
+    @apply absolute bottom-[5.5rem] left-auto right-4 top-auto backdrop-blur;
   }
 
   .map :global(.ol-zoom-in) {
     @apply bg-sky-700/90;
   }
+
   .map :global(.ol-zoom-out) {
     @apply bg-sky-700/90;
   }

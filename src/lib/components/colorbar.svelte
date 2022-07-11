@@ -9,9 +9,7 @@
   export let max: number;
   export let opacity = 1;
   export let title = '';
-  export { cl as class };
 
-  let cl = 'top-6 right-6';
   let svg: SVGSVGElement;
 
   onMount(() => {
@@ -29,6 +27,8 @@
       }
     );
   });
+
+  $: d3.select(svg).select('image').attr('opacity', opacity);
 </script>
 
 <svg bind:this={svg} />

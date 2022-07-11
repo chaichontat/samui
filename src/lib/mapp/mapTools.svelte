@@ -220,10 +220,10 @@
       </table>
     </div>
   {/if}
-
-  {#if colorbar}
-    <div class="relative mt-2">
-      <Colorbar class="right-6" bind:opacity={colorOpacity} color="turbo" min={0} max={10} />
-    </div>
-  {/if}
 </section>
+
+{#if colorbar}
+  <div class="absolute right-4 bottom-4 z-20 items-end">
+    <Colorbar bind:opacity={colorOpacity} title="Log" color="turbo" min={0} max={10} />
+  </div>
+{/if}

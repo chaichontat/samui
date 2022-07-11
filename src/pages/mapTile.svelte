@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  export type Hie = { root?: true; split?: 'h' | 'v'; maps: (Hie | number | null)[] };
+  export type Hierarchy = { root?: true; split?: 'h' | 'v'; maps: (Hierarchy | number | null)[] };
 </script>
 
 <script lang="ts">
@@ -19,7 +19,7 @@
 
   const dispatch = createEventDispatcher();
 
-  export let hie: Hie | number;
+  export let hie: Hierarchy | number;
   let hieN: number;
   $: hieN = typeof hie === 'number' ? hie : -1;
 
