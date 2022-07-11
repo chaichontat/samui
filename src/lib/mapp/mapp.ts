@@ -12,7 +12,7 @@ import type { Overlay as OverlayClass } from '../data/overlay';
 import { Deferrable } from '../utils';
 import { Background } from './background';
 import { Draww } from './selector';
-import { ActiveSpots, genSpotStyle, WebGLSpots } from './spots';
+import { ActiveSpots, CanvasSpots, genSpotStyle, WebGLSpots } from './spots';
 
 export interface MapComponent extends Deferrable {
   readonly source?: VectorSource<Geometry> | GeoTIFFSource;
@@ -29,6 +29,7 @@ export class Mapp extends Deferrable {
     spots?: WebGLSpots;
     active?: ActiveSpots;
     cells?: WebGLSpots;
+    outlines?: CanvasSpots;
   };
   draw?: Draww;
   image?: Image;
@@ -53,15 +54,12 @@ export class Mapp extends Deferrable {
       background: background ? new Background() : undefined,
       spots: spots ? new WebGLSpots(this, { style: genSpotStyle('quantitative', 10) }) : undefined,
       active: active ? new ActiveSpots() : undefined,
-      cells: points ? new WebGLSpots(this) : undefined
+      cells: points ? new WebGLSpots(this) : undefined,
+      outlines: new CanvasSpots(this)
     };
-
-    this.layers = [];
-    for (const k of ['background', 'spots', 'cells', 'active']) {
-      // @ts-ignore
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      if (this.layerMap[k]) this.layers.push(this.layerMap[k]);
-    }
+    this.layers = Object.values(this.layerMap)
+      .filter(Boolean)
+      .map((layer) => layer);
 
     this.draw = new Draww();
   }
@@ -99,7 +97,8 @@ export class Mapp extends Deferrable {
 
     await Promise.all([
       this.layerMap.background?.update(this.map!, image),
-      spots ? this.layerMap.spots?.update(spots) : undefined
+      spots ? this.layerMap.spots?.update(spots) : undefined,
+      this.layerMap.outlines?.update(spots)
     ]);
 
     if (this.layerMap.spots) this.draw!.update(this.layerMap.spots.source.getFeatures());

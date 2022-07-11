@@ -138,7 +138,6 @@ export function genSpotStyle(
       variables: { opacity: 1 },
       symbol: {
         ...common,
-        // color: '#fce652ff',
         color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
         opacity: ['var', 'opacity']
         // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
@@ -164,6 +163,7 @@ function genCategoricalColors() {
   return colors;
 }
 
+// TODO: Combine activespots and canvasspots
 export class ActiveSpots extends Deferrable implements MapComponent {
   readonly source: VectorSource<Circle>;
   readonly layer: VectorLayer<typeof this.source>;
@@ -194,5 +194,44 @@ export class ActiveSpots extends Deferrable implements MapComponent {
     const { x, y } = ov.pos![idx];
     const size = ov.size ? ov.size / 4 : ov.mPerPx * 20;
     this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
+  }
+}
+
+export class CanvasSpots extends Deferrable implements MapComponent {
+  readonly source: VectorSource<Circle>;
+  readonly layer: VectorLayer<typeof this.source>;
+
+  constructor(
+    map: Mapp,
+    style: Style = new Style({ stroke: new Stroke({ color: '#ffffff66', width: 1 }) })
+  ) {
+    super();
+
+    this.source = new VectorSource();
+    this.layer = new VectorLayer({
+      source: this.source,
+      zIndex: 50,
+      style
+    });
+  }
+
+  mount(): void {
+    this._deferred.resolve();
+  }
+
+  update(ov: Overlay) {
+    this.source.clear();
+    this.source.addFeatures(
+      ov.pos!.map(({ x, y }, i) => {
+        const f = new Feature({
+          geometry: new Circle([x * ov.mPerPx!, -y * ov.mPerPx!], ov.size! / 4),
+          value: 0,
+          id: i
+        });
+        f.setId(i);
+        return f;
+      })
+    );
+    console.log(this.source);
   }
 }
