@@ -19,6 +19,7 @@ const config = {
     }
   },
   build: {
+    target: 'esnext',
     chunkSizeWarningLimit: 1024,
     rollupOptions: {
       output: {
