@@ -36,18 +36,18 @@ export class Background extends Deferrable implements MapComponent {
       sources: urls
     });
 
-    let resolve: () => void;
-    const promise: Promise<void> = new Promise((res) => {
-      resolve = res;
-    });
+    // let resolve: () => void;
+    // const promise: Promise<void> = new Promise((res) => {
+    //   resolve = res;
+    // });
     // Need this because we need source.bandCount to be set before we can set the style.
     // Otherwise, it defaults to 4 and we cannot access channels > 4.
-    this.source.on('change', () => {
-      if (this.source?.getState() === 'ready') resolve();
-    });
-    await promise;
-
+    // this.source.on('change', () => {
+    //   if (this.source?.getState() === 'ready') resolve();
+    // });
+    // await promise;
     this.mode = image.channel === 'rgb' ? 'rgb' : 'composite';
+    this.source.bandCount = image.channel === 'rgb' ? 3 : image.channel.length;
     this.layer = new WebGLTileLayer({
       style: this._genBgStyle(this.mode),
       source: this.source
