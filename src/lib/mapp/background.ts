@@ -28,15 +28,24 @@ export class Background extends Deferrable implements MapComponent {
       map.removeLayer(this.layer);
       this.layer.dispose();
     }
-    if (this.source) {
-      this.source.dispose(); // Cannot reuse GeoTIFF.
-    }
 
     const urls = image.urls.map((url) => ({ url: url.url }));
+    this.source?.dispose(); // Cannot reuse GeoTIFF.
     this.source = new GeoTIFF({
       normalize: image.channel === 'rgb',
       sources: urls
     });
+
+    let resolve: () => void;
+    const promise: Promise<void> = new Promise((res) => {
+      resolve = res;
+    });
+    // Need this because we need source.bandCount to be set before we can set the style.
+    // Otherwise, it defaults to 4 and we cannot access channels > 4.
+    this.source.on('change', () => {
+      if (this.source?.getState() === 'ready') resolve();
+    });
+    await promise;
 
     this.mode = image.channel === 'rgb' ? 'rgb' : 'composite';
     this.layer = new WebGLTileLayer({
@@ -46,8 +55,9 @@ export class Background extends Deferrable implements MapComponent {
 
     this.mPerPx = image.mPerPx;
     map.addLayer(this.layer);
-    const view = this.source.getView();
-    view
+
+    this.source
+      .getView()
       .then((v) => {
         return new View({
           ...v,
@@ -59,6 +69,7 @@ export class Background extends Deferrable implements MapComponent {
   }
 
   updateStyle(variables: Record<string, number>) {
+    console.log(this.layer);
     this.layer?.updateStyleVariables(variables);
   }
 
