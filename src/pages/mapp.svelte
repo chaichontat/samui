@@ -8,7 +8,13 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, activeOverlay, store, type NameWithFeature } from '../lib/store';
+  import {
+    activeFeatures,
+    activeOverlay,
+    annotating,
+    store,
+    type NameWithFeature
+  } from '../lib/store';
 
   export let sample: Sample;
   export let trackHover = false;
@@ -37,11 +43,22 @@
   onMount(() => {
     map.mount(mapElem, tippyElem);
     map.handlePointer({
-      pointermove: oneLRU((idx: number | null) => {
-        if (trackHover) $store.currIdx = { idx, source: 'map' };
-      })
+      pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
+        if (trackHover && id_) $store.currIdx = { idx: id_.idx, source: 'map' };
+      }),
+      click: (id_: { idx: number; id: number | string } | null) => {
+        const ov = map.layerMap.cells?.overlay;
+        if ($annotating.curr && id_ && ov) {
+          console.log(id_);
+          const idx = id_.idx;
+          map.layerMap.annotations?.add(idx, $annotating.curr, ov, $annotating.keys);
+          $annotating.spots = map.layerMap.annotations?.dump();
+        }
+      }
     });
   });
+
+  $: map.layerMap.annotations?.layer.setVisible($annotating.show);
 
   // function moveView(idx: number) {
   //   if (!coords[idx]) return;

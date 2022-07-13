@@ -30,6 +30,7 @@ export class Mapp extends Deferrable {
     active?: ActiveSpots;
     cells?: WebGLSpots;
     outlines?: CanvasSpots;
+    annotations?: CanvasSpots;
   };
   draw?: Draww;
   image?: Image;
@@ -55,7 +56,8 @@ export class Mapp extends Deferrable {
       spots: spots ? new WebGLSpots(this, { style: genSpotStyle('quantitative', 10) }) : undefined,
       active: active ? new ActiveSpots() : undefined,
       cells: points ? new WebGLSpots(this) : undefined,
-      outlines: new CanvasSpots(this)
+      outlines: new CanvasSpots(this),
+      annotations: new CanvasSpots(this)
     };
     this.layers = Object.values(this.layerMap)
       .filter(Boolean)
@@ -118,9 +120,13 @@ export class Mapp extends Deferrable {
     }
   }
 
+  // Handle all clicks and hovers on the map.
   handlePointer(funs: {
-    pointermove?: (id: number | null, ev?: MapBrowserEvent<UIEvent>) => void;
-    click?: (id: number | null) => void;
+    pointermove?: (
+      obj: { idx: number; id: number | string } | null,
+      ev?: MapBrowserEvent<UIEvent>
+    ) => void;
+    click?: (obj: { idx: number; id: number | string } | null) => void;
   }) {
     if (!this.map) throw new Error('Map not initialized.');
     if (!this.layerMap.spots) return;
@@ -132,17 +138,22 @@ export class Mapp extends Deferrable {
             e.pixel,
             (f) => {
               const idx = f.getId() as number | undefined;
+              const id = f.get('id') as number | string;
               // 0 is falsy.
               if (idx === undefined) {
                 console.error("Feature doesn't have an id.");
                 return true;
               }
-              v(idx, e);
+              v({ idx, id }, e);
               return true; // Terminates search.
             },
+            // TODO: Don't hard code this.
             {
               layerFilter: (layer) =>
-                layer === this.layerMap.spots!.layer || layer === this.layerMap.outlines?.layer,
+                ((layer === this.layerMap.spots!.layer ||
+                  layer === this.layerMap.outlines?.layer) &&
+                  k === 'pointermove') ||
+                (layer === this.layerMap.cells?.layer && k === 'click'),
               hitTolerance: 10
             }
           );

@@ -58,6 +58,7 @@
     map.layerMap[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
 
+  // TODO: Use makedownload.
   function handleExport(t: 'spots' | 'selections') {
     if (!map.mounted) return;
     switch (t) {
@@ -179,15 +180,24 @@
     {/if}
   </div>
 
-  <!-- Show all spots -->
+  <!-- Spots -->
   {#if showImgControl}
     <div
       class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
     >
       <table>
         {#each Object.keys($samples[$activeSample].overlays) as ovName}
-          <tr>
-            <td class="pr-2">
+          <tr class="flex">
+            <td class="flex gap-x-1 pr-2">
+              <label class="flex cursor-pointer items-center gap-x-1">
+                <input
+                  type="checkbox"
+                  class="mr-0.5 cursor-pointer bg-opacity-80"
+                  checked
+                  on:change={(e) =>
+                    map.layerMap['outlines']?.layer?.setVisible(e.currentTarget.checked ?? false)}
+                />
+              </label>
               <label class="flex cursor-pointer items-center gap-x-1">
                 <input
                   type="checkbox"

@@ -1,9 +1,10 @@
+import * as d3 from 'd3';
 import Feature from 'ol/Feature.js';
 import { Circle, Point } from 'ol/geom.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
-import { Fill, Stroke, Style } from 'ol/style.js';
+import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
 import { convertCategoricalToNumber } from '../data/features';
@@ -15,6 +16,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
   readonly source: VectorSource<Point>;
   layer?: WebGLPointsLayer<typeof this.source>;
   map: Mapp;
+  overlay?: Overlay;
   _style: LiteralStyle;
   _mPerPx?: number;
 
@@ -101,6 +103,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
         return f;
       })
     );
+    this.overlay = overlay;
   }
 }
 
@@ -192,7 +195,7 @@ export class ActiveSpots extends Deferrable implements MapComponent {
   update(ov: Overlay, idx: number) {
     if (!ov.mPerPx) throw new Error('No mPerPx or spotDiam provided');
     const { x, y } = ov.pos![idx];
-    const size = ov.size ? ov.size / 4 : ov.mPerPx * 20;
+    const size = ov.size ? ov.size / 4 : ov.mPerPx * 10;
     this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
   }
 }
@@ -200,6 +203,7 @@ export class ActiveSpots extends Deferrable implements MapComponent {
 export class CanvasSpots extends Deferrable implements MapComponent {
   readonly source: VectorSource<Circle>;
   readonly layer: VectorLayer<typeof this.source>;
+  overlay: Overlay | undefined;
 
   constructor(
     map: Mapp,
@@ -235,5 +239,49 @@ export class CanvasSpots extends Deferrable implements MapComponent {
         return f;
       })
     );
+    this.overlay = ov;
+  }
+
+  add(idx: number, name: string, ov: Overlay, ant: string[]) {
+    let f = this.source.getFeatureById(idx);
+    if (f === null) {
+      const c = ov.pos![idx];
+      console.log(ov);
+
+      f = new Feature({
+        geometry: new Point([c.x * ov.mPerPx!, -c.y * ov.mPerPx!]),
+        id: c.id ?? idx
+      });
+      f.setId(idx);
+      this.source.addFeature(f);
+    }
+
+    f.set('value', name);
+    f.setStyle(
+      new Style({
+        image: new RegularShape({
+          fill: new Fill({
+            color: d3.schemeTableau10[ant.findIndex((x) => x === name) % 10] + 'cc'
+          }),
+          points: 5,
+          radius: 10,
+          radius2: 4,
+          angle: 0
+        })
+      })
+    );
+    console.log(this.dump());
+  }
+
+  delete(idx: number) {
+    const f = this.source.getFeatureById(idx);
+    if (f) {
+      this.source.removeFeature(f);
+    }
+  }
+
+  dump() {
+    const points = this.source.getFeatures().map((f) => [f.get('id'), f.get('value')].join(','));
+    return 'id,value\n' + points.join('\n');
   }
 }

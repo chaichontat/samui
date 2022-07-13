@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Annotate from '$src/lib/mapp/annotate.svelte';
+
   import Nav from '$src/lib/nav.svelte';
   import { activeFeatures, activeOverlay, sample, store } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
@@ -46,6 +48,9 @@
   </div>
 
   <div class="flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
+    <section>
+      <Annotate />
+    </section>
     <section>
       <label
         use:tooltip={{ content: 'Can be slow if there are many points.' }}
