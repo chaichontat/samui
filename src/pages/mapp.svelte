@@ -268,4 +268,8 @@
   .map :global(.ol-zoom-out) {
     @apply bg-sky-700/90;
   }
+
+  .map :global(.ol-overlaycontainer) {
+    @apply pointer-events-none;
+  }
 </style>
