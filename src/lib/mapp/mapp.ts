@@ -140,7 +140,11 @@ export class Mapp extends Deferrable {
               v(idx, e);
               return true; // Terminates search.
             },
-            { layerFilter: (layer) => layer === this.layerMap.spots!.layer, hitTolerance: 10 }
+            {
+              layerFilter: (layer) =>
+                layer === this.layerMap.spots!.layer || layer === this.layerMap.outlines?.layer,
+              hitTolerance: 10
+            }
           );
         } else {
           v(null, e);

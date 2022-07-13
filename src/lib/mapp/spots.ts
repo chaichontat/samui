@@ -3,7 +3,7 @@ import { Circle, Point } from 'ol/geom.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
-import { Stroke, Style } from 'ol/style.js';
+import { Fill, Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
 import { convertCategoricalToNumber } from '../data/features';
@@ -203,7 +203,10 @@ export class CanvasSpots extends Deferrable implements MapComponent {
 
   constructor(
     map: Mapp,
-    style: Style = new Style({ stroke: new Stroke({ color: '#ffffff66', width: 1 }) })
+    style: Style = new Style({
+      stroke: new Stroke({ color: '#ffffff66', width: 1 }),
+      fill: new Fill({ color: 'transparent' })
+    })
   ) {
     super();
 

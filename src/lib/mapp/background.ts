@@ -2,7 +2,7 @@ import { View, type Map } from 'ol';
 import WebGLTileLayer, { type Style } from 'ol/layer/WebGLTile.js';
 import GeoTIFF from 'ol/source/GeoTIFF.js';
 import type { Image } from '../data/image';
-import { Deferrable } from '../utils';
+import { Deferrable, oneLRU } from '../utils';
 import type { MapComponent } from './mapp';
 
 export class Background extends Deferrable implements MapComponent {
@@ -68,10 +68,9 @@ export class Background extends Deferrable implements MapComponent {
       .catch(console.error);
   }
 
-  updateStyle(variables: Record<string, number>) {
-    console.log(this.layer);
+  updateStyle = oneLRU((variables: Record<string, number>) => {
     this.layer?.updateStyleVariables(variables);
-  }
+  });
 
   _genBgStyle(mode: 'composite' | 'rgb'): Style {
     switch (mode) {
