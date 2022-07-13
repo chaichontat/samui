@@ -121,7 +121,8 @@
   }
 
   const setTippy = (idx: number) => {
-    const ov = sample.overlays[$activeOverlay];
+    // TODO: Revert to $activeOverlay
+    const ov = sample.overlays['spots'];
     const pos = ov.pos![idx];
     if (map.tippy && pos.id) {
       map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
@@ -135,7 +136,8 @@
     await image.promise;
     if (idx !== null) {
       map.layerMap.active?.layer.setVisible(true);
-      map.layerMap.active?.update(sample.overlays[$activeOverlay], idx);
+      // TODO Revert to $activeOverlay
+      map.layerMap.active?.update(sample.overlays['spots'], idx);
       setTippy(idx);
     } else {
       map.layerMap.active?.layer.setVisible(false);

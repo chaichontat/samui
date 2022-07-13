@@ -150,9 +150,7 @@ export class Mapp extends Deferrable {
             // TODO: Don't hard code this.
             {
               layerFilter: (layer) =>
-                ((layer === this.layerMap.spots!.layer ||
-                  layer === this.layerMap.outlines?.layer) &&
-                  k === 'pointermove') ||
+                (layer === this.layerMap.outlines?.layer && k === 'pointermove') ||
                 (layer === this.layerMap.cells?.layer && k === 'click'),
               hitTolerance: 10
             }
