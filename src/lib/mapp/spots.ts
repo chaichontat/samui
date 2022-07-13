@@ -91,11 +91,11 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this._mPerPx = overlay.mPerPx;
     this.source.clear();
     this.source.addFeatures(
-      overlay.pos!.map(({ x, y }, i) => {
+      overlay.pos!.map(({ x, y, id }, i) => {
         const f = new Feature({
           geometry: new Point([x * this._mPerPx!, -y * this._mPerPx!]),
           value: 0,
-          id: i
+          id: id ?? i
         });
         f.setId(i);
         return f;
@@ -225,16 +225,15 @@ export class CanvasSpots extends Deferrable implements MapComponent {
   update(ov: Overlay) {
     this.source.clear();
     this.source.addFeatures(
-      ov.pos!.map(({ x, y }, i) => {
+      ov.pos!.map(({ x, y, id }, i) => {
         const f = new Feature({
           geometry: new Circle([x * ov.mPerPx!, -y * ov.mPerPx!], ov.size! / 4),
           value: 0,
-          id: i
+          id: id ?? i
         });
         f.setId(i);
         return f;
       })
     );
-    console.log(this.source);
   }
 }
