@@ -36,11 +36,20 @@ export const sample: Writable<Sample | undefined> = writable();
 type OverlayName = string;
 export const activeFeatures: Writable<Record<OverlayName, NameWithFeature>> = writable({});
 export const activeOverlay: Writable<string> = writable('');
+export const annotating: Writable<{
+  curr: string;
+  keys: string[];
+  spots?: string;
+  show: boolean;
+}> = writable({
+  curr: '',
+  keys: [],
+  show: true
+});
 
 // Maps
 export const activeMap: Writable<number> = writable(0);
 export const mapList: Writable<number[]> = writable([]);
-
 export function preload() {
   if (sampleList) {
     sampleList

@@ -40,9 +40,14 @@ export class _Points {
 
   _updatePoint(
     feat: Feature<Point>,
-    { id, oricolor }: { id?: number; oricolor?: { origin: number; color: string } }
+    {
+      idx,
+      id,
+      oricolor
+    }: { idx?: number; id?: number | string; oricolor?: { origin: number; color: string } }
   ) {
-    if (id) feat.setId(id);
+    feat.setId(idx);
+    feat.set('id', id);
     // https://openlayers.org/en/latest/examples/regularshape.html
     if (oricolor) {
       const { origin, color } = oricolor;
@@ -79,7 +84,7 @@ export class _Points {
         .map((f) => {
           // ID of spot.
           const id = f.getId() as number;
-          let feat = this.source.getFeatureById(f.getId() as number);
+          let feat = this.source.getFeatureById(id);
           if (feat === null) {
             feat = new Feature({
               geometry: (f.getGeometry()! as Point).clone()
@@ -87,7 +92,8 @@ export class _Points {
           }
           // ids.push(id);
           this._updatePoint(feat, {
-            id,
+            idx: f.getId() as number,
+            id: f.get('id') as number | string,
             oricolor: {
               origin,
               color: (polygonFeat.get('color') as string) ?? '#00ffe9'
@@ -120,7 +126,7 @@ export class _Points {
     return this.source
       .getFeatures()
       .filter((f) => f.get('origin') === uid)
-      .map((f) => f.getId() as number);
+      .map((f) => f.get('id') as number | string);
   }
 }
 
@@ -288,7 +294,7 @@ export class Draww {
   }
 
   dumpAllPoints() {
-    const out: Named<number[]>[] = [];
+    const out: Named<(number | string)[]>[] = [];
     for (const feature of this.source.getFeatures()) {
       const uid = feature.getId() as number;
       out.push({ name: feature.get('name') as string, values: this.points.dump(uid) });
