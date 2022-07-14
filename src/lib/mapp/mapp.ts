@@ -7,7 +7,7 @@ import type { Layer } from 'ol/layer';
 import type WebGLPointsLayer from 'ol/layer/WebGLPoints';
 import type GeoTIFFSource from 'ol/source/GeoTIFF';
 import type VectorSource from 'ol/source/Vector';
-import type { Overlay as OverlayClass } from '../data/overlay';
+import type { OverlayData as OverlayClass } from '../data/overlay';
 
 import { Deferrable } from '../utils';
 import { Background } from './background';

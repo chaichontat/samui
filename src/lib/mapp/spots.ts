@@ -7,8 +7,8 @@ import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
-import { convertCategoricalToNumber } from '../data/features';
-import type { Overlay } from '../data/overlay';
+import { convertCategoricalToNumber, type Coord } from '../data/features';
+import type { OverlayData } from '../data/overlay';
 import { Deferrable, interpolateTurbo } from '../utils';
 import type { MapComponent, Mapp } from './mapp';
 
@@ -16,7 +16,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
   readonly source: VectorSource<Point>;
   layer?: WebGLPointsLayer<typeof this.source>;
   map: Mapp;
-  overlay?: Overlay;
+  overlay?: OverlayData;
   _style: LiteralStyle;
   _mPerPx?: number;
 
@@ -88,7 +88,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this.layer = newLayer;
   }
 
-  update(overlay?: Overlay) {
+  update(overlay?: OverlayData) {
     if (!overlay) return;
     this._mPerPx = overlay.mPerPx;
     this.source.clear();
@@ -192,7 +192,7 @@ export class ActiveSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  update(ov: Overlay, idx: number) {
+  update(ov: OverlayData, idx: number) {
     if (!ov.mPerPx) throw new Error('No mPerPx or spotDiam provided');
     const { x, y } = ov.pos![idx];
     const size = ov.size ? ov.size / 4 : ov.mPerPx * 10;
@@ -201,9 +201,9 @@ export class ActiveSpots extends Deferrable implements MapComponent {
 }
 
 export class CanvasSpots extends Deferrable implements MapComponent {
-  readonly source: VectorSource<Circle>;
+  readonly source: VectorSource<Circle | Point>;
   readonly layer: VectorLayer<typeof this.source>;
-  overlay: Overlay | undefined;
+  overlay: OverlayData | undefined;
 
   constructor(
     map: Mapp,
@@ -226,33 +226,40 @@ export class CanvasSpots extends Deferrable implements MapComponent {
     this._deferred.resolve();
   }
 
-  update(ov: Overlay) {
+  static _genCircle({
+    x,
+    y,
+    id,
+    i,
+    mPerPx,
+    size
+  }: Coord & { i: number; mPerPx: number; size?: number | null }) {
+    const c = [x * mPerPx, -y * mPerPx];
+    const f = new Feature({
+      geometry: size !== undefined && size !== null ? new Circle(c, size / 4) : new Point(c),
+      value: 0,
+      id: id ?? i
+    });
+    f.setId(i);
+    return f;
+  }
+
+  update(ov: OverlayData) {
+    if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
     this.source.clear();
     this.source.addFeatures(
-      ov.pos!.map(({ x, y, id }, i) => {
-        const f = new Feature({
-          geometry: new Circle([x * ov.mPerPx!, -y * ov.mPerPx!], ov.size! / 4),
-          value: 0,
-          id: id ?? i
-        });
-        f.setId(i);
-        return f;
-      })
+      ov.pos!.map((coord, i) =>
+        CanvasSpots._genCircle({ ...coord, i, mPerPx: ov.mPerPx!, size: ov.size })
+      )
     );
     this.overlay = ov;
   }
 
-  add(idx: number, name: string, ov: Overlay, ant: string[]) {
+  add(idx: number, name: string, ov: OverlayData, ant: string[]) {
+    if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
     let f = this.source.getFeatureById(idx);
     if (f === null) {
-      const c = ov.pos![idx];
-      console.log(ov);
-
-      f = new Feature({
-        geometry: new Point([c.x * ov.mPerPx!, -c.y * ov.mPerPx!]),
-        id: c.id ?? idx
-      });
-      f.setId(idx);
+      f = CanvasSpots._genCircle({ ...ov.pos![idx], i: idx, mPerPx: ov.mPerPx, size: ov.size });
       this.source.addFeature(f);
     }
 
@@ -261,7 +268,7 @@ export class CanvasSpots extends Deferrable implements MapComponent {
       new Style({
         image: new RegularShape({
           fill: new Fill({
-            color: d3.schemeTableau10[ant.findIndex((x) => x === name) % 10] + 'cc'
+            color: d3.schemeTableau10[ant.findIndex((x) => x === name) % 10] + 'ee'
           }),
           points: 5,
           radius: 10,

@@ -8,7 +8,7 @@ import {
   type RetrievedData
 } from './features';
 import { Image, type ImageParams } from './image';
-import { Overlay, type OverlayParams } from './overlay';
+import { OverlayData, type OverlayParams } from './overlay';
 
 export type SampleParams = {
   name: string;
@@ -27,7 +27,7 @@ export class Sample extends Deferrable {
 
   image: Image;
   features: Record<string, Data>;
-  overlays: Record<string, Overlay>;
+  overlays: Record<string, OverlayData>;
   hydrated: boolean;
   handle?: FileSystemDirectoryHandle;
   activeDefault: NameWithFeature;
@@ -46,11 +46,11 @@ export class Sample extends Deferrable {
     this.handle = handle;
     this.activeDefault = activeDefault ?? {};
 
-    this.overlays = {} as Record<string, Overlay>;
+    this.overlays = {} as Record<string, OverlayData>;
 
     if (overlayParams) {
       for (const o of overlayParams) {
-        this.overlays[o.name] = new Overlay(o);
+        this.overlays[o.name] = new OverlayData(o);
       }
     }
 

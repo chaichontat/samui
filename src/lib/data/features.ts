@@ -3,7 +3,7 @@ import pako from 'pako';
 import { Deferrable, genLRU, getFile, oneLRU } from '../utils';
 
 export type Url = { url: string; type: 'local' | 'network' };
-export type Coord = { x: number; y: number };
+export type Coord = { x: number; y: number; id?: string };
 
 // If ChunkedJSON, feature and name.
 // If PlainJSON, only name.
