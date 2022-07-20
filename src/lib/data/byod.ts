@@ -1,6 +1,6 @@
 import { Sample, type SampleParams } from '$lib/data/sample';
 import { get } from 'svelte/store';
-import { activeSample, samples } from '../store';
+import { focus, samples } from '../store';
 
 async function readFile<T extends object>(
   dirHandle: FileSystemDirectoryHandle,
@@ -39,7 +39,7 @@ export async function byod() {
 
   sp.handle = directoryHandle;
   const sample = new Sample(sp);
-  activeSample.set(sample.name);
+  focus.set({ ...get(focus), sample: sample.name });
   samples.set({ ...get(samples), [sample.name]: sample });
   // for await  (const entry of directoryHandle.values()) {
   //   console.log(entry.kind, entry.name);

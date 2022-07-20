@@ -21,7 +21,7 @@ export class _Points {
     this.source = new VectorSource({ features: this.features });
     this.layer = new VectorLayer({
       source: this.source,
-      zIndex: Infinity
+      zIndex: Infinity - 1
       // style: new Style({
       //   fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' })
       // })

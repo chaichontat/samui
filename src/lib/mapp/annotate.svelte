@@ -8,8 +8,14 @@
       alert('Empty name.');
       return;
     }
-    $annotating.keys.push(name.trim());
-    $annotating.keys = $annotating.keys;
+    const newKey = name.trim();
+
+    if ($annotating.keys.findIndex((v) => v === newKey) === -1) {
+      $annotating.keys.push(newKey);
+      $annotating.keys = $annotating.keys;
+    } else {
+      alert('Key already exists.');
+    }
   }
 </script>
 
@@ -19,8 +25,9 @@
     {#each $annotating.keys as key, i}
       <label class="flex items-center gap-x-1 hover:underline">
         <div class="h-3 w-3" style={`background-color: ${d3.schemeTableau10[i % 10]}`} />
-        <button on:click={() => ($annotating.curr = key)} class:font-bold={$annotating.curr === key}
-          >{key}</button
+        <button
+          on:click={() => ($annotating.currKey = key)}
+          class:font-bold={$annotating.currKey === key}>{key}</button
         >
       </label>
     {/each}

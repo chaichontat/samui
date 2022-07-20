@@ -4,7 +4,7 @@
   import type { Sample } from '$src/lib/data/sample';
   import type { FeatureNamesGroup, HoverSelect } from '$src/lib/data/searchBox';
   import { boxMuller } from '$src/lib/scatter/scatterlib';
-  import { sample, store } from '$src/lib/store';
+  import { sample, userState } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
 
@@ -114,6 +114,6 @@
   <Scatter
     coordsSource={coords}
     intensitySource={colorValues}
-    bind:currHover={$store.currIdx.idx}
+    bind:currHover={$userState.currIdx.idx}
   />
 </div>

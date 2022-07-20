@@ -174,14 +174,14 @@ function genCategoricalColors() {
 export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
   readonly feature: Feature<Circle>;
 
-  constructor(name: string, map: Mapp, style?: Style) {
+  constructor(name: string, map: Mapp) {
     super(
       name,
       map,
-      style ??
-        new Style({
-          stroke: new Stroke({ color: '#ffffff', width: 1 })
-        })
+      new Style({
+        stroke: new Stroke({ color: '#ffffff', width: 1 }),
+        fill: new Fill({ color: 'transparent' })
+      })
     );
     this.feature = new Feature({
       geometry: new Circle([0, 0]),
@@ -190,7 +190,7 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     this.layer = new VectorLayer({
       source: new VectorSource({ features: [this.feature] }),
       zIndex: Infinity,
-      style
+      style: this.style
     });
   }
 
@@ -261,9 +261,22 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     this.overlay = ov;
   }
 
+  get(idx: number) {
+    return this.source.getFeatureById(idx);
+  }
+
+  remove(idx: number) {
+    const f = this.get(idx);
+    if (f) {
+      this.source.removeFeature(f);
+    } else {
+      console.warn('Removing non-existent feature with idx:', idx);
+    }
+  }
+
   add(idx: number, name: string, ov: OverlayData, ant: string[]) {
     if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
-    let f = this.source.getFeatureById(idx);
+    let f = this.get(idx);
     if (f === null) {
       f = CanvasSpots._genCircle({ ...ov.pos![idx], i: idx, mPerPx: ov.mPerPx, size: ov.size });
       this.source.addFeature(f);

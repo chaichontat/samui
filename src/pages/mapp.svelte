@@ -10,7 +10,7 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { activeFeatures, activeOverlay, annotating, store } from '../lib/store';
+  import { annotating, features, focus, userState } from '../lib/store';
 
   export let sample: Sample;
 
@@ -35,21 +35,26 @@
     map.mount(mapElem, tippyElem);
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (id_) $store.currIdx = { idx: id_.idx, source: 'map' };
-      })
-      // click: (id_: { idx: number; id: number | string } | null) => {
-      //   const ov = map.layerMap.cells?.overlay;
-      //   if ($annotating.curr && id_ && ov) {
-      //     console.log(id_);
-      //     const idx = id_.idx;
-      //     // map.layerMap.annotations?.add(idx, $annotating.curr, ov, $annotating.keys);
-      //     // $annotating.spots = map.layerMap.annotations?.dump();
-      //   }
-      // }
+        if (id_) $userState.currIdx = { idx: id_.idx, source: 'map' };
+      }),
+
+      click: (id_: { idx: number; id: number | string } | null) => {
+        const ov = map.layers[$focus.overlay]?.overlay;
+        if ($annotating.currKey && id_ && ov) {
+          const idx = id_.idx;
+          const existing = map.persistentLayers.annotations.get(idx);
+          if (existing === null || existing.get('value') !== $annotating.currKey) {
+            map.persistentLayers.annotations.add(idx, $annotating.currKey, ov, $annotating.keys);
+          } else {
+            map.persistentLayers.annotations.remove(idx);
+          }
+          $annotating.spots = map.persistentLayers.annotations.dump();
+        }
+      }
     });
   });
 
-  // $: map.layerMap.annotations?.layer.setVisible($annotating.show);
+  $: map.persistentLayers.annotations.layer?.setVisible($annotating.show);
 
   // function moveView(idx: number) {
   //   if (!coords[idx]) return;
@@ -99,8 +104,8 @@
   let currDataType: 'quantitative' | 'categorical';
   $: if (sample) {
     updateFeature({
-      key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
-      args: [$activeOverlay, $activeFeatures[$activeOverlay]]
+      key: `${sample.name}-${$features[$focus.overlay]?.name ?? 'null'}`,
+      args: [$focus.overlay, $features[$focus.overlay]]
     }).catch(console.error);
   }
   const updateFeature = keyOneLRU(async (ov: string, fn: NameWithFeature) => {
@@ -117,7 +122,7 @@
   });
 
   // Hover.
-  $: if (sample) changeHover($activeOverlay, $store.currIdx.idx).catch(console.error);
+  $: if (sample) changeHover($focus.overlay, $userState.currIdx.idx).catch(console.error);
   const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
     await sample.promise;
     const active = map.persistentLayers.active;
@@ -127,7 +132,7 @@
     if (idx !== null) {
       active.layer!.setVisible(true);
       const pos = ov.pos![idx];
-      if (!pos) return; // Happens when changing activeOverlay. Idx from another ol can exceed the length of current ol.
+      if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
       active.update(sample.overlays[activeol], idx);
       if (map.tippy && pos.id) {
         map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
@@ -166,12 +171,13 @@
     class:composite={showImgControl && image?.channel !== 'rgb' && !small}
     class:rgb={showImgControl && image?.channel === 'rgb'}
   />
-
+  features features
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
-    class="ol-tippy pointer-events-none max-w-sm -translate-x-1/2 translate-y-4 rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
+    class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
+  features
 
   {#if sample}
     <section
@@ -253,9 +259,5 @@
 
   .map :global(.ol-zoom-out) {
     @apply bg-sky-700/90;
-  }
-
-  .map :global(.ol-overlaycontainer) {
-    @apply pointer-events-none;
   }
 </style>

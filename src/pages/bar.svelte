@@ -5,7 +5,7 @@
   import { genUpdate, oneLRU } from '$src/lib/utils';
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
-  import { activeSample, samples, store } from '../lib/store';
+  import { focus, samples, userState } from '../lib/store';
 
   export let showing: boolean;
   Chart.defaults.font.size = 14;
@@ -49,7 +49,7 @@
       }
     });
 
-    update($activeSample).catch(console.error);
+    update($focus.sample).catch(console.error);
   });
 
   let spotGenes: ChunkedJSON;
@@ -71,7 +71,7 @@
   });
 
   let curr = 0;
-  $: update($activeSample).catch(console.error);
+  $: update($focus.sample).catch(console.error);
 
   // $: if (bar && $done) {
   //   getRow(5)
@@ -82,13 +82,13 @@
   //     .catch(console.error);
   // }
 
-  $: if (bar && showing && $store.currIdx.idx !== curr) {
-    getRow($store.currIdx.idx)
+  $: if (bar && showing && $userState.currIdx.idx !== curr) {
+    getRow($userState.currIdx.idx)
       .then((row) => {
         const filtered = row.sort((a, b) => b[1] - a[1]).slice(0, 10);
         bar.data.datasets[0].data = filtered.map(([name, val]) => ({ x: name, y: val }));
         bar.update();
-        curr = $store.currIdx.idx;
+        curr = $userState.currIdx.idx;
       })
       .catch(console.error);
     // if ($store.lockedIdx.idx !== -1) {

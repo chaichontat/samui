@@ -2,16 +2,11 @@ import sampleList from '$lib/data/meh';
 import { get, writable, type Writable } from 'svelte/store';
 import type { NameWithFeature } from './data/features';
 import type { Sample } from './data/sample';
+import { oneLRU } from './utils';
 
 export type Idx = { idx: number | null; source: string };
 
-export type State = {
-  lockedIdx: Idx;
-  currIdx: Idx;
-  readonly locked: boolean;
-};
-
-export const store: Writable<State> = writable({
+export const userState = writable({
   lockedIdx: { idx: -1, source: 'scatter' },
   currIdx: { idx: 0, source: 'scatter' },
   get locked() {
@@ -20,36 +15,11 @@ export const store: Writable<State> = writable({
 });
 
 // Samples
-export const samples: Writable<Record<string, Sample>> = writable({});
-// Changed in mapTile and byod.
-// Automatically hydrates on change.
-export const activeSample: Writable<string> = writable('');
-activeSample.subscribe((n) => {
-  const s = get(samples)[n];
-  if (!s) return;
-  if (!s.hydrated) s.hydrate().catch(console.error);
-  sample.set(s);
-});
 export const sample: Writable<Sample | undefined> = writable();
-
-// Overlays and Features
-type OverlayName = string;
-export const activeFeatures: Writable<Record<OverlayName, NameWithFeature>> = writable({});
-export const activeOverlay: Writable<string> = writable('');
-export const annotating: Writable<{
-  curr: string;
-  keys: string[];
-  spots?: string;
-  show: boolean;
-}> = writable({
-  curr: '',
-  keys: [],
-  show: true
-});
-
-// Maps
-export const activeMap: Writable<number> = writable(0);
+export const samples: Writable<Record<string, Sample>> = writable({});
+export const features: Writable<Record<OverlayName, NameWithFeature>> = writable({});
 export const mapList: Writable<number[]> = writable([]);
+// Maps
 export function preload() {
   if (sampleList) {
     sampleList
@@ -60,3 +30,34 @@ export function preload() {
       .catch(console.error);
   }
 }
+
+// Changed in mapTile and byod.
+// Automatically hydrates on change.
+
+export const focus = writable({
+  features: {} as Record<OverlayName, NameWithFeature>,
+  overlay: '',
+  mapId: 0,
+  sample: ''
+});
+
+const updateSample = oneLRU((newSample: string) => {
+  const s = get(samples)[newSample];
+  if (!s) return;
+  if (!s.hydrated) s.hydrate().catch(console.error);
+  sample.set(s);
+});
+focus.subscribe((f) => updateSample(f.sample));
+
+// Overlays and Features
+type OverlayName = string;
+export const annotating: Writable<{
+  currKey: string;
+  keys: string[];
+  spots?: string;
+  show: boolean;
+}> = writable({
+  curr: '',
+  keys: [],
+  show: true
+});

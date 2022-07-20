@@ -6,7 +6,7 @@ import Zoom from 'ol/control/Zoom.js';
 
 import { get } from 'svelte/store';
 import type { OverlayData } from '../data/overlay';
-import { activeOverlay } from '../store';
+import { focus } from '../store';
 
 import { Deferrable } from '../utils';
 import { Background } from './background';
@@ -36,6 +36,7 @@ export class Mapp extends Deferrable {
       active: new ActiveSpots('active', this),
       annotations: new CanvasSpots('annotations', this)
     };
+    this.persistentLayers.annotations.z = Infinity;
     this.draw = new Draww();
   }
 
@@ -54,7 +55,15 @@ export class Mapp extends Deferrable {
     this.map.on('movestart', () => (this.map!.getViewport().style.cursor = 'grabbing'));
     this.map.on('moveend', () => (this.map!.getViewport().style.cursor = 'grab'));
 
-    this.tippy = { overlay: new Overlay({ element: tippyElem }), elem: tippyElem };
+    this.tippy = {
+      overlay: new Overlay({
+        element: tippyElem,
+        positioning: 'top-center',
+        offset: [0, 16],
+        stopEvent: false
+      }),
+      elem: tippyElem
+    };
     this.map.addOverlay(this.tippy.overlay);
 
     this._deferred.resolve();
@@ -116,11 +125,12 @@ export class Mapp extends Deferrable {
     for (const [k, v] of Object.entries(funs)) {
       this.map!.on(k as 'pointermove' | 'click', (e) => {
         // Outlines take precedence. Either visible is fine.
-        const comp = this.layers[get(activeOverlay)];
+        const comp = this.layers[get(focus).overlay];
         const currLayer = comp.outline?.visible ? comp.outline?.layer : comp.layer;
         if (!currLayer) throw new Error('No layer');
 
         if (this.map!.hasFeatureAtPixel(e.pixel)) {
+          this.map!.getViewport().style.cursor = 'pointer';
           this.map!.forEachFeatureAtPixel(
             e.pixel,
             (f) => {
@@ -136,10 +146,11 @@ export class Mapp extends Deferrable {
             },
             {
               layerFilter: (layer) => layer === currLayer,
-              hitTolerance: 10
+              hitTolerance: 20
             }
           );
         } else {
+          this.map!.getViewport().style.cursor = 'grab';
           v(null, e);
         }
       });

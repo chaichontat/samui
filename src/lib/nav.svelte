@@ -5,26 +5,29 @@
   import SearchBox from './components/searchBox.svelte';
   import type { NameWithFeature } from './data/features';
   import { HoverSelect, updateNames, type FeatureNamesGroup } from './data/searchBox';
-  import { activeFeatures, activeOverlay, sample } from './store';
+  import { features, focus, sample } from './store';
+  import { oneLRU } from './utils';
 
   let active: HoverSelect<NameWithFeature>;
   $: if (active?.active) {
-    $activeFeatures[$activeOverlay] = active.active;
-    console.log($activeFeatures);
+    $features[$focus.overlay] = active.active;
+    console.log($features);
   }
   let names: FeatureNamesGroup[];
   $: {
     if ($sample) {
-      updateNames($sample.features, $activeOverlay)
+      updateNames($sample.features, $focus.overlay)
         .then((v) => (names = v))
         .catch(console.error);
     }
   }
 
-  activeOverlay.subscribe((v: string) => {
+  const setSelected = oneLRU((ov: string) => {
     if (!active) return;
-    active.selected = $activeFeatures[v];
+    active.selected = $features[ov];
   });
+
+  focus.subscribe((f) => setSelected(f.overlay));
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">
@@ -32,7 +35,7 @@
   <div class="gap-x-2 pt-1 text-base">
     <List
       items={$sample ? Object.keys($sample.overlays) : []}
-      bind:active={$activeOverlay}
+      bind:active={$focus.overlay}
       loading={false}
       showArrow={false}
       addSample={false}

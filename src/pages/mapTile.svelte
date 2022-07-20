@@ -7,7 +7,7 @@
   import List from '$src/lib/components/list.svelte';
   import { byod } from '$src/lib/data/byod';
   import type { Sample } from '$src/lib/data/sample';
-  import { activeMap, activeSample, mapList, samples } from '$src/lib/store';
+  import { focus, mapList, samples } from '$src/lib/store';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
@@ -24,13 +24,13 @@
   $: hieN = typeof hie === 'number' ? hie : -1;
 
   $: if (typeof hie === 'number' && $samples[active]) {
-    $activeSample = active;
+    $focus.sample = active;
     currSample = $samples[active];
-    $activeMap = hie;
+    $focus.mapId = hie;
   }
 
-  $: if ($activeMap === hie) {
-    $activeSample = currSample?.name;
+  $: if ($focus.mapId === hie) {
+    $focus.sample = currSample?.name;
   }
 
   function handleSplit(i: number, mode: 'h' | 'v') {
@@ -72,7 +72,7 @@
       $mapList.splice(idx, 1);
       $mapList = $mapList;
       if (idx > 0) {
-        $activeMap = $mapList[idx - 1];
+        $focus.mapId = $mapList[idx - 1];
       } else {
         throw new Error('Should be impossible to delete the first map');
       }
@@ -171,13 +171,13 @@
 
     <div
       class="h-full w-full border-2"
-      class:border-slate-800={$activeMap !== hieN}
-      class:border-slate-100={$activeMap === hieN && $mapList.length > 1}
+      class:border-slate-800={$focus.mapId !== hieN}
+      class:border-slate-100={$focus.mapId === hieN && $mapList.length > 1}
     >
       <Mapp
-        on:mapClick={() => ($activeMap = hieN)}
+        on:mapClick={() => ($focus.mapId = hieN)}
         sample={currSample}
-        trackHover={$activeMap === hie}
+        trackHover={$focus.mapId === hie}
         uid={hie}
       />
     </div>

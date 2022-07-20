@@ -5,7 +5,7 @@
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
   import type { PlainJSON } from '../data/features';
-  import { activeFeatures, activeSample, samples } from '../store';
+  import { features, focus, samples } from '../store';
   import type { Draww } from './selector';
 
   export let map: Mapp;
@@ -35,7 +35,7 @@
   function updateSelectionPoints() {
     if (!map.mounted) return;
     const names = map.draw?.getPolygonsName() ?? [];
-    const arr = ($samples[$activeSample].features._selections as PlainJSON).values as string[];
+    const arr = ($samples[$focus.sample].features._selections as PlainJSON).values as string[];
     arr.fill('');
     for (const [i, n] of names.entries()) {
       map.draw!.getPoints(i).forEach((p) => (arr[p] = n));
@@ -65,13 +65,13 @@
       case 'selections':
         toJSON(
           draw!.dumpPolygons(),
-          `selections_${$activeSample}.json`,
+          `selections_${$focus.sample}.json`,
           'selections',
-          $activeSample
+          $focus.sample
         );
         break;
       case 'spots':
-        toJSON(draw!.dumpAllPoints(), `spots_${$activeSample}.json`, 'spots', $activeSample);
+        toJSON(draw!.dumpAllPoints(), `spots_${$focus.sample}.json`, 'spots', $focus.sample);
         break;
       default:
         throw new Error('Unknown export type');
@@ -103,7 +103,7 @@
       if (parsed.type !== 'selections') {
         alert('Not a polygon. Make sure that you have the correct file.');
       }
-      if (parsed.sample !== $activeSample) {
+      if (parsed.sample !== $focus.sample) {
         alert('Sample does not match.');
       }
 
@@ -186,7 +186,7 @@
       class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
     >
       <table>
-        {#each Object.keys($samples[$activeSample].overlays) as ovName}
+        {#each Object.keys($samples[$focus.sample].overlays) as ovName}
           <tr class="flex">
             <td class="flex gap-x-1 pr-2">
               <label class="flex cursor-pointer items-center gap-x-1">
@@ -210,7 +210,7 @@
             </td>
 
             <td class="pr-3 text-yellow-400">
-              {$activeFeatures[ovName]?.name ?? 'None'}
+              {$features[ovName]?.name ?? 'None'}
             </td>
 
             <td>
