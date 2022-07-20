@@ -278,7 +278,8 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
     let f = this.get(idx);
     if (f === null) {
-      f = CanvasSpots._genCircle({ ...ov.pos![idx], i: idx, mPerPx: ov.mPerPx, size: ov.size });
+      // Null to generate Point, instead of Circle.
+      f = CanvasSpots._genCircle({ ...ov.pos![idx], i: idx, mPerPx: ov.mPerPx, size: null });
       this.source.addFeature(f);
     }
 
