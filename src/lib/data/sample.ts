@@ -89,9 +89,6 @@ export class Sample extends Deferrable {
       ...Object.values(this.features).map((f) => f.hydrate(this.handle)),
       ...Object.values(this.overlays).map((o) => o.hydrate(this.handle))
     ]);
-    // (this.features._selections as PlainJSON<string[]>).values = new Array(
-    //   this.image.coords!.length
-    // ).fill('');
 
     if (!this.activeDefault.name && this.featParams) {
       const f = this.featParams[0].name;

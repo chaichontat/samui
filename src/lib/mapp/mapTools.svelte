@@ -50,12 +50,12 @@
   let colorOpacity = 1;
 
   const setVisible = (name: string, c: boolean | null) =>
-    map.layerMap[name]?.layer?.setVisible(c ?? false);
+    map.layers[name]?.layer?.setVisible(c ?? false);
 
   const setOpacity = oneLRU(async (name: string, opacity: string) => {
-    await map.layerMap[name]?.promise;
-    if (name === 'spots') colorOpacity = Number(opacity);
-    map.layerMap[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
+    await map.layers[name]?.promise;
+    colorOpacity = Number(opacity);
+    map.layers[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
 
   // TODO: Use makedownload.
@@ -195,7 +195,7 @@
                   class="mr-0.5 cursor-pointer bg-opacity-80"
                   checked
                   on:change={(e) =>
-                    map.layerMap['outlines']?.layer?.setVisible(e.currentTarget.checked ?? false)}
+                    map.layers[ovName]?.outline?.layer.setVisible(e.currentTarget.checked ?? false)}
                 />
               </label>
               <label class="flex cursor-pointer items-center gap-x-1">

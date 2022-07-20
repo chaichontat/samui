@@ -20,9 +20,10 @@
 </script>
 
 {#if imgCtrl}
-  {#if channels !== 'rgb'}
+  {#if imgCtrl.type === 'composite'}
     {#each ['blue', 'green', 'red'] as color, i}
       <div class:gap-x-2={small} class:gap-x-4={!small} class="flex">
+        <!-- Ignore error. Type narrowing done at if. -->
         <ButtonGroup {names} bind:curr={imgCtrl.showing[i]} {color} {small} addNone />
         <input
           type="range"

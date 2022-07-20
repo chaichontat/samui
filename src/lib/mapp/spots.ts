@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import Feature from 'ol/Feature.js';
-import { Circle, Point } from 'ol/geom.js';
+import { Circle, Geometry, Point } from 'ol/geom.js';
+
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
@@ -9,47 +10,32 @@ import type { LiteralStyle } from 'ol/style/literal';
 import { tableau10arr } from '../colors';
 import { convertCategoricalToNumber, type Coord } from '../data/features';
 import type { OverlayData } from '../data/overlay';
-import { Deferrable, interpolateTurbo } from '../utils';
-import type { MapComponent, Mapp } from './mapp';
+import { interpolateTurbo } from '../utils';
+import { MapComponent } from './definitions';
+import type { Mapp } from './mapp';
 
-export class WebGLSpots extends Deferrable implements MapComponent {
-  readonly source: VectorSource<Point>;
-  layer?: WebGLPointsLayer<typeof this.source>;
-  map: Mapp;
-  overlay?: OverlayData;
-  _style: LiteralStyle;
+export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point>>> {
+  outline?: CanvasSpots;
   _mPerPx?: number;
 
-  constructor(map: Mapp, { style }: { style?: LiteralStyle } = {}) {
-    super();
-    this.map = map;
-    this.source = new VectorSource({ features: [] });
-    this._style = style ?? {
-      variables: { opacity: 1 },
-      symbol: {
-        size: ['interpolate', ['exponential', 2], ['zoom'], 1, 3, 4, 10],
-        symbolType: 'circle',
-        color: ['case', ...genCategoricalColors(), '#ffffff'],
-        opacity: ['var', 'opacity']
+  constructor(name: string, map: Mapp, style?: LiteralStyle) {
+    super(
+      name,
+      map,
+      style ?? {
+        variables: { opacity: 1 },
+        symbol: {
+          size: ['interpolate', ['exponential', 2], ['zoom'], 1, 3, 4, 10],
+          symbolType: 'circle',
+          color: ['case', ...genCategoricalColors(), '#ffffff'],
+          opacity: ['var', 'opacity']
+        }
       }
-    };
+    );
   }
 
-  mount(): void {
-    this.layer = new WebGLPointsLayer({
-      source: this.source,
-      style: this._style,
-      zIndex: 10
-    });
-    this._deferred.resolve();
-  }
-
-  async updateIntensity(map: Mapp, intensity: number[] | string[] | Promise<number[] | string[]>) {
-    await map.promise;
+  updateProperties(intensity: number[] | string[]) {
     if (!intensity) throw new Error('No intensity provided');
-    if (intensity instanceof Promise) {
-      intensity = await intensity;
-    }
 
     if (intensity?.length !== this.source?.getFeatures().length) {
       console.error(
@@ -68,14 +54,31 @@ export class WebGLSpots extends Deferrable implements MapComponent {
   }
 
   updateStyle(style: LiteralStyle) {
-    this._style = style;
-    this._rebuildLayer();
+    this.style = style;
+    this._rebuildLayer().catch(console.error);
   }
 
-  _rebuildLayer() {
+  _updateOutline() {
+    const shortEnough = this.overlay!.pos!.length < 10000;
+    if (shortEnough) {
+      if (!this.outline) {
+        this.outline = new CanvasSpots(this.name + 'Outline', this.map);
+        this.outline.mount();
+      }
+      this.outline.update(this.overlay!);
+    } else {
+      if (this.outline) {
+        this.outline.dispose();
+        this.outline = undefined;
+      }
+    }
+  }
+
+  async _rebuildLayer() {
+    await this.map.promise;
     const newLayer = new WebGLPointsLayer({
-      source: this.source,
-      style: this._style,
+      source: this.source as VectorSource<Point>,
+      style: this.style,
       zIndex: 10
     });
 
@@ -88,8 +91,7 @@ export class WebGLSpots extends Deferrable implements MapComponent {
     this.layer = newLayer;
   }
 
-  update(overlay?: OverlayData) {
-    if (!overlay) return;
+  update(overlay: OverlayData) {
     this._mPerPx = overlay.mPerPx;
     this.source.clear();
     this.source.addFeatures(
@@ -104,6 +106,8 @@ export class WebGLSpots extends Deferrable implements MapComponent {
       })
     );
     this.overlay = overlay;
+    this._rebuildLayer().catch(console.error);
+    this._updateOutline();
   }
 }
 
@@ -167,63 +171,65 @@ function genCategoricalColors() {
 }
 
 // TODO: Combine activespots and canvasspots
-export class ActiveSpots extends Deferrable implements MapComponent {
-  readonly source: VectorSource<Circle>;
-  readonly layer: VectorLayer<typeof this.source>;
+export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
   readonly feature: Feature<Circle>;
 
-  constructor(style: Style = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) })) {
-    super();
+  constructor(name: string, map: Mapp, style?: Style) {
+    super(
+      name,
+      map,
+      style ??
+        new Style({
+          stroke: new Stroke({ color: '#ffffff', width: 1 })
+        })
+    );
     this.feature = new Feature({
       geometry: new Circle([0, 0]),
       value: 0
     });
-    this.source = new VectorSource({
-      features: [this.feature]
-    });
     this.layer = new VectorLayer({
-      source: this.source,
-      zIndex: 50,
+      source: new VectorSource({ features: [this.feature] }),
+      zIndex: Infinity,
       style
     });
   }
 
-  mount(): void {
+  mount() {
+    this.map.map!.addLayer(this.layer!);
     this._deferred.resolve();
+    return this;
   }
 
   update(ov: OverlayData, idx: number) {
-    if (!ov.mPerPx) throw new Error('No mPerPx or spotDiam provided');
+    if (!ov.mPerPx) throw new Error('No mPerPx provided');
     const { x, y } = ov.pos![idx];
     const size = ov.size ? ov.size / 4 : ov.mPerPx * 10;
     this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
   }
 }
 
-export class CanvasSpots extends Deferrable implements MapComponent {
-  readonly source: VectorSource<Circle | Point>;
-  readonly layer: VectorLayer<typeof this.source>;
-  overlay: OverlayData | undefined;
+export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
+  constructor(name: string, map: Mapp, style?: Style) {
+    super(
+      name,
+      map,
+      style ??
+        new Style({
+          stroke: new Stroke({ color: '#ffffff66', width: 1 }),
+          fill: new Fill({ color: 'transparent' })
+        })
+    );
 
-  constructor(
-    map: Mapp,
-    style: Style = new Style({
-      stroke: new Stroke({ color: '#ffffff66', width: 1 }),
-      fill: new Fill({ color: 'transparent' })
-    })
-  ) {
-    super();
-
-    this.source = new VectorSource();
     this.layer = new VectorLayer({
       source: this.source,
-      zIndex: 50,
-      style
+      style: this.style
     });
   }
 
-  mount(): void {
+  mount() {
+    this.map.map!.addLayer(this.layer!);
     this._deferred.resolve();
+    return this;
   }
 
   static _genCircle({

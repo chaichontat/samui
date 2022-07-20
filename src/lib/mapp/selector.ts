@@ -20,7 +20,8 @@ export class _Points {
     this.features = [];
     this.source = new VectorSource({ features: this.features });
     this.layer = new VectorLayer({
-      source: this.source
+      source: this.source,
+      zIndex: Infinity
       // style: new Style({
       //   fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' })
       // })
@@ -29,7 +30,6 @@ export class _Points {
   }
 
   mount(map: Map) {
-    this.layer.setZIndex(20);
     map.addLayer(this.layer);
   }
 

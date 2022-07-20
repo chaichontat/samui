@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { NameWithFeature } from '$lib/data/features';
+  import type { OverlayData } from '$src/lib/data/overlay';
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
@@ -8,19 +10,11 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import {
-    activeFeatures,
-    activeOverlay,
-    annotating,
-    store,
-    type NameWithFeature
-  } from '../lib/store';
+  import { activeFeatures, activeOverlay, annotating, store } from '../lib/store';
 
   export let sample: Sample;
-  export let trackHover = false;
 
   $: image = sample?.image;
-  $: spots = sample?.overlays.spots;
 
   export let uid: number;
   const mapName = `map-${uid}`;
@@ -33,32 +27,29 @@
   let small = false;
   const dispatch = createEventDispatcher();
 
-  //   // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
-  // }
-
   let imgCtrl: ImageCtrl;
   let selecting = false;
   let showImgControl = true;
 
   onMount(() => {
     map.mount(mapElem, tippyElem);
-    map.handlePointer({
+    map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (trackHover && id_) $store.currIdx = { idx: id_.idx, source: 'map' };
-      }),
-      click: (id_: { idx: number; id: number | string } | null) => {
-        const ov = map.layerMap.cells?.overlay;
-        if ($annotating.curr && id_ && ov) {
-          console.log(id_);
-          const idx = id_.idx;
-          map.layerMap.annotations?.add(idx, $annotating.curr, ov, $annotating.keys);
-          $annotating.spots = map.layerMap.annotations?.dump();
-        }
-      }
+        if (id_) $store.currIdx = { idx: id_.idx, source: 'map' };
+      })
+      // click: (id_: { idx: number; id: number | string } | null) => {
+      //   const ov = map.layerMap.cells?.overlay;
+      //   if ($annotating.curr && id_ && ov) {
+      //     console.log(id_);
+      //     const idx = id_.idx;
+      //     // map.layerMap.annotations?.add(idx, $annotating.curr, ov, $annotating.keys);
+      //     // $annotating.spots = map.layerMap.annotations?.dump();
+      //   }
+      // }
     });
   });
 
-  $: map.layerMap.annotations?.layer.setVisible($annotating.show);
+  // $: map.layerMap.annotations?.layer.setVisible($annotating.show);
 
   // function moveView(idx: number) {
   //   if (!coords[idx]) return;
@@ -94,89 +85,65 @@
     }
   }
 
+  // Sample change.
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
-
+  $: if (sample) update({ key: sample.name, args: [sample] }).catch(console.error);
   const update = keyOneLRU(async (sample: Sample) => {
     await sample.promise;
     const img = sample.image;
-    await map.update({ image: img, spots });
+    await map.update({ image: img, overlays: sample.overlays });
     convertImgCtrl = colorVarFactory(img.channel);
-
-    map.layerMap['cells']?.update(sample.overlays.cells);
-
-    // Update overlay properties.
-    for (const [ol, v] of Object.entries($activeFeatures)) {
-      updateSpot({
-        key: `${sample.name}-${v?.name ?? 'null'}`,
-        args: [ol, v]
-      });
-    }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  $: if (sample) update({ key: sample.name, args: [sample] });
-
-  $: if (convertImgCtrl && imgCtrl) {
-    map.layerMap.background?.updateStyle(convertImgCtrl(imgCtrl));
+  // Feature change.
+  let currDataType: 'quantitative' | 'categorical';
+  $: if (sample) {
+    updateFeature({
+      key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
+      args: [$activeOverlay, $activeFeatures[$activeOverlay]]
+    }).catch(console.error);
   }
-
-  const setTippy = (idx: number) => {
-    // TODO: Revert to $activeOverlay
-    const ov = sample.overlays['spots'];
-    const pos = ov.pos![idx];
-    if (map.tippy && pos.id) {
-      map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
-      map.tippy.elem.removeAttribute('hidden');
-      map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
-    }
-  };
-
-  const changeHover = oneLRU(async (idx: number | null) => {
-    if (!image) return;
-    await image.promise;
-    if (idx !== null) {
-      map.layerMap.active?.layer.setVisible(true);
-      // TODO Revert to $activeOverlay
-      map.layerMap.active?.update(sample.overlays['spots'], idx);
-      setTippy(idx);
-    } else {
-      map.layerMap.active?.layer.setVisible(false);
-      map.tippy?.elem.setAttribute('hidden', '');
-      // map.tippy?.overlay.
-    }
-  });
-
-  $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
-
-  let currimage: 'quantitative' | 'categorical';
-
-  const updateSpot = keyOneLRU((ov: string, fn: NameWithFeature) => {
+  const updateFeature = keyOneLRU(async (ov: string, fn: NameWithFeature) => {
     if (!sample || !fn) return false;
-    sample
-      .getFeature(fn)
-      .then(({ values, dataType }) => {
-        if (ov === 'spots' && dataType !== currimage) {
-          map.layerMap[ov]?.updateStyle(
-            genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
-          );
-          currimage = dataType as 'quantitative' | 'categorical';
-        }
-        map.layerMap[ov]?.updateIntensity(map, values).catch(console.error);
-      })
-      .catch(console.error);
+    let { values, dataType } = await sample.getFeature(fn);
+    if (dataType !== currDataType) {
+      map.layers[ov]?.updateStyle(
+        genSpotStyle(dataType as 'quantitative' | 'categorical', sample.overlays[ov].sizePx)
+      );
+      currDataType = dataType as 'quantitative' | 'categorical';
+    }
+    const v = values instanceof Promise ? await values : values;
+    map.layers[ov]?.updateProperties(v);
   });
 
-  /// To remove $activeSample dependency since updateSpot must run after updateSample.
-  function updateSpotName(fn: NameWithFeature) {
-    if (sample) {
-      updateSpot({
-        key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
-        args: [$activeOverlay, $activeFeatures[$activeOverlay]]
-      });
-    }
-  }
+  // Hover.
+  $: if (sample) changeHover($activeOverlay, $store.currIdx.idx).catch(console.error);
+  const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
+    await sample.promise;
+    const active = map.persistentLayers.active;
+    const ov = sample.overlays[activeol];
+    if (!ov) return false;
 
-  $: updateSpotName($activeFeatures[$activeOverlay]);
+    if (idx !== null) {
+      active.layer!.setVisible(true);
+      const pos = ov.pos![idx];
+      if (!pos) return; // Happens when changing activeOverlay. Idx from another ol can exceed the length of current ol.
+      active.update(sample.overlays[activeol], idx);
+      if (map.tippy && pos.id) {
+        map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
+        map.tippy.elem.removeAttribute('hidden');
+        map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+      }
+    } else {
+      active.layer!.setVisible(false);
+      map.tippy?.elem.setAttribute('hidden', '');
+    }
+  });
+
+  // Image control params
+  $: if (convertImgCtrl && imgCtrl) {
+    map.persistentLayers.background?.updateStyle(convertImgCtrl(imgCtrl));
+  }
 
   $: small = width < 500;
 </script>

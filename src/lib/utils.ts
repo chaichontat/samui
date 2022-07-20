@@ -140,23 +140,26 @@ export function oneLRU<P, T extends Exclude<P, unknown[]>[], R>(
       throw new Error(`doNotRepeat: args must not be arrays.`);
     }
     if (lastArgs && isEqual(lastArgs, args)) return lastResult;
+    const newResult = f(...args);
+    // if (newResult !== false) {
     lastArgs = args;
-    lastResult = f(...args);
+    lastResult = newResult;
+    // }
     return lastResult;
   };
 }
 
-export function keyOneLRU<T extends unknown[], R>(f: (...args: T) => R | false) {
+export function keyOneLRU<T extends unknown[], R>(f: (...args: T) => R) {
   let lastName: string;
   let lastResult: R;
 
-  return ({ key, args }: { key: string; args: T }): R | false => {
+  return ({ key, args }: { key: string; args: T }): R => {
     if (key === lastName) return lastResult;
     const res = f(...args);
-    if (res !== false) {
-      lastName = key;
-      lastResult = res;
-    }
+    // if (res !== false) {
+    lastName = key;
+    lastResult = res;
+    // }
     return res;
   };
 }

@@ -8,7 +8,7 @@
       alert('Empty name.');
       return;
     }
-    $annotating.keys.push(name);
+    $annotating.keys.push(name.trim());
     $annotating.keys = $annotating.keys;
   }
 </script>

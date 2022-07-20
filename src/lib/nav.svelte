@@ -1,7 +1,7 @@
 <script lang="ts">
   import Darkswitch from './components/darkswitch.svelte';
   import Github from './components/github.svelte';
-  import SampleList from './components/sampleList.svelte';
+  import List from './components/list.svelte';
   import SearchBox from './components/searchBox.svelte';
   import type { NameWithFeature } from './data/features';
   import { HoverSelect, updateNames, type FeatureNamesGroup } from './data/searchBox';
@@ -30,7 +30,7 @@
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">
   <!-- <div class="over mt-2 text-ellipsis text-xl font-medium">Showing <i>{$currRna.name}</i>.</div> -->
   <div class="gap-x-2 pt-1 text-base">
-    <SampleList
+    <List
       items={$sample ? Object.keys($sample.overlays) : []}
       bind:active={$activeOverlay}
       loading={false}

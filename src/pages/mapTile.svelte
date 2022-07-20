@@ -4,7 +4,7 @@
 
 <script lang="ts">
   import { tooltip } from '$lib/utils';
-  import SampleList from '$src/lib/components/sampleList.svelte';
+  import List from '$src/lib/components/list.svelte';
   import { byod } from '$src/lib/data/byod';
   import type { Sample } from '$src/lib/data/sample';
   import { activeMap, activeSample, mapList, samples } from '$src/lib/store';
@@ -15,7 +15,7 @@
   let currSample: Sample;
   let refreshPls = false;
   let width = 0;
-  let sampleList: SampleList;
+  let sampleList: List;
 
   const dispatch = createEventDispatcher();
 
@@ -117,7 +117,7 @@
         {/if}
 
         <div class:mt-1={hie !== 0} class="min-w-[200px]">
-          <SampleList
+          <List
             bind:this={sampleList}
             items={Object.keys($samples)}
             bind:active

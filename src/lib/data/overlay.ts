@@ -38,8 +38,9 @@ export class OverlayData extends Deferrable {
   }
 
   get sizePx() {
-    if (!this.size || !this.mPerPx) throw new Error('Must provide size and mPerPx');
-    return this.size / this.mPerPx;
+    if (!this.mPerPx) throw new Error('Must provide mPerPx');
+    // Defaults to 20 for objects without size.
+    return this.size ? this.size / this.mPerPx : 20;
   }
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
