@@ -7,10 +7,8 @@ import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
-import { tableau10arr } from '../colors';
 import { convertCategoricalToNumber, type Coord } from '../data/features';
 import type { OverlayData } from '../data/overlay';
-import { interpolateTurbo } from '../utils';
 import { MapComponent } from './definitions';
 import type { Mapp } from './mapp';
 
@@ -139,7 +137,7 @@ export function genSpotStyle(
   };
 
   if (type === 'quantitative') {
-    const colors = [...Array(10).keys()].flatMap((i) => [i, interpolateTurbo(i / 10)]);
+    const colors = [...Array(10).keys()].flatMap((i) => [i, d3.interpolateTurbo(i / 10)]);
     colors[1] += 'ff';
     return {
       variables: { opacity: 1 },
@@ -164,8 +162,11 @@ export function genSpotStyle(
 
 function genCategoricalColors() {
   const colors = [];
-  for (let i = 0; i < tableau10arr.length; i++) {
-    colors.push(['==', ['%', ['get', 'value'], tableau10arr.length], i], tableau10arr[i]);
+  for (let i = 0; i < d3.schemeTableau10.length; i++) {
+    colors.push(
+      ['==', ['%', ['get', 'value'], d3.schemeTableau10.length], i],
+      d3.schemeTableau10[i]
+    );
   }
   return colors;
 }

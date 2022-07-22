@@ -1,3 +1,4 @@
+import { schemeTableau10 } from 'd3';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
 import { Point, Polygon } from 'ol/geom.js';
@@ -7,7 +8,6 @@ import type { ModifyEvent } from 'ol/interaction/Modify';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style, Text } from 'ol/style.js';
-import { tableau10arr } from '../colors';
 import type { Named } from '../utils';
 
 export class _Points {
@@ -216,8 +216,8 @@ export class Draww {
   }
 
   _afterDraw(feature: Feature<Polygon>) {
-    const cid = this._colorCounter++ % tableau10arr.length;
-    feature.set('color', tableau10arr[cid]);
+    const cid = this._colorCounter++ % schemeTableau10.length;
+    feature.set('color', schemeTableau10[cid]);
     feature.setId(Math.random());
 
     this._updatePolygonStyle(feature);

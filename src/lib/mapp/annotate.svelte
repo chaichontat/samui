@@ -1,6 +1,6 @@
 <script lang="ts">
   import { annotating } from '$lib/store';
-  import * as d3 from 'd3';
+  import { schemeTableau10 } from 'd3';
   import { makeDownload } from '../utils';
 
   function handleNewKey(name: string | null) {
@@ -24,7 +24,7 @@
   <div class="flex gap-x-6">
     {#each $annotating.keys as key, i}
       <label class="flex items-center gap-x-1 hover:underline">
-        <div class="h-3 w-3" style={`background-color: ${d3.schemeTableau10[i % 10]}`} />
+        <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
         <button
           on:click={() => ($annotating.currKey = key)}
           class:font-bold={$annotating.currKey === key}>{key}</button
