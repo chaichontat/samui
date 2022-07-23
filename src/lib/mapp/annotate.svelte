@@ -13,6 +13,7 @@
     if ($annotating.keys.findIndex((v) => v === newKey) === -1) {
       $annotating.keys.push(newKey);
       $annotating.keys = $annotating.keys;
+      $annotating.currKey = $annotating.keys.length - 1;
     } else {
       alert('Key already exists.');
     }
@@ -26,8 +27,8 @@
       <label class="flex items-center gap-x-1 hover:underline">
         <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
         <button
-          on:click={() => ($annotating.currKey = key)}
-          class:font-bold={$annotating.currKey === key}>{key}</button
+          on:click={() => ($annotating.currKey = i)}
+          class:font-bold={$annotating.currKey === i}>{key}</button
         >
       </label>
     {/each}

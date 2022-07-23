@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import Feature from 'ol/Feature.js';
-import { Circle, Geometry, Point } from 'ol/geom.js';
+import { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
 
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
@@ -251,6 +251,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     return f;
   }
 
+  /// Replace entire feature.
   update(ov: OverlayData) {
     if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
     this.source.clear();
@@ -265,15 +266,10 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   get(idx: number) {
     return this.source.getFeatureById(idx);
   }
+}
 
-  remove(idx: number) {
-    const f = this.get(idx);
-    if (f) {
-      this.source.removeFeature(f);
-    } else {
-      console.warn('Removing non-existent feature with idx:', idx);
-    }
-  }
+export class MutableSpots extends CanvasSpots {
+  names: string[] = [];
 
   add(idx: number, name: string, ov: OverlayData, ant: string[]) {
     if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
@@ -298,7 +294,35 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
         })
       })
     );
-    console.log(this.dump());
+  }
+
+  addMultiple(idxs: number[], name: string, ov: OverlayData, ant: string[]) {
+    idxs.forEach((idx) => this.add(idx, name, ov, ant));
+  }
+
+  addFromPolygon(polygonFeat: Feature<Polygon>, name: string, ov: OverlayData, ant: string[]) {
+    if (!name) {
+      alert('Set annotation name first.');
+      return;
+    }
+    const polygon = polygonFeat.getGeometry()!;
+    const template = [];
+    for (let i = 0; i < ov.pos!.length; i++) {
+      template.push(CanvasSpots._genCircle({ ...ov.pos![i], i, mPerPx: ov.mPerPx!, size: null }));
+    }
+
+    const filtered = ov
+      .pos!.filter((f) => polygon.intersectsCoordinate([f.x * ov.mPerPx!, -f.y * ov.mPerPx!]))
+      .map((p) => p.idx);
+
+    this.addMultiple(filtered, name, ov, ant);
+  }
+
+  deleteFromPolygon(polygonFeat: Feature<Polygon>) {
+    const polygon = polygonFeat.getGeometry()!;
+    this.source.forEachFeatureIntersectingExtent(polygon.getExtent(), (f) => {
+      this.source.removeFeature(f);
+    });
   }
 
   delete(idx: number) {
@@ -306,6 +330,14 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     if (f) {
       this.source.removeFeature(f);
     }
+  }
+
+  deleteByValue(name: string) {
+    this.source.forEachFeature((f) => {
+      if (f.get('value') === name) {
+        this.source.removeFeature(f);
+      }
+    });
   }
 
   dump() {

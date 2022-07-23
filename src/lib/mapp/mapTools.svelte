@@ -4,7 +4,6 @@
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
-  import type { PlainJSON } from '../data/features';
   import { features, focus, samples } from '../store';
   import type { Draww } from './selector';
 
@@ -18,33 +17,26 @@
   onMount(async () => {
     await map.promise;
     map.draw!.draw.on('drawend', () => (selecting = false));
-    map.draw!.source.on('addfeature', (evt) => {
-      if (!evt.feature!.get('name')) {
-        const name = prompt('Name of selection');
-        map.draw!.setPolygonName(-1, name ?? 'Selection');
-      }
-      updateSelection();
-    });
     draw = map.draw;
   });
 
   let selectionNames: string[] = [];
-  function updateSelectionNames() {
-    selectionNames = map.draw?.getPolygonsName() ?? [];
-  }
-  function updateSelectionPoints() {
-    if (!map.mounted) return;
-    const names = map.draw?.getPolygonsName() ?? [];
-    const arr = ($samples[$focus.sample].features._selections as PlainJSON).values as string[];
-    arr.fill('');
-    for (const [i, n] of names.entries()) {
-      map.draw!.getPoints(i).forEach((p) => (arr[p] = n));
-    }
-  }
+  // function updateSelectionNames() {
+  //   selectionNames = map.draw?.getPolygonsName() ?? [];
+  // }
+  // function updateSelectionPoints() {
+  //   if (!map.mounted) return;
+  //   const names = map.draw?.getPolygonsName() ?? [];
+  //   const arr = ($samples[$focus.sample].features._selections as PlainJSON).values as string[];
+  //   arr.fill('');
+  //   for (const [i, n] of names.entries()) {
+  //     map.draw!.getPoints(i).forEach((p) => (arr[p] = n));
+  //   }
+  // }
 
   function updateSelection() {
-    updateSelectionNames();
-    updateSelectionPoints();
+    // updateSelectionNames();
+    // updateSelectionPoints();
   }
 
   let colorOpacity = 1;
@@ -150,13 +142,6 @@
         }}
         on:export={(evt) => handleExport(evt.detail.name)}
         on:import={(evt) => fromJSON(evt.detail.e).catch(console.error)}
-        on:rename={(evt) => {
-          const newName = prompt('Enter new selection name.');
-          if (newName) {
-            draw?.setPolygonName(evt.detail.i, newName);
-            updateSelection();
-          }
-        }}
       />
       <button
         class="rounded-lg bg-sky-600/80 px-2 py-1 text-sm text-white shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80 dark:bg-sky-600/90 dark:text-slate-200 dark:hover:bg-sky-600"

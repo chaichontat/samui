@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { NameWithFeature } from '$lib/data/features';
-  import type { OverlayData } from '$src/lib/data/overlay';
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
@@ -43,10 +42,18 @@
         if ($annotating.currKey && id_ && ov) {
           const idx = id_.idx;
           const existing = map.persistentLayers.annotations.get(idx);
-          if (existing === null || existing.get('value') !== $annotating.currKey) {
-            map.persistentLayers.annotations.add(idx, $annotating.currKey, ov, $annotating.keys);
+          if (
+            existing === null ||
+            existing.get('value') !== $annotating.keys[$annotating.currKey]
+          ) {
+            map.persistentLayers.annotations.add(
+              idx,
+              $annotating.keys[$annotating.currKey],
+              ov,
+              $annotating.keys
+            );
           } else {
-            map.persistentLayers.annotations.remove(idx);
+            map.persistentLayers.annotations.delete(idx);
           }
           $annotating.spots = map.persistentLayers.annotations.dump();
         }

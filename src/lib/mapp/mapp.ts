@@ -12,14 +12,14 @@ import { Deferrable } from '../utils';
 import { Background } from './background';
 import type { MapComponent, OLLayer } from './definitions';
 import { Draww } from './selector';
-import { ActiveSpots, CanvasSpots, genSpotStyle, WebGLSpots } from './spots';
+import { ActiveSpots, MutableSpots, WebGLSpots } from './spots';
 
 export class Mapp extends Deferrable {
   map?: Map;
   layers: Record<string, MapComponent<OLLayer>>;
   persistentLayers: {
     background: Background;
-    annotations: CanvasSpots;
+    annotations: MutableSpots;
     active: ActiveSpots;
   };
   draw?: Draww;
@@ -34,10 +34,10 @@ export class Mapp extends Deferrable {
     this.persistentLayers = {
       background: new Background('background'),
       active: new ActiveSpots('active', this),
-      annotations: new CanvasSpots('annotations', this)
+      annotations: new MutableSpots('annotations', this)
     };
     this.persistentLayers.annotations.z = Infinity;
-    this.draw = new Draww();
+    this.draw = new Draww(this, this.persistentLayers.annotations);
   }
 
   mount(target: HTMLElement, tippyElem: HTMLElement) {

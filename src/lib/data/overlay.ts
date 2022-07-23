@@ -55,13 +55,16 @@ export class OverlayData extends Deferrable {
         download: true,
         dynamicTyping: true,
         header: true,
-        complete: (results: Papa.ParseResult<Coord>) => {
-          this.pos = results.data;
+        complete: (results: Papa.ParseResult<Omit<Coord, 'idx'>>) => {
+          this.pos = results.data as Coord[]; // Idx added below.
           res();
         },
         skipEmptyLines: 'greedy'
       });
       await promise;
+      this.pos!.forEach((p, i) => (p.idx = i));
+    } else {
+      console.info(`Overlay ${this.name} has no url or pos.`);
     }
     this.hydrated = true;
     this._deferred.resolve();

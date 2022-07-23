@@ -52,12 +52,12 @@ focus.subscribe((f) => updateSample(f.sample));
 // Overlays and Features
 type OverlayName = string;
 export const annotating: Writable<{
-  currKey: string;
+  currKey: number;
   keys: string[];
   spots?: string;
   show: boolean;
 }> = writable({
-  curr: '',
+  currKey: -1,
   keys: [],
   show: true
 });
