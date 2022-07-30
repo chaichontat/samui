@@ -29,3 +29,17 @@ Being compatible with static hosting, there are multiple layers of data.
 
 - `sample.json`: this contains the overall detail of the sample, such as its names and list of features.
 - `{features}.json`: these are either headers for `ChunkedJSON` or headers and data for `PlainJSON`.
+
+```mermaid
+graph LR
+    subgraph Sample
+    Overlay1 --> Feature1
+    Overlay1 --> Feature2
+    subgraph FeatureGroup
+        Feature1
+        Feature2
+    end
+    Overlay1 --> Feature3
+    Overlay2 --> Feature4
+    end
+ ```
