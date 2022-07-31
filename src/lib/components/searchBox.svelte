@@ -3,13 +3,13 @@
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import { Fzf } from '../../../node_modules/fzf';
-  import type { NameWithFeature } from '../data/features';
-  import { HoverSelect, type FeatureNamesGroup } from '../data/searchBox';
+  import type { FeatureAndGroup } from '../data/features';
+  import { HoverSelect, type FeatureGroupList } from '../data/searchBox';
 
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
-  export let featureNamesGroup: FeatureNamesGroup[];
-  export let curr = new HoverSelect<NameWithFeature>();
+  export let featureGroup: FeatureGroupList[];
+  export let curr = new HoverSelect<FeatureAndGroup>();
 
   let showSearch = true;
 
@@ -25,14 +25,14 @@
   }
 
   const setVal = oneLRU(
-    (v: { hover?: NameWithFeature | null; selected?: NameWithFeature | null }) => {
+    (v: { hover?: FeatureAndGroup | null; selected?: FeatureAndGroup | null }) => {
       curr.update(v);
       curr = curr;
     }
   );
 
-  $: if (featureNamesGroup) {
-    fzf = featureNamesGroup.map((f) => [f.feature, new Fzf(f.names, { limit: 6 })]);
+  $: if (featureGroup) {
+    fzf = featureGroup.map((f) => [f.group, new Fzf(f.features, { limit: 6 })]);
   }
 
   $: if (fzf) {
@@ -52,7 +52,9 @@
 
   // Top-down update of the search box.
   const setSearch = oneLRU((v: string) => (search = v));
-  $: curr.selected?.name && setSearch(curr.selected?.name);
+  $: curr.selected?.feature && setSearch(curr.selected?.feature);
+
+  $: noFeature = !featureGroup?.length || featureGroup.find((f) => f.features.length) === undefined;
 </script>
 
 <div class="relative w-full">
@@ -62,10 +64,12 @@
     bind:value={search}
     on:click={() => (showSearch = true)}
     on:input={() => (showSearch = true)}
-    placeholder="Search features"
+    placeholder={noFeature ? 'No feature' : 'Search features'}
+    disabled={noFeature}
   />
 
   {#if showSearch}
+    <!-- See clickOutside for on:outclick. -->
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
       class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"
@@ -83,10 +87,10 @@
             {#each values as v}
               <div
                 class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
-                on:mousemove={() => setVal({ hover: { feature: v.feature, name: v.raw } })}
+                on:mousemove={() => setVal({ hover: { group: v.feature, feature: v.raw } })}
                 on:click={() => {
                   showSearch = false;
-                  setVal({ selected: { feature: v.feature, name: v.raw } });
+                  setVal({ selected: { group: v.feature, feature: v.raw } });
                 }}
                 transition:slide={{ duration: 100, easing: cubicInOut }}
               >

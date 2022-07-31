@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { NameWithFeature } from '$lib/data/features';
+  import type { FeatureAndGroup } from '$lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
@@ -9,7 +9,7 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, features, focus, userState } from '../lib/store';
+  import { annotating, features, focus } from '../lib/store';
 
   export let sample: Sample;
 
@@ -34,7 +34,7 @@
     map.mount(mapElem, tippyElem);
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (id_) $userState.currIdx = { idx: id_.idx, source: 'map' };
+        if (id_) $focus.id = { ...id_, source: 'map' };
       }),
 
       click: (id_: { idx: number; id: number | string } | null) => {
@@ -111,11 +111,11 @@
   let currDataType: 'quantitative' | 'categorical';
   $: if (sample) {
     updateFeature({
-      key: `${sample.name}-${$features[$focus.overlay]?.name ?? 'null'}`,
+      key: `${sample.name}-${$features[$focus.overlay]?.feature ?? 'null'}`,
       args: [$focus.overlay, $features[$focus.overlay]]
     }).catch(console.error);
   }
-  const updateFeature = keyOneLRU(async (ov: string, fn: NameWithFeature) => {
+  const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
     if (!sample || !fn) return false;
     let { values, dataType } = await sample.getFeature(fn);
     if (dataType !== currDataType) {
@@ -128,12 +128,13 @@
     map.layers[ov]?.updateProperties(v);
   });
 
-  // Hover.
-  $: if (sample) changeHover($focus.overlay, $userState.currIdx.idx).catch(console.error);
+  // Hover/overlay.
+  $: if (sample) changeHover($focus.overlay, $focus.id.idx).catch(console.error);
   const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
     await sample.promise;
     const active = map.persistentLayers.active;
     const ov = sample.overlays[activeol];
+
     if (!ov) return false;
 
     if (idx !== null) {

@@ -22,7 +22,7 @@
     const f = $sample.getFeature($features[$focus.overlay]);
     intensity = f
       ? {
-          name: `${$sample.name}-${$focus.overlay}-${$features[$focus.overlay]?.name}`,
+          name: `${$sample.name}-${$focus.overlay}-${$features[$focus.overlay]?.feature}`,
           dataType: f.dataType,
           values: f.values
         }

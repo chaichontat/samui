@@ -3,8 +3,8 @@ import {
   ChunkedJSON,
   PlainJSON,
   type Data,
+  type FeatureAndGroup,
   type FeatureParams,
-  type NameWithFeature,
   type RetrievedData
 } from './features';
 import { Image, type ImageParams } from './image';
@@ -16,7 +16,7 @@ export type SampleParams = {
   overlayParams?: OverlayParams[];
   featParams?: FeatureParams<RetrievedData>[];
   handle?: FileSystemDirectoryHandle;
-  activeDefault?: NameWithFeature;
+  activeDefault?: FeatureAndGroup;
 };
 
 export class Sample extends Deferrable {
@@ -30,7 +30,7 @@ export class Sample extends Deferrable {
   overlays: Record<string, OverlayData>;
   hydrated: boolean;
   handle?: FileSystemDirectoryHandle;
-  activeDefault: NameWithFeature;
+  activeDefault: FeatureAndGroup;
 
   constructor(
     { name, imgParams, featParams, overlayParams, handle, activeDefault }: SampleParams,
@@ -90,13 +90,13 @@ export class Sample extends Deferrable {
       ...Object.values(this.overlays).map((o) => o.hydrate(this.handle))
     ]);
 
-    if (!this.activeDefault.name && this.featParams) {
+    if (!this.activeDefault.feature && this.featParams) {
       const f = this.featParams[0].name;
       if (this.features[f] instanceof PlainJSON) {
-        this.activeDefault.name = f;
-      } else {
         this.activeDefault.feature = f;
-        this.activeDefault.name = (this.features[f] as ChunkedJSON<RetrievedData>).activeDefault;
+      } else {
+        this.activeDefault.group = f;
+        this.activeDefault.feature = (this.features[f] as ChunkedJSON<RetrievedData>).activeDefault;
       }
     }
     this.hydrated = true;
@@ -104,16 +104,17 @@ export class Sample extends Deferrable {
     return this;
   }
 
-  async getFeature<T extends RetrievedData>(fn: NameWithFeature) {
+  async getFeature<T extends RetrievedData>(fn: FeatureAndGroup) {
     let values;
     let feature;
-    if (!fn?.name) return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
-    if (fn.feature) {
-      feature = this.features[fn.feature] as ChunkedJSON<T>;
+    if (!fn?.feature)
+      return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
+    if (fn.group) {
+      feature = this.features[fn.group] as ChunkedJSON<T>;
       await feature.promise;
-      values = feature?.retrieve!(fn.name);
+      values = feature?.retrieve!(fn.feature);
     } else {
-      feature = this.features[fn.name] as PlainJSON<T>;
+      feature = this.features[fn.feature] as PlainJSON<T>;
       values = feature?.values;
     }
     return {

@@ -19,24 +19,24 @@ export class HoverSelect<T> {
   });
 }
 
-export type FeatureNamesGroup = {
-  feature?: string;
-  names: string[];
+export type FeatureGroupList = {
+  group?: string;
+  features: string[];
 };
 
 export async function updateNames(
   features: Record<string, Data>,
   filterOverlay: string
-): Promise<FeatureNamesGroup[]> {
+): Promise<FeatureGroupList[]> {
   if (!features) return [];
-  const out: FeatureNamesGroup[] = [{ feature: undefined, names: [] }];
+  const out: FeatureGroupList[] = [{ group: undefined, features: [] }];
   for (const [name, f] of Object.entries(features)) {
     if (f.overlay !== filterOverlay) continue;
     if (f instanceof PlainJSON) {
-      out[0].names.push(name);
+      out[0].features.push(name);
     } else if (f instanceof ChunkedJSON) {
       await f.promise;
-      out.push({ feature: name, names: Object.keys(f.header!.names!) });
+      out.push({ group: name, features: Object.keys(f.header!.names!) });
     } else {
       throw new Error('Unknown feature type');
     }

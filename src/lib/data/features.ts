@@ -7,9 +7,9 @@ export type Coord = { x: number; y: number; id?: string; idx: number };
 
 // If ChunkedJSON, feature and name.
 // If PlainJSON, only name.
-export type NameWithFeature = {
+export type FeatureAndGroup = {
+  group?: string;
   feature?: string;
-  name?: string;
 };
 
 export type DataType = 'coords' | 'categorical' | 'quantitative';

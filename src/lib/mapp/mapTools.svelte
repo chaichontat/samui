@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { classes, tooltip } from '$lib/utils';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import type { Mapp } from '$src/lib/mapp/mapp';
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
@@ -21,24 +22,6 @@
   });
 
   let selectionNames: string[] = [];
-  // function updateSelectionNames() {
-  //   selectionNames = map.draw?.getPolygonsName() ?? [];
-  // }
-  // function updateSelectionPoints() {
-  //   if (!map.mounted) return;
-  //   const names = map.draw?.getPolygonsName() ?? [];
-  //   const arr = ($samples[$focus.sample].features._selections as PlainJSON).values as string[];
-  //   arr.fill('');
-  //   for (const [i, n] of names.entries()) {
-  //     map.draw!.getPoints(i).forEach((p) => (arr[p] = n));
-  //   }
-  // }
-
-  function updateSelection() {
-    // updateSelectionNames();
-    // updateSelectionPoints();
-  }
-
   let colorOpacity = 1;
 
   const setVisible = (name: string, c: boolean | null) =>
@@ -132,14 +115,8 @@
       <SelectionBox
         names={selectionNames}
         on:hover={(evt) => map.draw?.highlightPolygon(evt.detail.i)}
-        on:delete={(evt) => {
-          map.draw?.deletePolygon(evt.detail.i);
-          updateSelection();
-        }}
-        on:clearall={() => {
-          map.draw?.clear();
-          updateSelection();
-        }}
+        on:delete={(evt) => map.draw?.deletePolygon(evt.detail.i)}
+        on:clearall={() => map.draw?.clear()}
         on:export={(evt) => handleExport(evt.detail.name)}
         on:import={(evt) => fromJSON(evt.detail.e).catch(console.error)}
       />
@@ -165,16 +142,19 @@
     {/if}
   </div>
 
-  <!-- Spots -->
+  <!-- Overlay selector -->
   {#if showImgControl}
     <div
       class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
     >
-      <table>
+      <table class="table-fixed">
         {#each Object.keys($samples[$focus.sample].overlays) as ovName}
-          <tr class="flex">
+          <tr>
             <td class="flex gap-x-1 pr-2">
-              <label class="flex cursor-pointer items-center gap-x-1">
+              <label
+                class="flex cursor-pointer items-center gap-x-1"
+                use:tooltip={{ content: 'Border' }}
+              >
                 <input
                   type="checkbox"
                   class="mr-0.5 cursor-pointer bg-opacity-80"
@@ -188,14 +168,25 @@
                   type="checkbox"
                   class="mr-0.5 cursor-pointer bg-opacity-80"
                   checked
+                  use:tooltip={{ content: 'Fill' }}
                   on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
                 />
-                <span class="max-w-[10rem] select-none text-ellipsis capitalize">{ovName}</span>
+                <span
+                  class={classes(
+                    'max-w-[10rem] select-none text-ellipsis capitalize',
+                    $focus.overlay === ovName ? 'text-white' : 'text-white/70'
+                  )}>{ovName}</span
+                >
               </label>
             </td>
 
-            <td class="pr-3 text-yellow-400">
-              {$features[ovName]?.name ?? 'None'}
+            <td
+              class={classes(
+                'min-w-[4rem] pr-3',
+                $focus.overlay === ovName ? 'text-yellow-300' : 'text-yellow-300/70'
+              )}
+            >
+              {$features[ovName]?.feature ?? 'None'}
             </td>
 
             <td>
@@ -207,6 +198,7 @@
                 step="0.01"
                 on:change={(e) => setOpacity(ovName, e.currentTarget.value)}
                 on:mousemove={(e) => setOpacity(ovName, e.currentTarget.value)}
+                use:tooltip={{ content: 'Opacity' }}
                 class="max-w-[5rem] translate-y-[2px] cursor-pointer opacity-80"
               />
             </td>

@@ -1,11 +1,12 @@
 import sampleList from '$lib/data/meh';
 import { get, writable, type Writable } from 'svelte/store';
-import type { NameWithFeature } from './data/features';
+import type { FeatureAndGroup } from './data/features';
 import type { Sample } from './data/sample';
 import { oneLRU } from './utils';
 
-export type Idx = { idx: number | null; source: string };
+export type Idx = { id?: number | string | null; idx: number; source: string };
 
+// TODO: deprecate
 export const userState = writable({
   lockedIdx: { idx: -1, source: 'scatter' },
   currIdx: { idx: 0, source: 'scatter' },
@@ -17,7 +18,7 @@ export const userState = writable({
 // Samples
 export const sample: Writable<Sample | undefined> = writable();
 export const samples: Writable<Record<string, Sample>> = writable({});
-export const features: Writable<Record<OverlayName, NameWithFeature>> = writable({});
+export const features: Writable<Record<OverlayName, FeatureAndGroup>> = writable({});
 export const mapList: Writable<number[]> = writable([]);
 // Maps
 export function preload() {
@@ -35,10 +36,17 @@ export function preload() {
 // Automatically hydrates on change.
 
 export const focus = writable({
-  features: {} as Record<OverlayName, NameWithFeature>,
-  overlay: '',
   mapId: 0,
-  sample: ''
+  sample: '',
+  features: {} as Record<OverlayName, FeatureAndGroup>,
+  overlay: '',
+  id: { idx: -1, source: 'scatter' } as Idx,
+
+  get value() {
+    return typeof this.id?.idx === 'number'
+      ? this.features[this.overlay]?.group?.[this.id.idx]
+      : undefined;
+  }
 });
 
 const updateSample = oneLRU((newSample: string) => {
@@ -47,6 +55,7 @@ const updateSample = oneLRU((newSample: string) => {
   if (!s.hydrated) s.hydrate().catch(console.error);
   sample.set(s);
 });
+// Update sample when sample is changed.
 focus.subscribe((f) => updateSample(f.sample));
 
 // Overlays and Features
