@@ -12,7 +12,7 @@ export type FeatureAndGroup = {
   feature?: string;
 };
 
-export type DataType = 'coords' | 'categorical' | 'quantitative';
+export type DataType = 'categorical' | 'quantitative';
 export type RetrievedData = (number | string)[] | Record<string, number | string> | Coord[];
 type SparseMode = 'record' | 'array' | null;
 

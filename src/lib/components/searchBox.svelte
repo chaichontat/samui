@@ -15,8 +15,8 @@
 
   let search = '';
   let candidates: {
-    feature: string | undefined;
-    values: { feature: string | undefined; raw: string; embellished: string }[];
+    group: string | undefined;
+    values: { group: string | undefined; feature: string; embellished: string }[];
   }[] = [];
 
   function highlightChars(str: string, indices: Set<number>): string {
@@ -37,13 +37,13 @@
 
   $: if (fzf) {
     candidates = [];
-    for (const [feature, fz] of fzf) {
+    for (const [group, fz] of fzf) {
       const res = fz.find(search);
       candidates.push({
-        feature,
+        group,
         values: res.map((x) => ({
-          feature,
-          raw: x.item,
+          group,
+          feature: x.item,
           embellished: highlightChars(x.item, x.positions)
         }))
       });
@@ -78,19 +78,19 @@
       on:mouseout={() => setVal({ hover: null })}
       on:blur={() => setVal({ hover: null })}
     >
-      {#each candidates as { feature, values }}
+      {#each candidates as { group, values }}
         {#if values.length > 0}
           <div>
             <span class="px-2 py-1.5 font-medium capitalize text-yellow-300"
-              >{feature ?? 'Misc.'}</span
+              >{group ?? 'Misc.'}</span
             >
             {#each values as v}
               <div
                 class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
-                on:mousemove={() => setVal({ hover: { group: v.feature, feature: v.raw } })}
+                on:mousemove={() => setVal({ hover: v })}
                 on:click={() => {
                   showSearch = false;
-                  setVal({ selected: { group: v.feature, feature: v.raw } });
+                  setVal({ selected: v });
                 }}
                 transition:slide={{ duration: 100, easing: cubicInOut }}
               >

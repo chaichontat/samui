@@ -1,6 +1,12 @@
 import { oneLRU } from '../utils';
 import { ChunkedJSON, PlainJSON, type Data } from './features';
 
+/// Only for search box.
+export type FeatureGroupList = {
+  group?: string;
+  features: string[];
+};
+
 export class HoverSelect<T> {
   hover: T | null = null;
   selected: T | null = null;
@@ -18,11 +24,6 @@ export class HoverSelect<T> {
     if (selected !== undefined) this.selected = selected;
   });
 }
-
-export type FeatureGroupList = {
-  group?: string;
-  features: string[];
-};
 
 export async function updateNames(
   features: Record<string, Data>,
