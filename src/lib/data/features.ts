@@ -8,7 +8,7 @@ export type Coord = { x: number; y: number; id?: string; idx: number };
 // If ChunkedJSON, feature and name.
 // If PlainJSON, only name.
 export type FeatureAndGroup = {
-  group?: string;
+  group: string;
   feature?: string;
 };
 
@@ -22,10 +22,10 @@ interface JSONParams {
   overlay?: string;
 }
 
-export interface PlainJSONParams<Ret extends RetrievedData> extends JSONParams {
+export interface PlainJSONParams extends JSONParams {
   type: 'plainJSON';
   url?: Url;
-  values?: Ret;
+  values?: RetrievedData;
 }
 
 export interface ChunkedJSONParams extends JSONParams {
@@ -43,15 +43,17 @@ export type ChunkedJSONHeader = {
   sparseMode?: SparseMode;
 };
 
-export type FeatureParams<T extends RetrievedData> = ChunkedJSONParams | PlainJSONParams<T>;
+export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
 export type Sparse = { index: number[]; value: number[] };
 
-export interface Data {
+export interface FeatureData {
   readonly name: string;
-  readonly dataType: DataType;
   readonly overlay?: string;
   hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
   hydrated: boolean;
+  retrieve(
+    name?: string
+  ): Promise<{ dataType: 'quantitative' | 'categorical'; data: RetrievedData } | undefined>;
 }
 
 export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements Data {
@@ -89,9 +91,19 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
     this._deferred.resolve();
     return this;
   }
+
+  async retrieve() {
+    if (!this.hydrated) {
+      await this.hydrate();
+    }
+    return { dataType: this.dataType, data: this.values };
+  }
 }
 
-export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable implements Data {
+export class ChunkedJSON<Ret extends RetrievedData | Sparse>
+  extends Deferrable
+  implements FeatureData
+{
   retrieve:
     | ((
         name: string | number
@@ -183,6 +195,7 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
     this.retrieve = genLRU(async (selected: string | number) => {
       if (!browser) return;
       if (selected === -1) throw new Error('-1 sent to retrieve');
+      await this.promise;
 
       let idx: number;
       if (typeof selected === 'string') {
@@ -212,7 +225,9 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse> extends Deferrable 
       const blob = await raw.blob();
       const decomped = await ChunkedJSON.decompressBlob(blob);
       const ret = JSON.parse(decomped) as Ret;
-      return densify ? densify(ret as Sparse) : ret;
+
+      const data = densify ? densify(ret as Sparse) : ret;
+      return { dataType: this.dataType, data };
     });
 
     this._deferred.resolve();

@@ -1,9 +1,9 @@
 import { oneLRU } from '../utils';
-import { ChunkedJSON, PlainJSON, type Data } from './features';
+import { ChunkedJSON, PlainJSON, type FeatureData } from './features';
 
 /// Only for search box.
 export type FeatureGroupList = {
-  group?: string;
+  group: string | null;
   features: string[];
 };
 
@@ -26,11 +26,11 @@ export class HoverSelect<T> {
 }
 
 export async function updateNames(
-  features: Record<string, Data>,
+  features: Record<string, FeatureData>,
   filterOverlay: string
 ): Promise<FeatureGroupList[]> {
   if (!features) return [];
-  const out: FeatureGroupList[] = [{ group: undefined, features: [] }];
+  const out: FeatureGroupList[] = [{ group: null, features: [] }];
   for (const [name, f] of Object.entries(features)) {
     if (f.overlay !== filterOverlay) continue;
     if (f instanceof PlainJSON) {

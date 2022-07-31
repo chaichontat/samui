@@ -56,8 +56,8 @@
   let geneNames: Record<number, string>;
 
   const update = genUpdate(samples, (s: Sample) => {
-    spotGenes = s.features.spotGenes as ChunkedJSON;
-    geneNames = (s.features.genes as ChunkedJSON).revNames!;
+    spotGenes = s.groups.spotGenes as ChunkedJSON;
+    geneNames = (s.groups.genes as ChunkedJSON).revNames!;
   });
 
   const getRow = oneLRU(async (i: number): Promise<[string, number][]> => {

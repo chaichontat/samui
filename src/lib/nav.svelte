@@ -17,7 +17,7 @@
   let names: FeatureGroupList[];
   $: {
     if ($sample) {
-      updateNames($sample.features, $focus.overlay)
+      updateNames($sample.groups, $focus.overlay)
         .then((v) => (names = v))
         .catch(console.error);
     }

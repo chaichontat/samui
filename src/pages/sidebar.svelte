@@ -18,28 +18,28 @@
 
   let intensity;
 
-  $: if ($sample) {
-    const f = $sample.getFeature($features[$focus.overlay]);
-    intensity = f
-      ? {
-          name: `${$sample.name}-${$focus.overlay}-${$features[$focus.overlay]?.feature}`,
-          dataType: f.dataType,
-          values: f.values
-        }
-      : undefined;
-  }
+  // $: if ($sample) {
+  //   const f = $sample.getFeature($features[$focus.overlay]);
+  //   intensity = f
+  //     ? {
+  //         name: `${$sample.name}-${$focus.overlay}-${$features[$focus.overlay]?.feature}`,
+  //         dataType: f.dataType,
+  //         values: f.values
+  //       }
+  //     : undefined;
+  // }
 
-  const naviChartOptions: ChartConfiguration<'scatter'> = {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false,
-        reverse: true
-      }
-    }
-  };
+  // const naviChartOptions: ChartConfiguration<'scatter'> = {
+  //   scales: {
+  //     x: {
+  //       display: false
+  //     },
+  //     y: {
+  //       display: false,
+  //       reverse: true
+  //     }
+  //   }
+  // };
 </script>
 
 <aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto">
@@ -51,7 +51,8 @@
     <section>
       <Annotate />
     </section>
-    <section>
+
+    <!-- <section>
       <label
         use:tooltip={{ content: 'Can be slow if there are many points.' }}
         class="cursor-pointer"
@@ -78,7 +79,7 @@
           />
         {/await}
       {/if}
-    </section>
+    </section> -->
 
     <!-- <section class="pt-4"> -->
     <!-- <TabGroup on:change={(e) => (showing = e.detail)}>

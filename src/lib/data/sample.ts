@@ -2,8 +2,9 @@ import { Deferrable } from '../utils';
 import {
   ChunkedJSON,
   PlainJSON,
-  type Data,
+  PlainJSONGroup,
   type FeatureAndGroup,
+  type FeatureData,
   type FeatureParams,
   type RetrievedData
 } from './features';
@@ -26,7 +27,7 @@ export class Sample extends Deferrable {
   featParams?: FeatureParams<RetrievedData>[];
 
   image: Image;
-  features: Record<string, Data>;
+  groups: Record<string, FeatureData>;
   overlays: Record<string, OverlayData>;
   hydrated: boolean;
   handle?: FileSystemDirectoryHandle;
@@ -54,15 +55,15 @@ export class Sample extends Deferrable {
       }
     }
 
-    this.features = {} as Record<string, Data>;
+    this.groups = {} as Record<string, FeatureData>;
     if (featParams) {
       for (const f of featParams) {
         switch (f.type) {
           case 'chunkedJSON':
-            this.features[f.name] = new ChunkedJSON(f, false);
+            this.groups[f.name] = new ChunkedJSON(f, false);
             break;
           case 'plainJSON':
-            this.features[f.name] = new PlainJSON(f, false);
+            this.groups[f.name] = new PlainJSON(f, false);
             break;
           default:
             throw new Error('Unsupported feature type at Sample.constructor');
@@ -86,17 +87,17 @@ export class Sample extends Deferrable {
     console.debug(`Hydrating ${this.name}.`);
     await Promise.all([
       this.image.hydrate(this.handle),
-      ...Object.values(this.features).map((f) => f.hydrate(this.handle)),
+      ...Object.values(this.groups).map((f) => f.hydrate(this.handle)),
       ...Object.values(this.overlays).map((o) => o.hydrate(this.handle))
     ]);
 
     if (!this.activeDefault.feature && this.featParams) {
       const f = this.featParams[0].name;
-      if (this.features[f] instanceof PlainJSON) {
+      if (this.groups[f] instanceof PlainJSON) {
         this.activeDefault.feature = f;
       } else {
         this.activeDefault.group = f;
-        this.activeDefault.feature = (this.features[f] as ChunkedJSON<RetrievedData>).activeDefault;
+        this.activeDefault.feature = (this.groups[f] as ChunkedJSON<RetrievedData>).activeDefault;
       }
     }
     this.hydrated = true;
@@ -104,23 +105,17 @@ export class Sample extends Deferrable {
     return this;
   }
 
-  async getFeature<T extends RetrievedData>(fn: FeatureAndGroup) {
-    let values;
-    let feature;
+  async getFeature(fn: FeatureAndGroup) {
     if (!fn?.feature)
       return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
-    if (fn.group) {
-      feature = this.features[fn.group] as ChunkedJSON<T>;
-      await feature.promise;
-      values = feature?.retrieve!(fn.feature);
-    } else {
-      feature = this.features[fn.feature] as PlainJSON<T>;
-      values = feature?.values;
-    }
+
+    const feature = this.groups[fn.group];
+    const values = await feature?.retrieve(fn.feature);
+
     return {
-      values,
-      dataType: feature?.dataType ?? 'quantitative',
-      activeDefault: 'activeDefault' in feature ? feature?.activeDefault : undefined,
+      values: values?.data,
+      dataType: values?.dataType ?? 'quantitative',
+      activeDefault: undefined,
       overlay: feature?.overlay
     };
   }
