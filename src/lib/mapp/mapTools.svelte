@@ -5,9 +5,11 @@
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
-  import { samples, sFeature, sOverlay, sSample } from '../store';
+  import type { Sample } from '../data/sample';
+  import { samples, sFeature, sOverlay } from '../store';
   import type { Draww } from './selector';
 
+  export let sample: Sample | undefined;
   export let map: Mapp;
   export let selecting: boolean;
   export let showImgControl: boolean;
@@ -35,18 +37,13 @@
 
   // TODO: Use makedownload.
   function handleExport(t: 'spots' | 'selections') {
-    if (!map.mounted || !$sSample) return;
+    if (!map.mounted || !sample) return;
     switch (t) {
       case 'selections':
-        toJSON(
-          draw!.dumpPolygons(),
-          `selections_${$sSample.name}.json`,
-          'selections',
-          $sSample.name
-        );
+        toJSON(draw!.dumpPolygons(), `selections_${sample.name}.json`, 'selections', sample.name);
         break;
       case 'spots':
-        toJSON(draw!.dumpAllPoints(), `spots_${$sSample.name}.json`, 'spots', $sSample.name);
+        toJSON(draw!.dumpAllPoints(), `spots_${sample.name}.json`, 'spots', sample.name);
         break;
       default:
         throw new Error('Unknown export type');
@@ -78,7 +75,7 @@
       if (parsed.type !== 'selections') {
         alert('Not a polygon. Make sure that you have the correct file.');
       }
-      if (parsed.sample !== $sSample.name) {
+      if (parsed.sample !== sample?.name) {
         alert('Sample does not match.');
       }
 
@@ -148,8 +145,8 @@
       class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
     >
       <table class="table-fixed">
-        {#if $sSample}
-          {#each Object.keys($samples[$sSample.name].overlays) as ovName}
+        {#if sample}
+          {#each Object.keys($samples[sample.name].overlays) as ovName}
             <tr>
               <td class="flex gap-x-1 pr-2">
                 <label
@@ -177,7 +174,7 @@
                   <span
                     class={classes(
                       'max-w-[10rem] select-none text-ellipsis capitalize',
-                      $sOverlay?.name === ovName ? 'text-white' : 'text-white/70'
+                      $sOverlay === ovName ? 'text-white' : 'text-white/70'
                     )}>{ovName}</span
                   >
                 </label>
@@ -186,10 +183,10 @@
               <td
                 class={classes(
                   'min-w-[4rem] pr-3',
-                  $sOverlay?.name === ovName ? 'text-yellow-300' : 'text-yellow-300/70'
+                  $sOverlay === ovName ? 'text-yellow-300' : 'text-yellow-300/70'
                 )}
               >
-                {$sFeature?.feature ?? 'None'}
+                {$sFeature[ovName]?.feature ?? 'None'}
               </td>
 
               <td>

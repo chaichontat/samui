@@ -8,8 +8,8 @@ export type Coord = { x: number; y: number; id?: string; idx: number };
 // If ChunkedJSON, feature and name.
 // If PlainJSON, only name.
 export type FeatureAndGroup = {
-  group: string;
-  feature?: string;
+  readonly group: string;
+  readonly feature: string;
 };
 
 export type DataType = 'categorical' | 'quantitative';
@@ -93,7 +93,7 @@ export class PlainJSONGroup extends Deferrable implements FeatureData {
   }
 
   async retrieve(name: string) {
-    return await this.plainjsons[name].retrieve();
+    return await this.plainjsons[name]?.retrieve();
   }
 }
 

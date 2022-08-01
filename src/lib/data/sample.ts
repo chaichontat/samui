@@ -46,6 +46,7 @@ export class Sample extends Deferrable {
     }
   }
 
+  /// Hydrates the sample, including the image and overlays (including their groups for the headers).
   async hydrate() {
     if (this.hydrated) return this;
     console.debug(`Hydrating ${this.name}.`);

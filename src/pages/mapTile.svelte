@@ -7,15 +7,15 @@
   import List from '$src/lib/components/list.svelte';
   import { byod } from '$src/lib/data/byod';
   import type { Sample } from '$src/lib/data/sample';
-  import { mapList, samples, sMapId, sSample } from '$src/lib/store';
+  import { mapIdSample, mapList, samples, sMapId } from '$src/lib/store';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
-  let active: string;
-  let currSample: Sample;
+  let currSampleName: string;
+  $: if (typeof hie === 'number') $mapIdSample[hie] = currSampleName;
+
   let refreshPls = false;
   let width = 0;
-  let sampleList: List;
 
   const dispatch = createEventDispatcher();
 
@@ -113,12 +113,7 @@
         {/if}
 
         <div class:mt-1={hie !== 0} class="min-w-[200px]">
-          <List
-            bind:this={sampleList}
-            items={Object.keys($samples)}
-            bind:active
-            on:addSample={byod}
-          />
+          <List items={Object.keys($samples)} bind:active={currSampleName} on:addSample={byod} />
         </div>
       </div>
 
@@ -170,12 +165,7 @@
       class:border-slate-800={$sMapId !== hieN}
       class:border-slate-100={$sMapId === hieN && $mapList.length > 1}
     >
-      <Mapp
-        on:mapClick={() => ($sMapId = hieN)}
-        sample={$sSample}
-        trackHover={$sMapId === hie}
-        uid={hie}
-      />
+      <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />
     </div>
   </section>
 {:else}

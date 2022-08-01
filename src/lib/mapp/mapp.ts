@@ -127,7 +127,7 @@ export class Mapp extends Deferrable {
         const ol = get(sOverlay);
         if (!ol) return;
 
-        const comp = this.layers[ol.name];
+        const comp = this.layers[ol];
         const currLayer = comp.outline?.visible ? comp.outline?.layer : comp.layer;
         if (!currLayer) throw new Error('No layer');
 

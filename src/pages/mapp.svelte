@@ -9,14 +9,12 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, sFeature, sId, sOverlay, sSample } from '../lib/store';
+  import { annotating, sFeature, sId, sOverlay } from '../lib/store';
 
   export let sample: Sample | undefined;
+  $: sample?.hydrate().catch(console.error);
 
   $: image = sample?.image;
-
-  $: console.log(sample);
-  $: console.log($sSample);
 
   export let uid: number;
   const mapName = `map-${uid}`;
@@ -42,7 +40,7 @@
 
       click: (id_: { idx: number; id: number | string } | null) => {
         if (!$sOverlay) return;
-        const ov = map.layers[$sOverlay.name]?.overlay;
+        const ov = map.layers[$sOverlay]?.overlay;
         if ($annotating.currKey && id_ && ov) {
           const idx = id_.idx;
           const existing = map.persistentLayers.annotations.get(idx);
@@ -113,27 +111,27 @@
 
   // Feature change.
   let currDataType: 'quantitative' | 'categorical';
-  $: if (sample && $sFeature && $sOverlay) {
+  $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
+    const ol = $sOverlay;
     updateFeature({
-      key: `${sample.name}-${$sFeature.group ?? 'nogroups'}`,
-      args: [$sOverlay.name, $sFeature]
+      key: `${sample.name}-${ol}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
+      args: [$sOverlay, $sFeature[ol]]
     }).catch(console.error);
   }
   const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
-    if (!sample || !fn) return false;
-    let { values, dataType } = await sample.overlays[ov].getFeature(fn);
+    const res = await sample!.overlays[ov].getFeature(fn);
+    if (!res) return false;
+
+    let { data, dataType } = res;
+    map.layers[ov]?.updateStyle(genSpotStyle(dataType, sample!.overlays[ov].sizePx));
     if (dataType !== currDataType) {
-      map.layers[ov]?.updateStyle(
-        genSpotStyle(dataType as 'quantitative' | 'categorical', sample.overlays[ov].sizePx)
-      );
-      currDataType = dataType as 'quantitative' | 'categorical';
+      currDataType = dataType;
     }
-    const v = values instanceof Promise ? await values : values;
-    map.layers[ov]?.updateProperties(v);
+    map.layers[ov]?.updateProperties(data);
   });
 
   // Hover/overlay.
-  $: if (sample && $sOverlay) changeHover($sOverlay.name, $sId.idx).catch(console.error);
+  $: if (sample && $sOverlay) changeHover($sOverlay, $sId.idx).catch(console.error);
 
   const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
     await sample!.promise;
@@ -204,7 +202,7 @@
       </div>
     </section>
 
-    <MapTools {map} {width} bind:selecting bind:showImgControl />
+    <MapTools {sample} {map} {width} bind:selecting bind:showImgControl />
   {/if}
 
   <!-- Buttons -->

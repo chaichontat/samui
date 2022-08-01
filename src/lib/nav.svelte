@@ -6,21 +6,23 @@
   import SearchBox from './components/searchBox.svelte';
   import type { FeatureAndGroup } from './data/features';
   import type { FeatureGroupList, HoverSelect } from './data/searchBox';
-  import { setFeature, setOverlay, sOverlay, sSample } from './store';
+  import { sFeature, sOverlay, sSample } from './store';
   import { oneLRU } from './utils';
 
-  let names: FeatureGroupList[];
-  $: if ($sOverlay) names = $sOverlay.featNames;
+  // Overlay
+  let currOverlay: string;
+  $: if ($sSample && currOverlay) {
+    $sOverlay = currOverlay;
+  }
+
+  // Features
+  let featureGroup: FeatureGroupList[];
+  $: if ($sSample && $sOverlay) featureGroup = $sSample.overlays[$sOverlay].featNames;
 
   let currFeature: HoverSelect<FeatureAndGroup>;
-  $: if ($sSample && currFeature?.active) {
-    setFeature(currFeature.active).catch(console.error);
-  }
+  const updateFeature = oneLRU((cf: typeof currFeature) => ($sFeature[$sOverlay] = cf.active!));
 
-  let selected: string;
-  $: if ($sSample && selected) {
-    setOverlay(selected).catch(console.error);
-  }
+  $: if ($sSample && currFeature?.active) updateFeature(currFeature);
 
   // const setSelected = oneLRU((ov: string) => {
   //   if (!active) return;
@@ -35,15 +37,17 @@
   <div class="gap-x-2 pt-1 text-base">
     <List
       items={$sSample ? Object.keys($sSample.overlays) : []}
-      bind:active={selected}
+      bind:active={currOverlay}
       loading={false}
       showArrow={false}
       addSample={false}
       useSpinner={false}
     />
   </div>
+
+  <!-- Search features -->
   <div class="mt-1 flex-grow">
-    <SearchBox featureGroup={names} bind:curr={currFeature} />
+    <SearchBox {featureGroup} bind:curr={currFeature} />
   </div>
   <Darkswitch />
   <Github />

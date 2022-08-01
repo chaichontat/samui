@@ -31,7 +31,7 @@ export class OverlayData extends Deferrable {
   pos?: Coord[];
   size?: number;
   mPerPx?: number;
-  featgroups: Record<string, FeatureData>;
+  groups: Record<string, FeatureData>;
 
   constructor(
     { name, shape, url, size, mPerPx, pos, features }: OverlayParams,
@@ -44,11 +44,11 @@ export class OverlayData extends Deferrable {
     this.pos = pos;
     this.size = size;
     this.mPerPx = mPerPx;
-    this.featgroups = {};
+    this.groups = {};
 
     if (!this.url && !this.pos) throw new Error('Must provide url or value');
     if (features) {
-      this.featgroups = OverlayData._parseFeature(features);
+      this.groups = OverlayData._parseFeature(features);
     }
     if (autoHydrate) {
       this.hydrate().catch(console.error);
@@ -103,7 +103,12 @@ export class OverlayData extends Deferrable {
         },
         skipEmptyLines: 'greedy'
       });
-      await promise;
+
+      // Hydrate groups as well.
+      const promises: Promise<any>[] = Object.values(this.groups).map((g) => g.hydrate());
+      promises.push(promise);
+      await Promise.all(promises);
+
       this.pos!.forEach((p, i) => (p.idx = i));
     } else {
       console.info(`Overlay ${this.name} has no url or pos.`);
@@ -114,7 +119,7 @@ export class OverlayData extends Deferrable {
 
   get featNames() {
     const out = [];
-    for (const [g, feat] of Object.entries(this.featgroups)) {
+    for (const [g, feat] of Object.entries(this.groups)) {
       if (feat.featNames) {
         out.push({ group: g, features: feat.featNames });
       }
@@ -123,17 +128,6 @@ export class OverlayData extends Deferrable {
   }
 
   async getFeature(fn: FeatureAndGroup) {
-    if (!fn?.feature)
-      return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
-
-    const feature = this.featgroups[fn.group];
-    const values = await feature?.retrieve(fn.feature);
-
-    return {
-      values: values?.data,
-      dataType: values?.dataType ?? 'quantitative',
-      activeDefault: undefined,
-      overlay: feature?.overlay
-    };
+    return await this.groups[fn.group].retrieve(fn.feature);
   }
 }

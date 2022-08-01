@@ -110,7 +110,7 @@ export class Draww {
     this.points.addFromPolygon(
       feature,
       name,
-      this.map.layers[get(sOverlay).name].overlay!,
+      this.map.layers[get(sOverlay)].overlay!,
       get(annotating).keys
     );
   }
@@ -127,7 +127,7 @@ export class Draww {
       this.points.addFromPolygon(
         feature,
         get(annotating).keys[get(annotating).currKey],
-        this.map.layers[get(sOverlay).name].overlay!,
+        this.map.layers[get(sOverlay)].overlay!,
         get(annotating).keys
       );
 
