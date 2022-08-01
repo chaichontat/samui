@@ -9,11 +9,14 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, features, focus } from '../lib/store';
+  import { annotating, sFeature, sId, sOverlay, sSample } from '../lib/store';
 
-  export let sample: Sample;
+  export let sample: Sample | undefined;
 
   $: image = sample?.image;
+
+  $: console.log(sample);
+  $: console.log($sSample);
 
   export let uid: number;
   const mapName = `map-${uid}`;
@@ -34,11 +37,12 @@
     map.mount(mapElem, tippyElem);
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (id_) $focus.id = { ...id_, source: 'map' };
+        if (id_) $sId = { ...id_, source: 'map' };
       }),
 
       click: (id_: { idx: number; id: number | string } | null) => {
-        const ov = map.layers[$focus.overlay]?.overlay;
+        if (!$sOverlay) return;
+        const ov = map.layers[$sOverlay.name]?.overlay;
         if ($annotating.currKey && id_ && ov) {
           const idx = id_.idx;
           const existing = map.persistentLayers.annotations.get(idx);
@@ -109,15 +113,15 @@
 
   // Feature change.
   let currDataType: 'quantitative' | 'categorical';
-  $: if (sample) {
+  $: if (sample && $sFeature && $sOverlay) {
     updateFeature({
-      key: `${sample.name}-${$features[$focus.overlay]?.feature ?? 'null'}`,
-      args: [$focus.overlay, $features[$focus.overlay]]
+      key: `${sample.name}-${$sFeature.group ?? 'nogroups'}`,
+      args: [$sOverlay.name, $sFeature]
     }).catch(console.error);
   }
   const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
     if (!sample || !fn) return false;
-    let { values, dataType } = await sample.getFeature(fn);
+    let { values, dataType } = await sample.overlays[ov].getFeature(fn);
     if (dataType !== currDataType) {
       map.layers[ov]?.updateStyle(
         genSpotStyle(dataType as 'quantitative' | 'categorical', sample.overlays[ov].sizePx)
@@ -129,11 +133,12 @@
   });
 
   // Hover/overlay.
-  $: if (sample) changeHover($focus.overlay, $focus.id.idx).catch(console.error);
+  $: if (sample && $sOverlay) changeHover($sOverlay.name, $sId.idx).catch(console.error);
+
   const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
-    await sample.promise;
+    await sample!.promise;
     const active = map.persistentLayers.active;
-    const ov = sample.overlays[activeol];
+    const ov = sample!.overlays[activeol];
 
     if (!ov) return false;
 
@@ -141,7 +146,7 @@
       active.layer!.setVisible(true);
       const pos = ov.pos![idx];
       if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
-      active.update(sample.overlays[activeol], idx);
+      active.update(sample!.overlays[activeol], idx);
       if (map.tippy && pos.id) {
         map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
         map.tippy.elem.removeAttribute('hidden');
@@ -179,13 +184,11 @@
     class:composite={showImgControl && image?.channel !== 'rgb' && !small}
     class:rgb={showImgControl && image?.channel === 'rgb'}
   />
-  features features
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
     class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
-  features
 
   {#if sample}
     <section
@@ -214,8 +217,8 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if image.channel !== 'rgb'}
-          <svelte:component this={ImgControl} channels={image.channel} bind:imgCtrl {small} />
+        {#if image?.channel !== 'rgb'}
+          <svelte:component this={ImgControl} channels={image?.channel} bind:imgCtrl {small} />
         {:else}
           <svelte:component this={ImgControl} bind:imgCtrl {small} />
         {/if}

@@ -21,21 +21,21 @@ function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
     url.type = 'network';
   }
 
-  if (r.featParams) {
-    for (const f of r.featParams) {
-      if (f.url) {
-        f.url = { url: `${dirUrl}/${f.url.url}`, type: 'network' };
-      }
-      if ('headerUrl' in f && f.headerUrl) {
-        f.headerUrl = { url: `${dirUrl}/${f.headerUrl.url}`, type: 'network' };
-      }
-    }
-  }
-
   if (r.overlayParams) {
     for (const o of r.overlayParams) {
       if (o.url) {
         o.url = { url: `${dirUrl}/${o.url.url}`, type: 'network' };
+      }
+
+      if (o.features) {
+        for (const f of o.features) {
+          if (f.url) {
+            f.url = { url: `${dirUrl}/${f.url.url}`, type: 'network' };
+          }
+          if ('headerUrl' in f && f.headerUrl) {
+            f.headerUrl = { url: `${dirUrl}/${f.headerUrl.url}`, type: 'network' };
+          }
+        }
       }
     }
   }

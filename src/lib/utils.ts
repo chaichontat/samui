@@ -224,10 +224,21 @@ export class Deferred<T extends unknown[] = [void], R = void> {
 export class Deferrable {
   readonly promise: Promise<void>;
   readonly _deferred: Deferred<[void], void>;
+  _hydrated = false;
 
   constructor() {
     this._deferred = new Deferred();
     this.promise = this._deferred.promise;
+  }
+
+  get hydrated() {
+    return this._hydrated;
+  }
+
+  set hydrated(h: boolean) {
+    if (!h) throw new Error('Cannot set hydrated to false.');
+    this._deferred.resolve();
+    this._hydrated = h;
   }
 }
 

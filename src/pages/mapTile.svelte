@@ -7,7 +7,7 @@
   import List from '$src/lib/components/list.svelte';
   import { byod } from '$src/lib/data/byod';
   import type { Sample } from '$src/lib/data/sample';
-  import { focus, mapList, samples } from '$src/lib/store';
+  import { mapList, samples, sMapId, sSample } from '$src/lib/store';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
@@ -23,15 +23,12 @@
   let hieN: number;
   $: hieN = typeof hie === 'number' ? hie : -1;
 
-  $: if (typeof hie === 'number' && $samples[active]) {
-    $focus.sample = active;
-    currSample = $samples[active];
-    $focus.mapId = hie;
-  }
-
-  $: if ($focus.mapId === hie) {
-    $focus.sample = currSample?.name;
-  }
+  // $: if (typeof hie === 'number') {
+  //   $focus
+  //     .setSample(active)
+  //     .then(() => ($focus = $focus))
+  //     .catch(console.error);
+  // }
 
   function handleSplit(i: number, mode: 'h' | 'v') {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
@@ -72,7 +69,7 @@
       $mapList.splice(idx, 1);
       $mapList = $mapList;
       if (idx > 0) {
-        $focus.mapId = $mapList[idx - 1];
+        $sMapId = $mapList[idx - 1];
       } else {
         throw new Error('Should be impossible to delete the first map');
       }
@@ -87,8 +84,7 @@
     }
   });
 
-  $: currSample?.promise.then(() => sampleList.stopSpinner()).catch(console.error);
-  $: console.log(currSample?.hydrated);
+  // $: currSample?.promise.then(() => sampleList.stopSpinner()).catch(console.error);
 </script>
 
 {#if typeof hie === 'number'}
@@ -171,13 +167,13 @@
 
     <div
       class="h-full w-full border-2"
-      class:border-slate-800={$focus.mapId !== hieN}
-      class:border-slate-100={$focus.mapId === hieN && $mapList.length > 1}
+      class:border-slate-800={$sMapId !== hieN}
+      class:border-slate-100={$sMapId === hieN && $mapList.length > 1}
     >
       <Mapp
-        on:mapClick={() => ($focus.mapId = hieN)}
-        sample={currSample}
-        trackHover={$focus.mapId === hie}
+        on:mapClick={() => ($sMapId = hieN)}
+        sample={$sSample}
+        trackHover={$sMapId === hie}
         uid={hie}
       />
     </div>

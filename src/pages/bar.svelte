@@ -5,7 +5,7 @@
   import { genUpdate, oneLRU } from '$src/lib/utils';
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
-  import { focus, samples, userState } from '../lib/store';
+  import { samples, userState } from '../lib/store';
 
   export let showing: boolean;
   Chart.defaults.font.size = 14;
@@ -49,7 +49,7 @@
       }
     });
 
-    update($focus.sample).catch(console.error);
+    // update($focus.sample).catch(console.error);
   });
 
   let spotGenes: ChunkedJSON;
@@ -71,7 +71,7 @@
   });
 
   let curr = 0;
-  $: update($focus.sample).catch(console.error);
+  // $: update($focus.sample).catch(console.error);
 
   // $: if (bar && $done) {
   //   getRow(5)

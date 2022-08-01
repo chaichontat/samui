@@ -15,8 +15,8 @@
 
   let search = '';
   let candidates: {
-    group: string | undefined;
-    values: { group: string | undefined; feature: string; embellished: string }[];
+    group: string;
+    values: { group: string; feature: string; embellished: string }[];
   }[] = [];
 
   function highlightChars(str: string, indices: Set<number>): string {
@@ -40,9 +40,9 @@
     for (const [group, fz] of fzf) {
       const res = fz.find(search);
       candidates.push({
-        group,
+        group: group ?? 'nogroups',
         values: res.map((x) => ({
-          group,
+          group: group ?? 'nogroups',
           feature: x.item,
           embellished: highlightChars(x.item, x.positions)
         }))

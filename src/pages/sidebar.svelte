@@ -2,7 +2,7 @@
   import Annotate from '$src/lib/mapp/annotate.svelte';
 
   import Nav from '$src/lib/nav.svelte';
-  import { features, focus, sample, userState } from '$src/lib/store';
+  import { userState } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';
   import 'tippy.js/dist/tippy.css';

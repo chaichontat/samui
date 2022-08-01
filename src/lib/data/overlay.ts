@@ -1,6 +1,16 @@
 import Papa from 'papaparse';
 import { Deferrable } from '../utils';
-import { convertLocalToNetwork, type Coord, type Url } from './features';
+import {
+  ChunkedJSON,
+  convertLocalToNetwork,
+  PlainJSON,
+  PlainJSONGroup,
+  type Coord,
+  type FeatureAndGroup,
+  type FeatureData,
+  type FeatureParams,
+  type Url
+} from './features';
 
 type Shape = 'circle';
 
@@ -11,6 +21,7 @@ export interface OverlayParams {
   size?: number;
   mPerPx?: number;
   pos?: Coord[];
+  features?: FeatureParams[];
 }
 
 export class OverlayData extends Deferrable {
@@ -20,9 +31,12 @@ export class OverlayData extends Deferrable {
   pos?: Coord[];
   size?: number;
   mPerPx?: number;
-  hydrated = false;
+  featgroups: Record<string, FeatureData>;
 
-  constructor({ name, shape, url, size, mPerPx, pos }: OverlayParams, autoHydrate = false) {
+  constructor(
+    { name, shape, url, size, mPerPx, pos, features }: OverlayParams,
+    autoHydrate = false
+  ) {
     super();
     this.name = name;
     this.shape = shape;
@@ -30,8 +44,12 @@ export class OverlayData extends Deferrable {
     this.pos = pos;
     this.size = size;
     this.mPerPx = mPerPx;
+    this.featgroups = {};
 
     if (!this.url && !this.pos) throw new Error('Must provide url or value');
+    if (features) {
+      this.featgroups = OverlayData._parseFeature(features);
+    }
     if (autoHydrate) {
       this.hydrate().catch(console.error);
     }
@@ -41,6 +59,30 @@ export class OverlayData extends Deferrable {
     if (!this.mPerPx) throw new Error('Must provide mPerPx');
     // Defaults to 20 for objects without size.
     return this.size ? this.size / this.mPerPx : 20;
+  }
+
+  static _parseFeature(featParams: FeatureParams[]) {
+    const featgroups = {} as Record<string, FeatureData>;
+    const nogroup = [] as PlainJSON[];
+    for (const f of featParams) {
+      if (f.name === 'nogroup') {
+        alert('Cannot have a feature with name "nogroup"');
+        throw new Error('Cannot have a feature with name "nogroup"');
+      }
+      switch (f.type) {
+        case 'chunkedJSON':
+          featgroups[f.name] = new ChunkedJSON(f, false);
+          break;
+        case 'plainJSON':
+          nogroup.push(new PlainJSON(f, false));
+          break;
+        default:
+          throw new Error('Unsupported feature type at Sample.constructor');
+      }
+    }
+
+    featgroups.nogroup = new PlainJSONGroup({ name: '', plainjsons: nogroup });
+    return featgroups;
   }
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
@@ -67,7 +109,31 @@ export class OverlayData extends Deferrable {
       console.info(`Overlay ${this.name} has no url or pos.`);
     }
     this.hydrated = true;
-    this._deferred.resolve();
     return this;
+  }
+
+  get featNames() {
+    const out = [];
+    for (const [g, feat] of Object.entries(this.featgroups)) {
+      if (feat.featNames) {
+        out.push({ group: g, features: feat.featNames });
+      }
+    }
+    return out;
+  }
+
+  async getFeature(fn: FeatureAndGroup) {
+    if (!fn?.feature)
+      return { values: undefined, dataType: 'quantitative', activeDefault: undefined };
+
+    const feature = this.featgroups[fn.group];
+    const values = await feature?.retrieve(fn.feature);
+
+    return {
+      values: values?.data,
+      dataType: values?.dataType ?? 'quantitative',
+      activeDefault: undefined,
+      overlay: feature?.overlay
+    };
   }
 }

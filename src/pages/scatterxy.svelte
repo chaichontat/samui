@@ -3,7 +3,7 @@
   import type { FeatureAndGroup } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import type { FeatureGroupList, HoverSelect } from '$src/lib/data/searchBox';
-  import { sample, userState } from '$src/lib/store';
+  // import { sample, userState } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
 

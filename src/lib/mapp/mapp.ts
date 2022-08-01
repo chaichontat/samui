@@ -6,7 +6,7 @@ import Zoom from 'ol/control/Zoom.js';
 
 import { get } from 'svelte/store';
 import type { OverlayData } from '../data/overlay';
-import { focus } from '../store';
+import { sOverlay } from '../store';
 
 import { Deferrable } from '../utils';
 import { Background } from './background';
@@ -97,7 +97,6 @@ export class Mapp extends Deferrable {
       ...newLayers.map((x) => x.update(overlays[x.name]))
     ]);
 
-    // if (this.layerMap.spots) this.draw!.update(this.layerMap.spots.source.getFeatures());
     this.image = image;
   }
 
@@ -125,7 +124,10 @@ export class Mapp extends Deferrable {
     for (const [k, v] of Object.entries(funs)) {
       this.map!.on(k as 'pointermove' | 'click', (e) => {
         // Outlines take precedence. Either visible is fine.
-        const comp = this.layers[get(focus).overlay];
+        const ol = get(sOverlay);
+        if (!ol) return;
+
+        const comp = this.layers[ol.name];
         const currLayer = comp.outline?.visible ? comp.outline?.layer : comp.layer;
         if (!currLayer) throw new Error('No layer');
 

@@ -5,7 +5,7 @@
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
-  import { features, focus, samples } from '../store';
+  import { samples, sFeature, sOverlay, sSample } from '../store';
   import type { Draww } from './selector';
 
   export let map: Mapp;
@@ -35,18 +35,18 @@
 
   // TODO: Use makedownload.
   function handleExport(t: 'spots' | 'selections') {
-    if (!map.mounted) return;
+    if (!map.mounted || !$sSample) return;
     switch (t) {
       case 'selections':
         toJSON(
           draw!.dumpPolygons(),
-          `selections_${$focus.sample}.json`,
+          `selections_${$sSample.name}.json`,
           'selections',
-          $focus.sample
+          $sSample.name
         );
         break;
       case 'spots':
-        toJSON(draw!.dumpAllPoints(), `spots_${$focus.sample}.json`, 'spots', $focus.sample);
+        toJSON(draw!.dumpAllPoints(), `spots_${$sSample.name}.json`, 'spots', $sSample.name);
         break;
       default:
         throw new Error('Unknown export type');
@@ -78,7 +78,7 @@
       if (parsed.type !== 'selections') {
         alert('Not a polygon. Make sure that you have the correct file.');
       }
-      if (parsed.sample !== $focus.sample) {
+      if (parsed.sample !== $sSample.name) {
         alert('Sample does not match.');
       }
 
@@ -148,62 +148,66 @@
       class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
     >
       <table class="table-fixed">
-        {#each Object.keys($samples[$focus.sample].overlays) as ovName}
-          <tr>
-            <td class="flex gap-x-1 pr-2">
-              <label
-                class="flex cursor-pointer items-center gap-x-1"
-                use:tooltip={{ content: 'Border' }}
-              >
-                <input
-                  type="checkbox"
-                  class="mr-0.5 cursor-pointer bg-opacity-80"
-                  checked
-                  on:change={(e) =>
-                    map.layers[ovName]?.outline?.layer.setVisible(e.currentTarget.checked ?? false)}
-                />
-              </label>
-              <label class="flex cursor-pointer items-center gap-x-1">
-                <input
-                  type="checkbox"
-                  class="mr-0.5 cursor-pointer bg-opacity-80"
-                  checked
-                  use:tooltip={{ content: 'Fill' }}
-                  on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
-                />
-                <span
-                  class={classes(
-                    'max-w-[10rem] select-none text-ellipsis capitalize',
-                    $focus.overlay === ovName ? 'text-white' : 'text-white/70'
-                  )}>{ovName}</span
+        {#if $sSample}
+          {#each Object.keys($samples[$sSample.name].overlays) as ovName}
+            <tr>
+              <td class="flex gap-x-1 pr-2">
+                <label
+                  class="flex cursor-pointer items-center gap-x-1"
+                  use:tooltip={{ content: 'Border' }}
                 >
-              </label>
-            </td>
+                  <input
+                    type="checkbox"
+                    class="mr-0.5 cursor-pointer bg-opacity-80"
+                    checked
+                    on:change={(e) =>
+                      map.layers[ovName]?.outline?.layer?.setVisible(
+                        e.currentTarget.checked ?? false
+                      )}
+                  />
+                </label>
+                <label class="flex cursor-pointer items-center gap-x-1">
+                  <input
+                    type="checkbox"
+                    class="mr-0.5 cursor-pointer bg-opacity-80"
+                    checked
+                    use:tooltip={{ content: 'Fill' }}
+                    on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
+                  />
+                  <span
+                    class={classes(
+                      'max-w-[10rem] select-none text-ellipsis capitalize',
+                      $sOverlay?.name === ovName ? 'text-white' : 'text-white/70'
+                    )}>{ovName}</span
+                  >
+                </label>
+              </td>
 
-            <td
-              class={classes(
-                'min-w-[4rem] pr-3',
-                $focus.overlay === ovName ? 'text-yellow-300' : 'text-yellow-300/70'
-              )}
-            >
-              {$features[ovName]?.feature ?? 'None'}
-            </td>
+              <td
+                class={classes(
+                  'min-w-[4rem] pr-3',
+                  $sOverlay?.name === ovName ? 'text-yellow-300' : 'text-yellow-300/70'
+                )}
+              >
+                {$sFeature?.feature ?? 'None'}
+              </td>
 
-            <td>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                value="0.9"
-                step="0.01"
-                on:change={(e) => setOpacity(ovName, e.currentTarget.value)}
-                on:mousemove={(e) => setOpacity(ovName, e.currentTarget.value)}
-                use:tooltip={{ content: 'Opacity' }}
-                class="max-w-[5rem] translate-y-[2px] cursor-pointer opacity-80"
-              />
-            </td>
-          </tr>
-        {/each}
+              <td>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  value="0.9"
+                  step="0.01"
+                  on:change={(e) => setOpacity(ovName, e.currentTarget.value)}
+                  on:mousemove={(e) => setOpacity(ovName, e.currentTarget.value)}
+                  use:tooltip={{ content: 'Opacity' }}
+                  class="max-w-[5rem] translate-y-[2px] cursor-pointer opacity-80"
+                />
+              </td>
+            </tr>
+          {/each}
+        {/if}
       </table>
     </div>
   {/if}

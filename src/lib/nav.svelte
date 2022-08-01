@@ -5,38 +5,37 @@
   import List from './components/list.svelte';
   import SearchBox from './components/searchBox.svelte';
   import type { FeatureAndGroup } from './data/features';
-  import { HoverSelect, updateNames, type FeatureGroupList } from './data/searchBox';
-  import { features, focus, sample } from './store';
+  import type { FeatureGroupList, HoverSelect } from './data/searchBox';
+  import { setFeature, setOverlay, sOverlay, sSample } from './store';
   import { oneLRU } from './utils';
 
-  let active: HoverSelect<FeatureAndGroup>;
-  $: if (active?.active) {
-    $features[$focus.overlay] = active.active;
-    console.log($features);
-  }
   let names: FeatureGroupList[];
-  $: {
-    if ($sample) {
-      updateNames($sample.groups, $focus.overlay)
-        .then((v) => (names = v))
-        .catch(console.error);
-    }
+  $: if ($sOverlay) names = $sOverlay.featNames;
+
+  let currFeature: HoverSelect<FeatureAndGroup>;
+  $: if ($sSample && currFeature?.active) {
+    setFeature(currFeature.active).catch(console.error);
   }
 
-  const setSelected = oneLRU((ov: string) => {
-    if (!active) return;
-    active.selected = $features[ov];
-  });
+  let selected: string;
+  $: if ($sSample && selected) {
+    setOverlay(selected).catch(console.error);
+  }
 
-  focus.subscribe((f) => setSelected(f.overlay));
+  // const setSelected = oneLRU((ov: string) => {
+  //   if (!active) return;
+  //   active.selected = $features[ov];
+  // });
+
+  // focus.subscribe((f) => setSelected(f.overlay));
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">
   <!-- Overlay selector -->
   <div class="gap-x-2 pt-1 text-base">
     <List
-      items={$sample ? Object.keys($sample.overlays) : []}
-      bind:active={$focus.overlay}
+      items={$sSample ? Object.keys($sSample.overlays) : []}
+      bind:active={selected}
       loading={false}
       showArrow={false}
       addSample={false}
@@ -44,7 +43,7 @@
     />
   </div>
   <div class="mt-1 flex-grow">
-    <SearchBox featureGroup={names} bind:curr={active} />
+    <SearchBox featureGroup={names} bind:curr={currFeature} />
   </div>
   <Darkswitch />
   <Github />

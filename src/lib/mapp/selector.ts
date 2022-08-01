@@ -9,7 +9,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style, Text } from 'ol/style.js';
 import { get } from 'svelte/store';
-import { annotating, focus } from '../store';
+import { annotating, sOverlay } from '../store';
 import type { Named } from '../utils';
 import type { Mapp } from './mapp';
 import type { MutableSpots } from './spots';
@@ -110,7 +110,7 @@ export class Draww {
     this.points.addFromPolygon(
       feature,
       name,
-      this.map.layers[get(focus).overlay].overlay!,
+      this.map.layers[get(sOverlay).name].overlay!,
       get(annotating).keys
     );
   }
@@ -127,7 +127,7 @@ export class Draww {
       this.points.addFromPolygon(
         feature,
         get(annotating).keys[get(annotating).currKey],
-        this.map.layers[get(focus).overlay].overlay!,
+        this.map.layers[get(sOverlay).name].overlay!,
         get(annotating).keys
       );
 

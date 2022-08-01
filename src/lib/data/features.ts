@@ -46,33 +46,71 @@ export type ChunkedJSONHeader = {
 export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
 export type Sparse = { index: number[]; value: number[] };
 
-export interface FeatureData {
+export interface FeatureData extends Deferrable {
   readonly name: string;
   readonly overlay?: string;
+  featNames?: string[];
+
   hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
-  hydrated: boolean;
   retrieve(
-    name?: string
+    name?: string | number
   ): Promise<{ dataType: 'quantitative' | 'categorical'; data: RetrievedData } | undefined>;
 }
 
-export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements Data {
+export class PlainJSONGroup extends Deferrable implements FeatureData {
+  name = '';
+  plainjsons: Record<string | number, PlainJSON>;
+  featNames: string[];
+
+  constructor(
+    { name, plainjsons }: { name: string; plainjsons: PlainJSON[] },
+    autoHydrate = false
+  ) {
+    super();
+    this.name = name;
+    this.plainjsons = {};
+    this.featNames = [];
+    for (const p of plainjsons) {
+      this.plainjsons[p.name] = p;
+      this.featNames.push(p.name);
+    }
+
+    if (autoHydrate) {
+      this.hydrate().catch(console.error);
+    }
+    this._deferred.resolve();
+  }
+
+  async hydrate(): Promise<this> {
+    if (this.hydrated) {
+      return this;
+    }
+    for (const p of Object.values(this.plainjsons)) {
+      await p.hydrate();
+    }
+    this.hydrated = true;
+    return this;
+  }
+
+  async retrieve(name: string) {
+    return await this.plainjsons[name].retrieve();
+  }
+}
+
+export class PlainJSON extends Deferrable implements FeatureData {
   url?: Url;
 
   readonly name: string;
   readonly dataType: DataType;
-  readonly overlay?: string;
 
-  values?: Ret;
-  hydrated = false;
+  values?: RetrievedData;
 
-  constructor({ name, url, dataType, values, overlay }: PlainJSONParams<Ret>, autoHydrate = false) {
+  constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
     super();
     this.name = name;
     this.url = url;
     this.values = values;
     this.dataType = dataType;
-    this.overlay = overlay;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -81,14 +119,14 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
   }
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
+    if (this.hydrated) return this;
     if (!this.values && this.url) {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      this.values = (await fetch(this.url.url).then((r) => r.json())) as Ret;
+      this.values = (await fetch(this.url.url).then((r) => r.json())) as RetrievedData;
     }
     this.hydrated = true;
-    this._deferred.resolve();
     return this;
   }
 
@@ -96,7 +134,7 @@ export class PlainJSON<Ret extends RetrievedData> extends Deferrable implements 
     if (!this.hydrated) {
       await this.hydrate();
     }
-    return { dataType: this.dataType, data: this.values };
+    return { dataType: this.dataType, data: this.values! };
   }
 }
 
@@ -104,13 +142,12 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse>
   extends Deferrable
   implements FeatureData
 {
-  retrieve:
-    | ((
-        name: string | number
-      ) => Promise<Record<string, string | number> | number[] | Ret | null | undefined>)
-    | undefined;
+  retrieve: (
+    name?: string | number
+  ) => Promise<{ dataType: 'quantitative' | 'categorical'; data: RetrievedData } | undefined>;
   ptr?: number[];
   names?: Record<string, number> | null;
+  featNames: string[] = [];
   length?: number;
 
   url: Url;
@@ -121,26 +158,75 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse>
   header?: ChunkedJSONHeader;
   activeDefault?: string;
   sparseMode?: SparseMode;
-  hydrated = false;
-  overlay?: string;
   allData?: ArrayBuffer;
 
-  constructor(
-    { name, url, headerUrl, header, dataType, overlay }: ChunkedJSONParams,
-    autoHydrate = false
-  ) {
+  constructor({ name, url, headerUrl, header, dataType }: ChunkedJSONParams, autoHydrate = false) {
     super();
     this.name = name;
     this.url = url;
     this.header = header;
     this.headerUrl = headerUrl;
     this.dataType = dataType;
-    this.overlay = overlay;
 
     if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
     if (autoHydrate) {
       throw new Error('Not implemented');
     }
+
+    let densify: (
+      obj: Sparse | null
+    ) =>
+      | ReturnType<ReturnType<typeof densifyToArray>>
+      | ReturnType<ReturnType<typeof densifyToRecords>>;
+
+    this.retrieve = genLRU(async (name: string | number) => {
+      if (!browser) return;
+      if (name === -1) throw new Error('-1 sent to retrieve');
+      await this.hydrate();
+
+      if (!densify) {
+        switch (this.sparseMode) {
+          case 'record':
+            densify = densifyToRecords(Object.keys(this.names!));
+            break;
+          case 'array':
+            densify = densifyToArray(this.length!); // After hydrated, this is guaranteed to be set.
+            break;
+        }
+      }
+
+      let idx: number;
+      if (typeof name === 'string') {
+        if (!this.names) throw new Error('Index must be number for ChunkedJSON without names.');
+        idx = this.names[name];
+      } else {
+        if (this.names) {
+          idx = this.names[name];
+        } else {
+          idx = name;
+        }
+      }
+      if (idx === undefined) {
+        console.error("Couldn't find index for", name);
+        return undefined;
+      }
+
+      if (this.ptr![idx] === this.ptr![idx + 1]) {
+        return densify ? { dataType: this.dataType, data: densify(null) } : undefined;
+      }
+
+      const raw = await fetch(this.url.url, {
+        headers: {
+          Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`
+        }
+      });
+      const blob = await raw.blob();
+      const decomped = await ChunkedJSON.decompressBlob(blob);
+      const ret = JSON.parse(decomped) as Ret;
+
+      const data = densify ? densify(ret as Sparse) : ret;
+      return { dataType: this.dataType, data };
+    });
   }
 
   get revNames(): Record<number, string> | undefined {
@@ -156,6 +242,7 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse>
   }
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
+    if (this.hydrated) return this;
     if (!this.header && this.headerUrl) {
       if (handle) {
         this.headerUrl = await convertLocalToNetwork(handle, this.headerUrl);
@@ -174,63 +261,11 @@ export class ChunkedJSON<Ret extends RetrievedData | Sparse>
       sparseMode: this.sparseMode
     } = this.header!);
 
-    let densify: (
-      obj: Sparse | null
-    ) =>
-      | ReturnType<ReturnType<typeof densifyToArray>>
-      | ReturnType<ReturnType<typeof densifyToRecords>>;
-    switch (this.sparseMode) {
-      case 'record':
-        densify = densifyToRecords(Object.keys(this.names!));
-        break;
-      case 'array':
-        densify = densifyToArray(this.length);
-        break;
-    }
-
+    this.featNames = Object.keys(this.names!);
     if (!this.activeDefault && this.names) {
       this.activeDefault = Object.keys(this.names)[0];
     }
 
-    this.retrieve = genLRU(async (selected: string | number) => {
-      if (!browser) return;
-      if (selected === -1) throw new Error('-1 sent to retrieve');
-      await this.promise;
-
-      let idx: number;
-      if (typeof selected === 'string') {
-        if (!this.names) throw new Error('Index must be number for ChunkedJSON without names.');
-        idx = this.names[selected];
-      } else {
-        if (this.names) {
-          idx = this.names[selected];
-        } else {
-          idx = selected;
-        }
-      }
-      if (idx === undefined) {
-        console.error("Couldn't find index for", selected);
-        return undefined;
-      }
-
-      if (this.ptr![idx] === this.ptr![idx + 1]) {
-        return densify ? densify(null) : null;
-      }
-
-      const raw = await fetch(this.url.url, {
-        headers: {
-          Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`
-        }
-      });
-      const blob = await raw.blob();
-      const decomped = await ChunkedJSON.decompressBlob(blob);
-      const ret = JSON.parse(decomped) as Ret;
-
-      const data = densify ? densify(ret as Sparse) : ret;
-      return { dataType: this.dataType, data };
-    });
-
-    this._deferred.resolve();
     this.hydrated = true;
     return this;
   }
