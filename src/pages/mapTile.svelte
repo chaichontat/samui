@@ -84,7 +84,11 @@
     }
   });
 
-  // $: currSample?.promise.then(() => sampleList.stopSpinner()).catch(console.error);
+  // Stop loading spinner when sample is hydrated.
+  let sampleListElem: List;
+  $: $samples[currSampleName]?.promise
+    .then(() => sampleListElem.stopSpinner())
+    .catch(console.error);
 </script>
 
 {#if typeof hie === 'number'}
@@ -113,7 +117,12 @@
         {/if}
 
         <div class:mt-1={hie !== 0} class="min-w-[200px]">
-          <List items={Object.keys($samples)} bind:active={currSampleName} on:addSample={byod} />
+          <List
+            bind:this={sampleListElem}
+            items={Object.keys($samples)}
+            bind:active={currSampleName}
+            on:addSample={byod}
+          />
         </div>
       </div>
 

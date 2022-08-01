@@ -7,7 +7,6 @@
   import type { FeatureAndGroup } from './data/features';
   import type { FeatureGroupList, HoverSelect } from './data/searchBox';
   import { sFeature, sOverlay, sSample } from './store';
-  import { oneLRU } from './utils';
 
   // Overlay
   let currOverlay: string;
@@ -15,21 +14,15 @@
     $sOverlay = currOverlay;
   }
 
-  // Features
+  // Feature list
   let featureGroup: FeatureGroupList[];
   $: if ($sSample && $sOverlay) featureGroup = $sSample.overlays[$sOverlay].featNames;
 
+  // Set feature
   let currFeature: HoverSelect<FeatureAndGroup>;
-  const updateFeature = oneLRU((cf: typeof currFeature) => ($sFeature[$sOverlay] = cf.active!));
-
-  $: if ($sSample && currFeature?.active) updateFeature(currFeature);
-
-  // const setSelected = oneLRU((ov: string) => {
-  //   if (!active) return;
-  //   active.selected = $features[ov];
-  // });
-
-  // focus.subscribe((f) => setSelected(f.overlay));
+  // Need to use this function in order to prevent update when $sOverlay is changed.
+  const setFeature = (cf: typeof currFeature) => ($sFeature[$sOverlay] = cf.active!);
+  $: if ($sSample && currFeature?.active) setFeature(currFeature);
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">

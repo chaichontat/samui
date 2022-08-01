@@ -128,6 +128,6 @@ export class OverlayData extends Deferrable {
   }
 
   async getFeature(fn: FeatureAndGroup) {
-    return await this.groups[fn.group].retrieve(fn.feature);
+    return await this.groups[fn.group]?.retrieve(fn.feature);
   }
 }

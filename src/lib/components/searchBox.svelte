@@ -87,10 +87,12 @@
             {#each values as v}
               <div
                 class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
-                on:mousemove={() => setVal({ hover: v })}
+                on:mousemove={() => setVal({ hover: { group: v.group, feature: v.feature } })}
                 on:click={() => {
                   showSearch = false;
-                  setVal({ selected: v });
+                  setVal({
+                    selected: { group: v.group, feature: v.feature }
+                  });
                 }}
                 transition:slide={{ duration: 100, easing: cubicInOut }}
               >
@@ -101,9 +103,9 @@
         {/if}
       {/each}
 
-      <!-- {#if candidates.length === 0}
-        <i class="py-1 px-3 text-slate-300">No genes found.</i>
-      {/if} -->
+      {#if candidates.length === 0}
+        <i class="py-1 px-3 text-slate-300">No features found.</i>
+      {/if}
     </div>
   {/if}
 </div>

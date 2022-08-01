@@ -1,5 +1,3 @@
-import { oneLRU } from '../utils';
-
 /// Only for search box.
 export type FeatureGroupList = {
   group: string | null;
@@ -18,8 +16,8 @@ export class HoverSelect<T> {
     return this.hover ?? this.selected;
   }
 
-  update = oneLRU(({ hover, selected }: { hover?: T | null; selected?: T | null }) => {
+  update({ hover, selected }: { hover?: T | null; selected?: T | null }) {
     if (hover !== undefined) this.hover = hover;
     if (selected !== undefined) this.selected = selected;
-  });
+  }
 }

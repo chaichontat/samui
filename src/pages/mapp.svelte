@@ -112,13 +112,17 @@
   // Feature change.
   let currDataType: 'quantitative' | 'categorical';
   $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
+    console.log($sFeature[$sOverlay]);
+
     const ol = $sOverlay;
     updateFeature({
       key: `${sample.name}-${ol}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
-      args: [$sOverlay, $sFeature[ol]]
+      args: [ol, $sFeature[ol]]
     }).catch(console.error);
   }
   const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
+    console.log(ov, fn);
+
     const res = await sample!.overlays[ov].getFeature(fn);
     if (!res) return false;
 
