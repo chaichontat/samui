@@ -82,6 +82,7 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
     if (this.layer) {
       this.map.map?.removeLayer(this.layer);
       this.layer.dispose();
+      this.outline?.dispose();
     }
     this.source.dispose();
   }

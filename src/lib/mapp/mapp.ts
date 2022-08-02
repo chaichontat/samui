@@ -70,7 +70,15 @@ export class Mapp extends Deferrable {
     this.mounted = true;
   }
 
-  async update({ overlays, image }: { overlays: Record<string, OverlayData>; image: Image }) {
+  async update({
+    overlays,
+    image,
+    refresh
+  }: {
+    overlays: Record<string, OverlayData>;
+    image?: Image;
+    refresh?: boolean;
+  }) {
     if (!this.mounted) throw new Error('Map not mounted.');
     const newOl = Object.keys(overlays);
     const currOl = Object.keys(this.layers);
@@ -92,10 +100,10 @@ export class Mapp extends Deferrable {
     }
 
     await Promise.all(Object.values(overlays).map((x) => x.promise));
-    await Promise.all([
-      this.persistentLayers.background.update(this.map!, image),
-      ...newLayers.map((x) => x.update(overlays[x.name]))
-    ]);
+    const imgPromise =
+      !refresh && image ? this.persistentLayers.background.update(this.map!, image) : undefined;
+
+    await Promise.all([imgPromise, ...newLayers.map((x) => x.update(overlays[x.name]))]);
 
     this.image = image;
   }

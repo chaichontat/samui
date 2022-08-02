@@ -88,18 +88,22 @@
 
   // Sample change.
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
-  $: if (sample) update({ key: sample.name, args: [sample] }).catch(console.error);
-  const update = keyOneLRU(async (sample: Sample) => {
-    await sample.promise;
-    const img = sample.image;
-    await map.update({ image: img, overlays: sample.overlays });
-    convertImgCtrl = colorVarFactory(img.channel);
-  });
+  $: if (sample) update(sample).catch(console.error);
+  const update = async (sample: Sample) => {
+    if (currSample !== sample.name) {
+      await sample.promise;
+      const img = sample.image;
+      await map.update({ image: img, overlays: sample.overlays });
+      convertImgCtrl = colorVarFactory(img.channel);
+      currSample = sample.name;
+    } else {
+      // When adding outlines in app.
+      await map.update({ overlays: sample.overlays, refresh: true });
+    }
+  };
 
   // Feature change.
   $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
-    console.log($sFeature[$sOverlay]);
-
     const ol = $sOverlay;
     updateFeature({
       key: `${sample.name}-${ol}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
@@ -170,6 +174,7 @@
     class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
 
+  <!-- Channel indicator -->
   {#if sample}
     <section
       class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
@@ -184,11 +189,10 @@
       </div>
     </section>
 
+    <!-- Top right tools -->
     <MapTools {sample} {map} {width} bind:showImgControl />
-  {/if}
 
-  <!-- Buttons -->
-  {#if sample}
+    <!-- Img control -->
     <div
       class="absolute bottom-3 left-1 lg:left-4 lg:bottom-6 xl:pr-4"
       style="max-width: calc(100% - 20px);"
