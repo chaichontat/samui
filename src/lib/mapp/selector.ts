@@ -94,9 +94,11 @@ export class Draww {
 
   _afterDraw(feature: Feature<Polygon>) {
     // Not called after modify.
+    const keyIdx = get(annotating).currKey;
+    if (keyIdx === null) throw new Error('keyIdx is null');
 
-    feature.set('color', schemeTableau10[get(annotating).currKey % 10]);
-    feature.set('keyIdx', get(annotating).currKey);
+    feature.set('color', schemeTableau10[keyIdx % 10]);
+    feature.set('keyIdx', keyIdx);
     feature.setId(Math.random());
     feature.on('propertychange', (e) => {
       if (e.key === 'keyIdx' || e.key === 'color') {
@@ -108,7 +110,7 @@ export class Draww {
     this._updatePolygonStyle(feature);
     this.points.addFromPolygon(
       feature,
-      get(annotating).keys[get(annotating).currKey],
+      get(annotating).keys[keyIdx],
       this.map.layers[get(sOverlay)].overlay!,
       get(annotating).keys
     );
@@ -117,15 +119,18 @@ export class Draww {
   _attachModify(map: Map) {
     map.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => {
+      const keyIdx = get(annotating).currKey;
+      if (keyIdx === null) throw new Error('keyIdx is null');
+
       const feature = e.features.getArray()[0] as Feature<Polygon>;
       const idx = feature.getId() as number;
-      feature.set('color', schemeTableau10[get(annotating).currKey % 10]);
-      feature.set('keyIdx', get(annotating).currKey);
+      feature.set('color', schemeTableau10[keyIdx % 10]);
+      feature.set('keyIdx', keyIdx);
       const prev = this.featuresBeforeMod[idx];
       this.points.deleteFromPolygon(prev);
       this.points.addFromPolygon(
         feature,
-        get(annotating).keys[get(annotating).currKey],
+        get(annotating).keys[keyIdx],
         this.map.layers[get(sOverlay)].overlay!,
         get(annotating).keys
       );

@@ -39,7 +39,7 @@
       click: (id_: { idx: number; id: number | string } | null) => {
         if (!$sOverlay) return;
         const ov = map.layers[$sOverlay]?.overlay;
-        if ($annotating.currKey && id_ && ov) {
+        if ($annotating.currKey !== null && id_ && ov) {
           const idx = id_.idx;
           const existing = map.persistentLayers.annotations.get(idx);
           if (

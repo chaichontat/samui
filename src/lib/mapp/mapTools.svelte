@@ -26,8 +26,7 @@
   // Enable/disable polygon draw
   $: if (map.map && map.draw) {
     if (selecting) {
-      const name = $annotating.keys[$annotating.currKey];
-      if (!name) {
+      if ($annotating.currKey === null) {
         alert('Set annotation name first');
         selecting = false;
       } else {
