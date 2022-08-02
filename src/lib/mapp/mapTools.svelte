@@ -165,46 +165,49 @@
           {#each Object.keys($samples[sample.name].overlays) as ovName}
             <tr>
               <td class="flex gap-x-1 pr-2">
-                <label
-                  class="flex cursor-pointer items-center gap-x-1"
+                <!-- Outline checkbox -->
+                <input
+                  type="checkbox"
+                  class="mr-0.5 cursor-pointer items-center gap-x-1 bg-opacity-80"
                   use:tooltip={{ content: 'Border' }}
+                  checked
+                  on:change={(e) =>
+                    map.layers[ovName]?.outline?.layer?.setVisible(
+                      e.currentTarget.checked ?? false
+                    )}
+                />
+
+                <!-- Fill checkbox -->
+                <input
+                  type="checkbox"
+                  class="mr-0.5 cursor-pointer items-center gap-x-1 bg-opacity-80"
+                  checked
+                  use:tooltip={{ content: 'Fill' }}
+                  on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
+                />
+
+                <!-- Overlay name -->
+                <span
+                  on:click={() => ($sOverlay = ovName)}
+                  class={classes(
+                    'max-w-[10rem] cursor-pointer select-none text-ellipsis capitalize',
+                    $sOverlay === ovName ? 'text-white' : 'text-white/70'
+                  )}>{ovName}</span
                 >
-                  <input
-                    type="checkbox"
-                    class="mr-0.5 cursor-pointer bg-opacity-80"
-                    checked
-                    on:change={(e) =>
-                      map.layers[ovName]?.outline?.layer?.setVisible(
-                        e.currentTarget.checked ?? false
-                      )}
-                  />
-                </label>
-                <label class="flex cursor-pointer items-center gap-x-1">
-                  <input
-                    type="checkbox"
-                    class="mr-0.5 cursor-pointer bg-opacity-80"
-                    checked
-                    use:tooltip={{ content: 'Fill' }}
-                    on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
-                  />
-                  <span
-                    class={classes(
-                      'max-w-[10rem] select-none text-ellipsis capitalize',
-                      $sOverlay === ovName ? 'text-white' : 'text-white/70'
-                    )}>{ovName}</span
-                  >
-                </label>
               </td>
 
+              <!-- Feature name -->
               <td
+                on:click={() => ($sOverlay = ovName)}
                 class={classes(
-                  'min-w-[4rem] pr-3',
+                  'min-w-[4rem] cursor-pointer pr-3',
                   $sOverlay === ovName ? 'text-yellow-300' : 'text-yellow-300/70'
                 )}
               >
                 {$sFeature[ovName]?.feature ?? 'None'}
               </td>
 
+              <!-- Opacity bar -->
               <td>
                 <input
                   type="range"

@@ -5,6 +5,7 @@
   import { Fzf } from '../../../node_modules/fzf';
   import type { FeatureAndGroup } from '../data/features';
   import { HoverSelect, type FeatureGroupList } from '../data/searchBox';
+  import { sFeature, sOverlay } from '../store';
 
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
@@ -53,8 +54,12 @@
   // Top-down update of the search box.
   const setSearch = oneLRU((v: string) => (search = v));
   $: curr.selected?.feature && setSearch(curr.selected?.feature);
-
   $: noFeature = !featureGroup?.length || featureGroup.find((f) => f.features.length) === undefined;
+
+  // Change search box when overlay is changed.
+  sOverlay.subscribe((ov) => {
+    if (ov) search = $sFeature[ov]?.feature ?? '';
+  });
 </script>
 
 <div class="relative w-full">
@@ -68,6 +73,7 @@
     disabled={noFeature}
   />
 
+  <!-- Search results -->
   {#if showSearch}
     <!-- See clickOutside for on:outclick. -->
     <div

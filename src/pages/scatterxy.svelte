@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SearchBox from '$src/lib/components/searchBox.svelte';
+  import SearchBox from '$src/lib/components/featureSearchBox.svelte';
   import type { FeatureAndGroup } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import type { FeatureGroupList, HoverSelect } from '$src/lib/data/searchBox';

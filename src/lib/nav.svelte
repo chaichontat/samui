@@ -1,18 +1,12 @@
 <!-- Nav of sidebar. -->
 <script lang="ts">
   import Darkswitch from './components/darkswitch.svelte';
+  import SearchBox from './components/featureSearchBox.svelte';
   import Github from './components/github.svelte';
   import List from './components/list.svelte';
-  import SearchBox from './components/searchBox.svelte';
   import type { FeatureAndGroup } from './data/features';
   import type { FeatureGroupList, HoverSelect } from './data/searchBox';
   import { sFeature, sOverlay, sSample } from './store';
-
-  // Overlay
-  let currOverlay: string;
-  $: if ($sSample && currOverlay) {
-    $sOverlay = currOverlay;
-  }
 
   // Feature list
   let featureGroup: FeatureGroupList[];
@@ -30,7 +24,7 @@
   <div class="gap-x-2 pt-1 text-base">
     <List
       items={$sSample ? Object.keys($sSample.overlays) : []}
-      bind:active={currOverlay}
+      bind:active={$sOverlay}
       loading={false}
       showArrow={false}
       addSample={false}
