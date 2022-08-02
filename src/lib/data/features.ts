@@ -16,6 +16,11 @@ export type DataType = 'categorical' | 'quantitative';
 export type RetrievedData = (number | string)[] | Record<string, number | string> | Coord[];
 type SparseMode = 'record' | 'array' | null;
 
+export interface FeatureValues {
+  dataType: 'quantitative' | 'categorical';
+  data: RetrievedData;
+}
+
 interface JSONParams {
   name: string;
   dataType: DataType;
@@ -52,9 +57,7 @@ export interface FeatureData extends Deferrable {
   featNames?: string[];
 
   hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
-  retrieve(
-    name?: string | number
-  ): Promise<{ dataType: 'quantitative' | 'categorical'; data: RetrievedData } | undefined>;
+  retrieve(name?: string | number): Promise<FeatureValues | undefined>;
 }
 
 export class PlainJSONGroup extends Deferrable implements FeatureData {

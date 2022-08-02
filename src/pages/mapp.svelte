@@ -4,7 +4,6 @@
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
-  import { genSpotStyle } from '$src/lib/mapp/spots';
   import { keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
@@ -110,7 +109,6 @@
   });
 
   // Feature change.
-  let currDataType: 'quantitative' | 'categorical';
   $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
     console.log($sFeature[$sOverlay]);
 
@@ -121,17 +119,9 @@
     }).catch(console.error);
   }
   const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
-    console.log(ov, fn);
-
     const res = await sample!.overlays[ov].getFeature(fn);
     if (!res) return false;
-
-    let { data, dataType } = res;
-    map.layers[ov]?.updateStyle(genSpotStyle(dataType, sample!.overlays[ov].sizePx));
-    if (dataType !== currDataType) {
-      currDataType = dataType;
-    }
-    map.layers[ov]?.updateProperties(data);
+    map.layers[ov]?.updateProperties(res);
   });
 
   // Hover/overlay.
