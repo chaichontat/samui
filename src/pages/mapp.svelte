@@ -27,7 +27,6 @@
   const dispatch = createEventDispatcher();
 
   let imgCtrl: ImageCtrl;
-  let selecting = false;
   let showImgControl = true;
 
   onMount(() => {
@@ -86,17 +85,6 @@
   //     moveView(idx.idx);
   //   }
   // }
-
-  // Enable/disable polygon draw
-  $: if (map.map && map.draw) {
-    if (selecting) {
-      map.map?.addInteraction(map.draw.draw);
-      map.map.getViewport().style.cursor = 'crosshair';
-    } else {
-      map.map.removeInteraction(map.draw.draw);
-      map.map.getViewport().style.cursor = 'grab';
-    }
-  }
 
   // Sample change.
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
@@ -196,7 +184,7 @@
       </div>
     </section>
 
-    <MapTools {sample} {map} {width} bind:selecting bind:showImgControl />
+    <MapTools {sample} {map} {width} bind:showImgControl />
   {/if}
 
   <!-- Buttons -->

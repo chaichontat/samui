@@ -116,12 +116,12 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       return false;
     }
 
-    ({ converted: data } = convertCategoricalToNumber(data));
+    ({ converted: data } = convertCategoricalToNumber(data as string[]));
     this.currStyle = dataType;
 
-    for (let i = 0; i < data.length; i++) {
-      this.source.getFeatureById(i)?.setProperties({ value: data[i] });
-    }
+    this.source.forEachFeature((f) => {
+      f.setProperties({ value: data[f.getId() as number] });
+    });
   }
 
   updateStyle(style: LiteralStyle) {

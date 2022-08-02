@@ -6,22 +6,39 @@
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
   import type { Sample } from '../data/sample';
-  import { samples, sFeature, sOverlay } from '../store';
+  import { annotating, samples, sFeature, sOverlay } from '../store';
   import type { Draww } from './selector';
 
   export let sample: Sample | undefined;
   export let map: Mapp;
-  export let selecting: boolean;
   export let showImgControl: boolean;
   export let colorbar = true;
   export let width = 0;
   let draw: Draww | undefined;
+  let selecting = false;
 
   onMount(async () => {
     await map.promise;
     map.draw!.draw.on('drawend', () => (selecting = false));
     draw = map.draw;
   });
+
+  // Enable/disable polygon draw
+  $: if (map.map && map.draw) {
+    if (selecting) {
+      const name = $annotating.keys[$annotating.currKey];
+      if (!name) {
+        alert('Set annotation name first');
+        selecting = false;
+      } else {
+        map.map?.addInteraction(map.draw.draw);
+        map.map.getViewport().style.cursor = 'crosshair';
+      }
+    } else {
+      map.map.removeInteraction(map.draw.draw);
+      map.map.getViewport().style.cursor = 'grab';
+    }
+  }
 
   let selectionNames: string[] = [];
   let colorOpacity = 1;

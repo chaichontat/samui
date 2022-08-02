@@ -94,6 +94,7 @@ export class Draww {
 
   _afterDraw(feature: Feature<Polygon>) {
     // Not called after modify.
+
     feature.set('color', schemeTableau10[get(annotating).currKey % 10]);
     feature.set('keyIdx', get(annotating).currKey);
     feature.setId(Math.random());
@@ -105,11 +106,9 @@ export class Draww {
 
     this.featuresBeforeMod[feature.getId() as number] = feature.clone();
     this._updatePolygonStyle(feature);
-    const name = get(annotating).keys[get(annotating).currKey];
-
     this.points.addFromPolygon(
       feature,
-      name,
+      get(annotating).keys[get(annotating).currKey],
       this.map.layers[get(sOverlay)].overlay!,
       get(annotating).keys
     );
