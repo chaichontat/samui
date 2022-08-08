@@ -1,4 +1,4 @@
-import Papa from 'papaparse';
+import { fromCSV } from '../io';
 import { Deferrable } from '../utils';
 import {
   ChunkedJSON,
@@ -90,25 +90,11 @@ export class OverlayData extends Deferrable {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      let res: () => void;
-      const promise: Promise<void> = new Promise((resolve) => (res = resolve));
-
-      Papa.parse(this.url.url, {
-        download: true,
-        dynamicTyping: true,
-        header: true,
-        complete: (results: Papa.ParseResult<Omit<Coord, 'idx'>>) => {
-          this.pos = results.data as Coord[]; // Idx added below.
-          res();
-        },
-        skipEmptyLines: 'greedy'
-      });
-
+      const promise = fromCSV(this.url.url).then((x) => (this.pos = x?.data as Coord[]));
       // Hydrate groups as well.
       const promises: Promise<any>[] = Object.values(this.groups).map((g) => g.hydrate());
       promises.push(promise);
       await Promise.all(promises);
-
       this.pos!.forEach((p, i) => (p.idx = i));
     } else {
       console.info(`Overlay ${this.name} has no url or pos.`);

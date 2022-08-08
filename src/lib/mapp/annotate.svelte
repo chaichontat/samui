@@ -1,7 +1,7 @@
 <script lang="ts">
   import { annotating } from '$lib/store';
   import { schemeTableau10 } from 'd3';
-  import { makeDownload } from '../utils';
+  import { toCSV } from '../io';
 
   function handleNewKey(name: string | null) {
     if (name === null) {
@@ -47,8 +47,7 @@
   <button
     class="button my-0 flex-grow py-2 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
     on:click={() => {
-      if ($annotating.spots)
-        makeDownload({ name: 'annotations.csv', s: $annotating.spots, type: 'text/csv' });
+      if ($annotating.spots) toCSV('annotations.csv', $annotating.spots);
     }}>Download</button
   >
 </section>

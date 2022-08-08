@@ -6,6 +6,7 @@
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
   import type { Sample } from '../data/sample';
+  import { getFileInput, toJSON } from '../io';
   import { annotating, samples, sFeature, sOverlay } from '../store';
   import type { Draww } from './selector';
 
@@ -56,32 +57,26 @@
     if (!map.mounted || !sample) return;
     switch (t) {
       case 'selections':
-        toJSON(draw!.dumpPolygons(), `selections_${sample.name}.json`, 'selections', sample.name);
+        toJSON(`selections_${sample.name}.json`, {
+          sample: sample.name,
+          type: 'selections',
+          values: draw!.dumpPolygons()
+        });
         break;
       case 'spots':
-        toJSON(draw!.dumpAllPoints(), `spots_${sample.name}.json`, 'spots', sample.name);
+        toJSON(`spots_${sample.name}.json`, {
+          sample: sample.name,
+          type: 'spots',
+          values: draw!.dumpAllPoints()
+        });
         break;
       default:
         throw new Error('Unknown export type');
     }
   }
 
-  function toJSON(t: object, name: string, type: string, sample: string) {
-    const blob = new Blob([JSON.stringify({ sample, type, values: t })], {
-      type: 'application/json'
-    });
-    const elem = window.document.createElement('a');
-    elem.href = window.URL.createObjectURL(blob);
-    elem.download = name;
-    document.body.appendChild(elem);
-    elem.click();
-    document.body.removeChild(elem);
-  }
-
   async function fromJSON(e: { currentTarget: EventTarget & HTMLInputElement }) {
-    if (!e.currentTarget.files) return;
-    const raw = await e.currentTarget.files[0].text();
-
+    const raw = await getFileInput(e.currentTarget);
     try {
       const parsed = JSON.parse(raw) as {
         sample: string;

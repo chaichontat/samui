@@ -247,13 +247,3 @@ export type Named<T> = { name: string; values: T };
 export function classes(...classes: (false | null | undefined | string)[]): string {
   return classes.filter(Boolean).join(' ');
 }
-
-export function makeDownload({ name, s, type }: { name: string; s: string; type: string }) {
-  const blob = new Blob([s], { type });
-  const elem = window.document.createElement('a');
-  elem.href = window.URL.createObjectURL(blob);
-  elem.download = name;
-  document.body.appendChild(elem);
-  elem.click();
-  document.body.removeChild(elem);
-}
