@@ -22,6 +22,7 @@ export interface OverlayParams {
   mPerPx?: number;
   pos?: Coord[];
   features?: FeatureParams[];
+  addedOnline?: boolean;
 }
 
 export class OverlayData extends Deferrable {
@@ -32,9 +33,10 @@ export class OverlayData extends Deferrable {
   size?: number;
   mPerPx?: number;
   groups: Record<string, FeatureData>;
+  addedOnline: boolean;
 
   constructor(
-    { name, shape, url, size, mPerPx, pos, features }: OverlayParams,
+    { name, shape, url, size, mPerPx, pos, features, addedOnline }: OverlayParams,
     autoHydrate = false
   ) {
     super();
@@ -44,6 +46,7 @@ export class OverlayData extends Deferrable {
     this.pos = pos;
     this.size = size;
     this.mPerPx = mPerPx;
+    this.addedOnline = addedOnline ?? false;
     this.groups = {};
 
     if (!this.url && !this.pos) throw new Error('Must provide url or value');
@@ -97,10 +100,10 @@ export class OverlayData extends Deferrable {
       const promises: Promise<any>[] = Object.values(this.groups).map((g) => g.hydrate());
       promises.push(promise);
       await Promise.all(promises);
-      this.pos!.forEach((p, i) => (p.idx = i));
     } else {
       console.info(`Overlay ${this.name} has no url or pos.`);
     }
+    this.pos!.forEach((p, i) => (p.idx = i));
     this.hydrated = true;
     return this;
   }
