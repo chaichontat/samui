@@ -22,7 +22,7 @@
       </svg>
     </DisclosureButton>
 
-    <DisclosurePanel class="mt-2">
+    <DisclosurePanel class="mx-3 mt-2">
       <slot />
     </DisclosurePanel>
   </Disclosure>
