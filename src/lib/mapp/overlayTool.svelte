@@ -50,7 +50,8 @@
       name,
       shape: 'circle',
       pos: pos.data as Coord[],
-      mPerPx: $sSample.image.mPerPx
+      mPerPx: $sSample.image.mPerPx,
+      addedOnline: true
     };
 
     sample!.overlays[name] = new OverlayData(op);
@@ -65,11 +66,11 @@
     {#if sample}
       {#each Object.keys(sample.overlays) as ovName}
         <tr>
-          <td class="flex gap-x-1 pr-2">
+          <td class="flex">
             <!-- Outline checkbox -->
             <input
               type="checkbox"
-              class="mr-0.5 cursor-pointer items-center gap-x-1 bg-opacity-80"
+              class="mr-1 cursor-pointer"
               use:tooltip={{ content: 'Border' }}
               checked
               on:change={(e) =>
@@ -79,17 +80,19 @@
             <!-- Fill checkbox -->
             <input
               type="checkbox"
-              class="mr-0.5 cursor-pointer items-center gap-x-1 bg-opacity-80"
+              class="cursor-pointer"
               checked
               use:tooltip={{ content: 'Fill' }}
               on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
             />
-
-            <!-- Overlay name -->
+            &nbsp;
+          </td>
+          <!-- Overlay name -->
+          <td>
             <span
               on:click={() => ($sOverlay = ovName)}
               class={classes(
-                'max-w-[10rem] cursor-pointer select-none text-ellipsis capitalize',
+                'mr-2 max-w-[10rem] cursor-pointer select-none text-ellipsis capitalize',
                 $sOverlay === ovName ? 'text-white' : 'text-white/70'
               )}>{ovName}</span
             >
@@ -109,6 +112,7 @@
           <!-- Opacity bar -->
           <td>
             <input
+              class="max-w-[5rem] -translate-y-0.5 cursor-pointer align-middle opacity-80"
               type="range"
               min="0"
               max="1"
@@ -117,9 +121,29 @@
               on:change={(e) => setOpacity(ovName, e.currentTarget.value)}
               on:mousemove={(e) => setOpacity(ovName, e.currentTarget.value)}
               use:tooltip={{ content: 'Opacity' }}
-              class="max-w-[5rem] translate-y-[2px] cursor-pointer opacity-80"
             />
           </td>
+          <!-- Delete -->
+          {#if sample.overlays[ovName].addedOnline}
+            <td class="">
+              <button
+                class="flex items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
+                on:click={async () => {
+                  delete sample.overlays[ovName];
+                  sample.overlays = sample.overlays;
+                  await map.update({ overlays: sample.overlays, refresh: true });
+                }}
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 stroke-white stroke-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg></button
+              >
+            </td>
+          {/if}
         </tr>
       {/each}
     {/if}
