@@ -136,7 +136,7 @@ export class Mapp extends Deferrable {
         if (!ol) return;
 
         const comp = this.layers[ol];
-        const currLayer = comp.outline?.visible ? comp.outline?.layer : comp.layer;
+        const currLayer = comp.outline?.visible ? comp.outline.layer : comp.layer;
         if (!currLayer) throw new Error('No layer');
 
         if (this.map!.hasFeatureAtPixel(e.pixel)) {

@@ -97,10 +97,10 @@ export class OverlayData extends Deferrable {
       const promises: Promise<any>[] = Object.values(this.groups).map((g) => g.hydrate());
       promises.push(promise);
       await Promise.all(promises);
-      this.pos!.forEach((p, i) => (p.idx = i));
     } else {
       console.info(`Overlay ${this.name} has no url or pos.`);
     }
+    this.pos!.forEach((p, i) => (p.idx = i));
     this.hydrated = true;
     return this;
   }
