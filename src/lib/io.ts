@@ -9,13 +9,12 @@ function download(name: string, blob: Blob) {
   document.body.removeChild(elem);
 }
 
-export async function fromCSV<T>(url: string, options?: ParseConfig<T>) {
+export async function fromCSV<T>(str: string, options?: ParseConfig<T>) {
   let out: ParseResult<T> | undefined;
   let res: () => void;
   const promise: Promise<void> = new Promise((resolve) => (res = resolve));
 
-  Papa.parse(url, {
-    download: true,
+  Papa.parse(str, {
     dynamicTyping: true,
     header: true,
     skipEmptyLines: 'greedy',
@@ -26,7 +25,6 @@ export async function fromCSV<T>(url: string, options?: ParseConfig<T>) {
     ...options
   });
   await promise;
-  console.log(url, out);
   return out;
 }
 
@@ -36,6 +34,8 @@ export function toCSV(name: string, obj: object[] | string) {
   if (typeof obj === 'string') {
     const blob = new Blob([obj], { type: 'text/csv' });
     download(name, blob);
+    console.log('hi');
+
     return;
   }
 
@@ -55,7 +55,11 @@ export function toJSON(name: string, obj: object | any[] | string | number) {
   download(name, blob);
 }
 
-export async function getFileInput(currentTarget: EventTarget & HTMLInputElement) {
+export async function getFileFromEvent({
+  currentTarget
+}: {
+  currentTarget: EventTarget & HTMLInputElement;
+}) {
   if (!currentTarget.files) return;
   return await currentTarget.files[0].text();
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { annotating } from '$lib/store';
+  import { annotating, sMapp, sSample } from '$lib/store';
   import { schemeTableau10 } from 'd3';
   import { toCSV } from '../io';
 
@@ -47,10 +47,9 @@
   <button
     class="button my-0 flex-grow py-2 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
     on:click={() => {
-      if ($annotating.spots) toCSV('annotations.csv', $annotating.spots);
+      if ($annotating.currKey !== null) {
+        toCSV(`annotations_${$sSample.name}.csv`, $sMapp.persistentLayers.annotations.dump());
+      }
     }}>Download</button
   >
 </section>
-
-<style lang="postcss">
-</style>

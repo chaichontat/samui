@@ -80,7 +80,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   _currStyle: string;
 
   constructor(name: string, map: Mapp) {
-    super(name, map, genSpotStyle('categorical', 4));
+    super(name, map, genSpotStyle('categorical', 20));
     this._currStyle = 'categorical';
   }
 

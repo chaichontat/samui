@@ -90,7 +90,9 @@ export class OverlayData extends Deferrable {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      const promise = fromCSV(this.url.url).then((x) => (this.pos = x?.data as Coord[]));
+      const promise = fromCSV(this.url.url, { download: true }).then(
+        (x) => (this.pos = x?.data as Coord[])
+      );
       // Hydrate groups as well.
       const promises: Promise<any>[] = Object.values(this.groups).map((g) => g.hydrate());
       promises.push(promise);

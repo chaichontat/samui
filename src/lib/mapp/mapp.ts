@@ -99,12 +99,12 @@ export class Mapp extends Deferrable {
       this.layers[layer.name] = layer;
     }
 
-    await Promise.all(Object.values(overlays).map((x) => x.promise));
+    await Promise.all(Object.values(overlays).map((x) => x.hydrate()));
+    newLayers.map((x) => x.update(overlays[x.name]));
+
     const imgPromise =
       !refresh && image ? this.persistentLayers.background.update(this.map!, image) : undefined;
-
-    await Promise.all([imgPromise, ...newLayers.map((x) => x.update(overlays[x.name]))]);
-
+    await imgPromise;
     this.image = image;
   }
 

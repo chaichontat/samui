@@ -5,9 +5,12 @@
   import SelectionBox from '$src/lib/mapp/selectionBox.svelte';
   import { oneLRU } from '$src/lib/utils';
   import { onMount } from 'svelte';
+  import FileInput from '../components/fileInput.svelte';
+  import type { Coord } from '../data/features';
+  import { OverlayData, type OverlayParams } from '../data/overlay';
   import type { Sample } from '../data/sample';
-  import { getFileInput, toJSON } from '../io';
-  import { annotating, samples, sFeature, sOverlay } from '../store';
+  import { fromCSV, getFileFromEvent, toJSON } from '../io';
+  import { annotating, sFeature, sOverlay, sSample } from '../store';
   import type { Draww } from './selector';
 
   export let sample: Sample | undefined;
@@ -76,9 +79,9 @@
   }
 
   async function fromJSON(e: { currentTarget: EventTarget & HTMLInputElement }) {
-    const raw = await getFileInput(e.currentTarget);
+    const raw = await getFileFromEvent(e);
     try {
-      const parsed = JSON.parse(raw) as {
+      const parsed = JSON.parse(raw!) as {
         sample: string;
         type: string;
         values: ReturnType<Draww['dumpPolygons']>;
@@ -94,6 +97,43 @@
     } catch (e) {
       alert(e);
     }
+  }
+
+  async function addOverlay(ev: CustomEvent<{ e: EventTarget & HTMLInputElement }>) {
+    const name = prompt('Overlay name?');
+    if (!name) {
+      alert('Name cannot be empty.');
+      return;
+    }
+
+    if (name in $sSample.overlays) {
+      alert('Name cannot be the same as existing overlay.');
+      return;
+    }
+
+    const raw = await getFileFromEvent(ev.detail.e);
+    const pos = await fromCSV(raw);
+    if (!pos || pos.errors.length) {
+      alert(pos?.errors.join(', '));
+      return;
+    }
+
+    for (const p of pos.data) {
+      if (!('x' in p) || !('y' in p)) {
+        alert('x or y not in every line.');
+        return;
+      }
+    }
+
+    const op: OverlayParams = {
+      name,
+      shape: 'circle',
+      pos: pos.data as Coord[],
+      mPerPx: $sSample.image.mPerPx
+    };
+
+    sample!.overlays[name] = new OverlayData(op);
+    await map.update({ overlays: sample!.overlays, refresh: true });
   }
 </script>
 
@@ -153,11 +193,11 @@
   <!-- Overlay selector -->
   {#if showImgControl}
     <div
-      class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur transition-all hover:bg-slate-200 dark:bg-neutral-600/90 dark:text-white/90 dark:hover:bg-neutral-600"
+      class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur dark:bg-neutral-600/90 dark:text-white/90"
     >
       <table class="table-fixed">
         {#if sample}
-          {#each Object.keys($samples[sample.name].overlays) as ovName}
+          {#each Object.keys(sample.overlays) as ovName}
             <tr>
               <td class="flex gap-x-1 pr-2">
                 <!-- Outline checkbox -->
@@ -220,6 +260,28 @@
           {/each}
         {/if}
       </table>
+
+      <!-- Upload -->
+      <div class="flex w-full justify-center border-t border-t-white/30">
+        <FileInput accept=".csv" on:import={addOverlay}>
+          <div
+            class="mt-1.5 flex cursor-pointer items-center opacity-90 transition-opacity hover:opacity-100"
+            use:tooltip={{
+              content: 'CSV file with columns: `x`, `y` in pixels, and optional `id`.'
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="mr-0.5 h-4 w-4 stroke-slate-300 stroke-[2]"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <div class="font-normal">Add Overlay</div>
+          </div>
+        </FileInput>
+      </div>
     </div>
   {/if}
 </section>

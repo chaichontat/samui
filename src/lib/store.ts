@@ -1,6 +1,7 @@
 import sampleList from '$lib/data/meh';
 import { get, writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
+import type { Mapp } from './mapp/mapp';
 
 export type Idx = { id?: number | string | null; idx: number; source: string };
 
@@ -16,6 +17,7 @@ export const userState = writable({
 // Samples
 export const samples: Writable<Record<string, Sample>> = writable({});
 export const mapList: Writable<number[]> = writable([]);
+export const sMapp = writable(undefined as Mapp | undefined);
 
 // Set active map.
 export const sSample = writable(undefined as Sample | undefined);
@@ -55,7 +57,6 @@ export const sFeature = writable({} as Record<string, { group: string; feature: 
 export const annotating: Writable<{
   currKey: number | null;
   keys: string[];
-  spots?: string;
   show: boolean;
 }> = writable({
   currKey: null,

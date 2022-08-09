@@ -8,10 +8,11 @@
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, sFeature, sId, sOverlay } from '../lib/store';
+  import { annotating, sFeature, sId, sMapp, sOverlay } from '../lib/store';
 
   export let sample: Sample | undefined;
   $: sample?.hydrate().catch(console.error);
+  let currSample = sample?.name;
 
   $: image = sample?.image;
 
@@ -20,6 +21,7 @@
   let mapElem: HTMLDivElement;
   let tippyElem: HTMLDivElement;
   const map = new Mapp();
+  $sMapp = map;
 
   let width: number;
   let height: number;
@@ -55,7 +57,6 @@
           } else {
             map.persistentLayers.annotations.delete(idx);
           }
-          $annotating.spots = map.persistentLayers.annotations.dump();
         }
       }
     });
