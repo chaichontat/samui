@@ -2,7 +2,7 @@
   import Annotate from '$src/lib/mapp/annotate.svelte';
 
   import Nav from '$src/lib/nav.svelte';
-  import { activeFeatures, activeOverlay, sample, store } from '$src/lib/store';
+  import { userState } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';
   import 'tippy.js/dist/tippy.css';
@@ -18,28 +18,28 @@
 
   let intensity;
 
-  $: if ($sample) {
-    const f = $sample.getFeature($activeFeatures[$activeOverlay]);
-    intensity = f
-      ? {
-          name: `${$sample.name}-${$activeOverlay}-${$activeFeatures[$activeOverlay]?.name}`,
-          dataType: f.dataType,
-          values: f.values
-        }
-      : undefined;
-  }
+  // $: if ($sample) {
+  //   const f = $sample.getFeature($features[$focus.overlay]);
+  //   intensity = f
+  //     ? {
+  //         name: `${$sample.name}-${$focus.overlay}-${$features[$focus.overlay]?.feature}`,
+  //         dataType: f.dataType,
+  //         values: f.values
+  //       }
+  //     : undefined;
+  // }
 
-  const naviChartOptions: ChartConfiguration<'scatter'> = {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false,
-        reverse: true
-      }
-    }
-  };
+  // const naviChartOptions: ChartConfiguration<'scatter'> = {
+  //   scales: {
+  //     x: {
+  //       display: false
+  //     },
+  //     y: {
+  //       display: false,
+  //       reverse: true
+  //     }
+  //   }
+  // };
 </script>
 
 <aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto">
@@ -51,7 +51,8 @@
     <section>
       <Annotate />
     </section>
-    <section>
+
+    <!-- <section>
       <label
         use:tooltip={{ content: 'Can be slow if there are many points.' }}
         class="cursor-pointer"
@@ -66,19 +67,19 @@
         {#await $sample.promise then _}
           <Scatter
             coordsSource={{
-              name: `${$sample.name}-${$activeOverlay}`,
-              values: $sample.overlays[$activeOverlay]?.pos
+              name: `${$sample.name}-${$focus.overlay}`,
+              values: $sample.overlays[$focus.overlay]?.pos
             }}
             intensitySource={intensity}
             mainChartOptions={naviChartOptions}
             hoverChartOptions={naviChartOptions}
-            bind:currHover={$store.currIdx.idx}
+            bind:currHover={$userState.currIdx.idx}
             colorbar
             showScatter={showNavigator}
           />
         {/await}
       {/if}
-    </section>
+    </section> -->
 
     <!-- <section class="pt-4"> -->
     <!-- <TabGroup on:change={(e) => (showing = e.detail)}>

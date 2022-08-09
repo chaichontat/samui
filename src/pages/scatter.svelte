@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { tableau10arr } from '$src/lib/colors';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import Legend from '$src/lib/components/legend.svelte';
   import { convertCategoricalToNumber } from '$src/lib/data/features';
@@ -7,8 +6,8 @@
   import { keyLRU, keyOneLRU, type Named } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';
   import genColormap from 'colormap';
+  import { schemeTableau10 } from 'd3';
   import { onMount } from 'svelte';
-
   const id = Math.random();
 
   export let colormap = 'viridis';
@@ -79,9 +78,9 @@
         // eslint-disable-next-line no-case-declarations
         const legend = {} as Record<number | string, `#${string}`>;
         for (const [i, x] of conv.legend.entries()) {
-          legend[x] = (tableau10arr[i % tableau10arr.length] + opacity) as `#${string}`;
+          legend[x] = (schemeTableau10[i % schemeTableau10.length] + opacity) as `#${string}`;
         }
-        _color = conv.converted.map((x) => tableau10arr[x % tableau10arr.length] + opacity);
+        _color = conv.converted.map((x) => schemeTableau10[x % schemeTableau10.length] + opacity);
 
         return { colors: _color, legend };
 

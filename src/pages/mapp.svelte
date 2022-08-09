@@ -1,64 +1,68 @@
 <script lang="ts">
+  import type { FeatureAndGroup } from '$lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
-  import { genSpotStyle } from '$src/lib/mapp/spots';
   import { keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import {
-    activeFeatures,
-    activeOverlay,
-    annotating,
-    store,
-    type NameWithFeature
-  } from '../lib/store';
+  import { annotating, sFeature, sId, sMapp, sOverlay } from '../lib/store';
 
-  export let sample: Sample;
-  export let trackHover = false;
+  export let sample: Sample | undefined;
+  $: sample?.hydrate().catch(console.error);
+  let currSample = sample?.name;
 
   $: image = sample?.image;
-  $: spots = sample?.overlays.spots;
 
   export let uid: number;
   const mapName = `map-${uid}`;
   let mapElem: HTMLDivElement;
   let tippyElem: HTMLDivElement;
   const map = new Mapp();
+  $sMapp = map;
 
   let width: number;
   let height: number;
   let small = false;
   const dispatch = createEventDispatcher();
 
-  //   // adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
-  // }
-
   let imgCtrl: ImageCtrl;
-  let selecting = false;
   let showImgControl = true;
 
   onMount(() => {
     map.mount(mapElem, tippyElem);
-    map.handlePointer({
+    map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (trackHover && id_) $store.currIdx = { idx: id_.idx, source: 'map' };
+        if (id_) $sId = { ...id_, source: 'map' };
       }),
+
       click: (id_: { idx: number; id: number | string } | null) => {
-        const ov = map.layerMap.cells?.overlay;
-        if ($annotating.curr && id_ && ov) {
-          console.log(id_);
+        if (!$sOverlay) return;
+        const ov = map.layers[$sOverlay]?.overlay;
+        if ($annotating.currKey !== null && id_ && ov) {
           const idx = id_.idx;
-          map.layerMap.annotations?.add(idx, $annotating.curr, ov, $annotating.keys);
-          $annotating.spots = map.layerMap.annotations?.dump();
+          const existing = map.persistentLayers.annotations.get(idx);
+          if (
+            existing === null ||
+            existing.get('value') !== $annotating.keys[$annotating.currKey]
+          ) {
+            map.persistentLayers.annotations.add(
+              idx,
+              $annotating.keys[$annotating.currKey],
+              ov,
+              $annotating.keys
+            );
+          } else {
+            map.persistentLayers.annotations.delete(idx);
+          }
         }
       }
     });
   });
 
-  $: map.layerMap.annotations?.layer.setVisible($annotating.show);
+  $: map.persistentLayers.annotations.layer?.setVisible($annotating.show);
 
   // function moveView(idx: number) {
   //   if (!coords[idx]) return;
@@ -83,100 +87,66 @@
   //   }
   // }
 
-  // Enable/disable polygon draw
-  $: if (map.map && map.draw) {
-    if (selecting) {
-      map.map?.addInteraction(map.draw.draw);
-      map.map.getViewport().style.cursor = 'crosshair';
-    } else {
-      map.map.removeInteraction(map.draw.draw);
-      map.map.getViewport().style.cursor = 'grab';
-    }
-  }
-
+  // Sample change.
   let convertImgCtrl: ReturnType<typeof colorVarFactory>;
-
-  const update = keyOneLRU(async (sample: Sample) => {
-    await sample.promise;
-    const img = sample.image;
-    await map.update({ image: img, spots });
-    convertImgCtrl = colorVarFactory(img.channel);
-
-    map.layerMap['cells']?.update(sample.overlays.cells);
-
-    // Update overlay properties.
-    for (const [ol, v] of Object.entries($activeFeatures)) {
-      updateSpot({
-        key: `${sample.name}-${v?.name ?? 'null'}`,
-        args: [ol, v]
-      });
-    }
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  $: if (sample) update({ key: sample.name, args: [sample] });
-
-  $: if (convertImgCtrl && imgCtrl) {
-    map.layerMap.background?.updateStyle(convertImgCtrl(imgCtrl));
-  }
-
-  const setTippy = (idx: number) => {
-    // TODO: Revert to $activeOverlay
-    const ov = sample.overlays['spots'];
-    const pos = ov.pos![idx];
-    if (map.tippy && pos.id) {
-      map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
-      map.tippy.elem.removeAttribute('hidden');
-      map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+  $: if (sample) update(sample).catch(console.error);
+  const update = async (sample: Sample) => {
+    if (currSample !== sample.name) {
+      await sample.promise;
+      const img = sample.image;
+      await map.update({ image: img, overlays: sample.overlays });
+      convertImgCtrl = colorVarFactory(img.channel);
+      currSample = sample.name;
+    } else {
+      // When adding outlines in app.
+      await map.update({ overlays: sample.overlays, refresh: true });
     }
   };
 
-  const changeHover = oneLRU(async (idx: number | null) => {
-    if (!image) return;
-    await image.promise;
-    if (idx !== null) {
-      map.layerMap.active?.layer.setVisible(true);
-      // TODO Revert to $activeOverlay
-      map.layerMap.active?.update(sample.overlays['spots'], idx);
-      setTippy(idx);
-    } else {
-      map.layerMap.active?.layer.setVisible(false);
-      map.tippy?.elem.setAttribute('hidden', '');
-      // map.tippy?.overlay.
-    }
-  });
-
-  $: if (map.mounted && trackHover) changeHover($store.currIdx.idx).catch(console.error);
-
-  let currimage: 'quantitative' | 'categorical';
-
-  const updateSpot = keyOneLRU((ov: string, fn: NameWithFeature) => {
-    if (!sample || !fn) return false;
-    sample
-      .getFeature(fn)
-      .then(({ values, dataType }) => {
-        if (ov === 'spots' && dataType !== currimage) {
-          map.layerMap[ov]?.updateStyle(
-            genSpotStyle(dataType as 'quantitative' | 'categorical', spots.sizePx)
-          );
-          currimage = dataType as 'quantitative' | 'categorical';
-        }
-        map.layerMap[ov]?.updateIntensity(map, values).catch(console.error);
-      })
-      .catch(console.error);
-  });
-
-  /// To remove $activeSample dependency since updateSpot must run after updateSample.
-  function updateSpotName(fn: NameWithFeature) {
-    if (sample) {
-      updateSpot({
-        key: `${sample.name}-${$activeFeatures[$activeOverlay]?.name ?? 'null'}`,
-        args: [$activeOverlay, $activeFeatures[$activeOverlay]]
-      });
-    }
+  // Feature change.
+  $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
+    const ol = $sOverlay;
+    updateFeature({
+      key: `${sample.name}-${ol}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
+      args: [ol, $sFeature[ol]]
+    }).catch(console.error);
   }
+  const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
+    const res = await sample!.overlays[ov].getFeature(fn);
+    if (!res) return false;
+    map.layers[ov]?.updateProperties(res);
+  });
 
-  $: updateSpotName($activeFeatures[$activeOverlay]);
+  // Hover/overlay.
+  $: if (sample && $sOverlay) changeHover($sOverlay, $sId.idx).catch(console.error);
+
+  const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
+    await sample!.promise;
+    const active = map.persistentLayers.active;
+    const ov = sample!.overlays[activeol];
+
+    if (!ov) return false;
+
+    if (idx !== null) {
+      active.layer!.setVisible(true);
+      const pos = ov.pos![idx];
+      if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
+      active.update(sample!.overlays[activeol], idx);
+      if (map.tippy && pos.id) {
+        map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
+        map.tippy.elem.removeAttribute('hidden');
+        map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+      }
+    } else {
+      active.layer!.setVisible(false);
+      map.tippy?.elem.setAttribute('hidden', '');
+    }
+  });
+
+  // Image control params
+  $: if (convertImgCtrl && imgCtrl) {
+    map.persistentLayers.background?.updateStyle(convertImgCtrl(imgCtrl));
+  }
 
   $: small = width < 500;
 </script>
@@ -199,13 +169,13 @@
     class:composite={showImgControl && image?.channel !== 'rgb' && !small}
     class:rgb={showImgControl && image?.channel === 'rgb'}
   />
-
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
-    class="ol-tippy pointer-events-none max-w-sm -translate-x-1/2 translate-y-4 rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
+    class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
 
+  <!-- Channel indicator -->
   {#if sample}
     <section
       class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
@@ -220,11 +190,10 @@
       </div>
     </section>
 
-    <MapTools {map} {width} bind:selecting bind:showImgControl />
-  {/if}
+    <!-- Top right tools -->
+    <MapTools {sample} {map} {width} bind:showImgControl />
 
-  <!-- Buttons -->
-  {#if sample}
+    <!-- Img control -->
     <div
       class="absolute bottom-3 left-1 lg:left-4 lg:bottom-6 xl:pr-4"
       style="max-width: calc(100% - 20px);"
@@ -233,8 +202,8 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if image.channel !== 'rgb'}
-          <svelte:component this={ImgControl} channels={image.channel} bind:imgCtrl {small} />
+        {#if image?.channel !== 'rgb'}
+          <svelte:component this={ImgControl} channels={image?.channel} bind:imgCtrl {small} />
         {:else}
           <svelte:component this={ImgControl} bind:imgCtrl {small} />
         {/if}
@@ -286,9 +255,5 @@
 
   .map :global(.ol-zoom-out) {
     @apply bg-sky-700/90;
-  }
-
-  .map :global(.ol-overlaycontainer) {
-    @apply pointer-events-none;
   }
 </style>

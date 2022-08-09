@@ -1,15 +1,22 @@
 <script lang="ts">
-  import { annotating } from '$lib/store';
-  import * as d3 from 'd3';
-  import { makeDownload } from '../utils';
+  import { annotating, sMapp, sSample } from '$lib/store';
+  import { schemeTableau10 } from 'd3';
+  import { toCSV } from '../io';
 
   function handleNewKey(name: string | null) {
     if (name === null) {
       alert('Empty name.');
       return;
     }
-    $annotating.keys.push(name);
-    $annotating.keys = $annotating.keys;
+    const newKey = name.trim();
+
+    if ($annotating.keys.findIndex((v) => v === newKey) === -1) {
+      $annotating.keys.push(newKey);
+      $annotating.keys = $annotating.keys;
+      $annotating.currKey = $annotating.keys.length - 1;
+    } else {
+      alert('Key already exists.');
+    }
   }
 </script>
 
@@ -18,9 +25,10 @@
   <div class="flex gap-x-6">
     {#each $annotating.keys as key, i}
       <label class="flex items-center gap-x-1 hover:underline">
-        <div class="h-3 w-3" style={`background-color: ${d3.schemeTableau10[i % 10]}`} />
-        <button on:click={() => ($annotating.curr = key)} class:font-bold={$annotating.curr === key}
-          >{key}</button
+        <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
+        <button
+          on:click={() => ($annotating.currKey = i)}
+          class:font-bold={$annotating.currKey === i}>{key}</button
         >
       </label>
     {/each}
@@ -39,11 +47,9 @@
   <button
     class="button my-0 flex-grow py-2 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
     on:click={() => {
-      if ($annotating.spots)
-        makeDownload({ name: 'annotations.csv', s: $annotating.spots, type: 'text/csv' });
+      if ($annotating.currKey !== null) {
+        toCSV(`annotations_${$sSample.name}.csv`, $sMapp.persistentLayers.annotations.dump());
+      }
     }}>Download</button
   >
 </section>
-
-<style lang="postcss">
-</style>

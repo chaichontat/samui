@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Popover, PopoverButton, PopoverPanel, Transition } from '@rgossiaux/svelte-headlessui';
   import { createEventDispatcher } from 'svelte';
+  import FileInput from '../components/fileInput.svelte';
 
   export let names: string[] = [];
   const dispatch = createEventDispatcher();
@@ -83,18 +84,10 @@
       </section>
 
       <section id="selectionControls" class="p-1">
-        <input
-          class="visually-hidden"
-          name="file"
-          type="file"
-          id="selectionFileInput"
-          accept=".json"
-          on:click={(e) => (e.currentTarget.value = '')}
-          on:change={(e) => dispatch('import', { e })}
-        />
-        <label for="selectionFileInput" class="picker-el w-full select-none py-1 text-left">
-          Import selections
-        </label>
+        <FileInput accept=".json" on:import={(e) => dispatch('import', { e })}>
+          <div class="picker-el w-full select-none py-1 text-left">Import selections</div>
+        </FileInput>
+
         {#if names.length > 0}
           <button
             class="picker-el py-1 text-left"
@@ -116,12 +109,5 @@
 <style lang="postcss">
   section {
     @apply flex flex-col gap-y-1 py-1;
-  }
-
-  .visually-hidden {
-    @apply absolute overflow-hidden;
-    height: 1px;
-    width: 1px;
-    clip: rect(1px, 1px, 1px, 1px);
   }
 </style>

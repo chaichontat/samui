@@ -20,18 +20,7 @@ const config = {
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 1024,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'chart.js': ['chart.js'],
-          // 'vega-embed': ['vega-embed'],
-          'lru-cache': ['lru-cache'],
-          ol: ['ol'],
-          'tippy.js': ['tippy.js']
-        }
-      }
-    }
+    chunkSizeWarningLimit: 1024
   }
 };
 export default config;

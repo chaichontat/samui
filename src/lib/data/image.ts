@@ -12,8 +12,6 @@ export class Image extends Deferrable {
   channel: string[] | 'rgb';
   mPerPx: number;
 
-  hydrated = false;
-
   constructor({ urls, channel, mPerPx }: ImageParams, autoHydrate = false) {
     super();
     this.urls = urls;
@@ -33,7 +31,6 @@ export class Image extends Deferrable {
     }
 
     this.hydrated = true;
-    this._deferred.resolve();
     return this;
   }
 }

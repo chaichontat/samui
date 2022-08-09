@@ -1,46 +1,40 @@
+<!-- Nav of sidebar. -->
 <script lang="ts">
   import Darkswitch from './components/darkswitch.svelte';
+  import SearchBox from './components/featureSearchBox.svelte';
   import Github from './components/github.svelte';
-  import SampleList from './components/sampleList.svelte';
-  import SearchBox from './components/searchBox.svelte';
-  import type { NameWithFeature } from './data/features';
-  import { HoverSelect, updateNames, type FeatureNamesGroup } from './data/searchBox';
-  import { activeFeatures, activeOverlay, sample } from './store';
+  import List from './components/list.svelte';
+  import type { FeatureAndGroup } from './data/features';
+  import type { FeatureGroupList, HoverSelect } from './data/searchBox';
+  import { sFeature, sOverlay, sSample } from './store';
 
-  let active: HoverSelect<NameWithFeature>;
-  $: if (active?.active) {
-    $activeFeatures[$activeOverlay] = active.active;
-    console.log($activeFeatures);
-  }
-  let names: FeatureNamesGroup[];
-  $: {
-    if ($sample) {
-      updateNames($sample.features, $activeOverlay)
-        .then((v) => (names = v))
-        .catch(console.error);
-    }
-  }
+  // Feature list
+  let featureGroup: FeatureGroupList[];
+  $: if ($sSample && $sOverlay) featureGroup = $sSample.overlays[$sOverlay].featNames;
 
-  activeOverlay.subscribe((v: string) => {
-    if (!active) return;
-    active.selected = $activeFeatures[v];
-  });
+  // Set feature
+  let currFeature: HoverSelect<FeatureAndGroup>;
+  // Need to use this function in order to prevent update when $sOverlay is changed.
+  const setFeature = (cf: typeof currFeature) => ($sFeature[$sOverlay] = cf.active!);
+  $: if ($sSample && currFeature?.active) setFeature(currFeature);
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-6 shadow backdrop-blur dark:bg-gray-900">
-  <!-- <div class="over mt-2 text-ellipsis text-xl font-medium">Showing <i>{$currRna.name}</i>.</div> -->
+  <!-- Overlay selector -->
   <div class="gap-x-2 pt-1 text-base">
-    <SampleList
-      items={$sample ? Object.keys($sample.overlays) : []}
-      bind:active={$activeOverlay}
+    <List
+      items={$sSample ? Object.keys($sSample.overlays) : []}
+      bind:active={$sOverlay}
       loading={false}
       showArrow={false}
       addSample={false}
       useSpinner={false}
     />
   </div>
-  <div class="mt-1  flex-grow">
-    <SearchBox featureNamesGroup={names} bind:curr={active} />
+
+  <!-- Search features -->
+  <div class="mt-1 flex-grow">
+    <SearchBox {featureGroup} bind:curr={currFeature} />
   </div>
   <Darkswitch />
   <Github />

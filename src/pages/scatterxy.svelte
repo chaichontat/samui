@@ -1,16 +1,15 @@
 <script lang="ts">
-  import SearchBox from '$src/lib/components/searchBox.svelte';
-  import type { NameWithFeature } from '$src/lib/data/features';
+  import SearchBox from '$src/lib/components/featureSearchBox.svelte';
+  import type { FeatureAndGroup } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
-  import type { FeatureNamesGroup, HoverSelect } from '$src/lib/data/searchBox';
-  import { boxMuller } from '$src/lib/scatter/scatterlib';
-  import { sample, store } from '$src/lib/store';
+  import type { FeatureGroupList, HoverSelect } from '$src/lib/data/searchBox';
+  // import { sample, userState } from '$src/lib/store';
   import type { Named } from '$src/lib/utils';
   import Scatter from './scatter.svelte';
 
-  export let names: FeatureNamesGroup[];
+  export let names: FeatureGroupList[];
 
-  type Name = NameWithFeature;
+  type Name = FeatureAndGroup;
   let x: HoverSelect<Name>;
   let y: HoverSelect<Name>;
   let color: HoverSelect<Name>;
@@ -24,8 +23,8 @@
 
   async function getData(
     s: Sample,
-    x: HoverSelect<NameWithFeature>,
-    y: HoverSelect<NameWithFeature>,
+    x: HoverSelect<FeatureAndGroup>,
+    y: HoverSelect<FeatureAndGroup>,
     jitterX = 0,
     jitterY = 0
   ) {
@@ -46,7 +45,7 @@
     };
 
     coords = {
-      name: `${s.name}--${x.active!.name!}--${y.active!.name!}--${jitterX}--${jitterY}`,
+      name: `${s.name}--${x.active!.feature!}--${y.active!.feature!}--${jitterX}--${jitterY}`,
       values: (xf.values as number[]).map((x, i) => ({
         x: x + (jitterX !== 0 ? boxMuller(jitterX) : 0),
         y: values.y[i] + (jitterY !== 0 ? boxMuller(jitterY) : 0)
@@ -54,7 +53,7 @@
     };
   }
 
-  async function updateColors(s: Sample, color: HoverSelect<NameWithFeature>) {
+  async function updateColors(s: Sample, color: HoverSelect<FeatureAndGroup>) {
     let c = await s.getFeature(color.active!);
     if (c.values instanceof Promise) {
       c.values = await c.values;
@@ -62,7 +61,7 @@
 
     colorValues = {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      name: `${s.name}-${color.active!.name}`,
+      name: `${s.name}-${color.active!.feature}`,
       values: c.values as number[],
       dataType: c.dataType
     };
@@ -83,14 +82,14 @@
 <div class="flex flex-col items-center gap-y-1">
   <div class="flex max-w-md items-center gap-x-2">
     x:
-    <SearchBox featureNamesGroup={names} bind:curr={x} />
-    y: <SearchBox featureNamesGroup={names} bind:curr={y} />
+    <SearchBox featureGroup={names} bind:curr={x} />
+    y: <SearchBox featureGroup={names} bind:curr={y} />
   </div>
 
   <div class="flex max-w-md items-center gap-x-2">
     Color:
     <div class="">
-      <SearchBox featureNamesGroup={names} bind:curr={color} />
+      <SearchBox featureGroup={names} bind:curr={color} />
     </div>
   </div>
 
@@ -114,6 +113,6 @@
   <Scatter
     coordsSource={coords}
     intensitySource={colorValues}
-    bind:currHover={$store.currIdx.idx}
+    bind:currHover={$userState.currIdx.idx}
   />
 </div>

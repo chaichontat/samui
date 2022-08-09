@@ -1,141 +1,27 @@
+import { schemeTableau10 } from 'd3';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
-import { Point, Polygon } from 'ol/geom.js';
+import { Polygon } from 'ol/geom.js';
 import { Draw, Modify } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
-import { Fill, RegularShape, Stroke, Style, Text } from 'ol/style.js';
-import { tableau10arr } from '../colors';
+import { Fill, Stroke, Style, Text } from 'ol/style.js';
+import { get } from 'svelte/store';
+import { annotating, sOverlay } from '../store';
 import type { Named } from '../utils';
-
-export class _Points {
-  readonly features: Feature[];
-  readonly source: VectorSource<Point>;
-  readonly layer: VectorLayer<typeof this.source>;
-  template?: Feature[];
-
-  constructor(readonly parent: Draww) {
-    this.features = [];
-    this.source = new VectorSource({ features: this.features });
-    this.layer = new VectorLayer({
-      source: this.source
-      // style: new Style({
-      //   fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' })
-      // })
-    });
-    this.parent = parent;
-  }
-
-  mount(map: Map) {
-    this.layer.setZIndex(20);
-    map.addLayer(this.layer);
-  }
-
-  update(template: Feature[]) {
-    this.source.clear();
-    this.template = template;
-  }
-
-  _updatePoint(
-    feat: Feature<Point>,
-    {
-      idx,
-      id,
-      oricolor
-    }: { idx?: number; id?: number | string; oricolor?: { origin: number; color: string } }
-  ) {
-    feat.setId(idx);
-    feat.set('id', id);
-    // https://openlayers.org/en/latest/examples/regularshape.html
-    if (oricolor) {
-      const { origin, color } = oricolor;
-      feat.set('origin', origin);
-      feat.setStyle(
-        new Style({
-          image: new RegularShape({
-            fill: new Fill({
-              color
-            }),
-            points: 4,
-            radius: 5
-            // angle: Math.PI / 4
-          })
-        })
-      );
-    }
-  }
-
-  // Remove === Get rid of all points, used when dragging things around.
-  updateSelect(polygonFeat: Feature<Polygon>, remove = false) {
-    if (!this.template) return;
-
-    // const ids: number[] = [];
-    const origin = (polygonFeat.getId() ?? -1) as number;
-    const polygon = polygonFeat.getGeometry()!;
-    if (remove) {
-      this.remove(origin);
-    }
-
-    this.source.addFeatures(
-      this.template
-        .filter((f) => polygon.intersectsExtent(f.getGeometry()!.getExtent()))
-        .map((f) => {
-          // ID of spot.
-          const id = f.getId() as number;
-          let feat = this.source.getFeatureById(id);
-          if (feat === null) {
-            feat = new Feature({
-              geometry: (f.getGeometry()! as Point).clone()
-            });
-          }
-          // ids.push(id);
-          this._updatePoint(feat, {
-            idx: f.getId() as number,
-            id: f.get('id') as number | string,
-            oricolor: {
-              origin,
-              color: (polygonFeat.get('color') as string) ?? '#00ffe9'
-            }
-          });
-          return feat;
-        })
-    );
-    // return ids;
-  }
-
-  /// Update if the point is in other selections. Otherwise, delete.
-  remove(uid: number) {
-    this.source.getFeatures().forEach((f) => {
-      if (f.get('origin') === uid) {
-        const coord = f.getGeometry()!.getCoordinates()!;
-        const exists = this.parent.source.forEachFeatureAtCoordinateDirect(coord, (p) => {
-          this._updatePoint(f, {
-            oricolor: { origin: p.getId() as number, color: p.get('color') as string }
-          });
-          return true;
-        });
-
-        if (!exists) this.source.removeFeature(f);
-      }
-    });
-  }
-
-  dump(uid: number) {
-    return this.source
-      .getFeatures()
-      .filter((f) => f.get('origin') === uid)
-      .map((f) => f.get('id') as number | string);
-  }
-}
+import type { Mapp } from './mapp';
+import type { MutableSpots } from './spots';
 
 export class Draww {
   readonly draw: Draw;
   readonly source: VectorSource<Polygon>;
   readonly selectionLayer: VectorLayer<typeof this.source>;
-  readonly points: _Points;
+  readonly points: MutableSpots;
   readonly modify: Modify;
+  readonly map: Mapp;
+  readonly featuresBeforeMod: Record<number, Feature<Polygon>> = {};
 
   _currHighlight: number | null = null;
   _colorCounter = 0; // Ensures that color increases when deleting older selections.
@@ -155,7 +41,7 @@ export class Draww {
     })
   });
 
-  constructor() {
+  constructor(map: Mapp, mutspot: MutableSpots) {
     this.source = new VectorSource();
     // Style for drawing polygons.
     this.draw = new Draw({
@@ -170,11 +56,13 @@ export class Draww {
       stopClick: true
     });
 
+    this.map = map;
+
     this.selectionLayer = new VectorLayer({
       source: this.source
     });
 
-    this.points = new _Points(this);
+    this.points = mutspot;
     this.modify = new Modify({ source: this.source });
 
     this._attachDraw();
@@ -182,9 +70,8 @@ export class Draww {
 
   mount(map: Map) {
     this._attachModify(map);
-    this.selectionLayer.setZIndex(50);
+    this.selectionLayer.setZIndex(Infinity);
     map.addLayer(this.selectionLayer);
-    this.points.mount(map);
   }
 
   clear() {
@@ -194,20 +81,10 @@ export class Draww {
 
   update(template: Feature[]) {
     this.clear();
-    this.points.update(template);
+    // this.points.update(template);
   }
 
   _attachDraw() {
-    // this.draw.on('drawstart', (event: DrawEvent) => {
-    //   event.feature.getGeometry()!.on(
-    //     'change',
-    //     throttle(() => this.points.updateSelect(event.feature as Feature<Polygon>, true), 200, {
-    //       leading: true,
-    //       trailing: false
-    //     })
-    //   );
-    // });
-
     this.draw.on('drawend', (event: DrawEvent) => {
       event.preventDefault();
       // this.points.remove(-1);
@@ -216,18 +93,49 @@ export class Draww {
   }
 
   _afterDraw(feature: Feature<Polygon>) {
-    const cid = this._colorCounter++ % tableau10arr.length;
-    feature.set('color', tableau10arr[cid]);
-    feature.setId(Math.random());
+    // Not called after modify.
+    const keyIdx = get(annotating).currKey;
+    if (keyIdx === null) throw new Error('keyIdx is null');
 
+    feature.set('color', schemeTableau10[keyIdx % 10]);
+    feature.set('keyIdx', keyIdx);
+    feature.setId(Math.random());
+    feature.on('propertychange', (e) => {
+      if (e.key === 'keyIdx' || e.key === 'color') {
+        this._updatePolygonStyle(feature);
+      }
+    });
+
+    this.featuresBeforeMod[feature.getId() as number] = feature.clone();
     this._updatePolygonStyle(feature);
-    this.points.updateSelect(feature);
+    this.points.addFromPolygon(
+      feature,
+      get(annotating).keys[keyIdx],
+      this.map.layers[get(sOverlay)].overlay!,
+      get(annotating).keys
+    );
   }
 
   _attachModify(map: Map) {
     map.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => {
-      this.points.updateSelect(e.features.getArray()[0] as Feature<Polygon>, true);
+      const keyIdx = get(annotating).currKey;
+      if (keyIdx === null) throw new Error('keyIdx is null');
+
+      const feature = e.features.getArray()[0] as Feature<Polygon>;
+      const idx = feature.getId() as number;
+      feature.set('color', schemeTableau10[keyIdx % 10]);
+      feature.set('keyIdx', keyIdx);
+      const prev = this.featuresBeforeMod[idx];
+      this.points.deleteFromPolygon(prev);
+      this.points.addFromPolygon(
+        feature,
+        get(annotating).keys[keyIdx],
+        this.map.layers[get(sOverlay)].overlay!,
+        get(annotating).keys
+      );
+
+      this.featuresBeforeMod[idx] = feature.clone();
     });
   }
 
@@ -256,33 +164,23 @@ export class Draww {
     } else {
       st.setFill(new Fill({ color: 'rgba(255, 255, 255, 0.1)' }));
     }
-    st.getText().setText(feature.get('name') as string);
+    st.getText().setText(get(annotating).keys[feature.get('keyIdx') as number]);
     feature.setStyle(st);
-  }
-
-  getPolygonsName() {
-    return this.source.getFeatures().map((f) => (f.get('name') ?? '') as string);
-  }
-
-  setPolygonName(i: number, name: string) {
-    const feat = this.source.getFeatures().at(i);
-    if (!feat) throw new Error('No feature at index ' + i.toString());
-    feat.set('name', name);
-    this._updatePolygonStyle(feat);
   }
 
   deletePolygon(i: number) {
     const feature = this.source.getFeatures()[i];
     const uid = feature.getId() as number;
     this.source.removeFeature(feature);
-    this.points.remove(uid);
+    // this.points.remove(uid);
   }
 
   dumpPolygons() {
     const out: Named<Coordinate[][]>[] = [];
+    const keys = get(annotating).keys;
     for (const feature of this.source.getFeatures()) {
       const g = feature.getGeometry();
-      if (g) out.push({ name: feature.get('name') as string, values: g.getCoordinates() });
+      if (g) out.push({ name: keys[feature.get('keyIdx') as number], values: g.getCoordinates() });
     }
     return out;
   }
@@ -290,16 +188,7 @@ export class Draww {
   getPoints(i: number) {
     const feat = this.source.getFeatures()[i];
     const uid = feat.getId() as number;
-    return this.points.dump(uid);
-  }
-
-  dumpAllPoints() {
-    const out: Named<(number | string)[]>[] = [];
-    for (const feature of this.source.getFeatures()) {
-      const uid = feature.getId() as number;
-      out.push({ name: feature.get('name') as string, values: this.points.dump(uid) });
-    }
-    return out;
+    // return this.points.dump(uid);
   }
 
   loadPolygons(cs: Named<Coordinate[][]>[]) {
@@ -310,5 +199,10 @@ export class Draww {
       this._afterDraw(feature);
       this.source.addFeature(feature);
     }
+  }
+
+  /// To be used when renaming.
+  refresh() {
+    this.source.forEachFeature((f) => this._updatePolygonStyle(f));
   }
 }

@@ -4,18 +4,18 @@
 
 <script lang="ts">
   import { tooltip } from '$lib/utils';
-  import SampleList from '$src/lib/components/sampleList.svelte';
+  import List from '$src/lib/components/list.svelte';
   import { byod } from '$src/lib/data/byod';
   import type { Sample } from '$src/lib/data/sample';
-  import { activeMap, activeSample, mapList, samples } from '$src/lib/store';
+  import { mapIdSample, mapList, samples, sMapId } from '$src/lib/store';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
 
-  let active: string;
-  let currSample: Sample;
+  let currSampleName: string;
+  $: if (typeof hie === 'number') $mapIdSample[hie] = currSampleName;
+
   let refreshPls = false;
   let width = 0;
-  let sampleList: SampleList;
 
   const dispatch = createEventDispatcher();
 
@@ -23,15 +23,12 @@
   let hieN: number;
   $: hieN = typeof hie === 'number' ? hie : -1;
 
-  $: if (typeof hie === 'number' && $samples[active]) {
-    $activeSample = active;
-    currSample = $samples[active];
-    $activeMap = hie;
-  }
-
-  $: if ($activeMap === hie) {
-    $activeSample = currSample?.name;
-  }
+  // $: if (typeof hie === 'number') {
+  //   $focus
+  //     .setSample(active)
+  //     .then(() => ($focus = $focus))
+  //     .catch(console.error);
+  // }
 
   function handleSplit(i: number, mode: 'h' | 'v') {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
@@ -72,7 +69,7 @@
       $mapList.splice(idx, 1);
       $mapList = $mapList;
       if (idx > 0) {
-        $activeMap = $mapList[idx - 1];
+        $sMapId = $mapList[idx - 1];
       } else {
         throw new Error('Should be impossible to delete the first map');
       }
@@ -87,8 +84,11 @@
     }
   });
 
-  $: currSample?.promise.then(() => sampleList.stopSpinner()).catch(console.error);
-  $: console.log(currSample?.hydrated);
+  // Stop loading spinner when sample is hydrated.
+  let sampleListElem: List;
+  $: $samples[currSampleName]?.promise
+    .then(() => sampleListElem.stopSpinner())
+    .catch(console.error);
 </script>
 
 {#if typeof hie === 'number'}
@@ -117,10 +117,10 @@
         {/if}
 
         <div class:mt-1={hie !== 0} class="min-w-[200px]">
-          <SampleList
-            bind:this={sampleList}
+          <List
+            bind:this={sampleListElem}
             items={Object.keys($samples)}
-            bind:active
+            bind:active={currSampleName}
             on:addSample={byod}
           />
         </div>
@@ -171,15 +171,10 @@
 
     <div
       class="h-full w-full border-2"
-      class:border-slate-800={$activeMap !== hieN}
-      class:border-slate-100={$activeMap === hieN && $mapList.length > 1}
+      class:border-slate-800={$sMapId !== hieN}
+      class:border-slate-100={$sMapId === hieN && $mapList.length > 1}
     >
-      <Mapp
-        on:mapClick={() => ($activeMap = hieN)}
-        sample={currSample}
-        trackHover={$activeMap === hie}
-        uid={hie}
-      />
+      <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />
     </div>
   </section>
 {:else}

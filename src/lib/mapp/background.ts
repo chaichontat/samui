@@ -3,23 +3,26 @@ import WebGLTileLayer, { type Style } from 'ol/layer/WebGLTile.js';
 import GeoTIFF from 'ol/source/GeoTIFF.js';
 import type { Image } from '../data/image';
 import { Deferrable, oneLRU } from '../utils';
-import type { MapComponent } from './mapp';
+import type { MapComponent } from './definitions';
 
-export class Background extends Deferrable implements MapComponent {
+export class Background extends Deferrable {
+  name: string;
   source?: GeoTIFF;
   layer?: WebGLTileLayer;
   mode?: 'composite' | 'rgb';
   mPerPx?: number;
 
-  constructor() {
+  constructor(name: string) {
     super();
+    this.name = name;
   }
 
-  mount(): void {
+  mount() {
     if (!this.layer) {
-      this.layer = new WebGLTileLayer({});
+      this.layer = new WebGLTileLayer({ zIndex: 0 });
     }
     this._deferred.resolve();
+    return this;
   }
 
   async update(map: Map, image: Image) {
@@ -36,21 +39,23 @@ export class Background extends Deferrable implements MapComponent {
       sources: urls
     });
 
-    // let resolve: () => void;
-    // const promise: Promise<void> = new Promise((res) => {
-    //   resolve = res;
-    // });
-    // Need this because we need source.bandCount to be set before we can set the style.
-    // Otherwise, it defaults to 4 and we cannot access channels > 4.
-    // this.source.on('change', () => {
-    //   if (this.source?.getState() === 'ready') resolve();
-    // });
-    // await promise;
     this.mode = image.channel === 'rgb' ? 'rgb' : 'composite';
-    this.source.bandCount = image.channel === 'rgb' ? 3 : image.channel.length;
+    const bandCount = (this.source.bandCount = this.mode === 'rgb' ? 3 : image.channel.length);
+    // Verify correct bandCount.
+    // this.source.on(
+    //   'change',
+    //   () =>
+    //     this.source?.getState() === 'ready' &&
+    //     this.source.bandCount !== bandCount &&
+    //     alert(
+    //       `Number of channels mismatch between config ${bandCount} and actual ${this.source.bandCount}.`
+    //     )
+    // );
+
     this.layer = new WebGLTileLayer({
       style: this._genBgStyle(this.mode),
-      source: this.source
+      source: this.source,
+      zIndex: -1
     });
 
     this.mPerPx = image.mPerPx;

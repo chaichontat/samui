@@ -4,7 +4,7 @@
   import { byod } from '$src/lib/data/byod';
   import { getSample, getSampleList } from '$src/lib/data/preload';
   import { mapList, preload, samples } from '$src/lib/store';
-  import MapSample, { type Hierarchy } from '$src/pages/mapTile.svelte';
+  import MapTile, { type Hierarchy } from '$src/pages/mapTile.svelte';
   import Sidebar from '$src/pages/sidebar.svelte';
   import { onMount } from 'svelte';
 
@@ -31,7 +31,7 @@
   {#if Object.keys($samples).length > 0}
     <div class="relative h-[600px] w-full overflow-hidden lg:h-full lg:w-[75%]">
       <article class="h-full w-full" id="allMaps">
-        <MapSample {hie} />
+        <MapTile {hie} />
       </article>
     </div>
 
