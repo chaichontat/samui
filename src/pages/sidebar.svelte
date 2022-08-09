@@ -1,7 +1,8 @@
 <script lang="ts">
-  import Annotate from '$src/lib/mapp/annotate.svelte';
+  import Annotate from '$lib/sidebar/annotate.svelte';
 
   import Nav from '$src/lib/nav.svelte';
+  import Section from '$src/lib/sidebar/section.svelte';
   import { userState } from '$src/lib/store';
   import { tooltip } from '$src/lib/utils';
   import type { ChartConfiguration } from 'chart.js';
@@ -47,10 +48,10 @@
     <Nav />
   </div>
 
-  <div class="flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
-    <section>
+  <div class="mx-4 mt-3 flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
+    <Section title="Annotations">
       <Annotate />
-    </section>
+    </Section>
 
     <!-- <section>
       <label
