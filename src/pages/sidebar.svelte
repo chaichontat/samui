@@ -1,6 +1,7 @@
 <script lang="ts">
   import Annotate from '$lib/sidebar/annotate.svelte';
 
+  import Status from '$lib/sidebar/status.svelte';
   import Nav from '$src/lib/nav.svelte';
   import Section from '$src/lib/sidebar/section.svelte';
   import { userState } from '$src/lib/store';
@@ -43,12 +44,12 @@
   // };
 </script>
 
-<aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto">
+<aside class="relative mx-4 flex h-full w-full flex-1 flex-col overflow-y-auto">
   <div class="z-40 w-full">
     <Nav />
   </div>
 
-  <div class="mx-4 mt-3 flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
+  <div class="mt-3 flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
     <Section title="Annotations">
       <Annotate />
     </Section>
@@ -106,7 +107,7 @@
       </section>
     {/each} -->
 
-    <section class="flex w-full justify-around">
+    <!-- <section class="flex w-full justify-around">
       <button
         class="button flex-grow py-3 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
         on:click={() => {
@@ -114,7 +115,10 @@
           sections = sections;
         }}>Add Scatter</button
       >
-    </section>
+    </section> -->
+  </div>
+  <div class="mt-6 text-sm">
+    <Status />
   </div>
 </aside>
 

@@ -19,7 +19,7 @@
   $: if ($sSample && currFeature?.active) setFeature(currFeature);
 </script>
 
-<nav class="flex items-center gap-x-3 bg-gray-100 py-3 px-4 shadow backdrop-blur dark:bg-gray-900">
+<nav class="flex items-center gap-x-3 bg-gray-100 py-3 shadow backdrop-blur dark:bg-gray-900">
   <!-- Overlay selector -->
   <div class="gap-x-2 pt-1 text-base">
     <List
