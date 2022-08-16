@@ -214,7 +214,13 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 
   update(ov: OverlayData, idx: number) {
     if (!ov.mPerPx) throw new Error('No mPerPx provided');
-    const { x, y, id } = ov.pos![idx];
+    const pos = ov.pos!.find((p) => p.idx === idx);
+    if (!pos) {
+      console.error(`No position found for idx ${idx}`);
+      return;
+    }
+
+    const { x, y, id } = pos;
     const size = ov.size ? ov.size / 4 : ov.mPerPx * 10;
     this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
     this.feature.set('id', id);
