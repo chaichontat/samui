@@ -166,13 +166,13 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this.overlay = overlay;
     this.source.clear();
     this.source.addFeatures(
-      overlay.pos!.map(({ x, y, id }, i) => {
+      overlay.pos!.map(({ x, y, id, idx }) => {
         const f = new Feature({
           geometry: new Point([x * this.overlay!.mPerPx!, -y * this.overlay!.mPerPx!]),
           value: 0,
-          id: id ?? i
+          id: id ?? idx
         });
-        f.setId(i);
+        f.setId(idx);
         return f;
       })
     );
@@ -214,9 +214,11 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 
   update(ov: OverlayData, idx: number) {
     if (!ov.mPerPx) throw new Error('No mPerPx provided');
-    const { x, y } = ov.pos![idx];
+    const { x, y, id } = ov.pos![idx];
     const size = ov.size ? ov.size / 4 : ov.mPerPx * 10;
     this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
+    this.feature.set('id', id);
+    this.feature.setId(idx);
   }
 }
 
@@ -248,17 +250,17 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     x,
     y,
     id,
-    i,
+    idx,
     mPerPx,
     size
-  }: Coord & { i: number; mPerPx: number; size?: number | null }) {
+  }: Coord & { idx: number; mPerPx: number; size?: number | null }) {
     const c = [x * mPerPx, -y * mPerPx];
     const f = new Feature({
       geometry: size !== undefined && size !== null ? new Circle(c, size / 4) : new Point(c),
       value: 0,
-      id: id ?? i
+      id: id ?? idx
     });
-    f.setId(i);
+    f.setId(idx);
     return f;
   }
 
@@ -267,8 +269,8 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
     this.source.clear();
     this.source.addFeatures(
-      ov.pos!.map((coord, i) =>
-        CanvasSpots._genCircle({ ...coord, i, mPerPx: ov.mPerPx!, size: ov.size })
+      ov.pos!.map((coord) =>
+        CanvasSpots._genCircle({ ...coord, mPerPx: ov.mPerPx!, size: ov.size })
       )
     );
     this.overlay = ov;
@@ -287,7 +289,7 @@ export class MutableSpots extends CanvasSpots {
     let f = this.get(idx);
     if (f === null) {
       // Null to generate Point, instead of Circle.
-      f = CanvasSpots._genCircle({ ...ov.pos![idx], i: idx, mPerPx: ov.mPerPx, size: null });
+      f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
       this.source.addFeature(f);
     }
 
@@ -319,7 +321,7 @@ export class MutableSpots extends CanvasSpots {
     const polygon = polygonFeat.getGeometry()!;
     const template = [];
     for (let i = 0; i < ov.pos!.length; i++) {
-      template.push(CanvasSpots._genCircle({ ...ov.pos![i], i, mPerPx: ov.mPerPx!, size: null }));
+      template.push(CanvasSpots._genCircle({ ...ov.pos![i], mPerPx: ov.mPerPx!, size: null }));
     }
 
     const filtered = ov

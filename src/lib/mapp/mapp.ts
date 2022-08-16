@@ -141,21 +141,24 @@ export class Mapp extends Deferrable {
 
         if (this.map!.hasFeatureAtPixel(e.pixel)) {
           this.map!.getViewport().style.cursor = 'pointer';
+          // feature is overlay in our parlance.
           this.map!.forEachFeatureAtPixel(
             e.pixel,
             (f) => {
               const idx = f.getId() as number | undefined;
               const id = f.get('id') as number | string;
+              console.log(idx, id);
+
               if (idx === undefined) {
                 // 0 is falsy.
-                console.error("Feature doesn't have an id.");
+                console.error("Overlay doesn't have an id.");
                 return true;
               }
               v({ idx, id }, e);
               return true; // Terminates search.
             },
             {
-              layerFilter: (layer) => layer === currLayer,
+              layerFilter: (layer) => layer !== this.persistentLayers.active.layer, // Ignore active spot.
               hitTolerance: 20
             }
           );

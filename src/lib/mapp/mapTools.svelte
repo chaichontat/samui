@@ -34,7 +34,7 @@
 
   <!-- Overlay selector -->
   {#if showImgControl}
-    <OverlayTool {sample} {map} />
+    <OverlayTool {map} />
   {/if}
 </section>
 

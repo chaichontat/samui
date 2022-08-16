@@ -9,7 +9,8 @@
   import { fromCSV, getFileFromEvent } from '../io';
   import { sFeature, sOverlay, sSample } from '../store';
 
-  export let sample: Sample;
+  let sample: Sample;
+  $: sample = $sSample;
   export let map: Mapp;
 
   const setOpacity = oneLRU(async (name: string, opacity: string) => {
@@ -17,8 +18,17 @@
     map.layers[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
 
-  const setVisible = (name: string, c: boolean | null) =>
-    map.layers[name]?.layer?.setVisible(c ?? false);
+  const outlinevis: Record<string, boolean> = {};
+  const visible: Record<string, boolean> = {};
+  const setVisible = (name: string, c: boolean | null, outline = false) => {
+    if (outline) {
+      map.layers[name]?.outline?.layer?.setVisible(c ?? false);
+      outlinevis[name] = c ?? false;
+    } else {
+      map.layers[name]?.layer?.setVisible(c ?? false);
+      visible[name] = c ?? false;
+    }
+  };
 
   async function addOverlay(ev: CustomEvent<{ e: EventTarget & HTMLInputElement }>) {
     const name = prompt('Overlay name?');
@@ -50,12 +60,20 @@
       name,
       shape: 'circle',
       pos: pos.data as Coord[],
-      mPerPx: $sSample.image.mPerPx,
+      mPerPx: sample.image.mPerPx,
       addedOnline: true
     };
 
     sample!.overlays[name] = new OverlayData(op);
     await map.update({ overlays: sample!.overlays, refresh: true });
+    $sSample = $sSample;
+    for (const [name, v] of Object.entries(visible)) {
+      setVisible(name, v);
+    }
+    for (const [name, v] of Object.entries(outlinevis)) {
+      setVisible(name, v, true);
+    }
+    $sOverlay = name;
   }
 </script>
 
@@ -73,8 +91,7 @@
               class="mr-1 cursor-pointer"
               use:tooltip={{ content: 'Border' }}
               checked
-              on:change={(e) =>
-                map.layers[ovName]?.outline?.layer?.setVisible(e.currentTarget.checked ?? false)}
+              on:change={(e) => setVisible(ovName, e.currentTarget.checked, true)}
             />
 
             <!-- Fill checkbox -->
@@ -83,7 +100,7 @@
               class="cursor-pointer"
               checked
               use:tooltip={{ content: 'Fill' }}
-              on:change={(e) => setVisible(ovName, e.currentTarget.checked ?? false)}
+              on:change={(e) => setVisible(ovName, e.currentTarget.checked)}
             />
             &nbsp;
           </td>
