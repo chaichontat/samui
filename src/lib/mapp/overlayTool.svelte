@@ -9,7 +9,8 @@
   import { fromCSV, getFileFromEvent } from '../io';
   import { sFeature, sOverlay, sSample } from '../store';
 
-  export let sample: Sample;
+  let sample: Sample;
+  $: sample = $sSample;
   export let map: Mapp;
 
   const setOpacity = oneLRU(async (name: string, opacity: string) => {
@@ -50,12 +51,13 @@
       name,
       shape: 'circle',
       pos: pos.data as Coord[],
-      mPerPx: $sSample.image.mPerPx,
+      mPerPx: sample.image.mPerPx,
       addedOnline: true
     };
 
     sample!.overlays[name] = new OverlayData(op);
     await map.update({ overlays: sample!.overlays, refresh: true });
+    $sSample = $sSample;
   }
 </script>
 
