@@ -25,23 +25,22 @@
   }
 
   let draw: Draww | undefined;
-  let selecting = false;
 
   $: map = $sMapp;
   $: sample = $sSample;
 
   onMount(async () => {
     await map.promise;
-    map.draw!.draw.on('drawend', () => (selecting = false));
+    map.draw!.draw.on('drawend', () => ($annotating.selecting = false));
     draw = map.draw;
   });
 
   // Enable/disable polygon draw
   $: if (map.map && map.draw) {
-    if (selecting) {
+    if ($annotating.selecting) {
       if ($annotating.currKey === null) {
         alert('Set annotation name first');
-        selecting = false;
+        $annotating.selecting = false;
       } else {
         map.map?.addInteraction(map.draw.draw);
         map.map.getViewport().style.cursor = 'crosshair';
@@ -49,31 +48,6 @@
     } else {
       map.map.removeInteraction(map.draw.draw);
       map.map.getViewport().style.cursor = 'grab';
-    }
-  }
-
-  let selectionNames: string[] = [];
-
-  // TODO: Use makedownload.
-  function handleExport(t: 'spots' | 'selections') {
-    if (!map.mounted || !sample) return;
-    switch (t) {
-      case 'selections':
-        toJSON(`selections_${sample.name}.json`, {
-          sample: sample.name,
-          type: 'selections',
-          values: draw!.dumpPolygons()
-        });
-        break;
-      case 'spots':
-        toJSON(`spots_${sample.name}.json`, {
-          sample: sample.name,
-          type: 'spots',
-          values: draw!.dumpAllPoints()
-        });
-        break;
-      default:
-        throw new Error('Unknown export type');
     }
   }
 
@@ -107,7 +81,7 @@
       <button
         class="py-1 text-sm text-white"
         on:click={() => handleNewKey(prompt('Enter new key.'))}
-        disabled={selecting}
+        disabled={$annotating.selecting}
       >
         <Plus class="h-5 w-5 stroke-current stroke-[2.5]" />
       </button>
@@ -132,8 +106,8 @@
       Selections
       <button
         class="py-1 text-sm text-white"
-        on:click={() => (selecting = true)}
-        disabled={selecting}
+        on:click={() => ($annotating.selecting = true)}
+        disabled={$annotating.selecting}
       >
         <Plus class="h-5 w-5 stroke-current stroke-[2.5]" />
       </button>

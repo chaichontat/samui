@@ -54,12 +54,9 @@ export const sOverlay = writable(undefined as string | undefined);
 /// Overlay -> Group/feature
 export const sFeature = writable({} as Record<string, { group: string; feature: string }>);
 
-export const annotating: Writable<{
-  currKey: number | null;
-  keys: string[];
-  show: boolean;
-}> = writable({
-  currKey: null,
-  keys: [],
-  show: true
+export const annotating = writable({
+  currKey: null as number | null,
+  keys: [] as string[],
+  show: true,
+  selecting: false
 });

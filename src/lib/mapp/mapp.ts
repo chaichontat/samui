@@ -136,7 +136,7 @@ export class Mapp extends Deferrable {
         if (!ol) return;
 
         const comp = this.layers[ol];
-        const currLayer = comp.outline?.visible ? comp.outline.layer : comp.layer;
+        const currLayer = comp.layer;
         if (!currLayer) throw new Error('No layer');
 
         if (this.map!.hasFeatureAtPixel(e.pixel)) {
@@ -147,8 +147,6 @@ export class Mapp extends Deferrable {
             (f) => {
               const idx = f.getId() as number | undefined;
               const id = f.get('id') as number | string;
-              console.log(idx, id);
-
               if (idx === undefined) {
                 // 0 is falsy.
                 console.error("Overlay doesn't have an id.");
@@ -158,7 +156,7 @@ export class Mapp extends Deferrable {
               return true; // Terminates search.
             },
             {
-              layerFilter: (layer) => layer !== this.persistentLayers.active.layer, // Ignore active spot.
+              layerFilter: (layer) => layer === currLayer, // Ignore active spot.
               hitTolerance: 20
             }
           );
