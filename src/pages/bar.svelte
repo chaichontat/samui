@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser } from '$app/env';
+  import { browser } from '$app/environment';
   import type { ChunkedJSON, Sparse } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import { genUpdate, oneLRU } from '$src/lib/utils';

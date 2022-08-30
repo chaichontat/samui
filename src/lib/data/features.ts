@@ -1,4 +1,4 @@
-import { browser } from '$app/env';
+import { browser } from '$app/environment';
 import pako from 'pako';
 import { Deferrable, genLRU, getFile, oneLRU } from '../utils';
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser } from '$app/env';
+  import { browser } from '$app/environment';
   import { setVal } from '$src/lib/components/featureSearchBox.svelte';
   import { onMount } from 'svelte';
   import embed from 'vega-embed';
