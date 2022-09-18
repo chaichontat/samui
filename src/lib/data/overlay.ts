@@ -29,6 +29,7 @@ export class OverlayData extends Deferrable {
   url?: Url;
   readonly name: string;
   shape: Shape;
+  type: 'single' | 'multi' = 'single';
   pos?: Coord[];
   size?: number;
   mPerPx?: number;

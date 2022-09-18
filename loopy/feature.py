@@ -1,14 +1,10 @@
-# pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 
-import gzip
-import json
-from typing import Any, Literal
+from typing import Literal
 
-import numpy as np
 from anndata import AnnData
 from scipy.sparse import csc_matrix, csr_matrix
 
-from .utils import ReadonlyModel, Url
+from .utils import ReadonlyModel, Url, concat_json
 
 
 class Coord(ReadonlyModel):
@@ -23,19 +19,22 @@ class CoordId(Coord):
 class OverlayParams(ReadonlyModel):
     """
     name: Name of the overlay
+    type: Type of the overlay 'single', 'multi'
     shape: Shape of the overlay (currently only circle)
     url: points to a json file with the coordinates of the overlay
         in {x: number, y: number, id?: string}[].
+        or
+        ChunkedHeader
     mPerPx: micrometers per pixel
     size: size of the overlay in micrometers
     """
 
     name: str
+    type: Literal["single", "multi"] = "single"
     shape: Literal["circle"]
     url: Url
     mPerPx: float | None = None
     size: float | None = None
-
 
 class PlainJSONParams(ReadonlyModel):
     type: Literal["plainJSON"] = "plainJSON"
@@ -54,10 +53,11 @@ class ChunkedJSONParams(ReadonlyModel):
     overlay: str | None = None
 
 
-class ChunkedJSONHeader(ReadonlyModel):
+class ChunkedHeader(ReadonlyModel):
     names: dict[str, int] | None = None
     ptr: list[int]
     length: int
+    dtype: Literal['json', 'csv'] = 'json'
     activeDefault: str | None = None
     sparseMode: Literal["record", "array"] | None = None
 
@@ -65,28 +65,9 @@ class ChunkedJSONHeader(ReadonlyModel):
 FeatureParams = ChunkedJSONParams | PlainJSONParams
 
 
-def concat(objs: list[Any]) -> tuple[np.ndarray, bytearray]:
-    """Concatenate a list of JSON serializable objects into a single gzipped binary
-    along with pointers to the start of each object.
-
-    Returns:
-        tuple[np.ndarray, bytearray]: Pointer array and binary data
-    """
-    ptr = np.zeros(len(objs) + 1, dtype=int)
-    curr = 0
-    outbytes = bytearray()
-    for i, o in enumerate(objs):
-        if o is not None:
-            comped = gzip.compress(json.dumps(o).encode())
-            outbytes += comped
-            curr += len(comped)
-        ptr[i + 1] = curr
-    return ptr, outbytes
-
-
 def get_compressed_genes(
     vis: AnnData, mode: Literal["csr", "csc"] = "csc"
-) -> tuple[ChunkedJSONHeader, bytearray]:
+) -> tuple[ChunkedHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(vis.X)  # csR
     elif mode == "csc":
@@ -114,7 +95,7 @@ def get_compressed_genes(
             )
 
     names = {name: i for i, name in enumerate(names)}
-    ptr, outbytes = concat(objs)
+    ptr, outbytes = concat_json(objs)
     match mode:
         case "csr":
             length = cs.shape[1]
@@ -124,7 +105,7 @@ def get_compressed_genes(
             raise ValueError("Unknown mode")
 
     return (
-        ChunkedJSONHeader(
+        ChunkedHeader(
             names=names,
             ptr=ptr.tolist(),
             length=length,

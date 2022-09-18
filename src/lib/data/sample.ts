@@ -5,7 +5,7 @@ import { OverlayData, type OverlayParams } from './overlay';
 
 export type SampleParams = {
   name: string;
-  imgParams: ImageParams;
+  imgParams?: ImageParams;
   overlayParams?: OverlayParams[];
   handle?: FileSystemDirectoryHandle;
   activeDefault?: FeatureAndGroup;
@@ -13,11 +13,11 @@ export type SampleParams = {
 
 export class Sample extends Deferrable {
   name: string;
-  imgParams: ImageParams;
+  imgParams?: ImageParams;
   overlayParams?: OverlayParams[];
 
-  image: Image;
   overlays: Record<string, OverlayData>;
+  image?: Image;
   handle?: FileSystemDirectoryHandle;
   activeDefault: FeatureAndGroup;
 
@@ -28,7 +28,9 @@ export class Sample extends Deferrable {
     super();
     this.name = name;
     this.imgParams = imgParams;
-    this.image = new Image(this.imgParams, false);
+    if (this.imgParams) {
+      this.image = new Image(this.imgParams, false);
+    }
     this.overlayParams = overlayParams;
     this.handle = handle;
     this.activeDefault = activeDefault ?? {};
@@ -51,7 +53,7 @@ export class Sample extends Deferrable {
     if (this.hydrated) return this;
     console.debug(`Hydrating ${this.name}.`);
     await Promise.all([
-      this.image.hydrate(this.handle),
+      this.image?.hydrate(this.handle),
       ...Object.values(this.overlays).map((o) => o.hydrate(this.handle))
     ]);
 
