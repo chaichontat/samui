@@ -52,7 +52,7 @@ class ChunkedCSVParams(ReadonlyModel):
     dataType: Literal["categorical", "quantitative"] = "quantitative"
 
 class ChunkedCSVHeader(ReadonlyModel):
-    names: dict[str, int] | None = None
+    names: list[str] | None = None
     ptr: list[int]
     length: int
     activeDefault: str | None = None
@@ -92,7 +92,6 @@ def get_compressed_genes(
                 })
             )
 
-    names = {name: i for i, name in enumerate(names)}
     ptr, outbytes = concat(objs, lambda x: x.to_csv(index=False).encode())
     match mode:
         case "csr":
@@ -104,7 +103,7 @@ def get_compressed_genes(
 
     return (
         ChunkedCSVHeader(
-            names=names,
+            names=names.to_list(),
             ptr=ptr.tolist(),
             length=length,
             sparseMode="array" if mode == "csc" else "record",

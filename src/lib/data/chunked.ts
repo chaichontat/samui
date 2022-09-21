@@ -24,7 +24,7 @@ export interface ChunkedCSVParams {
 
 export type ChunkedCSVHeader = {
   length: number;
-  names: Record<string, number> | null;
+  names: string[] | null;
   ptr: number[];
   coordName?: string;
   mPerPx?: number;
@@ -38,6 +38,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
         dataType: 'quantitative' | 'categorical';
         data: RetrievedData;
         coordName: string | undefined;
+        mPerPx: number | undefined;
       }
     | undefined
   >;
@@ -129,7 +130,12 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
       console.log(ret.data);
 
       const data = densify ? densify(ret.data) : ret.data;
-      return { dataType: this.dataType, data, coordName: this.header?.coordName };
+      return {
+        dataType: this.dataType,
+        data,
+        coordName: this.header?.coordName,
+        mPerPx: this.header?.mPerPx
+      };
     });
   }
 
@@ -157,19 +163,27 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
         (res) => res.json() as Promise<ChunkedCSVHeader>
       );
     }
-    ({
-      names: this.names,
-      ptr: this.ptr,
-      length: this.length,
-      activeDefault: this.activeDefault,
-      sparseMode: this.sparseMode
-    } = this.header!);
 
-    this.featNames = Object.keys(this.names!);
-    if (!this.activeDefault && this.names) {
-      this.activeDefault = Object.keys(this.names)[0];
+    if (this.header) {
+      this.featNames = this.header.names =
+        this.header.names ?? [...Array(this.header.length).keys()].map((i) => i.toString());
+
+      this.names = {};
+      for (const [i, name] of this.featNames.entries()) {
+        this.names[name] = i;
+      }
+
+      ({
+        ptr: this.ptr,
+        length: this.length,
+        activeDefault: this.activeDefault,
+        sparseMode: this.sparseMode
+      } = this.header!);
+
+      if (!this.activeDefault && this.names) {
+        this.activeDefault = Object.keys(this.names)[0];
+      }
     }
-
     this.hydrated = true;
     return this;
   }

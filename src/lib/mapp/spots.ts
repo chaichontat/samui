@@ -81,7 +81,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   uid: string;
 
   constructor(map: Mapp) {
-    super(map, genSpotStyle('categorical', 20));
+    super(map, genSpotStyle('categorical', 2));
     this.uid = rand();
     this._currStyle = 'categorical';
   }
@@ -109,6 +109,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
   updateProperties({ dataType, data }: FeatureValues) {
     if (!data) throw new Error('No intensity provided');
+
+    // TODO: Subsample if coords subsampled.
     if (data?.length !== this.source?.getFeatures().length) {
       console.error(
         `Intensity length doesn't match. Expected: ${this.source?.getFeatures().length}, got: ${

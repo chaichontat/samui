@@ -15,10 +15,11 @@ export async function getSample(s: string) {
 }
 
 function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
-  if (!r.imgParams) throw new Error(`No imgParams in ${r.name!}`);
-  for (const url of r.imgParams.urls) {
-    url.url = `${dirUrl}/${url.url}`;
-    url.type = 'network';
+  if (r.imgParams) {
+    for (const url of r.imgParams.urls) {
+      url.url = `${dirUrl}/${url.url}`;
+      url.type = 'network';
+    }
   }
 
   if (r.coordParams) {

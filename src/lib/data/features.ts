@@ -12,7 +12,7 @@ export type FeatureAndGroup = {
 };
 
 export type DataType = 'categorical' | 'quantitative';
-export type RetrievedData = (number | string)[] | Record<string, number | string> | Coord[];
+export type RetrievedData = Record<string, number | string>[];
 
 export interface FeatureValues {
   dataType: 'quantitative' | 'categorical';
@@ -29,6 +29,8 @@ export interface PlainCSVParams extends CSVParams {
   url?: Url;
   values?: RetrievedData;
   coordName?: string;
+  mPerPx?: number;
+  size?: number;
 }
 
 export type Sparse = { index: number; value: number }[];
@@ -84,15 +86,22 @@ export class PlainCSV extends Deferrable implements FeatureData {
   readonly name: string;
   readonly dataType: DataType;
   readonly coordName: string | undefined;
+  readonly mPerPx: number | undefined;
+  readonly size: number | undefined;
   values?: RetrievedData;
 
-  constructor({ name, url, dataType, values, coordName }: PlainCSVParams, autoHydrate = false) {
+  constructor(
+    { name, url, dataType, values, coordName, mPerPx, size }: PlainCSVParams,
+    autoHydrate = false
+  ) {
     super();
     this.name = name;
     this.url = url;
     this.values = values;
     this.dataType = dataType;
     this.coordName = coordName;
+    this.mPerPx = mPerPx;
+    this.size = size;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -128,7 +137,13 @@ export class PlainCSV extends Deferrable implements FeatureData {
     if (!this.hydrated) {
       await this.hydrate();
     }
-    return { dataType: this.dataType, data: this.values!, coordName: this.coordName };
+    return {
+      dataType: this.dataType,
+      data: this.values!,
+      coordName: this.coordName,
+      mPerPx: this.mPerPx,
+      size: this.size
+    };
   }
 }
 

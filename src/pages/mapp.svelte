@@ -1,11 +1,13 @@
 <script lang="ts">
   import type { FeatureAndGroup } from '$lib/data/features';
+  import { CoordsData } from '$src/lib/data/coord';
   import type { Sample } from '$src/lib/data/sample';
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
-  import { keyOneLRU, oneLRU } from '$src/lib/utils';
+  import { keyLRU, keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
+  import View from 'ol/View';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
   import { annotating, overlays, sFeature, sId, sMapp, sOverlay } from '../lib/store';
@@ -95,7 +97,7 @@
       await sample.promise;
       const img = sample.image;
       await map.update({ image: img, overlays: sample.overlays });
-      convertImgCtrl = colorVarFactory(img.channel);
+      if (img) convertImgCtrl = colorVarFactory(img.channel);
       currSample = sample.name;
     } else {
       // When adding outlines in app.
@@ -111,12 +113,68 @@
       args: [$sFeature[ol]]
     }).catch(console.error);
   }
+
+  const genCoords = keyLRU((name: string, pos: Record<string, number>[], mPerPx: number) => {
+    return new CoordsData({
+      name,
+      shape: 'circle',
+      pos,
+      mPerPx
+    });
+  });
+
   const updateFeature = keyOneLRU(async (fn: FeatureAndGroup) => {
     if (!fn.feature) return false;
     const res = await sample!.getFeature(fn);
     if (!res) return false;
-    if (res.coordName) $overlays[$sOverlay].update(sample!.coords[res.coordName]);
+
+    const mPerPx = res.mPerPx ?? sample?.image?.mPerPx;
+    if (mPerPx == undefined) {
+      console.error(`mPerPx is undefined at ${fn.feature}.`);
+      return false;
+    }
+
+    if (res.coordName) {
+      $overlays[$sOverlay].update(sample!.coords[res.coordName]);
+    } else {
+      if (!('x' in res.data[0]) || !('y' in res.data[0])) {
+        console.error("Feature doesn't have x or y.");
+        return false;
+      }
+      $overlays[$sOverlay].update(
+        genCoords({
+          key: `${sample!.name}-${fn.group}-${fn.feature}`,
+          args: [fn.feature, res.data, mPerPx]
+        })
+      );
+    }
+
     $overlays[$sOverlay]?.updateProperties(res);
+    if (!map.map?.getView().getCenter()) {
+      let mx = 0;
+      let my = 0;
+      let max = [0, 0];
+      for (const { x, y } of res.data) {
+        mx += Number(x);
+        my += Number(y);
+        max[0] = Math.max(max[0], Number(x));
+        max[1] = Math.max(max[1], Number(y));
+      }
+      mx /= res.data.length;
+      my /= res.data.length;
+      console.log(res.data, mx, my);
+
+      // TODO: Deal with hard-coded zoom.
+      map.map?.setView(
+        new View({
+          center: [mx * mPerPx, -my * mPerPx],
+          projection: 'EPSG:3857',
+          resolution: 1e-4,
+          minResolution: 1e-7,
+          maxResolution: Math.max(max[0], max[1]) * mPerPx
+        })
+      );
+    }
   });
 
   // Hover/overlay.
@@ -155,6 +213,12 @@
 
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
+<button
+  class="h-50 w-50 absolute z-50 bg-red-500 text-xl"
+  on:click={() => console.log(map.map?.getView())}
+>
+  Meh
+</button>
 
 <section
   class="relative h-full w-full overflow-hidden"
@@ -204,9 +268,9 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if image?.channel !== 'rgb'}
+        {#if Array.isArray(image?.channel)}
           <svelte:component this={ImgControl} channels={image?.channel} bind:imgCtrl {small} />
-        {:else}
+        {:else if image?.channel === 'rgb'}
           <svelte:component this={ImgControl} bind:imgCtrl {small} />
         {/if}
       </div>

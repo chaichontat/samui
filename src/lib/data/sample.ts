@@ -82,7 +82,6 @@ export class Sample extends Deferrable {
       ...Object.values(this.features).map((o) => o.hydrate(this.handle))
     ]);
 
-    console.log(this.features['genes'].retrieve('GFAP'));
     this.hydrated = true;
     return this;
   }

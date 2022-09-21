@@ -12,6 +12,7 @@ export interface CoordsParams {
   size?: number;
   pos?: Coord[];
   addedOnline?: boolean;
+  sample?: number;
 }
 
 export class CoordsData extends Deferrable {
@@ -19,24 +20,31 @@ export class CoordsData extends Deferrable {
   readonly name: string;
   shape: Shape;
   pos?: Coord[];
+  _posOri?: Coord[];
   size?: number;
   mPerPx: number;
   addedOnline: boolean;
+  sample: number;
 
   constructor(
-    { name, shape, url, size, mPerPx, pos, addedOnline }: CoordsParams,
+    { name, shape, url, size, mPerPx, pos, addedOnline, sample }: CoordsParams,
     autoHydrate = false
   ) {
     super();
     this.name = name;
     this.shape = shape;
     this.url = url;
-    this.pos = pos;
+    this._posOri = this.pos = pos;
     this.size = size;
     this.mPerPx = mPerPx;
     this.addedOnline = addedOnline ?? false;
+    this.sample = sample ?? 100000;
 
     if (!this.url && !this.pos) throw new Error('Must provide url or value');
+    if (this.pos) {
+      this.pos.forEach((p, i) => (p.idx = i));
+      this.pos = this.subsample(this.sample);
+    }
 
     if (autoHydrate) {
       this.hydrate().catch(console.error);
@@ -46,7 +54,7 @@ export class CoordsData extends Deferrable {
   get sizePx() {
     if (!this.mPerPx) throw new Error('Must provide mPerPx');
     // Defaults to 20 for objects without size.
-    return this.size ? this.size / this.mPerPx : 20;
+    return this.size ? this.size / this.mPerPx : 2;
   }
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
@@ -54,12 +62,23 @@ export class CoordsData extends Deferrable {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      await fromCSV(this.url.url, { download: true }).then((x) => (this.pos = x?.data as Coord[]));
+      await fromCSV(this.url.url, { download: true }).then(
+        (x) => (this._posOri = this.pos = x?.data as Coord[])
+      );
     } else {
       console.info(`Overlay ${this.name} has no url or pos.`);
     }
     this.pos!.forEach((p, i) => (p.idx = i));
+    this.pos = this.subsample(this.sample);
     this.hydrated = true;
     return this;
+  }
+
+  subsample(n: number) {
+    if (this.pos!.length > n) {
+      const step = Math.ceil(this.pos!.length / n);
+      return this.pos!.filter((_, i) => i % step === 0);
+    }
+    return this.pos;
   }
 }
