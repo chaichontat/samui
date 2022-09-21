@@ -112,6 +112,7 @@
     }).catch(console.error);
   }
   const updateFeature = keyOneLRU(async (fn: FeatureAndGroup) => {
+    if (!fn.feature) return false;
     const res = await sample!.getFeature(fn);
     if (!res) return false;
     if (res.coordName) $overlays[$sOverlay].update(sample!.coords[res.coordName]);

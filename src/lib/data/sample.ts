@@ -88,8 +88,6 @@ export class Sample extends Deferrable {
   }
 
   async getFeature(fn: FeatureAndGroup) {
-    console.log(this.features[fn.feature]);
-
     const f =
       fn.group === 'Misc'
         ? await this.features[fn.feature]?.retrieve()
