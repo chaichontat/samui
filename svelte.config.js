@@ -13,12 +13,7 @@ const config = {
       assets: 'build',
       fallback: null,
       compress: true
-    }),
-
-    prerender: {
-      default: true,
-      crawl: true
-    }
+    })
   }
 };
 
