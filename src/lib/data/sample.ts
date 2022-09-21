@@ -1,12 +1,16 @@
 import { Deferrable } from '../utils';
-import type { FeatureAndGroup } from './features';
+import { ChunkedCSV, type ChunkedCSVParams } from './chunked';
+import { CoordsData, type CoordsParams } from './coord';
+import { PlainCSV, type FeatureAndGroup, type PlainCSVParams } from './features';
 import { Image, type ImageParams } from './image';
-import { OverlayData, type OverlayParams } from './overlay';
+
+type FeatureParams = ChunkedCSVParams | PlainCSVParams;
 
 export type SampleParams = {
   name: string;
   imgParams?: ImageParams;
-  overlayParams?: OverlayParams[];
+  coordParams?: CoordsParams[];
+  featParams?: FeatureParams[];
   handle?: FileSystemDirectoryHandle;
   activeDefault?: FeatureAndGroup;
 };
@@ -14,15 +18,18 @@ export type SampleParams = {
 export class Sample extends Deferrable {
   name: string;
   imgParams?: ImageParams;
-  overlayParams?: OverlayParams[];
+  coordsParams?: CoordsParams[];
+  featureParams?: FeatureParams[];
 
-  overlays: Record<string, OverlayData>;
+  features: Record<string, ChunkedCSV | PlainCSV> = {};
+  coords: Record<string, CoordsData> = {};
+
   image?: Image;
   handle?: FileSystemDirectoryHandle;
   activeDefault: FeatureAndGroup;
 
   constructor(
-    { name, imgParams, overlayParams, handle, activeDefault }: SampleParams,
+    { name, imgParams, coordParams, featParams, handle, activeDefault }: SampleParams,
     autoHydrate = false
   ) {
     super();
@@ -31,15 +38,32 @@ export class Sample extends Deferrable {
     if (this.imgParams) {
       this.image = new Image(this.imgParams, false);
     }
-    this.overlayParams = overlayParams;
+    // TODO: Rename on Python side.
+    const featureParams = featParams;
+    this.coordsParams = coordParams;
+    this.featureParams = featureParams;
     this.handle = handle;
     this.activeDefault = activeDefault ?? {};
 
-    this.overlays = {} as Record<string, OverlayData>;
+    if (coordParams) {
+      for (const o of coordParams) {
+        this.coords[o.name] = new CoordsData(o);
+      }
+    }
+    console.log(featureParams);
 
-    if (overlayParams) {
-      for (const o of overlayParams) {
-        this.overlays[o.name] = new OverlayData(o);
+    if (featureParams) {
+      for (const f of featureParams) {
+        switch (f.type) {
+          case 'chunkedCSV':
+            this.features[f.name] = new ChunkedCSV(f, false);
+            break;
+          case 'plainCSV':
+            this.features[f.name] = new PlainCSV(f, false);
+            break;
+          default:
+            throw new Error('Unsupported feature type at Sample.constructor');
+        }
       }
     }
 
@@ -54,10 +78,42 @@ export class Sample extends Deferrable {
     console.debug(`Hydrating ${this.name}.`);
     await Promise.all([
       this.image?.hydrate(this.handle),
-      ...Object.values(this.overlays).map((o) => o.hydrate(this.handle))
+      ...Object.values(this.coords).map((o) => o.hydrate(this.handle)),
+      ...Object.values(this.features).map((o) => o.hydrate(this.handle))
     ]);
 
+    console.log(this.features['genes'].retrieve('GFAP'));
     this.hydrated = true;
     return this;
+  }
+
+  async getFeature(fn: FeatureAndGroup) {
+    console.log(this.features[fn.feature]);
+
+    const f =
+      fn.group === 'Misc'
+        ? await this.features[fn.feature]?.retrieve()
+        : await this.features[fn.group]?.retrieve(fn.feature);
+    if (!f || !f.data) {
+      console.error(`getFeature: ${fn.feature} not found.`);
+      return;
+    }
+    return f;
+  }
+
+  genFeatureList() {
+    const featureList = [];
+    const misc = [];
+    for (const f of Object.values(this.features)) {
+      if (f instanceof ChunkedCSV) {
+        featureList.push({ group: f.name, features: Object.keys(f.names!) });
+      } else if (f instanceof PlainCSV) {
+        misc.push(f.name);
+      } else {
+        throw new Error('Unsupported feature type at Sample.genFeatureList');
+      }
+    }
+    featureList.push({ group: 'Misc', features: misc });
+    return featureList;
   }
 }

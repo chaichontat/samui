@@ -7,8 +7,8 @@ import type GeoTIFFSource from 'ol/source/GeoTIFF';
 import VectorSource from 'ol/source/Vector';
 import type { Style } from 'ol/style';
 import type { LiteralStyle } from 'ol/style/literal';
-import type { OverlayData } from '../data/overlay';
 
+import type { CoordsData } from '../data/coord';
 import { Deferrable } from '../utils';
 import type { Mapp } from './mapp';
 import type { CanvasSpots } from './spots';
@@ -32,22 +32,19 @@ type MyWebGLPointsLayer = WebGLPointsLayer<VectorSource<Point>>;
 export type OLLayer = Layer | MyWebGLPointsLayer;
 
 export class MapComponent<T extends OLLayer> extends Deferrable {
-  readonly name: string;
   source: VectorSource<Geometry>;
   map: Mapp;
   layer?: T;
   style: T extends MyWebGLPointsLayer ? LiteralStyle : Style;
-  overlay?: OverlayData;
+  coords?: CoordsData;
 
   outline?: CanvasSpots;
 
   constructor(
-    name: string,
     map: Mapp,
     style: T extends WebGLPointsLayer<VectorSource<Point>> ? LiteralStyle : Style
   ) {
     super();
-    this.name = name;
     this.map = map;
     this.style = style;
     this.source = new VectorSource();
@@ -87,7 +84,7 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
     this.source.dispose();
   }
 
-  update(ol: OverlayData, ...args: unknown[]) {
+  update(coords: CoordsData, ...args: unknown[]) {
     throw new Error('Method not implemented.');
   }
 

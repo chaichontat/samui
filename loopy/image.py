@@ -34,9 +34,10 @@ def gen_geotiff(img: np.ndarray, path: Path, scale: float, rgb: bool = False) ->
         height = img.shape[1]
         width = img.shape[2]
 
+    # JPEG compression can only handle up to 4 channels at a time.
     if z < 4:
         names = ("",)
-    elif z > 6:
+    elif z > 8:
         raise ValueError("Too many channels")
     else:
         names = ("_1", "_2")
@@ -52,17 +53,17 @@ def gen_geotiff(img: np.ndarray, path: Path, scale: float, rgb: bool = False) ->
             driver="GTiff",
             height=height,
             width=width,
-            count=3 if i == 0 else 4,
+            count=min(4, z) if i == 0 else z-4,
             photometric="RGB" if rgb else "MINISBLACK",
             transform=rasterio.Affine(
                 scale, 0, 0, 0, -scale, 0
-            ),  # https://gdal.org/tutorials/geotransforms_tut.html
+            ),  # https://gdal.org/tutorials/geotransforms_tut.html # Flip y-axis.
             dtype=img.dtype,
             crs="EPSG:32648",  # meters
             tiled=True,
         ) as dst:  # type: ignore
-            for j in range(3):
-                idx = j + 3 * i
+            for j in range(4):
+                idx = j + 4 * i
                 dst.write(img[idx] if not rgb else img[:, :, idx], j + 1)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
     return ps

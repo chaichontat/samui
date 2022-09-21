@@ -2,6 +2,8 @@ import sampleList from '$lib/data/meh';
 import { get, writable, type Writable } from 'svelte/store';
 import type { Sample } from './data/sample';
 import type { Mapp } from './mapp/mapp';
+import type { Overlay } from './mapp/overlay';
+import type { WebGLSpots } from './mapp/spots';
 
 export type Idx = { id?: number | string | null; idx: number; source: string };
 
@@ -15,6 +17,7 @@ export const userState = writable({
 });
 
 // Samples
+export const overlays: Writable<Record<string, WebGLSpots>> = writable({});
 export const samples: Writable<Record<string, Sample>> = writable({});
 export const mapList: Writable<number[]> = writable([]);
 export const sMapp = writable(undefined as Mapp | undefined);

@@ -4,8 +4,11 @@ dependencies:
   - python=3.10
   - click
   - gdal
+  - pip
   - pydantic
   - rasterio
   - scanpy
   - scipy
   - tifffile
+  - pip:
+      - -e .

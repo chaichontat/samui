@@ -4,11 +4,12 @@
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
+  import { Overlay } from '$src/lib/mapp/overlay';
   import { keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, sFeature, sId, sMapp, sOverlay } from '../lib/store';
+  import { annotating, mapList, overlays, sFeature, sId, sMapp, sOverlay } from '../lib/store';
 
   export let sample: Sample | undefined;
   $: sample?.hydrate().catch(console.error);
@@ -36,29 +37,29 @@
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
         if (id_) $sId = { ...id_, source: 'map' };
-      }),
+      })
 
-      click: (id_: { idx: number; id: number | string } | null) => {
-        if (!$sOverlay) return;
-        const ov = map.layers[$sOverlay]?.overlay;
-        if ($annotating.currKey !== null && id_ && ov) {
-          const idx = id_.idx;
-          const existing = map.persistentLayers.annotations.get(idx);
-          if (
-            existing === null ||
-            existing.get('value') !== $annotating.keys[$annotating.currKey]
-          ) {
-            map.persistentLayers.annotations.add(
-              idx,
-              $annotating.keys[$annotating.currKey],
-              ov,
-              $annotating.keys
-            );
-          } else {
-            map.persistentLayers.annotations.delete(idx);
-          }
-        }
-      }
+      // click: (id_: { idx: number; id: number | string } | null) => {
+      //   if (!$sOverlay) return;
+      //   const ov = map.layers[$sOverlay]?.overlay;
+      //   if ($annotating.currKey !== null && id_ && ov) {
+      //     const idx = id_.idx;
+      //     const existing = map.persistentLayers.annotations.get(idx);
+      //     if (
+      //       existing === null ||
+      //       existing.get('value') !== $annotating.keys[$annotating.currKey]
+      //     ) {
+      //       map.persistentLayers.annotations.add(
+      //         idx,
+      //         $annotating.keys[$annotating.currKey],
+      //         ov,
+      //         $annotating.keys
+      //       );
+      //     } else {
+      //       map.persistentLayers.annotations.delete(idx);
+      //     }
+      //   }
+      // }
     });
   });
 
@@ -107,14 +108,15 @@
   $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
     const ol = $sOverlay;
     updateFeature({
-      key: `${sample.name}-${ol}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
-      args: [ol, $sFeature[ol]]
+      key: `${sample.name}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
+      args: [$sFeature[ol]]
     }).catch(console.error);
   }
-  const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
-    const res = await sample!.overlays[ov].getFeature(fn);
+  const updateFeature = keyOneLRU(async (fn: FeatureAndGroup) => {
+    const res = await sample!.getFeature(fn);
     if (!res) return false;
-    map.layers[ov]?.updateProperties(res);
+    if (res.coordName) $overlays[$sOverlay].update(sample!.coords[res.coordName]);
+    $overlays[$sOverlay]?.updateProperties(res);
   });
 
   // Hover/overlay.
@@ -191,7 +193,7 @@
     </section>
 
     <!-- Top right tools -->
-    <MapTools {sample} {map} {width} bind:showImgControl />
+    <MapTools {map} {width} bind:showImgControl />
 
     <!-- Img control -->
     <div

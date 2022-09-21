@@ -1,14 +1,13 @@
 import type { Image } from '$lib/data/image';
-import { difference, intersection } from 'lodash-es';
 import { Map, MapBrowserEvent, Overlay } from 'ol';
 import ScaleLine from 'ol/control/ScaleLine.js';
 import Zoom from 'ol/control/Zoom.js';
 
 import { get } from 'svelte/store';
-import type { OverlayData } from '../data/overlay';
-import { sOverlay } from '../store';
+import type { CoordsData } from '../data/coord';
+import { mapList, overlays, sOverlay } from '../store';
 
-import { Deferrable } from '../utils';
+import { Deferrable, rand } from '../utils';
 import { Background } from './background';
 import type { MapComponent, OLLayer } from './definitions';
 import { Draww } from './selector';
@@ -23,7 +22,7 @@ export class Mapp extends Deferrable {
     active: ActiveSpots;
   };
   draw?: Draww;
-  overlays?: Record<string, OverlayData>;
+  overlays?: Record<string, CoordsData>;
   image?: Image;
   tippy?: { overlay: Overlay; elem: HTMLElement };
   mounted = false;
@@ -33,8 +32,8 @@ export class Mapp extends Deferrable {
     this.layers = {};
     this.persistentLayers = {
       background: new Background('background'),
-      active: new ActiveSpots('active', this),
-      annotations: new MutableSpots('annotations', this)
+      active: new ActiveSpots(this),
+      annotations: new MutableSpots(this)
     };
     this.persistentLayers.annotations.z = Infinity;
     this.draw = new Draww(this, this.persistentLayers.annotations);
@@ -66,6 +65,12 @@ export class Mapp extends Deferrable {
     };
     this.map.addOverlay(this.tippy.overlay);
 
+    if (get(mapList).length === 1) {
+      const ol = new WebGLSpots(this);
+      overlays.set({ [ol.uid]: ol });
+      sOverlay.set(ol.uid);
+    }
+
     this._deferred.resolve();
     this.mounted = true;
   }
@@ -75,33 +80,27 @@ export class Mapp extends Deferrable {
     image,
     refresh
   }: {
-    overlays: Record<string, OverlayData>;
+    overlays: Record<string, CoordsData>;
     image?: Image;
     refresh?: boolean;
   }) {
-    if (!this.mounted) throw new Error('Map not mounted.');
-    const newOl = Object.keys(overlays);
-    const currOl = Object.keys(this.layers);
-
-    const toDelete = difference(currOl, newOl);
-    toDelete.map((name) => this.layers[name].dispose());
-
-    const toCreate = difference(newOl, currOl).map((name) => new WebGLSpots(name, this));
-    toCreate.forEach((x) => x.mount());
-
-    const newLayers = [
-      ...toCreate,
-      ...intersection(newOl, currOl).map((name) => this.layers[name])
-    ];
-
-    this.layers = {};
-    for (const layer of newLayers) {
-      this.layers[layer.name] = layer;
-    }
-
-    await Promise.all(Object.values(overlays).map((x) => x.hydrate()));
-    newLayers.map((x) => x.update(overlays[x.name]));
-
+    // if (!this.mounted) throw new Error('Map not mounted.');
+    // const newOl = Object.keys(overlays);
+    // const currOl = Object.keys(this.layers);
+    // const toDelete = difference(currOl, newOl);
+    // toDelete.map((name) => this.layers[name].dispose());
+    // const toCreate = difference(newOl, currOl).map((name) => new WebGLSpots(name, this));
+    // toCreate.forEach((x) => x.mount());
+    // const newLayers = [
+    //   ...toCreate,
+    //   ...intersection(newOl, currOl).map((name) => this.layers[name])
+    // ];
+    // this.layers = {};
+    // for (const layer of newLayers) {
+    //   this.layers[layer.name] = layer;
+    // }
+    // await Promise.all(Object.values(overlays).map((x) => x.hydrate()));
+    // newLayers.map((x) => x.update(overlays[x.name]));
     const imgPromise =
       !refresh && image ? this.persistentLayers.background.update(this.map!, image) : undefined;
     await imgPromise;

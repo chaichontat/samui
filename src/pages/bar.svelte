@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import type { ChunkedJSON, Sparse } from '$src/lib/data/features';
+  import type { ChunkedCSV } from '$src/lib/data/chunked';
+  import type { Sparse } from '$src/lib/data/features';
   import type { Sample } from '$src/lib/data/sample';
   import { genUpdate, oneLRU } from '$src/lib/utils';
   import Chart from 'chart.js/auto/auto.js';

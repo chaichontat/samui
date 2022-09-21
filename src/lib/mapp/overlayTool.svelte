@@ -3,11 +3,11 @@
   import type { Mapp } from '$src/lib/mapp/mapp';
   import { oneLRU } from '$src/lib/utils';
   import FileInput from '../components/fileInput.svelte';
+  import type { CoordsParams } from '../data/coord';
   import type { Coord } from '../data/features';
-  import { OverlayData, type OverlayParams } from '../data/overlay';
   import type { Sample } from '../data/sample';
   import { fromCSV, getFileFromEvent } from '../io';
-  import { sFeature, sOverlay, sSample } from '../store';
+  import { overlays, sFeature, sOverlay, sSample } from '../store';
 
   let sample: Sample;
   $: sample = $sSample;
@@ -37,7 +37,7 @@
       return;
     }
 
-    if (name in $sSample.overlays) {
+    if (name in $sSample.coords) {
       alert('Name cannot be the same as existing overlay.');
       return;
     }
@@ -56,15 +56,15 @@
       }
     }
 
-    const op: OverlayParams = {
+    const op: CoordsParams = {
       name,
       shape: 'circle',
       pos: pos.data as Coord[],
-      mPerPx: sample.image.mPerPx,
+      mPerPx: sample.image?.mPerPx,
       addedOnline: true
     };
 
-    sample!.overlays[name] = new OverlayData(op);
+    sample!.overlays[name] = new CoordsData(op);
     await map.update({ overlays: sample!.overlays, refresh: true });
     $sSample = $sSample;
     for (const [name, v] of Object.entries(visible)) {
@@ -82,7 +82,7 @@
 >
   <table class="table-fixed">
     {#if sample}
-      {#each Object.keys(sample.overlays) as ovName}
+      {#each Object.values($overlays) as ov}
         <tr>
           <td class="flex">
             <!-- Outline checkbox -->
@@ -91,7 +91,7 @@
               class="mr-1 cursor-pointer"
               use:tooltip={{ content: 'Border' }}
               checked
-              on:change={(e) => setVisible(ovName, e.currentTarget.checked, true)}
+              on:change={(e) => setVisible(ov.uid, e.currentTarget.checked, true)}
             />
 
             <!-- Fill checkbox -->
@@ -100,30 +100,30 @@
               class="cursor-pointer"
               checked
               use:tooltip={{ content: 'Fill' }}
-              on:change={(e) => setVisible(ovName, e.currentTarget.checked)}
+              on:change={(e) => setVisible(ov.uid, e.currentTarget.checked)}
             />
             &nbsp;
           </td>
           <!-- Overlay name -->
           <td>
             <span
-              on:click={() => ($sOverlay = ovName)}
+              on:click={() => ($sOverlay = ov.uid)}
               class={classes(
                 'mr-2 max-w-[10rem] cursor-pointer select-none text-ellipsis capitalize',
-                $sOverlay === ovName ? 'text-white' : 'text-white/70'
-              )}>{ovName}</span
+                $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
+              )}>{ov.uid}</span
             >
           </td>
 
           <!-- Feature name -->
           <td
-            on:click={() => ($sOverlay = ovName)}
+            on:click={() => ($sOverlay = ov.uid)}
             class={classes(
               'min-w-[4rem] cursor-pointer pr-3',
-              $sOverlay === ovName ? 'text-yellow-300' : 'text-yellow-300/70'
+              $sOverlay === ov.uid ? 'text-yellow-300' : 'text-yellow-300/70'
             )}
           >
-            {$sFeature[ovName]?.feature ?? 'None'}
+            <!-- {$sFeature[ovName]?.feature ?? 'None'} -->
           </td>
 
           <!-- Opacity bar -->
@@ -135,18 +135,18 @@
               max="1"
               value="0.9"
               step="0.01"
-              on:change={(e) => setOpacity(ovName, e.currentTarget.value)}
-              on:mousemove={(e) => setOpacity(ovName, e.currentTarget.value)}
+              on:change={(e) => setOpacity(ov.uid, e.currentTarget.value)}
+              on:mousemove={(e) => setOpacity(ov.uid, e.currentTarget.value)}
               use:tooltip={{ content: 'Opacity' }}
             />
           </td>
           <!-- Delete -->
-          {#if sample.overlays[ovName].addedOnline}
+          <!-- {#if sample.overlays[ovName].addedOnline}
             <td class="">
               <button
                 class="flex items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
                 on:click={async () => {
-                  delete sample.overlays[ovName];
+                  delete sample.overlays[ov.uid];
                   sample.overlays = sample.overlays;
                   await map.update({ overlays: sample.overlays, refresh: true });
                 }}
@@ -160,7 +160,7 @@
                 </svg></button
               >
             </td>
-          {/if}
+          {/if} -->
         </tr>
       {/each}
     {/if}

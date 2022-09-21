@@ -17,6 +17,7 @@ export async function fromCSV<T>(str: string, options?: ParseConfig<T>) {
   Papa.parse(str, {
     dynamicTyping: true,
     header: true,
+    delimiter: ',',
     skipEmptyLines: 'greedy',
     complete: (results: Papa.ParseResult<T>) => {
       out = results;
@@ -34,8 +35,6 @@ export function toCSV(name: string, obj: object[] | string) {
   if (typeof obj === 'string') {
     const blob = new Blob([obj], { type: 'text/csv' });
     download(name, blob);
-    console.log('hi');
-
     return;
   }
 

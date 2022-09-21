@@ -1,10 +1,11 @@
 
 from typing import Literal
 
+import pandas as pd
 from anndata import AnnData
 from scipy.sparse import csc_matrix, csr_matrix
 
-from .utils import ReadonlyModel, Url, concat_json
+from .utils import ReadonlyModel, Url, concat, concat_csv, concat_json
 
 
 class Coord(ReadonlyModel):
@@ -16,7 +17,7 @@ class CoordId(Coord):
     id: str
 
 
-class OverlayParams(ReadonlyModel):
+class CoordParams(ReadonlyModel):
     """
     name: Name of the overlay
     type: Type of the overlay 'single', 'multi'
@@ -30,44 +31,41 @@ class OverlayParams(ReadonlyModel):
     """
 
     name: str
-    type: Literal["single", "multi"] = "single"
     shape: Literal["circle"]
     url: Url
     mPerPx: float | None = None
     size: float | None = None
 
-class PlainJSONParams(ReadonlyModel):
-    type: Literal["plainJSON"] = "plainJSON"
+
+class PlainCSVParams(ReadonlyModel):
+    type: Literal["plainCSV"] = "plainCSV"
     name: str
     url: Url
-    dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
-    overlay: str | None = None
+    dataType: Literal["categorical", "quantitative"] = "quantitative"
+    coordName: str | None = None
 
-
-class ChunkedJSONParams(ReadonlyModel):
-    type: Literal["chunkedJSON"] = "chunkedJSON"
+class ChunkedCSVParams(ReadonlyModel):
+    type: Literal["chunkedCSV"] = "chunkedCSV"
     name: str
     url: Url
     headerUrl: Url
-    dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
-    overlay: str | None = None
+    dataType: Literal["categorical", "quantitative"] = "quantitative"
 
-
-class ChunkedHeader(ReadonlyModel):
+class ChunkedCSVHeader(ReadonlyModel):
     names: dict[str, int] | None = None
     ptr: list[int]
     length: int
-    dtype: Literal['json', 'csv'] = 'json'
     activeDefault: str | None = None
     sparseMode: Literal["record", "array"] | None = None
+    coordName: str | None = None
 
 
-FeatureParams = ChunkedJSONParams | PlainJSONParams
+FeatureParams = ChunkedCSVParams | PlainCSVParams
 
 
 def get_compressed_genes(
-    vis: AnnData, mode: Literal["csr", "csc"] = "csc"
-) -> tuple[ChunkedHeader, bytearray]:
+    vis: AnnData,coordName: str, mode: Literal["csr", "csc"] = "csc"
+) -> tuple[ChunkedCSVHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(vis.X)  # csR
     elif mode == "csc":
@@ -88,14 +86,14 @@ def get_compressed_genes(
             objs.append(None)
         else:
             objs.append(
-                {
+                pd.DataFrame({
                     "index": indices[indptr[i] : indptr[i + 1]].tolist(),
                     "value": [round(x, 3) for x in data[indptr[i] : indptr[i + 1]].tolist()],
-                }
+                })
             )
 
     names = {name: i for i, name in enumerate(names)}
-    ptr, outbytes = concat_json(objs)
+    ptr, outbytes = concat(objs, lambda x: x.to_csv(index=False).encode())
     match mode:
         case "csr":
             length = cs.shape[1]
@@ -105,11 +103,12 @@ def get_compressed_genes(
             raise ValueError("Unknown mode")
 
     return (
-        ChunkedHeader(
+        ChunkedCSVHeader(
             names=names,
             ptr=ptr.tolist(),
             length=length,
             sparseMode="array" if mode == "csc" else "record",
+            coordName=coordName,
         ),
         outbytes,
     )

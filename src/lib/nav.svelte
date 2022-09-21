@@ -3,17 +3,22 @@
   import Darkswitch from './components/darkswitch.svelte';
   import SearchBox from './components/featureSearchBox.svelte';
   import Github from './components/github.svelte';
-  import List from './components/list.svelte';
   import type { FeatureAndGroup } from './data/features';
   import type { FeatureGroupList, HoverSelect } from './data/searchBox';
   import { sFeature, sOverlay, sSample } from './store';
 
   // Feature list
   let featureGroup: FeatureGroupList[];
-  $: if ($sSample && $sOverlay) featureGroup = $sSample.overlays[$sOverlay].featNames;
+  $: if ($sSample) {
+    (async () => {
+      await $sSample.promise;
+      featureGroup = $sSample.genFeatureList();
+    })().catch(console.error);
+  }
 
   // Set feature
   let currFeature: HoverSelect<FeatureAndGroup>;
+
   // Need to use this function in order to prevent update when $sOverlay is changed.
   const setFeature = (cf: typeof currFeature) => ($sFeature[$sOverlay] = cf.active!);
   $: if ($sSample && currFeature?.active) setFeature(currFeature);
@@ -21,7 +26,7 @@
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 shadow backdrop-blur dark:bg-gray-900">
   <!-- Overlay selector -->
-  <div class="gap-x-2 pt-1 text-base">
+  <!-- <div class="gap-x-2 pt-1 text-base">
     <List
       items={$sSample ? Object.keys($sSample.overlays) : []}
       bind:active={$sOverlay}
@@ -30,7 +35,7 @@
       addSample={false}
       useSpinner={false}
     />
-  </div>
+  </div> -->
 
   <!-- Search features -->
   <div class="mt-1 flex-grow">

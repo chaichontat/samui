@@ -1,10 +1,8 @@
 <script lang="ts">
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import type { Mapp } from '$src/lib/mapp/mapp';
-  import type { Sample } from '../data/sample';
   import OverlayTool from './overlayTool.svelte';
 
-  export let sample: Sample;
   export let map: Mapp;
   export let showImgControl: boolean;
   export let colorbar = true;

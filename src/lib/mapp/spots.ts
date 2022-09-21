@@ -7,8 +7,9 @@ import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
+import type { CoordsData } from '../data/coord';
 import { convertCategoricalToNumber, type Coord, type FeatureValues } from '../data/features';
-import type { OverlayData } from '../data/overlay';
+import { rand } from '../utils';
 import { MapComponent } from './definitions';
 import type { Mapp } from './mapp';
 
@@ -76,11 +77,12 @@ function genCategoricalColors() {
 
 export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point>>> {
   outline?: CanvasSpots;
-  overlay?: OverlayData;
   _currStyle: string;
+  uid: string;
 
-  constructor(name: string, map: Mapp) {
-    super(name, map, genSpotStyle('categorical', 20));
+  constructor(map: Mapp) {
+    super(map, genSpotStyle('categorical', 20));
+    this.uid = rand();
     this._currStyle = 'categorical';
   }
 
@@ -89,15 +91,15 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   }
 
   set currStyle(style: string) {
-    if (!this.overlay) throw new Error('Must run update first.');
+    if (!this.coords) throw new Error('Must run update first.');
 
     if (style === this._currStyle) return;
     switch (style) {
       case 'quantitative':
-        this.updateStyle(genSpotStyle('quantitative', this.overlay.sizePx));
+        this.updateStyle(genSpotStyle('quantitative', this.coords.sizePx));
         break;
       case 'categorical':
-        this.updateStyle(genSpotStyle('categorical', this.overlay.sizePx));
+        this.updateStyle(genSpotStyle('categorical', this.coords.sizePx));
         break;
       default:
         throw new Error(`Unknown style: ${style}`);
@@ -130,13 +132,13 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   }
 
   _updateOutline() {
-    const shortEnough = this.overlay!.pos!.length < 10000;
+    const shortEnough = this.coords!.pos!.length < 10000;
     if (shortEnough) {
       if (!this.outline) {
-        this.outline = new CanvasSpots(this.name + 'Outline', this.map);
+        this.outline = new CanvasSpots(this.map);
         this.outline.mount();
       }
-      this.outline.update(this.overlay!);
+      this.outline.update(this.coords!);
     } else {
       if (this.outline) {
         this.outline.dispose();
@@ -162,13 +164,14 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this.layer = newLayer;
   }
 
-  update(overlay: OverlayData) {
-    this.overlay = overlay;
+  update(coords: CoordsData) {
+    if (coords.name === this.coords?.name) return;
+    this.coords = coords;
     this.source.clear();
     this.source.addFeatures(
-      overlay.pos!.map(({ x, y, id, idx }) => {
+      coords.pos!.map(({ x, y, id, idx }) => {
         const f = new Feature({
-          geometry: new Point([x * this.overlay!.mPerPx!, -y * this.overlay!.mPerPx!]),
+          geometry: new Point([x * this.coords!.mPerPx, -y * this.coords!.mPerPx]),
           value: 0,
           id: id ?? idx
         });
@@ -176,7 +179,6 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         return f;
       })
     );
-    this.overlay = overlay;
     this._rebuildLayer().catch(console.error);
     this._updateOutline();
   }
@@ -186,9 +188,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
   readonly feature: Feature<Circle>;
 
-  constructor(name: string, map: Mapp) {
+  constructor(map: Mapp) {
     super(
-      name,
       map,
       new Style({
         stroke: new Stroke({ color: '#ffffff', width: 1 }),
@@ -212,26 +213,25 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     return this;
   }
 
-  update(ov: OverlayData, idx: number) {
-    if (!ov.mPerPx) throw new Error('No mPerPx provided');
-    const pos = ov.pos!.find((p) => p.idx === idx);
+  update(coords: CoordsData, idx: number) {
+    if (!coords.mPerPx) throw new Error('No mPerPx provided');
+    const pos = coords.pos!.find((p) => p.idx === idx);
     if (!pos) {
       console.error(`No position found for idx ${idx}`);
       return;
     }
 
     const { x, y, id } = pos;
-    const size = ov.size ? ov.size / 4 : ov.mPerPx * 10;
-    this.feature.getGeometry()?.setCenterAndRadius([x * ov.mPerPx, -y * ov.mPerPx], size);
+    const size = coords.size ? coords.size / 4 : coords.mPerPx * 10;
+    this.feature.getGeometry()?.setCenterAndRadius([x * coords.mPerPx, -y * coords.mPerPx], size);
     this.feature.set('id', id);
     this.feature.setId(idx);
   }
 }
 
 export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
-  constructor(name: string, map: Mapp, style?: Style) {
+  constructor(map: Mapp, style?: Style) {
     super(
-      name,
       map,
       style ??
         new Style({
@@ -271,15 +271,15 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   }
 
   /// Replace entire feature.
-  update(ov: OverlayData) {
-    if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
+  update(coords: CoordsData) {
+    if (coords.mPerPx === undefined) throw new Error('mPerPx undefined.');
     this.source.clear();
     this.source.addFeatures(
-      ov.pos!.map((coord) =>
-        CanvasSpots._genCircle({ ...coord, mPerPx: ov.mPerPx!, size: ov.size })
+      coords.pos!.map((c) =>
+        CanvasSpots._genCircle({ ...c, mPerPx: coords.mPerPx!, size: coords.size })
       )
     );
-    this.overlay = ov;
+    this.coords = coords;
   }
 
   get(idx: number) {
@@ -290,7 +290,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 export class MutableSpots extends CanvasSpots {
   names: string[] = [];
 
-  add(idx: number, name: string, ov: OverlayData, ant: string[]) {
+  add(idx: number, name: string, ov: CoordsData, ant: string[]) {
     if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
     let f = this.get(idx);
     if (f === null) {
@@ -315,11 +315,11 @@ export class MutableSpots extends CanvasSpots {
     );
   }
 
-  addMultiple(idxs: number[], name: string, ov: OverlayData, ant: string[]) {
+  addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
     idxs.forEach((idx) => this.add(idx, name, ov, ant));
   }
 
-  addFromPolygon(polygonFeat: Feature<Polygon>, name: string, ov: OverlayData, ant: string[]) {
+  addFromPolygon(polygonFeat: Feature<Polygon>, name: string, ov: CoordsData, ant: string[]) {
     if (!name) {
       alert('Set annotation name first.');
       return;

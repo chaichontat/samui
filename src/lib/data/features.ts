@@ -1,6 +1,5 @@
-import { browser } from '$app/environment';
-import pako from 'pako';
-import { Deferrable, genLRU, getFile, oneLRU } from '../utils';
+import { fromCSV } from '../io';
+import { Deferrable, getFile } from '../utils';
 
 export type Url = { url: string; type: 'local' | 'network' };
 export type Coord = { x: number; y: number; id?: string; idx: number };
@@ -14,46 +13,28 @@ export type FeatureAndGroup = {
 
 export type DataType = 'categorical' | 'quantitative';
 export type RetrievedData = (number | string)[] | Record<string, number | string> | Coord[];
-type SparseMode = 'record' | 'array' | null;
 
 export interface FeatureValues {
   dataType: 'quantitative' | 'categorical';
   data: RetrievedData;
 }
 
-interface JSONParams {
+interface CSVParams {
   name: string;
   dataType: DataType;
-  overlay?: string;
 }
 
-export interface PlainJSONParams extends JSONParams {
-  type: 'plainJSON';
+export interface PlainCSVParams extends CSVParams {
+  type: 'plainCSV';
   url?: Url;
   values?: RetrievedData;
+  coordName?: string;
 }
 
-export interface ChunkedJSONParams extends JSONParams {
-  type: 'chunkedJSON';
-  url: Url;
-  headerUrl?: Url;
-  header?: ChunkedJSONHeader;
-}
-
-export type ChunkedJSONHeader = {
-  length: number;
-  names: Record<string, number> | null;
-  ptr: number[];
-  activeDefault?: string;
-  sparseMode?: SparseMode;
-};
-
-export type FeatureParams = ChunkedJSONParams | PlainJSONParams;
-export type Sparse = { index: number[]; value: number[] };
+export type Sparse = { index: number; value: number }[];
 
 export interface FeatureData extends Deferrable {
   readonly name: string;
-  readonly overlay?: string;
   featNames?: string[];
 
   hydrate: (handle?: FileSystemDirectoryHandle) => Promise<this>;
@@ -62,13 +43,10 @@ export interface FeatureData extends Deferrable {
 
 export class PlainJSONGroup extends Deferrable implements FeatureData {
   name = '';
-  plainjsons: Record<string | number, PlainJSON>;
+  plainjsons: Record<string | number, PlainCSV>;
   featNames: string[];
 
-  constructor(
-    { name, plainjsons }: { name: string; plainjsons: PlainJSON[] },
-    autoHydrate = false
-  ) {
+  constructor({ name, plainjsons }: { name: string; plainjsons: PlainCSV[] }, autoHydrate = false) {
     super();
     this.name = name;
     this.plainjsons = {};
@@ -100,20 +78,21 @@ export class PlainJSONGroup extends Deferrable implements FeatureData {
   }
 }
 
-export class PlainJSON extends Deferrable implements FeatureData {
+export class PlainCSV extends Deferrable implements FeatureData {
   url?: Url;
 
   readonly name: string;
   readonly dataType: DataType;
-
+  readonly coordName: string | undefined;
   values?: RetrievedData;
 
-  constructor({ name, url, dataType, values }: PlainJSONParams, autoHydrate = false) {
+  constructor({ name, url, dataType, values, coordName }: PlainCSVParams, autoHydrate = false) {
     super();
     this.name = name;
     this.url = url;
     this.values = values;
     this.dataType = dataType;
+    this.coordName = coordName;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -127,7 +106,19 @@ export class PlainJSON extends Deferrable implements FeatureData {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      this.values = (await fetch(this.url.url).then((r) => r.json())) as RetrievedData;
+      const retrieved = await fromCSV(this.url.url, { download: true });
+      if (!retrieved) {
+        console.error(`Cannot fetch ${this.url.url}.`);
+        return this;
+      }
+      const v = retrieved.data as { [key: string]: number | string }[];
+      if (Object.keys(v[0]).length === 1) {
+        const key = Object.keys(v[0])[0];
+        this.values = v.map((d) => d[key]);
+      } else {
+        console.error('CSV must have only one column.');
+        // throw new Error('Cannot handle multiple columns');
+      }
     }
     this.hydrated = true;
     return this;
@@ -137,186 +128,8 @@ export class PlainJSON extends Deferrable implements FeatureData {
     if (!this.hydrated) {
       await this.hydrate();
     }
-    return { dataType: this.dataType, data: this.values! };
+    return { dataType: this.dataType, data: this.values!, coordName: this.coordName };
   }
-}
-
-export class ChunkedJSON<Ret extends RetrievedData | Sparse>
-  extends Deferrable
-  implements FeatureData
-{
-  retrieve: (
-    name?: string | number
-  ) => Promise<{ dataType: 'quantitative' | 'categorical'; data: RetrievedData } | undefined>;
-  ptr?: number[];
-  names?: Record<string, number> | null;
-  featNames: string[] = [];
-  length?: number;
-
-  url: Url;
-  readonly dataType: DataType;
-  readonly name: string;
-
-  headerUrl?: Url;
-  header?: ChunkedJSONHeader;
-  activeDefault?: string;
-  sparseMode?: SparseMode;
-  allData?: ArrayBuffer;
-
-  constructor({ name, url, headerUrl, header, dataType }: ChunkedJSONParams, autoHydrate = false) {
-    super();
-    this.name = name;
-    this.url = url;
-    this.header = header;
-    this.headerUrl = headerUrl;
-    this.dataType = dataType;
-
-    if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
-    if (autoHydrate) {
-      throw new Error('Not implemented');
-    }
-
-    let densify: (
-      obj: Sparse | null
-    ) =>
-      | ReturnType<ReturnType<typeof densifyToArray>>
-      | ReturnType<ReturnType<typeof densifyToRecords>>;
-
-    this.retrieve = genLRU(async (name: string | number) => {
-      if (!browser) return;
-      if (name === -1) throw new Error('-1 sent to retrieve');
-      await this.hydrate();
-
-      if (!densify) {
-        switch (this.sparseMode) {
-          case 'record':
-            densify = densifyToRecords(Object.keys(this.names!));
-            break;
-          case 'array':
-            densify = densifyToArray(this.length!); // After hydrated, this is guaranteed to be set.
-            break;
-        }
-      }
-
-      let idx: number;
-      if (typeof name === 'string') {
-        if (!this.names) throw new Error('Index must be number for ChunkedJSON without names.');
-        idx = this.names[name];
-      } else {
-        if (this.names) {
-          idx = this.names[name];
-        } else {
-          idx = name;
-        }
-      }
-      if (idx === undefined) {
-        console.error("Couldn't find index for", name);
-        return undefined;
-      }
-
-      if (this.ptr![idx] === this.ptr![idx + 1]) {
-        return densify ? { dataType: this.dataType, data: densify(null) } : undefined;
-      }
-
-      const raw = await fetch(this.url.url, {
-        headers: {
-          Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`
-        }
-      });
-      const blob = await raw.blob();
-      const decomped = await ChunkedJSON.decompressBlob(blob);
-      const ret = JSON.parse(decomped) as Ret;
-
-      const data = densify ? densify(ret as Sparse) : ret;
-      return { dataType: this.dataType, data };
-    });
-  }
-
-  get revNames(): Record<number, string> | undefined {
-    if (!this.names) return undefined;
-    const f = oneLRU(() => {
-      const out = {} as Record<number, string>;
-      for (const [k, v] of Object.entries(this.names!)) {
-        out[v] = k;
-      }
-      return out;
-    });
-    return f();
-  }
-
-  async hydrate(handle?: FileSystemDirectoryHandle) {
-    if (this.hydrated) return this;
-    if (!this.header && this.headerUrl) {
-      if (handle) {
-        this.headerUrl = await convertLocalToNetwork(handle, this.headerUrl);
-        this.url = await convertLocalToNetwork(handle, this.url);
-      }
-
-      this.header = await fetch(this.headerUrl.url).then(
-        (res) => res.json() as Promise<ChunkedJSONHeader>
-      );
-    }
-    ({
-      names: this.names,
-      ptr: this.ptr,
-      length: this.length,
-      activeDefault: this.activeDefault,
-      sparseMode: this.sparseMode
-    } = this.header!);
-
-    this.featNames = Object.keys(this.names!);
-    if (!this.activeDefault && this.names) {
-      this.activeDefault = Object.keys(this.names)[0];
-    }
-
-    this.hydrated = true;
-    return this;
-  }
-
-  static decompressBlob =
-    browser && 'CompressionStream' in window // Chromium
-      ? async (blob: Blob) => {
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-            const ds = new DecompressionStream('gzip');
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-            const decompressedStream = blob.stream().pipeThrough(ds);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            return await new Response(decompressedStream).text();
-          } catch (e) {
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            throw new Error(`Error decompressing blob: ${e}`);
-          }
-        }
-      : async (blob: Blob): Promise<string> => {
-          return pako.inflate((await blob.arrayBuffer()) as pako.Data, { to: 'string' });
-        };
-}
-
-export function densifyToArray(length: number) {
-  const zero = new Array(length).fill(0) as number[];
-  return (obj: Sparse | null) => {
-    if (!obj) return zero;
-    console.assert(obj.index.length === obj.value.length);
-    const dense = new Array(length).fill(0) as number[];
-    for (let i = 0; i < obj.index.length; i++) {
-      dense[obj.index[i]] = obj.value[i];
-    }
-    console.assert(dense.every((x) => x !== undefined));
-    return dense;
-  };
-}
-
-export function densifyToRecords(names: string[]) {
-  return (obj: Sparse | null) => {
-    if (!obj) return {};
-    console.assert(obj.index.length === obj.value.length);
-    const out = {} as Record<string, string | number>;
-    for (let i = 0; i < obj.index.length; i++) {
-      out[names[obj.index[i]]] = obj.value[i];
-    }
-    return out;
-  };
 }
 
 export async function convertLocalToNetwork(
