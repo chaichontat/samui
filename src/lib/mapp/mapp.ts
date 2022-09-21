@@ -7,7 +7,7 @@ import { get } from 'svelte/store';
 import type { CoordsData } from '../data/coord';
 import { mapList, overlays, sOverlay } from '../store';
 
-import { Deferrable, rand } from '../utils';
+import { Deferrable } from '../utils';
 import { Background } from './background';
 import type { MapComponent, OLLayer } from './definitions';
 import { Draww } from './selector';
@@ -134,7 +134,7 @@ export class Mapp extends Deferrable {
         const ol = get(sOverlay);
         if (!ol) return;
 
-        const comp = this.layers[ol];
+        const comp = get(overlays)[ol];
         const currLayer = comp.layer;
         if (!currLayer) throw new Error('No layer');
 

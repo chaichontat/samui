@@ -4,12 +4,11 @@
   import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
   import ImgControl from '$src/lib/mapp/imgControl.svelte';
   import { Mapp } from '$src/lib/mapp/mapp';
-  import { Overlay } from '$src/lib/mapp/overlay';
   import { keyOneLRU, oneLRU } from '$src/lib/utils';
   import 'ol/ol.css';
   import { createEventDispatcher, onMount } from 'svelte';
   import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, mapList, overlays, sFeature, sId, sMapp, sOverlay } from '../lib/store';
+  import { annotating, overlays, sFeature, sId, sMapp, sOverlay } from '../lib/store';
 
   export let sample: Sample | undefined;
   $: sample?.hydrate().catch(console.error);
@@ -125,17 +124,17 @@
   const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
     await sample!.promise;
     const active = map.persistentLayers.active;
-    const ov = sample!.overlays[activeol];
+    const ov = $overlays[activeol];
 
     if (!ov) return false;
 
-    if (idx !== null) {
+    if (idx !== null && ov.coords) {
       active.layer!.setVisible(true);
-      const pos = ov.pos![idx];
+      const pos = ov.coords.pos![idx];
       if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
-      active.update(sample!.overlays[activeol], idx);
+      active.update(ov.coords, idx);
       if (map.tippy && pos.id) {
-        map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
+        map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
         map.tippy.elem.removeAttribute('hidden');
         map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
       }

@@ -3,7 +3,7 @@
   import type { Mapp } from '$src/lib/mapp/mapp';
   import { oneLRU } from '$src/lib/utils';
   import FileInput from '../components/fileInput.svelte';
-  import type { CoordsParams } from '../data/coord';
+  import { CoordsData, type CoordsParams } from '../data/coord';
   import type { Coord } from '../data/features';
   import type { Sample } from '../data/sample';
   import { fromCSV, getFileFromEvent } from '../io';
@@ -15,17 +15,17 @@
 
   const setOpacity = oneLRU(async (name: string, opacity: string) => {
     await map.layers[name]?.promise;
-    map.layers[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
+    $overlays[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
   });
 
   const outlinevis: Record<string, boolean> = {};
   const visible: Record<string, boolean> = {};
   const setVisible = (name: string, c: boolean | null, outline = false) => {
     if (outline) {
-      map.layers[name]?.outline?.layer?.setVisible(c ?? false);
+      $overlays[name]?.outline?.layer?.setVisible(c ?? false);
       outlinevis[name] = c ?? false;
     } else {
-      map.layers[name]?.layer?.setVisible(c ?? false);
+      $overlays[name]?.layer?.setVisible(c ?? false);
       visible[name] = c ?? false;
     }
   };
@@ -64,8 +64,8 @@
       addedOnline: true
     };
 
-    sample!.overlays[name] = new CoordsData(op);
-    await map.update({ overlays: sample!.overlays, refresh: true });
+    sample!.coords[name] = new CoordsData(op);
+    // await map.update({ overlays: sample!.overlays, refresh: true });
     $sSample = $sSample;
     for (const [name, v] of Object.entries(visible)) {
       setVisible(name, v);
@@ -111,7 +111,7 @@
               class={classes(
                 'mr-2 max-w-[10rem] cursor-pointer select-none text-ellipsis capitalize',
                 $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
-              )}>{ov.uid}</span
+              )}>{ov.uid ? $sFeature[ov.uid]?.feature ?? 'None' : ''}</span
             >
           </td>
 
