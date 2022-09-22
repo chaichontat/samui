@@ -9,7 +9,7 @@ import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import type { CoordsData } from '../data/coord';
 import { convertCategoricalToNumber, type Coord, type FeatureValues } from '../data/features';
-import { rand } from '../utils';
+import { keyLRU, rand } from '../utils';
 import { MapComponent } from './definitions';
 import type { Mapp } from './mapp';
 
@@ -79,6 +79,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   outline?: CanvasSpots;
   _currStyle: string;
   uid: string;
+  features?: Feature<Point>[];
 
   constructor(map: Mapp) {
     super(map, genSpotStyle('categorical', 2));
@@ -109,6 +110,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
   updateProperties({ dataType, data }: FeatureValues) {
     if (!data) throw new Error('No intensity provided');
+    if (!this.features) throw new Error('No features to update');
 
     // TODO: Subsample if coords subsampled.
     if (data?.length !== this.source?.getFeatures().length) {
@@ -122,10 +124,10 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
     ({ converted: data } = convertCategoricalToNumber(data as string[]));
     this.currStyle = dataType;
-
-    this.source.forEachFeature((f) => {
-      f.setProperties({ value: data[f.getId() as number] });
-    });
+    for (const [i, f] of this.features.entries()) {
+      f.setProperties({ value: data[i] });
+    }
+    this.source.changed();
   }
 
   updateStyle(style: LiteralStyle) {
@@ -170,20 +172,24 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     if (coords.name === this.coords?.name) return;
     this.coords = coords;
     this.source.clear();
-    this.source.addFeatures(
-      coords.pos!.map(({ x, y, id, idx }) => {
-        const f = new Feature({
-          geometry: new Point([x * this.coords!.mPerPx, -y * this.coords!.mPerPx]),
-          value: 0,
-          id: id ?? idx
-        });
-        f.setId(idx);
-        return f;
-      })
-    );
+    // TODO: Key collision: group, sample.
+    this.features = this.genFeatures({ key: coords.name, args: [coords] });
+    this.source.addFeatures(this.features);
     this._rebuildLayer().catch(console.error);
     this._updateOutline();
   }
+
+  genFeatures = keyLRU((coords: CoordsData) => {
+    return coords.pos!.map(({ x, y, id, idx }) => {
+      const f = new Feature({
+        geometry: new Point([x * this.coords!.mPerPx, -y * this.coords!.mPerPx]),
+        value: 0,
+        id: id ?? idx
+      });
+      f.setId(idx);
+      return f;
+    });
+  });
 }
 
 // TODO: Combine activespots and canvasspots

@@ -5,8 +5,8 @@ export type FeatureGroupList = {
 };
 
 export class HoverSelect<T> {
-  hover: T | null = null;
-  selected: T | null = null;
+  hover?: T = undefined;
+  selected?: T = undefined;
 
   constructor(initial: { hover?: T; selected?: T } = {}) {
     this.update(initial);
@@ -17,7 +17,7 @@ export class HoverSelect<T> {
   }
 
   update({ hover, selected }: { hover?: T | null; selected?: T | null }) {
-    if (hover !== undefined) this.hover = hover;
-    if (selected !== undefined) this.selected = selected;
+    if (hover != undefined) this.hover = hover;
+    if (selected != undefined) this.selected = selected;
   }
 }
