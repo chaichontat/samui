@@ -15,11 +15,12 @@ from rasterio.io import DatasetWriter
 from loopy.utils import ReadonlyModel, Url
 
 Meter = Annotated[float, "meter"]
-
+Colors = Literal['blue', 'green', 'red', 'magenta', 'yellow', 'cyan', 'white']
 
 class ImageParams(ReadonlyModel):
     urls: list[Url]
-    channel: list[str] | Literal["rgb"]
+    channels: list[str] | Literal["rgb"]
+    defaultChannels: dict[str, Colors] | None = None
     mPerPx: float
 
 

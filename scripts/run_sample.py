@@ -78,7 +78,7 @@ def run(s: str) -> None:
         name=s,
         imgParams=ImageParams(
             urls=[Url(f"{s}_1.tif"), Url(f"{s}_2.tif")],
-            channel=channels,
+            channels=channels,
             mPerPx=mPerPx,
         ),
         coordParams=[

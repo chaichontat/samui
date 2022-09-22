@@ -94,10 +94,7 @@
   $: if (sample) update(sample).catch(console.error);
   const update = async (sample: Sample) => {
     if (currSample !== sample.name) {
-      await sample.promise;
-      const img = sample.image;
-      await map.update({ image: img, overlays: sample.overlays });
-      if (img) convertImgCtrl = colorVarFactory(img.channel);
+      if (sample.image) convertImgCtrl = colorVarFactory(sample.image.channels);
       currSample = sample.name;
     } else {
       // When adding outlines in app.
@@ -232,8 +229,8 @@
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:small={showImgControl && small}
-    class:composite={showImgControl && image?.channel !== 'rgb' && !small}
-    class:rgb={showImgControl && image?.channel === 'rgb'}
+    class:composite={showImgControl && image?.channels !== 'rgb' && !small}
+    class:rgb={showImgControl && image?.channels === 'rgb'}
   />
   <!-- Map tippy -->
   <div
@@ -268,9 +265,15 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if Array.isArray(image?.channel)}
-          <svelte:component this={ImgControl} channels={image?.channel} bind:imgCtrl {small} />
-        {:else if image?.channel === 'rgb'}
+        {#if Array.isArray(image?.channels)}
+          <svelte:component
+            this={ImgControl}
+            channels={image?.channels}
+            defaultChannels={image?.defaultChannels}
+            bind:imgCtrl
+            {small}
+          />
+        {:else if image?.channels === 'rgb'}
           <svelte:component this={ImgControl} bind:imgCtrl {small} />
         {/if}
       </div>

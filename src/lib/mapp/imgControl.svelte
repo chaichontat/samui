@@ -4,6 +4,7 @@
   import { classes } from '../utils';
   import { bgColors, colors, type BandInfo, type ImageCtrl } from './imgControl';
 
+  export let defaultChannels: Record<string, BandInfo['color']> = {};
   export let channels: string[] | 'rgb' | null = null;
   export let small = false;
 
@@ -13,7 +14,12 @@
   if (Array.isArray(channels)) {
     for (const c of channels) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      selected[c] = { enabled: true, color: 'red', max: 128 };
+      selected[c] = { enabled: false, color: 'blue', max: 128 };
+    }
+    if (Object.keys(defaultChannels).length > 0) {
+      for (const [b, c] of Object.entries(defaultChannels)) {
+        selected[b] = { enabled: true, color: c, max: 128 };
+      }
     }
   }
 
@@ -27,6 +33,20 @@
 
   export let imgCtrl: ImageCtrl = _ic;
   imgCtrl = _ic; // Override from upstream.
+
+  function handleClick(name: string, color: BandInfo['color'] | undefined) {
+    if (imgCtrl.type === 'composite' && color) {
+      const v = imgCtrl.variables[name];
+      if (v.enabled && v.color === color) {
+        imgCtrl.variables[name].enabled = false;
+      } else {
+        const dupe = Object.values(imgCtrl.variables).find((v) => v.color === color && v.enabled);
+        if (dupe) dupe.enabled = false;
+        imgCtrl.variables[name].enabled = true;
+        imgCtrl.variables[name].color = color;
+      }
+    }
+  }
 </script>
 
 {#if imgCtrl}
@@ -37,22 +57,14 @@
         {#each names as name}
           {#key name}
             <tr class="">
-              <label>
-                <td class="w-[1%]">
-                  <input
-                    type="checkbox"
-                    class="cursor-pointer"
-                    bind:checked={imgCtrl.variables[name].enabled}
-                  />
-                </td>
-              </label>
-
               {#each zip(colors, bgColors) as [color, bg]}
-                <td class="w-[1%]" on:click={() => (imgCtrl.variables[name].color = color)}>
+                <td class="w-[1%]" on:click={() => handleClick(name, color)}>
                   <button
                     class={classes(
                       imgCtrl.variables[name].color === color ? 'max-w-[1000px]' : 'max-w-[20px]',
-                      imgCtrl.variables[name].enabled ? bg : 'bg-gray-600',
+                      imgCtrl.variables[name].color === color && !imgCtrl.variables[name].enabled
+                        ? 'bg-gray-700'
+                        : bg,
                       `transition-width mx-auto flex h-5 w-auto min-w-[20px] items-center rounded-full px-2 text-sm hover:opacity-100`
                     )}
                   >

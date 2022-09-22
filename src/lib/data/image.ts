@@ -1,21 +1,25 @@
+import type { BandInfo } from '../mapp/imgControl';
 import { Deferrable } from '../utils';
 import { convertLocalToNetwork, type Url } from './features';
 
 export type ImageParams = {
   urls: Url[];
-  channel: string[] | 'rgb';
+  channels: string[] | 'rgb';
   mPerPx: number;
+  defaultChannels?: Record<string, BandInfo['color']>;
 };
 
 export class Image extends Deferrable {
   urls: readonly Url[];
-  channel: string[] | 'rgb';
+  channels: string[] | 'rgb';
+  defaultChannels: Record<string, BandInfo['color']>;
   mPerPx: number;
 
-  constructor({ urls, channel, mPerPx }: ImageParams, autoHydrate = false) {
+  constructor({ urls, channels, defaultChannels, mPerPx }: ImageParams, autoHydrate = false) {
     super();
     this.urls = urls;
-    this.channel = channel;
+    this.channels = channels;
+    this.defaultChannels = defaultChannels ?? {};
     this.mPerPx = mPerPx;
 
     if (autoHydrate) {

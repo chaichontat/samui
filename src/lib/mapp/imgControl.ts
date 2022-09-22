@@ -1,9 +1,11 @@
-export const colors = ['blue', 'green', 'red', 'magenta', 'white'] as const;
+export const colors = ['blue', 'green', 'red', 'magenta', 'cyan', 'yellow', 'white'] as const;
 export const bgColors = [
   'bg-blue-600',
   'bg-green-600',
   'bg-red-600',
   'bg-fuchsia-500',
+  'bg-cyan-500',
+  'bg-yellow-500',
   'bg-white'
 ] as const;
 
@@ -48,13 +50,12 @@ export function colorVarFactory(mapping: string[] | 'rgb' | null) {
   }
 }
 
-// const colorVar = colorVarFactory(mode, channels);
-const maskMap = {
+const maskMap: Record<BandInfo['color'], [number, number, number]> = {
   red: [1, 0, 0],
   green: [0, 1, 0],
   blue: [0, 0, 1],
   magenta: [1, 0, 1],
-  // cyan: [0, 1, 1],
-  // yellow: [1, 1, 0],
+  cyan: [0, 1, 1],
+  yellow: [1, 1, 0],
   white: [1, 1, 1]
 };

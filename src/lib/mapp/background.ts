@@ -36,12 +36,12 @@ export class Background extends Deferrable {
     const urls = image.urls.map((url) => ({ url: url.url }));
     this.source?.dispose(); // Cannot reuse GeoTIFF.
     this.source = new GeoTIFF({
-      normalize: image.channel === 'rgb',
+      normalize: image.channels === 'rgb',
       sources: urls
     });
 
-    this.mode = image.channel === 'rgb' ? 'rgb' : 'composite';
-    const bandCount = (this.source.bandCount = this.mode === 'rgb' ? 3 : image.channel.length);
+    this.mode = image.channels === 'rgb' ? 'rgb' : 'composite';
+    const bandCount = (this.source.bandCount = this.mode === 'rgb' ? 3 : image.channels.length);
     // Verify correct bandCount.
     // this.source.on(
     //   'change',
@@ -54,7 +54,7 @@ export class Background extends Deferrable {
     // );
 
     this.layer = new WebGLTileLayer({
-      style: this._genBgStyle(image.channel),
+      style: this._genBgStyle(image.channels),
       source: this.source,
       zIndex: -1
     });
