@@ -181,13 +181,13 @@
       class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
     >
       <!-- Color indicator -->
-      <div class="flex flex-col">
+      <!-- <div class="flex flex-col">
         {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
           {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
             <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
           {/if}
         {/each}
-      </div>
+      </div> -->
     </section>
 
     <!-- Top right tools -->

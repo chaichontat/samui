@@ -3,7 +3,7 @@ import WebGLTileLayer, { type Style } from 'ol/layer/WebGLTile.js';
 import GeoTIFF from 'ol/source/GeoTIFF.js';
 import type { Image } from '../data/image';
 import { Deferrable, oneLRU } from '../utils';
-import type { MapComponent } from './definitions';
+import { genStyle } from './colormap';
 
 export class Background extends Deferrable {
   name: string;
@@ -26,6 +26,7 @@ export class Background extends Deferrable {
   }
 
   async update(map: Map, image: Image) {
+    console.log('Updating background');
     await image.promise;
     if (this.layer) {
       map.removeLayer(this.layer);
@@ -53,7 +54,7 @@ export class Background extends Deferrable {
     // );
 
     this.layer = new WebGLTileLayer({
-      style: this._genBgStyle(this.mode),
+      style: this._genBgStyle(image.channel),
       source: this.source,
       zIndex: -1
     });
@@ -77,42 +78,20 @@ export class Background extends Deferrable {
     this.layer?.updateStyleVariables(variables);
   });
 
-  _genBgStyle(mode: 'composite' | 'rgb'): Style {
-    switch (mode) {
-      case 'composite':
-        return {
-          variables: {
-            blue: 1,
-            green: 1,
-            red: 1,
-            blueMax: 128,
-            greenMax: 128,
-            redMax: 128,
-            blueMask: 1,
-            greenMask: 1,
-            redMask: 1
-          },
-          color: [
-            'array',
-            ['*', ['/', ['band', ['var', 'red']], ['var', 'redMax']], ['var', 'redMask']],
-            ['*', ['/', ['band', ['var', 'green']], ['var', 'greenMax']], ['var', 'greenMask']],
-            ['*', ['/', ['band', ['var', 'blue']], ['var', 'blueMax']], ['var', 'blueMask']],
-            1
-          ]
-        };
-      case 'rgb':
-        return {
-          variables: {
-            Exposure: 0,
-            Contrast: 0,
-            Saturation: 0
-          },
-          exposure: ['var', 'Exposure'],
-          contrast: ['var', 'Contrast'],
-          saturation: ['var', 'Saturation']
-        };
-      default:
-        throw new Error(`Unknown image mode`);
+  _genBgStyle(channel: 'rgb' | string[]): Style {
+    if (channel === 'rgb') {
+      return {
+        variables: {
+          Exposure: 0,
+          Contrast: 0,
+          Saturation: 0
+        },
+        exposure: ['var', 'Exposure'],
+        contrast: ['var', 'Contrast'],
+        saturation: ['var', 'Saturation']
+      };
+    } else {
+      return genStyle(channel);
     }
   }
 }

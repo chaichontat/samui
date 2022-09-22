@@ -1,4 +1,15 @@
-type CompCtrl = { type: 'composite'; showing: string[]; maxIntensity: number[] };
+export const colors = ['blue', 'green', 'red', 'magenta', 'white'] as const;
+export const bgColors = [
+  'bg-blue-600',
+  'bg-green-600',
+  'bg-red-600',
+  'bg-fuchsia-500',
+  'bg-white'
+] as const;
+
+export type BandInfo = { enabled: boolean; color: typeof colors[number]; max: number };
+
+type CompCtrl = { type: 'composite'; variables: Record<string, BandInfo> };
 type RGBCtrl = { type: 'rgb'; Exposure: number; Contrast: number; Saturation: number };
 export type ImageCtrl = CompCtrl | RGBCtrl;
 
@@ -18,19 +29,32 @@ export function colorVarFactory(mapping: string[] | 'rgb' | null) {
     if (!mapping) throw new Error('Missing mapping for composite mode');
     return (imgCtrl: ImageCtrl) => {
       if (imgCtrl.type !== 'composite') throw new Error('Expected composite image control');
+      const bands = mapping;
+      const out: Record<string, number> = {};
 
-      const showing = imgCtrl.showing;
-      const max = imgCtrl.maxIntensity;
-
-      return ['blue', 'green', 'red']
-        .map((c, i) => ({
-          [c]: showing[i] === 'None' ? 1 : mapping.findIndex((c) => c === showing[i]) + 1,
-          [c + 'Max']: 255 - max[i],
-          [c + 'Mask']: showing[i] === 'None' ? 0 : 1
-        }))
-        .reduce((acc, x) => Object.assign(acc, x), {});
+      for (const [i, b] of bands.entries()) {
+        const { enabled, color, max } = imgCtrl.variables[b];
+        const masks = [`${b}redMask`, `${b}greenMask`, `${b}blueMask`];
+        out[`${b}Max`] = 255 - max;
+        out[b] = i + 1;
+        if (!enabled) {
+          masks.forEach((m) => (out[m] = 0));
+        } else {
+          maskMap[color].forEach((m, i) => (out[masks[i]] = m));
+        }
+      }
+      return out;
     };
   }
 }
 
 // const colorVar = colorVarFactory(mode, channels);
+const maskMap = {
+  red: [1, 0, 0],
+  green: [0, 1, 0],
+  blue: [0, 0, 1],
+  magenta: [1, 0, 1],
+  // cyan: [0, 1, 1],
+  // yellow: [1, 1, 0],
+  white: [1, 1, 1]
+};
