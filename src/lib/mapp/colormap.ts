@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { zip } from 'lodash';
+import { zip } from 'lodash-es';
 import { genLRU } from '../utils';
 
 export const magenta = [
