@@ -193,10 +193,10 @@
     bind:this={mapElem}
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
-    class:small={showImgControl && small}
-    class:composite={showImgControl && sample?.image?.mode !== 'rgb' && !small}
-    class:rgb={showImgControl && sample?.image?.mode === 'rgb'}
   />
+  <!-- class:small={showImgControl && small}
+    class:composite={showImgControl && sample?.image?.mode !== 'rgb' && !small}
+    class:rgb={showImgControl && sample?.image?.mode === 'rgb'} -->
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
@@ -205,46 +205,18 @@
 
   <!-- Channel indicator -->
   {#if sample}
-    <section
-      class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
-    >
-      <!-- Color indicator -->
-      <!-- <div class="flex flex-col">
-        {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
-            <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
-          {/if}
-        {/each}
-      </div> -->
-    </section>
-
     <!-- Top right tools -->
     <!-- <MapTools {map} {width} bind:showImgControl /> -->
 
     <!-- Img control -->
     <div
-      class="absolute bottom-3 left-1 lg:left-4 lg:bottom-6 xl:pr-4"
+      class="absolute top-[72px] left-1 lg:left-4 lg:bottom-6"
+      class:hidden={!showImgControl}
       style="max-width: calc(100% - 20px);"
     >
-      <div
-        class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
-        class:hidden={!showImgControl}
-      >
-        {#if map.persistentLayers.background.image?.channels}
-          <ImgControl background={map.persistentLayers.background} />
-          <!-- content here -->
-        {/if}
-        <!-- {#if Array.isArray(image?.channels)}
-          <svelte:component
-            this={ImgControl}
-            channels={image?.channels}
-            defaultChannels={image?.defaultChannels}
-            {small}
-          />
-        {:else if image?.channels === 'rgb'}
-          <svelte:component this={ImgControl} {small} />
-        {/if} -->
-      </div>
+      {#if map.persistentLayers.background.image?.channels}
+        <ImgControl background={map.persistentLayers.background} />
+      {/if}
     </div>
   {/if}
 </section>
@@ -263,34 +235,22 @@
   }
 
   .map :global(.ol-scale-line) {
-    @apply left-6 bottom-4 float-right w-3 bg-transparent text-right font-sans;
-  }
-
-  .small :global(.ol-scale-line) {
-    @apply bottom-[8.5rem];
-  }
-
-  .rgb :global(.ol-scale-line) {
-    @apply bottom-36;
-  }
-
-  .composite :global(.ol-scale-line) {
-    @apply bottom-[9.5rem];
+    @apply left-8 bottom-8 float-right w-3 bg-transparent text-right font-sans;
   }
 
   .map :global(.ol-scale-line-inner) {
-    @apply pb-1 text-sm;
+    @apply border-neutral-200 pb-1 text-sm text-neutral-200;
   }
 
   .map :global(.ol-zoom) {
-    @apply absolute bottom-[5.5rem] left-auto right-4 top-auto backdrop-blur;
+    @apply absolute bottom-8 left-auto right-6 top-auto border-neutral-200 backdrop-blur;
   }
 
   .map :global(.ol-zoom-in) {
-    @apply bg-sky-700/90;
+    @apply bg-sky-600/90 text-neutral-200;
   }
 
   .map :global(.ol-zoom-out) {
-    @apply bg-sky-700/90;
+    @apply bg-sky-600/90 text-neutral-200;
   }
 </style>

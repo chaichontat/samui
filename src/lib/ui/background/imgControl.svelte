@@ -58,7 +58,7 @@
 
   onMount(() => {
     if (table) {
-      const shrink = () => (table.style.maxWidth = `${cell.clientWidth + 10}px`);
+      const shrink = () => (table.style.maxWidth = `${cell.clientWidth + 12}px`);
       table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
       table.addEventListener('mouseleave', shrink);
       setTimeout(shrink, 1000);
@@ -71,7 +71,7 @@
 {#if imgCtrl}
   <div
     bind:this={table}
-    class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 p-2 font-medium backdrop-blur-lg transition-all duration-1000 ease-in-out  dark:bg-slate-800/80"
+    class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 p-1.5 font-medium backdrop-blur-lg transition-all duration-1000 ease-in-out  dark:bg-slate-800/80"
   >
     {#if imgCtrl.type === 'composite' && Array.isArray(channels)}
       <table class="table-auto">
@@ -86,13 +86,14 @@
                 <button
                   class={classes(
                     imgCtrl.variables[name].enabled
-                      ? bgColors[colors.findIndex((x) => x === imgCtrl.variables[name].color)]
+                      ? bgColors[colors.findIndex((x) => x === imgCtrl.variables[name].color)] +
+                          ' text-white'
                       : 'opacity-60 hover:opacity-80',
                     imgCtrl.variables[name].enabled &&
                       ['white', 'yellow'].includes(imgCtrl.variables[name].color)
                       ? 'text-black'
                       : '',
-                    `transition-width m-0.5 mx-auto flex items-center rounded-full pl-3 pr-4`
+                    `transition-width m-0.5 mx-auto flex items-center rounded-full pl-3 pr-3`
                   )}
                 >
                   <div class="-translate-y-[1px]">{name}</div>
@@ -100,12 +101,13 @@
               </td>
 
               <td class="flex items-center justify-center gap-x-1.5">
-                {#each zip(colors, bgColors) as [color, bg]}
+                {#each zip(colors, bgColors) as [color, bg], i}
                   <button
                     on:click={() => handleClick(name, color)}
                     class={classes(
                       bg,
                       color !== 'white' ? 'opacity-90' : '',
+                      i === 0 ? 'ml-1.5' : '',
                       `mx-[1px] my-1 flex h-[18px] w-[18px] items-center rounded-full opacity-70 transition-opacity duration-500 group-hover:opacity-100`
                     )}
                   />
