@@ -124,7 +124,6 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
         console.error('Failed to parse chunked CSV');
         return undefined;
       }
-      console.log(ret.data);
 
       const data = densify ? densify(ret.data) : ret.data;
       return {

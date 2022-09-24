@@ -27,13 +27,25 @@
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
   }
 
-  const setVal = debounce(
+  const setHover = debounce(
     oneLRU((v: { hover?: FeatureAndGroup; selected?: FeatureAndGroup }) => {
       curr.update(v);
       curr = curr;
     }),
-    100
+    50
   );
+
+  // Prevents hover from overriding actual selected.
+  function setVal(v: { hover?: FeatureAndGroup; selected?: FeatureAndGroup }) {
+    if (v.hover) {
+      setHover(v);
+    }
+    if (v.selected) {
+      setHover.cancel();
+      curr.update(v);
+      curr = curr;
+    }
+  }
 
   $: if (featureGroup) {
     fzf = featureGroup.map((f) => [f.group, new Fzf(f.features, { limit: 6 })]);
@@ -98,10 +110,10 @@
                 class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
                 on:mousemove={() => setVal({ hover: { group: v.group, feature: v.feature } })}
                 on:click={() => {
-                  showSearch = false;
                   setVal({
                     selected: { group: v.group, feature: v.feature }
                   });
+                  showSearch = false;
                 }}
                 transition:slide={{ duration: 100, easing: cubicInOut }}
               >

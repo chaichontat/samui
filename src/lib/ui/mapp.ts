@@ -105,23 +105,6 @@ export class Mapp extends Deferrable {
 
   updateFeature = keyOneLRU(async (ol: WebGLSpots, fn: FeatureAndGroup) => {
     if (!fn.feature) return false;
-    const sample = get(sSample);
-    const res = await sample.getFeature(fn);
-    if (!res) {
-      console.error('Feature not retrieved.');
-      return false;
-    }
-
-    const mPerPx = res.mPerPx ?? sample.image?.mPerPx;
-    if (mPerPx == undefined) {
-      console.error(`mPerPx is undefined at ${fn.feature}.`);
-      return false;
-    }
-
-    // Case: external coords.
-    if (res.coordName) {
-      ol.update(sample.coords[res.coordName]);
-    }
 
     $overlays[$sOverlay]?.updateProperties(res);
     if (!map.map?.getView().getCenter()) {

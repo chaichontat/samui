@@ -48,7 +48,6 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         this.style = genSpotStyle('quantitative', this.coords.sizePx);
         break;
       case 'categorical':
-        console.log('categorical');
         this.style = genSpotStyle('categorical', this.coords.sizePx);
         break;
       default:
@@ -85,7 +84,6 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     for (const [i, f] of this.features.entries()) {
       f.setProperties({ value: data[i] });
     }
-    console.log(this.features);
   }
 
   _updateOutline() {
@@ -119,7 +117,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       prev.dispose();
     }
     this.layer = newLayer;
-    console.log('Rebuilt');
+    console.log(`Overlay ${this.uid} rebuilt.`);
   }
 
   async update(sample: Sample, fn: FeatureAndGroup) {

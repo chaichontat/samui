@@ -22,6 +22,7 @@
   // Need to use this function in order to prevent update when $sOverlay is changed.
   const setFeature = (cf: typeof currFeature) => ($sFeature[$sOverlay] = cf.active);
   $: if (sample) setFeature(currFeature);
+  $: console.log($sFeature[$sOverlay]);
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 shadow backdrop-blur dark:bg-gray-900">

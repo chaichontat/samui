@@ -13,6 +13,8 @@ export class HoverSelect<T> {
   }
 
   get active() {
+    console.log(this.hover ?? this.selected);
+
     return this.hover ?? this.selected;
   }
 
