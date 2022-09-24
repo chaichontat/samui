@@ -9,14 +9,13 @@ import {
   type RetrievedData
 } from '$src/lib/data/objects/feature';
 import type { Sample } from '$src/lib/data/objects/sample';
-import { keyLRU, keyOneLRU } from '$src/lib/lru';
+import { keyLRU } from '$src/lib/lru';
 import { rand } from '$src/lib/utils';
 import { isEqual } from 'lodash-es';
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
-import type { LiteralStyle } from 'ol/style/literal';
 import { MapComponent } from '../definitions';
 import type { Mapp } from '../mapp';
 import { genSpotStyle } from './featureColormap';
@@ -42,24 +41,22 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
   set currStyle(style: string) {
     if (!this.coords) throw new Error('Must run update first.');
-
     if (style === this._currStyle) return;
+
     switch (style) {
       case 'quantitative':
-        this.updateStyle(genSpotStyle('quantitative', this.coords.sizePx));
+        this.style = genSpotStyle('quantitative', this.coords.sizePx);
         break;
       case 'categorical':
-        this.updateStyle(genSpotStyle('categorical', this.coords.sizePx));
+        console.log('categorical');
+        this.style = genSpotStyle('categorical', this.coords.sizePx);
         break;
       default:
         throw new Error(`Unknown style: ${style}`);
     }
+
     this._currStyle = style;
     this._rebuildLayer().catch(console.error);
-  }
-
-  updateStyle(style: LiteralStyle) {
-    this.webglStyle = style;
   }
 
   _updateProperties(sample: Sample, fn: FeatureAndGroup, { dataType, data }: RetrievedData) {
@@ -75,17 +72,20 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       );
       return false;
     }
+
+    // Set style cateogrical or quantitative.
     if (dataType === 'categorical') {
       ({ converted: data } = convertCategoricalToNumber({
         key: `${sample.name}-${fn.group}-${fn.feature}`,
         args: [data]
       }));
     }
-
     this.currStyle = dataType;
+
     for (const [i, f] of this.features.entries()) {
       f.setProperties({ value: data[i] });
     }
+    console.log(this.features);
   }
 
   _updateOutline() {
@@ -108,7 +108,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     await this.map.promise;
     const newLayer = new WebGLPointsLayer({
       source: this.source as VectorSource<Point>,
-      style: this.webglStyle,
+      style: this.style,
       zIndex: 10
     });
 
@@ -119,6 +119,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       prev.dispose();
     }
     this.layer = newLayer;
+    console.log('Rebuilt');
   }
 
   async update(sample: Sample, fn: FeatureAndGroup) {
@@ -189,7 +190,7 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     this.layer = new VectorLayer({
       source: new VectorSource({ features: [this.feature] }),
       zIndex: Infinity,
-      style: this.webglStyle
+      style: this.style
     });
   }
 
@@ -229,7 +230,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 
     this.layer = new VectorLayer({
       source: this.source,
-      style: this.webglStyle
+      style: this.style
     });
   }
 

@@ -96,6 +96,8 @@ export class Sample extends Deferrable {
     }
 
     const key = `${fn.group}-${fn.feature}`;
+
+    // Coordinates stuffs.
     let g: CoordsData;
     if (res.coordName) {
       g = this.coords[res.coordName];
@@ -121,7 +123,19 @@ export class Sample extends Deferrable {
       });
     }
 
-    return { ...res, coords: g };
+    // Transform value into array.
+    // Data can be in array form from the densify function.
+    let data: (number | string)[];
+    if (typeof res.data[0] === 'number') {
+      data = res.data as unknown as number[];
+    } else {
+      const k = Object.keys(res.data[0]).length === 1 ? Object.keys(res.data[0])[0] : 'value';
+      if (!(k in res.data[0])) {
+        throw new Error('value not found in CSV for ChunkedCSV with coord in feature.');
+      }
+      data = res.data.map((o) => o[k]);
+    }
+    return { ...res, data, coords: g };
   });
 
   genFeatureList() {

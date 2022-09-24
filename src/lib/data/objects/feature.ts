@@ -30,14 +30,7 @@ export interface FeatureData {
 }
 
 // TODO Set spec.
-export const convertCategoricalToNumber = keyLRU((values: Record<string, number | string>[]) => {
-  const key = Object.keys(values[0]).length === 1 ? Object.keys(values[0])[0] : 'value';
-  if (!(key in values[0])) {
-    throw new Error('value not found in CSV for ChunkedCSV with coord in feature.');
-  }
-
-  const arr = values.map((v) => v[key]);
-
+export const convertCategoricalToNumber = keyLRU((arr: (number | string)[]) => {
   const unique = [...new Set(arr)];
   const legend = {} as Record<number | string, number>;
   const legendArr = [] as (number | string)[];
@@ -46,6 +39,6 @@ export const convertCategoricalToNumber = keyLRU((values: Record<string, number 
     legendArr.push(v);
   }
   // TODO: Overwrite old thing?
-  const converted = values.map((v) => ({ ...v, [key]: legend[v[key]] }));
+  const converted = arr.map((v) => legend[v]);
   return { legend: legendArr, converted };
 });

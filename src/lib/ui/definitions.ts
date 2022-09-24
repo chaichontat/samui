@@ -16,7 +16,7 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   source: VectorSource<Geometry>;
   map: Mapp;
   layer?: T;
-  webglStyle: T extends MyWebGLPointsLayer ? LiteralStyle : Style;
+  style: T extends MyWebGLPointsLayer ? LiteralStyle : Style;
   coords?: CoordsData;
 
   // outline?: CanvasSpots;
@@ -27,7 +27,7 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   ) {
     super();
     this.map = map;
-    this.webglStyle = style;
+    this.style = style;
     this.source = new VectorSource();
   }
 

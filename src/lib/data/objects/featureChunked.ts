@@ -214,7 +214,6 @@ export function densifyToArray(length: number) {
     for (const { index, value } of obj) {
       dense[index] = value;
     }
-    console.assert(dense.every((x) => x !== undefined));
     return dense;
   };
 }
