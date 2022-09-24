@@ -1,4 +1,4 @@
-import { View, type Map } from 'ol';
+import type { Map } from 'ol';
 import WebGLTileLayer from 'ol/layer/WebGLTile';
 import GeoTIFF from 'ol/source/GeoTIFF';
 import type { ImgData } from '../../data/objects/image';
@@ -60,18 +60,6 @@ export class Background extends Deferrable {
 
     this.mPerPx = image.mPerPx;
     map.addLayer(this.layer);
-
-    // TODO: Persistent view when returning to same sample.
-    this.source
-      .getView()
-      .then((v) => {
-        return new View({
-          ...v,
-          resolutions: [...v.resolutions!, v.resolutions!.at(-1)! / 2, v.resolutions!.at(-1)! / 4]
-        });
-      })
-      .then((v) => map.setView(v))
-      .catch(console.error);
   }
 
   updateStyle(imgCtrl: CompCtrl | RGBCtrl) {

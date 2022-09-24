@@ -16,7 +16,7 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   source: VectorSource<Geometry>;
   map: Mapp;
   layer?: T;
-  style: T extends MyWebGLPointsLayer ? LiteralStyle : Style;
+  webglStyle: T extends MyWebGLPointsLayer ? LiteralStyle : Style;
   coords?: CoordsData;
 
   // outline?: CanvasSpots;
@@ -27,7 +27,7 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   ) {
     super();
     this.map = map;
-    this.style = style;
+    this.webglStyle = style;
     this.source = new VectorSource();
   }
 
@@ -63,13 +63,5 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
       // this.outline?.dispose();
     }
     this.source.dispose();
-  }
-
-  update(coords: CoordsData, ...args: unknown[]) {
-    throw new Error('Method not implemented.');
-  }
-
-  updateProperties(...args: unknown[]) {
-    throw new Error('Method not implemented.');
   }
 }

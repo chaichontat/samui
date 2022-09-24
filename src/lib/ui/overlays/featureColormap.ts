@@ -1,6 +1,8 @@
+import type { FeatureType } from '$src/lib/data/objects/feature';
 import { genLRU } from '$src/lib/lru';
 import * as d3 from 'd3';
 import { zip } from 'lodash-es';
+import type { LiteralStyle } from 'ol/style/literal';
 
 // export function genColor(band: string, color: keyof typeof _colors) {
 
@@ -37,3 +39,62 @@ const genColormap = genLRU((c: keyof typeof _colors) => {
 
   return zip(range, cs).flatMap((a) => a);
 });
+
+function genCategoricalColors() {
+  const colors = [];
+  for (let i = 0; i < d3.schemeTableau10.length; i++) {
+    colors.push(
+      ['==', ['%', ['get', 'value'], d3.schemeTableau10.length], i],
+      d3.schemeTableau10[i]
+    );
+  }
+  return colors;
+}
+
+export function genSpotStyle(type: FeatureType, spotDiamPx: number): LiteralStyle {
+  const common = {
+    symbolType: 'circle',
+    size: [
+      'interpolate',
+      ['exponential', 1.2],
+      ['zoom'],
+      1,
+      spotDiamPx / 64,
+      2,
+      spotDiamPx / 32,
+      3,
+      spotDiamPx / 16,
+      4,
+      spotDiamPx / 8,
+      5,
+      spotDiamPx / 2,
+      6,
+      spotDiamPx,
+      7,
+      spotDiamPx * 2
+    ]
+  };
+
+  if (type === 'quantitative') {
+    const colors = [...Array(10).keys()].flatMap((i) => [i, d3.interpolateTurbo(i / 10)]);
+    colors[1] += 'ff';
+    return {
+      variables: { opacity: 1 },
+      symbol: {
+        ...common,
+        color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
+        opacity: ['var', 'opacity']
+        // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
+      }
+    };
+  } else {
+    return {
+      variables: { opacity: 0.9 },
+      symbol: {
+        ...common,
+        color: ['case', ...genCategoricalColors(), '#ffffff'],
+        opacity: ['clamp', ['var', 'opacity'], 0.1, 1]
+      }
+    };
+  }
+}

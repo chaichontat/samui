@@ -1,4 +1,4 @@
-import { Map, MapBrowserEvent, Overlay } from 'ol';
+import { Map, MapBrowserEvent, Overlay, View } from 'ol';
 import ScaleLine from 'ol/control/ScaleLine.js';
 import Zoom from 'ol/control/Zoom.js';
 
@@ -8,16 +8,18 @@ import type { CoordsData } from '$src/lib/data/objects/coords';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
 import { Background } from '$src/lib/ui/background/imgBackground';
-import { WebGLSpots } from '$src/lib/ui/overlays/points';
-import { mapTiles, overlays, sOverlay } from '../store';
+import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
+import type { FeatureAndGroup } from '../data/objects/feature';
+import { keyOneLRU } from '../lru';
+import { mapTiles, overlays, sOverlay, sSample } from '../store';
 
 export class Mapp extends Deferrable {
   map?: Map;
   // layers: Record<string, MapComponent<OLLayer>>;
   persistentLayers: {
     background: Background;
+    active: ActiveSpots;
     // annotations: MutableSpots;
-    // active: ActiveSpots;
   };
   // draw?: Draww;
   overlays?: Record<string, CoordsData>;
@@ -29,8 +31,8 @@ export class Mapp extends Deferrable {
     super();
     // this.layers = {};
     this.persistentLayers = {
-      background: new Background()
-      // active: new ActiveSpots(this),
+      background: new Background(),
+      active: new ActiveSpots(this)
       // annotations: new MutableSpots(this)
     };
     // this.persistentLayers.annotations.z = Infinity;
@@ -75,31 +77,79 @@ export class Mapp extends Deferrable {
   }
 
   async updateSample(sample: Sample) {
-    if (!this.mounted) throw new Error('Map not mounted.');
+    if (!this.map) throw new Error('Map not mounted.');
+    await sample.hydrate();
 
     // Image
+    // TODO: Persistent view when returning to same sample.
     const image = sample.image;
-    await sample.promise;
-    await (image ? this.persistentLayers.background.update(this.map!, image) : undefined);
-    if (!image) this.persistentLayers.background.dispose(this.map);
+    if (image) {
+      const bg = this.persistentLayers.background;
+      await bg.update(this.map, image);
+      bg.source!.getView()
+        .then((v) => {
+          return new View({
+            ...v,
+            resolutions: [...v.resolutions!, v.resolutions!.at(-1)! / 2, v.resolutions!.at(-1)! / 4]
+          });
+        })
+        .then((v) => this.map!.setView(v))
+        .catch(console.error);
+    } else {
+      this.persistentLayers.background.dispose(this.map);
+    }
 
-    // const newOl = Object.keys(overlays);
-    // const currOl = Object.keys(this.layers);
-    // const toDelete = difference(currOl, newOl);
-    // toDelete.map((name) => this.layers[name].dispose());
-    // const toCreate = difference(newOl, currOl).map((name) => new WebGLSpots(name, this));
-    // toCreate.forEach((x) => x.mount());
-    // const newLayers = [
-    //   ...toCreate,
-    //   ...intersection(newOl, currOl).map((name) => this.layers[name])
-    // ];
-    // this.layers = {};
-    // for (const layer of newLayers) {
-    //   this.layers[layer.name] = layer;
-    // }
-    // await Promise.all(Object.values(overlays).map((x) => x.hydrate()));
-    // newLayers.map((x) => x.update(overlays[x.name]));
+    this.persistentLayers.active.visible = false;
+    await Promise.all(Object.values(get(overlays)).map((ol) => ol.updateSample(sample)));
   }
+
+  updateFeature = keyOneLRU(async (ol: WebGLSpots, fn: FeatureAndGroup) => {
+    if (!fn.feature) return false;
+    const sample = get(sSample);
+    const res = await sample.getFeature(fn);
+    if (!res) {
+      console.error('Feature not retrieved.');
+      return false;
+    }
+
+    const mPerPx = res.mPerPx ?? sample.image?.mPerPx;
+    if (mPerPx == undefined) {
+      console.error(`mPerPx is undefined at ${fn.feature}.`);
+      return false;
+    }
+
+    // Case: external coords.
+    if (res.coordName) {
+      ol.update(sample.coords[res.coordName]);
+    }
+
+    $overlays[$sOverlay]?.updateProperties(res);
+    if (!map.map?.getView().getCenter()) {
+      let mx = 0;
+      let my = 0;
+      let max = [0, 0];
+      for (const { x, y } of res.data) {
+        mx += Number(x);
+        my += Number(y);
+        max[0] = Math.max(max[0], Number(x));
+        max[1] = Math.max(max[1], Number(y));
+      }
+      mx /= res.data.length;
+      my /= res.data.length;
+      console.log(res.data, mx, my);
+
+      // TODO: Deal with hard-coded zoom.
+      map.map?.setView(
+        new View({
+          center: [mx * mPerPx, -my * mPerPx],
+          projection: 'EPSG:3857',
+          resolution: 1e-4,
+          minResolution: 1e-7,
+          maxResolution: Math.max(max[0], max[1]) * mPerPx
+        })
+      );
+    }
+  });
 
   moveView({ x, y }: { x: number; y: number }, zoom?: number) {
     if (!this.map) throw new Error('Map not initialized.');

@@ -1,6 +1,7 @@
 import { Deferrable } from '$src/lib/definitions';
-import { CoordsData, type CoordsParams } from './coords';
-import type { FeatureAndGroup, FeatureData } from './feature';
+import { genLRU, keyLRU } from '$src/lib/lru';
+import { CoordsData, type Coord, type CoordsParams } from './coords';
+import type { FeatureAndGroup, FeatureData, RetrievedData } from './feature';
 import { ChunkedCSV, type ChunkedCSVParams } from './featureChunked';
 import { PlainCSV, type PlainCSVParams } from './featurePlain';
 import { ImgData, type ImageParams } from './image';
@@ -78,22 +79,50 @@ export class Sample extends Deferrable {
       ...Object.values(this.coords).map((o) => o.hydrate(this.handle)),
       ...Object.values(this.features).map((o) => o.hydrate(this.handle))
     ]);
-
+    this._deferred.resolve();
     this.hydrated = true;
     return this;
   }
 
-  async getFeature(fn: FeatureAndGroup) {
-    const f =
+  getFeature = genLRU(async (fn: FeatureAndGroup) => {
+    const res =
       fn.group === 'Misc'
         ? await this.features[fn.feature]?.retrieve()
         : await this.features[fn.group]?.retrieve(fn.feature);
-    if (!f || !f.data) {
+
+    if (!res || !res.data) {
       console.error(`getFeature: ${fn.feature} not found.`);
       return;
     }
-    return f;
-  }
+
+    const key = `${fn.group}-${fn.feature}`;
+    let g: CoordsData;
+    if (res.coordName) {
+      g = this.coords[res.coordName];
+    } else {
+      // Gen coords.
+      const mPerPx = res.mPerPx ?? this.image?.mPerPx;
+      if (mPerPx == undefined) {
+        console.error(`mPerPx is undefined at ${fn.feature}.`);
+        return;
+      }
+
+      if (!('x' in res.data[0]) || !('y' in res.data[0])) {
+        console.error("Feature doesn't have x or y.");
+        return;
+      }
+
+      g = new CoordsData({
+        name: key,
+        shape: 'circle',
+        pos: res.data as unknown as Coord[],
+        size: res.size,
+        mPerPx
+      });
+    }
+
+    return { ...res, coords: g };
+  });
 
   genFeatureList() {
     const featureList = [];

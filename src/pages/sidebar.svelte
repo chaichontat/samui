@@ -2,7 +2,7 @@
   import Nav from '$src/lib/sidebar/nav.svelte';
 </script>
 
-<aside class="relative mx-4 flex h-full w-full flex-1 flex-col overflow-y-auto">
+<aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4">
   <div class="z-40 w-full">
     <Nav />
   </div>

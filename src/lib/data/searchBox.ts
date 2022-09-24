@@ -16,8 +16,8 @@ export class HoverSelect<T> {
     return this.hover ?? this.selected;
   }
 
-  update({ hover, selected }: { hover?: T | null; selected?: T | null }) {
-    if (hover != undefined) this.hover = hover;
+  update({ hover, selected }: { hover?: T; selected?: T }) {
+    this.hover = hover;
     if (selected != undefined) this.selected = selected;
   }
 }

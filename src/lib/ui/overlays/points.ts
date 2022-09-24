@@ -3,8 +3,15 @@ import Feature from 'ol/Feature.js';
 import { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
 
 import type { Coord, CoordsData } from '$lib/data/objects/coords';
-import { keyLRU } from '$src/lib/lru';
+import {
+  convertCategoricalToNumber,
+  type FeatureAndGroup,
+  type RetrievedData
+} from '$src/lib/data/objects/feature';
+import type { Sample } from '$src/lib/data/objects/sample';
+import { keyLRU, keyOneLRU } from '$src/lib/lru';
 import { rand } from '$src/lib/utils';
+import { isEqual } from 'lodash-es';
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
@@ -12,74 +19,16 @@ import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { LiteralStyle } from 'ol/style/literal';
 import { MapComponent } from '../definitions';
 import type { Mapp } from '../mapp';
-
-export function genSpotStyle(
-  type: 'quantitative' | 'categorical',
-  spotDiamPx: number
-): LiteralStyle {
-  const common = {
-    symbolType: 'circle',
-    size: [
-      'interpolate',
-      ['exponential', 1.2],
-      ['zoom'],
-      1,
-      spotDiamPx / 64,
-      2,
-      spotDiamPx / 32,
-      3,
-      spotDiamPx / 16,
-      4,
-      spotDiamPx / 8,
-      5,
-      spotDiamPx / 2,
-      6,
-      spotDiamPx,
-      7,
-      spotDiamPx * 2
-    ]
-  };
-
-  if (type === 'quantitative') {
-    const colors = [...Array(10).keys()].flatMap((i) => [i, d3.interpolateTurbo(i / 10)]);
-    colors[1] += 'ff';
-    return {
-      variables: { opacity: 1 },
-      symbol: {
-        ...common,
-        color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
-        opacity: ['var', 'opacity']
-        // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
-      }
-    };
-  } else {
-    return {
-      variables: { opacity: 0.9 },
-      symbol: {
-        ...common,
-        color: ['case', ...genCategoricalColors(), '#ffffff'],
-        opacity: ['clamp', ['var', 'opacity'], 0.1, 1]
-      }
-    };
-  }
-}
-
-function genCategoricalColors() {
-  const colors = [];
-  for (let i = 0; i < d3.schemeTableau10.length; i++) {
-    colors.push(
-      ['==', ['%', ['get', 'value'], d3.schemeTableau10.length], i],
-      d3.schemeTableau10[i]
-    );
-  }
-  return colors;
-}
+import { genSpotStyle } from './featureColormap';
 
 export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point>>> {
   outline?: CanvasSpots;
   _currStyle: string;
   uid: string;
   features?: Feature<Point>[];
+
+  currSample?: string;
+  currFeature?: FeatureAndGroup;
 
   constructor(map: Mapp) {
     super(map, genSpotStyle('categorical', 2));
@@ -106,14 +55,19 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         throw new Error(`Unknown style: ${style}`);
     }
     this._currStyle = style;
+    this._rebuildLayer().catch(console.error);
   }
 
-  updateProperties({ dataType, data }: FeatureValues) {
+  updateStyle(style: LiteralStyle) {
+    this.webglStyle = style;
+  }
+
+  _updateProperties(sample: Sample, fn: FeatureAndGroup, { dataType, data }: RetrievedData) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
 
     // TODO: Subsample if coords subsampled.
-    if (data?.length !== this.source?.getFeatures().length) {
+    if (data?.length !== this.features.length) {
       console.error(
         `Intensity length doesn't match. Expected: ${this.source?.getFeatures().length}, got: ${
           data?.length
@@ -121,18 +75,17 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       );
       return false;
     }
+    if (dataType === 'categorical') {
+      ({ converted: data } = convertCategoricalToNumber({
+        key: `${sample.name}-${fn.group}-${fn.feature}`,
+        args: [data]
+      }));
+    }
 
-    ({ converted: data } = convertCategoricalToNumber(data as string[]));
     this.currStyle = dataType;
     for (const [i, f] of this.features.entries()) {
       f.setProperties({ value: data[i] });
     }
-    this.source.changed();
-  }
-
-  updateStyle(style: LiteralStyle) {
-    this.style = style;
-    this._rebuildLayer().catch(console.error);
   }
 
   _updateOutline() {
@@ -155,7 +108,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     await this.map.promise;
     const newLayer = new WebGLPointsLayer({
       source: this.source as VectorSource<Point>,
-      style: this.style,
+      style: this.webglStyle,
       zIndex: 10
     });
 
@@ -168,21 +121,46 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this.layer = newLayer;
   }
 
-  update(coords: CoordsData) {
-    if (coords.name === this.coords?.name) return;
-    this.coords = coords;
-    this.source.clear();
-    // TODO: Key collision: group, sample.
-    this.features = this.genFeatures({ key: coords.name, args: [coords] });
-    this.source.addFeatures(this.features);
-    this._rebuildLayer().catch(console.error);
+  async update(sample: Sample, fn: FeatureAndGroup) {
+    if (!fn.feature) return false;
+    const res = await sample.getFeature(fn);
+    if (!res) return false;
+
+    const { data, dataType, coords } = res;
+    // Check if coord is the same.
+    if (this.coords?.name !== coords.name) {
+      this.source.clear();
+      this.features = WebGLSpots.genPoints({
+        key: `${sample.name}-${coords.name}`,
+        args: [coords]
+      });
+      this.coords = coords;
+    }
+
+    if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
+      this._updateProperties(sample, fn, { dataType, data });
+      this.currFeature = fn;
+      this.currSample = sample.name;
+    }
+
+    // Tell WebGL to update. Intentionally not updating on source directly to minimize redraws.
+    this.source.getFeatures().length === 0
+      ? this.source.addFeatures(this.features!)
+      : this.source.changed();
+
     this._updateOutline();
+    return;
   }
 
-  genFeatures = keyLRU((coords: CoordsData) => {
+  async updateSample(sample: Sample) {
+    if (!this.currFeature) return false;
+    return await this.update(sample, this.currFeature);
+  }
+
+  static genPoints = keyLRU((coords: CoordsData) => {
     return coords.pos!.map(({ x, y, id, idx }) => {
       const f = new Feature({
-        geometry: new Point([x * this.coords!.mPerPx, -y * this.coords!.mPerPx]),
+        geometry: new Point([x * coords.mPerPx, -y * coords.mPerPx]),
         value: 0,
         id: id ?? idx
       });
@@ -211,7 +189,7 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     this.layer = new VectorLayer({
       source: new VectorSource({ features: [this.feature] }),
       zIndex: Infinity,
-      style: this.style
+      style: this.webglStyle
     });
   }
 
@@ -222,6 +200,7 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   }
 
   update(coords: CoordsData, idx: number) {
+    this.visible = true;
     if (!coords.mPerPx) throw new Error('No mPerPx provided');
     const pos = coords.pos!.find((p) => p.idx === idx);
     if (!pos) {
@@ -250,7 +229,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 
     this.layer = new VectorLayer({
       source: this.source,
-      style: this.style
+      style: this.webglStyle
     });
   }
 
@@ -281,10 +260,11 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   /// Replace entire feature.
   update(coords: CoordsData) {
     if (coords.mPerPx === undefined) throw new Error('mPerPx undefined.');
+    if (coords.name === this.coords?.name || !coords.size) return;
     this.source.clear();
     this.source.addFeatures(
       coords.pos!.map((c) =>
-        CanvasSpots._genCircle({ ...c, mPerPx: coords.mPerPx!, size: coords.size })
+        CanvasSpots._genCircle({ ...c, mPerPx: coords.mPerPx, size: coords.size })
       )
     );
     this.coords = coords;

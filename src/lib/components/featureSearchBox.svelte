@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Fzf } from 'fzf';
+  import { debounce } from 'lodash-es';
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import type { FeatureAndGroup } from '../data/objects/feature';
@@ -26,11 +27,12 @@
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
   }
 
-  const setVal = oneLRU(
-    (v: { hover?: FeatureAndGroup | null; selected?: FeatureAndGroup | null }) => {
+  const setVal = debounce(
+    oneLRU((v: { hover?: FeatureAndGroup; selected?: FeatureAndGroup }) => {
       curr.update(v);
       curr = curr;
-    }
+    }),
+    100
   );
 
   $: if (featureGroup) {
@@ -82,8 +84,8 @@
       class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
-      on:mouseout={() => setVal({ hover: null })}
-      on:blur={() => setVal({ hover: null })}
+      on:mouseout={() => setVal({ hover: undefined })}
+      on:blur={() => setVal({ hover: undefined })}
     >
       {#each candidates as { group, values }}
         {#if values.length > 0}

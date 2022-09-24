@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { sMapp } from '$lib/store';
+  import { overlays, sFeature as sFeatures, sMapp, sOverlay } from '$lib/store';
+  import type { FeatureAndGroup } from '$src/lib/data/objects/feature';
   import type { Sample } from '$src/lib/data/objects/sample';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
+  import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
   import 'ol/ol.css';
   import View from 'ol/View';
   import { createEventDispatcher, onMount } from 'svelte';
@@ -53,8 +55,8 @@
   // }
 
   // Sample change.
-  $: if (sample) update(sample).catch(console.error);
-  const update = async (sample: Sample) => {
+  $: if (sample) updateSample(sample).catch(console.error);
+  const updateSample = async (sample: Sample) => {
     if (currSample !== sample.name) {
       await map.updateSample(sample);
       currSample = sample.name;
@@ -73,102 +75,13 @@
   };
 
   // Feature change.
-  // $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
-  //   const ol = $sOverlay;
-  //   updateFeature({
-  //     key: `${sample.name}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
-  //     args: [$sFeature[ol]]
-  //   }).catch(console.error);
-  // }
-
-  // const genCoords = keyLRU((name: string, pos: Record<string, number>[], mPerPx: number) => {
-  //   return new CoordsData({
-  //     name,
-  //     shape: 'circle',
-  //     pos,
-  //     mPerPx
-  //   });
-  // });
-
-  // const updateFeature = keyOneLRU(async (fn: FeatureAndGroup) => {
-  //   if (!fn.feature) return false;
-  //   const res = await sample!.getFeature(fn);
-  //   if (!res) return false;
-
-  //   const mPerPx = res.mPerPx ?? sample?.image?.mPerPx;
-  //   if (mPerPx == undefined) {
-  //     console.error(`mPerPx is undefined at ${fn.feature}.`);
-  //     return false;
-  //   }
-
-  //   if (res.coordName) {
-  //     $overlays[$sOverlay].update(sample!.coords[res.coordName]);
-  //   } else {
-  //     if (!('x' in res.data[0]) || !('y' in res.data[0])) {
-  //       console.error("Feature doesn't have x or y.");
-  //       return false;
-  //     }
-  //     $overlays[$sOverlay].update(
-  //       genCoords({
-  //         key: `${sample!.name}-${fn.group}-${fn.feature}`,
-  //         args: [fn.feature, res.data, mPerPx]
-  //       })
-  //     );
-  //   }
-
-  //   $overlays[$sOverlay]?.updateProperties(res);
-  //   if (!map.map?.getView().getCenter()) {
-  //     let mx = 0;
-  //     let my = 0;
-  //     let max = [0, 0];
-  //     for (const { x, y } of res.data) {
-  //       mx += Number(x);
-  //       my += Number(y);
-  //       max[0] = Math.max(max[0], Number(x));
-  //       max[1] = Math.max(max[1], Number(y));
-  //     }
-  //     mx /= res.data.length;
-  //     my /= res.data.length;
-  //     console.log(res.data, mx, my);
-
-  //     // TODO: Deal with hard-coded zoom.
-  //     map.map?.setView(
-  //       new View({
-  //         center: [mx * mPerPx, -my * mPerPx],
-  //         projection: 'EPSG:3857',
-  //         resolution: 1e-4,
-  //         minResolution: 1e-7,
-  //         maxResolution: Math.max(max[0], max[1]) * mPerPx
-  //       })
-  //     );
-  //   }
-  // });
-
-  // Hover/overlay.
-  // $: if (sample && $sOverlay) changeHover($sOverlay, $sId.idx).catch(console.error);
-
-  // const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
-  //   await sample!.promise;
-  //   const active = map.persistentLayers.active;
-  //   const ov = $overlays[activeol];
-
-  //   if (!ov) return false;
-
-  //   if (idx !== null && ov.coords) {
-  //     active.layer!.setVisible(true);
-  //     const pos = ov.coords.pos![idx];
-  //     if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
-  //     active.update(ov.coords, idx);
-  //     if (map.tippy && pos.id) {
-  //       map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
-  //       map.tippy.elem.removeAttribute('hidden');
-  //       map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
-  //     }
-  //   } else {
-  //     active.layer!.setVisible(false);
-  //     map.tippy?.elem.setAttribute('hidden', '');
-  //   }
-  // });
+  $: if ($sOverlay && $sFeatures[$sOverlay]) {
+    updateFeature($sFeatures[$sOverlay]!).catch(console.error);
+  }
+  const updateFeature = async (fn: FeatureAndGroup) => {
+    if (!sample) return;
+    await $overlays[$sOverlay].update(sample, fn);
+  };
 
   $: small = width < 500;
 </script>
@@ -193,10 +106,8 @@
     bind:this={mapElem}
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
+    class:small={showImgControl && small}
   />
-  <!-- class:small={showImgControl && small}
-    class:composite={showImgControl && sample?.image?.mode !== 'rgb' && !small}
-    class:rgb={showImgControl && sample?.image?.mode === 'rgb'} -->
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
@@ -205,8 +116,8 @@
 
   <!-- Channel indicator -->
   {#if sample}
-    <!-- Top right tools -->
-    <!-- <MapTools {map} {width} bind:showImgControl /> -->
+    <!-- Overlay and Colorbar -->
+    <MapTools {map} {width} bind:showImgControl />
 
     <!-- Img control -->
     <div
