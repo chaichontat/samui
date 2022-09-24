@@ -1,5 +1,17 @@
 import Papa, { type ParseConfig, type ParseResult } from 'papaparse';
 
+export type Url = { url: string; type: 'local' | 'network' };
+
+export async function convertLocalToNetwork(
+  handle: FileSystemDirectoryHandle,
+  url: Url
+): Promise<Url> {
+  if (url.type === 'local') {
+    return { url: URL.createObjectURL(await getFile(handle, url.url)), type: 'network' };
+  }
+  return url;
+}
+
 function download(name: string, blob: Blob) {
   const elem = window.document.createElement('a');
   elem.href = window.URL.createObjectURL(blob);
@@ -9,7 +21,11 @@ function download(name: string, blob: Blob) {
   document.body.removeChild(elem);
 }
 
-export async function fromCSV<T>(str: string, options?: ParseConfig<T>) {
+export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
+  return await handle.getFileHandle(name).then((fh) => fh.getFile());
+}
+
+export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { download: boolean }) {
   let out: ParseResult<T> | undefined;
   let res: () => void;
   const promise: Promise<void> = new Promise((resolve) => (res = resolve));

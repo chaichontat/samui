@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { clickOutside, oneLRU } from '$src/lib/utils';
+  import { Fzf } from 'fzf';
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
-  import { Fzf } from '../../../node_modules/fzf';
-  import type { FeatureAndGroup } from '../data/features';
+  import type { FeatureAndGroup } from '../data/objects/feature';
   import { HoverSelect, type FeatureGroupList } from '../data/searchBox';
+  import { oneLRU } from '../lru';
   import { sFeature, sOverlay } from '../store';
+  import { clickOutside } from '../ui/utils';
 
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 

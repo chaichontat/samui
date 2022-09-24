@@ -1,28 +1,21 @@
 <script lang="ts">
-  import type { FeatureAndGroup } from '$lib/data/features';
-  import { CoordsData } from '$src/lib/data/coord';
-  import type { Sample } from '$src/lib/data/sample';
-  import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
-  import ImgControl from '$src/lib/mapp/imgControl.svelte';
-  import { Mapp } from '$src/lib/mapp/mapp';
-  import { keyLRU, keyOneLRU, oneLRU } from '$src/lib/utils';
+  import { sMapp } from '$lib/store';
+  import type { Sample } from '$src/lib/data/objects/sample';
+  import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import 'ol/ol.css';
   import View from 'ol/View';
   import { createEventDispatcher, onMount } from 'svelte';
-  import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, overlays, sFeature, sId, sMapp, sOverlay } from '../lib/store';
+  import { Mapp } from '../lib/ui/mapp';
 
   export let sample: Sample | undefined;
   $: sample?.hydrate().catch(console.error);
   let currSample = sample?.name;
 
-  $: image = sample?.image;
-
   export let uid: number;
   const mapName = `map-${uid}`;
   let mapElem: HTMLDivElement;
   let tippyElem: HTMLDivElement;
-  const map = new Mapp();
+  let map = new Mapp();
   $sMapp = map;
 
   let width: number;
@@ -30,41 +23,11 @@
   let small = false;
   const dispatch = createEventDispatcher();
 
-  let imgCtrl: ImageCtrl;
   let showImgControl = true;
 
   onMount(() => {
     map.mount(mapElem, tippyElem);
-    map.attachPointerListener({
-      pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (id_) $sId = { ...id_, source: 'map' };
-      })
-
-      // click: (id_: { idx: number; id: number | string } | null) => {
-      //   if (!$sOverlay) return;
-      //   const ov = map.layers[$sOverlay]?.overlay;
-      //   if ($annotating.currKey !== null && id_ && ov) {
-      //     const idx = id_.idx;
-      //     const existing = map.persistentLayers.annotations.get(idx);
-      //     if (
-      //       existing === null ||
-      //       existing.get('value') !== $annotating.keys[$annotating.currKey]
-      //     ) {
-      //       map.persistentLayers.annotations.add(
-      //         idx,
-      //         $annotating.keys[$annotating.currKey],
-      //         ov,
-      //         $annotating.keys
-      //       );
-      //     } else {
-      //       map.persistentLayers.annotations.delete(idx);
-      //     }
-      //   }
-      // }
-    });
   });
-
-  $: map.persistentLayers.annotations.layer?.setVisible($annotating.show);
 
   // function moveView(idx: number) {
   //   if (!coords[idx]) return;
@@ -90,120 +53,122 @@
   // }
 
   // Sample change.
-  let convertImgCtrl: ReturnType<typeof colorVarFactory>;
   $: if (sample) update(sample).catch(console.error);
   const update = async (sample: Sample) => {
     if (currSample !== sample.name) {
-      if (sample.image) convertImgCtrl = colorVarFactory(sample.image.channels);
+      await map.updateSample(sample);
       currSample = sample.name;
+      map = map;
     } else {
       // When adding outlines in app.
-      await map.update({ overlays: sample.overlays, refresh: true });
+      // await map.update({ sample, overlays: $overlays, refresh: true });
     }
+
+    // for (const [name, ol] of Object.entries($overlays)) {
+    //   updateFeature({
+    //     key: `${sample.name}-${$sFeature[name].group}-${$sFeature[name].feature}`,
+    //     args: [$sFeature[name]]
+    //   }).catch(console.error);
+    // }
   };
 
   // Feature change.
-  $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
-    const ol = $sOverlay;
-    updateFeature({
-      key: `${sample.name}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
-      args: [$sFeature[ol]]
-    }).catch(console.error);
-  }
+  // $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
+  //   const ol = $sOverlay;
+  //   updateFeature({
+  //     key: `${sample.name}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
+  //     args: [$sFeature[ol]]
+  //   }).catch(console.error);
+  // }
 
-  const genCoords = keyLRU((name: string, pos: Record<string, number>[], mPerPx: number) => {
-    return new CoordsData({
-      name,
-      shape: 'circle',
-      pos,
-      mPerPx
-    });
-  });
+  // const genCoords = keyLRU((name: string, pos: Record<string, number>[], mPerPx: number) => {
+  //   return new CoordsData({
+  //     name,
+  //     shape: 'circle',
+  //     pos,
+  //     mPerPx
+  //   });
+  // });
 
-  const updateFeature = keyOneLRU(async (fn: FeatureAndGroup) => {
-    if (!fn.feature) return false;
-    const res = await sample!.getFeature(fn);
-    if (!res) return false;
+  // const updateFeature = keyOneLRU(async (fn: FeatureAndGroup) => {
+  //   if (!fn.feature) return false;
+  //   const res = await sample!.getFeature(fn);
+  //   if (!res) return false;
 
-    const mPerPx = res.mPerPx ?? sample?.image?.mPerPx;
-    if (mPerPx == undefined) {
-      console.error(`mPerPx is undefined at ${fn.feature}.`);
-      return false;
-    }
+  //   const mPerPx = res.mPerPx ?? sample?.image?.mPerPx;
+  //   if (mPerPx == undefined) {
+  //     console.error(`mPerPx is undefined at ${fn.feature}.`);
+  //     return false;
+  //   }
 
-    if (res.coordName) {
-      $overlays[$sOverlay].update(sample!.coords[res.coordName]);
-    } else {
-      if (!('x' in res.data[0]) || !('y' in res.data[0])) {
-        console.error("Feature doesn't have x or y.");
-        return false;
-      }
-      $overlays[$sOverlay].update(
-        genCoords({
-          key: `${sample!.name}-${fn.group}-${fn.feature}`,
-          args: [fn.feature, res.data, mPerPx]
-        })
-      );
-    }
+  //   if (res.coordName) {
+  //     $overlays[$sOverlay].update(sample!.coords[res.coordName]);
+  //   } else {
+  //     if (!('x' in res.data[0]) || !('y' in res.data[0])) {
+  //       console.error("Feature doesn't have x or y.");
+  //       return false;
+  //     }
+  //     $overlays[$sOverlay].update(
+  //       genCoords({
+  //         key: `${sample!.name}-${fn.group}-${fn.feature}`,
+  //         args: [fn.feature, res.data, mPerPx]
+  //       })
+  //     );
+  //   }
 
-    $overlays[$sOverlay]?.updateProperties(res);
-    if (!map.map?.getView().getCenter()) {
-      let mx = 0;
-      let my = 0;
-      let max = [0, 0];
-      for (const { x, y } of res.data) {
-        mx += Number(x);
-        my += Number(y);
-        max[0] = Math.max(max[0], Number(x));
-        max[1] = Math.max(max[1], Number(y));
-      }
-      mx /= res.data.length;
-      my /= res.data.length;
-      console.log(res.data, mx, my);
+  //   $overlays[$sOverlay]?.updateProperties(res);
+  //   if (!map.map?.getView().getCenter()) {
+  //     let mx = 0;
+  //     let my = 0;
+  //     let max = [0, 0];
+  //     for (const { x, y } of res.data) {
+  //       mx += Number(x);
+  //       my += Number(y);
+  //       max[0] = Math.max(max[0], Number(x));
+  //       max[1] = Math.max(max[1], Number(y));
+  //     }
+  //     mx /= res.data.length;
+  //     my /= res.data.length;
+  //     console.log(res.data, mx, my);
 
-      // TODO: Deal with hard-coded zoom.
-      map.map?.setView(
-        new View({
-          center: [mx * mPerPx, -my * mPerPx],
-          projection: 'EPSG:3857',
-          resolution: 1e-4,
-          minResolution: 1e-7,
-          maxResolution: Math.max(max[0], max[1]) * mPerPx
-        })
-      );
-    }
-  });
+  //     // TODO: Deal with hard-coded zoom.
+  //     map.map?.setView(
+  //       new View({
+  //         center: [mx * mPerPx, -my * mPerPx],
+  //         projection: 'EPSG:3857',
+  //         resolution: 1e-4,
+  //         minResolution: 1e-7,
+  //         maxResolution: Math.max(max[0], max[1]) * mPerPx
+  //       })
+  //     );
+  //   }
+  // });
 
   // Hover/overlay.
-  $: if (sample && $sOverlay) changeHover($sOverlay, $sId.idx).catch(console.error);
+  // $: if (sample && $sOverlay) changeHover($sOverlay, $sId.idx).catch(console.error);
 
-  const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
-    await sample!.promise;
-    const active = map.persistentLayers.active;
-    const ov = $overlays[activeol];
+  // const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
+  //   await sample!.promise;
+  //   const active = map.persistentLayers.active;
+  //   const ov = $overlays[activeol];
 
-    if (!ov) return false;
+  //   if (!ov) return false;
 
-    if (idx !== null && ov.coords) {
-      active.layer!.setVisible(true);
-      const pos = ov.coords.pos![idx];
-      if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
-      active.update(ov.coords, idx);
-      if (map.tippy && pos.id) {
-        map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
-        map.tippy.elem.removeAttribute('hidden');
-        map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
-      }
-    } else {
-      active.layer!.setVisible(false);
-      map.tippy?.elem.setAttribute('hidden', '');
-    }
-  });
-
-  // Image control params
-  $: if (convertImgCtrl && imgCtrl) {
-    map.persistentLayers.background?.updateStyle(convertImgCtrl(imgCtrl));
-  }
+  //   if (idx !== null && ov.coords) {
+  //     active.layer!.setVisible(true);
+  //     const pos = ov.coords.pos![idx];
+  //     if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
+  //     active.update(ov.coords, idx);
+  //     if (map.tippy && pos.id) {
+  //       map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
+  //       map.tippy.elem.removeAttribute('hidden');
+  //       map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+  //     }
+  //   } else {
+  //     active.layer!.setVisible(false);
+  //     map.tippy?.elem.setAttribute('hidden', '');
+  //   }
+  // });
 
   $: small = width < 500;
 </script>
@@ -229,8 +194,8 @@
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:small={showImgControl && small}
-    class:composite={showImgControl && image?.channels !== 'rgb' && !small}
-    class:rgb={showImgControl && image?.channels === 'rgb'}
+    class:composite={showImgControl && sample?.image?.mode !== 'rgb' && !small}
+    class:rgb={showImgControl && sample?.image?.mode === 'rgb'}
   />
   <!-- Map tippy -->
   <div
@@ -254,7 +219,7 @@
     </section>
 
     <!-- Top right tools -->
-    <MapTools {map} {width} bind:showImgControl />
+    <!-- <MapTools {map} {width} bind:showImgControl /> -->
 
     <!-- Img control -->
     <div
@@ -265,17 +230,20 @@
         class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
         class:hidden={!showImgControl}
       >
-        {#if Array.isArray(image?.channels)}
+        {#if map.persistentLayers.background.image?.channels}
+          <ImgControl background={map.persistentLayers.background} />
+          <!-- content here -->
+        {/if}
+        <!-- {#if Array.isArray(image?.channels)}
           <svelte:component
             this={ImgControl}
             channels={image?.channels}
             defaultChannels={image?.defaultChannels}
-            bind:imgCtrl
             {small}
           />
         {:else if image?.channels === 'rgb'}
-          <svelte:component this={ImgControl} bind:imgCtrl {small} />
-        {/if}
+          <svelte:component this={ImgControl} {small} />
+        {/if} -->
       </div>
     </div>
   {/if}

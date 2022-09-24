@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { classes } from '$lib/utils';
   import {
     Listbox,
     ListboxButton,
@@ -8,7 +9,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import { classes } from '../utils';
   import Spinner from './spinner.svelte';
 
   export let items: string[];
