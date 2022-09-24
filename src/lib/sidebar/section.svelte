@@ -5,7 +5,7 @@
 </script>
 
 <section class="w-full">
-  <Disclosure let:open class="">
+  <Disclosure let:open defaultOpen class="">
     <DisclosureButton
       class="flex w-full items-center justify-between rounded-lg bg-white/10 py-2 pl-3 pr-4 text-left font-medium hover:bg-white/20 focus:outline-none"
     >

@@ -31,12 +31,12 @@ export const annotating = writable({
   selecting: false
 });
 
+type SimpleHS<T> = { hover?: T; selected?: T };
 export const hoverSelect = writable(new HoverSelect<FeatureAndGroup>());
-const _setHoverNow = (v: HoverSelect<FeatureAndGroup>) =>
-  hoverSelect.set(get(hoverSelect).update(v));
+const _setHoverNow = (v: SimpleHS<FeatureAndGroup>) => hoverSelect.set(get(hoverSelect).update(v));
 const _setHover = debounce(_setHoverNow, 50);
 
-export const setHoverSelect = oneLRU((v: HoverSelect<FeatureAndGroup>) => {
+export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
   _setHover(v);
   if (v.selected) {
     // Prevents hover from overriding actual selected.
