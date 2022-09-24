@@ -1,5 +1,7 @@
 <script lang="ts">
+  import Section from '$lib/sidebar/section.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
+  import Recent from '$src/lib/sidebar/recent.svelte';
 </script>
 
 <aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4">
@@ -8,9 +10,10 @@
   </div>
 
   <div class="mt-3 flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
-    <!-- <Section title="Annotations">
-      <Annotate />
-    </Section> -->
+    <Section title="Recent Features">
+      <Recent />
+      <!-- <Annotate /> -->
+    </Section>
   </div>
 
   <div class="mt-6 text-sm">

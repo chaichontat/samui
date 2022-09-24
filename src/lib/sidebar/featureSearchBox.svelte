@@ -4,15 +4,14 @@
   import { cubicInOut, cubicOut } from 'svelte/easing';
   import { fade, slide } from 'svelte/transition';
   import type { FeatureAndGroup } from '../data/objects/feature';
-  import { HoverSelect, type FeatureGroupList } from '../data/searchBox';
   import { oneLRU } from '../lru';
-  import { overlaysFeature, sOverlay } from '../store';
+  import { hoverSelect, overlaysFeature, setHoverSelect, sOverlay } from '../store';
   import { clickOutside } from '../ui/utils';
+  import type { FeatureGroupList, HoverSelect } from './searchBox';
 
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
   export let featureGroup: FeatureGroupList[];
-  export let curr = new HoverSelect<FeatureAndGroup>();
 
   let showSearch = true;
 
@@ -25,24 +24,6 @@
   function highlightChars(str: string, indices: Set<number>): string {
     const chars = str.split('');
     return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
-  }
-
-  const setHover = debounce(
-    oneLRU((v: { hover?: FeatureAndGroup; selected?: FeatureAndGroup }) => {
-      curr.update(v);
-      curr = curr;
-    }),
-    50
-  );
-
-  // Prevents hover from overriding actual selected.
-  function setVal(v: { hover?: FeatureAndGroup; selected?: FeatureAndGroup }) {
-    setHover(v);
-    if (v.selected) {
-      setHover.flush();
-      curr.update(v);
-      curr = curr;
-    }
   }
 
   $: if (featureGroup) {
@@ -66,7 +47,7 @@
 
   // Top-down update of the search box.
   const setSearch = oneLRU((v: string) => (search = v));
-  $: curr.selected?.feature && setSearch(curr.selected?.feature);
+  $: $hoverSelect.selected?.feature && setSearch($hoverSelect.selected?.feature);
   $: noFeature = !featureGroup?.length || featureGroup.find((f) => f.features.length) === undefined;
 
   // Change search box when overlay is changed.
@@ -94,8 +75,8 @@
       class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"
       use:clickOutside
       on:outclick={() => (showSearch = false)}
-      on:mouseout={() => setVal({ hover: undefined })}
-      on:blur={() => setVal({ hover: undefined })}
+      on:mouseout={() => setHoverSelect({ hover: undefined })}
+      on:blur={() => setHoverSelect({ hover: undefined })}
     >
       {#each candidates as { group, values }}
         {#if values.length > 0}
@@ -106,9 +87,10 @@
             {#each values as v}
               <div
                 class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
-                on:mousemove={() => setVal({ hover: { group: v.group, feature: v.feature } })}
+                on:mousemove={() =>
+                  setHoverSelect({ hover: { group: v.group, feature: v.feature } })}
                 on:click={() => {
-                  setVal({
+                  setHoverSelect({
                     selected: { group: v.group, feature: v.feature }
                   });
                   showSearch = false;

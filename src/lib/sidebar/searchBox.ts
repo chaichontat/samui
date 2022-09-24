@@ -1,3 +1,6 @@
+import type { FeatureAndGroup } from '../data/objects/feature';
+import { oneLRU } from '../lru';
+
 /// Only for search box.
 export type FeatureGroupList = {
   group: string | null;
@@ -20,5 +23,6 @@ export class HoverSelect<T> {
   update({ hover, selected }: { hover?: T; selected?: T }) {
     this.hover = hover;
     if (selected != undefined) this.selected = selected;
+    return this;
   }
 }

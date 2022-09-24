@@ -1,7 +1,10 @@
 import type { Mapp } from '$src/lib/ui/mapp';
-import { writable, type Writable } from 'svelte/store';
+import { debounce } from 'lodash-es';
+import { get, writable, type Writable } from 'svelte/store';
 import type { FeatureAndGroup } from './data/objects/feature';
 import type { Sample } from './data/objects/sample';
+import { oneLRU } from './lru';
+import { HoverSelect } from './sidebar/searchBox';
 import type { WebGLSpots } from './ui/overlays/points';
 
 export const samples: Writable<Record<string, Sample>> = writable({});
@@ -26,4 +29,18 @@ export const annotating = writable({
   keys: [] as string[],
   show: true,
   selecting: false
+});
+
+export const hoverSelect = writable(new HoverSelect<FeatureAndGroup>());
+const _setHoverNow = (v: HoverSelect<FeatureAndGroup>) =>
+  hoverSelect.set(get(hoverSelect).update(v));
+const _setHover = debounce(_setHoverNow, 50);
+
+export const setHoverSelect = oneLRU((v: HoverSelect<FeatureAndGroup>) => {
+  _setHover(v);
+  if (v.selected) {
+    // Prevents hover from overriding actual selected.
+    _setHover.flush();
+    _setHoverNow(v);
+  }
 });
