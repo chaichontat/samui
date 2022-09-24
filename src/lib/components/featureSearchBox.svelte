@@ -6,7 +6,7 @@
   import type { FeatureAndGroup } from '../data/objects/feature';
   import { HoverSelect, type FeatureGroupList } from '../data/searchBox';
   import { oneLRU } from '../lru';
-  import { sFeature, sOverlay } from '../store';
+  import { overlaysFeature, sOverlay } from '../store';
   import { clickOutside } from '../ui/utils';
 
   let fzf: [string | undefined, Fzf<readonly string[]>][];
@@ -37,11 +37,9 @@
 
   // Prevents hover from overriding actual selected.
   function setVal(v: { hover?: FeatureAndGroup; selected?: FeatureAndGroup }) {
-    if (v.hover) {
-      setHover(v);
-    }
+    setHover(v);
     if (v.selected) {
-      setHover.cancel();
+      setHover.flush();
       curr.update(v);
       curr = curr;
     }
@@ -73,7 +71,7 @@
 
   // Change search box when overlay is changed.
   sOverlay.subscribe((ov) => {
-    if (ov) search = $sFeature[ov]?.feature ?? '';
+    if (ov) search = $overlaysFeature[ov]?.feature ?? '';
   });
 </script>
 

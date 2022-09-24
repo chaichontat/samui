@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { overlays, sFeature as sFeatures, sMapp, sOverlay } from '$lib/store';
+  import { overlays, overlaysFeature, sFeature, sMapp, sOverlay } from '$lib/store';
   import type { FeatureAndGroup } from '$src/lib/data/objects/feature';
   import type { Sample } from '$src/lib/data/objects/sample';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
+  import { isEqual } from 'lodash-es';
   import 'ol/ol.css';
   import View from 'ol/View';
   import { createEventDispatcher, onMount } from 'svelte';
@@ -75,12 +76,16 @@
   };
 
   // Feature change.
-  $: if ($sOverlay && $sFeatures[$sOverlay]) {
-    updateFeature($sFeatures[$sOverlay]!).catch(console.error);
+  $: if ($overlaysFeature[$sOverlay]) {
+    updateFeature().catch(console.error);
   }
-  const updateFeature = async (fn: FeatureAndGroup) => {
+  const updateFeature = async () => {
     if (!sample) return;
-    await $overlays[$sOverlay].update(sample, fn);
+    const ol = $overlays[$sOverlay];
+    const fn = $overlaysFeature[$sOverlay];
+    // Prevents update when state is inconsistent.
+    if (!fn || isEqual(ol.currFeature, fn)) return;
+    await ol.update(sample, fn);
   };
 
   $: small = width < 500;

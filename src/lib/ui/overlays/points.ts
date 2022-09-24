@@ -61,6 +61,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   _updateProperties(sample: Sample, fn: FeatureAndGroup, { dataType, data }: RetrievedData) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
+    console.log(`Updating ${this.uid} to ${fn.feature}.`);
 
     // TODO: Subsample if coords subsampled.
     if (data?.length !== this.features.length) {
@@ -92,6 +93,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       if (!this.outline) {
         this.outline = new CanvasSpots(this.map);
         this.outline.mount();
+        this.outline.visible = false;
       }
       this.outline.update(this.coords!);
     } else {
@@ -129,7 +131,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     // Check if coord is the same.
     if (this.coords?.name !== coords.name) {
       this.source.clear();
-      this.features = WebGLSpots.genPoints({
+      this.features = this.genPoints({
         key: `${sample.name}-${coords.name}`,
         args: [coords]
       });
@@ -156,7 +158,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     return await this.update(sample, this.currFeature);
   }
 
-  static genPoints = keyLRU((coords: CoordsData) => {
+  // Do not use static, LRU will be linked between instances.
+  genPoints = keyLRU((coords: CoordsData) => {
     return coords.pos!.map(({ x, y, id, idx }) => {
       const f = new Feature({
         geometry: new Point([x * coords.mPerPx, -y * coords.mPerPx]),

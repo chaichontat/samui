@@ -1,7 +1,7 @@
 <!-- Nav of sidebar. -->
 <script lang="ts">
   import FeatureSearchBox from '$lib/components/featureSearchBox.svelte';
-  import { mapIdSample, samples, sFeature, sMapId, sOverlay } from '$lib/store';
+  import { mapIdSample, overlaysFeature, samples, sMapId, sOverlay } from '$lib/store';
   import Darkswitch from '../components/darkswitch.svelte';
   import Github from '../components/github.svelte';
   import type { FeatureAndGroup } from '../data/objects/feature';
@@ -20,9 +20,12 @@
   let currFeature: HoverSelect<FeatureAndGroup>;
 
   // Need to use this function in order to prevent update when $sOverlay is changed.
-  const setFeature = (cf: typeof currFeature) => ($sFeature[$sOverlay] = cf.active);
+  const setFeature = (cf: typeof currFeature) => {
+    $overlaysFeature[$sOverlay] = cf.active;
+    console.log(`Set ${$sOverlay} to ${cf.active?.feature}`);
+  };
   $: if (sample) setFeature(currFeature);
-  $: console.log($sFeature[$sOverlay]);
+  $: console.log($overlaysFeature[$sOverlay]);
 </script>
 
 <nav class="flex items-center gap-x-3 bg-gray-100 py-3 shadow backdrop-blur dark:bg-gray-900">

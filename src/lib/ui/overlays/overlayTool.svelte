@@ -1,6 +1,6 @@
 <script lang="ts">
   import { oneLRU } from '$lib/lru';
-  import { overlays, sFeature, sOverlay, sSample } from '$lib/store';
+  import { overlays, overlaysFeature, sOverlay, sSample } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes } from '$src/lib/utils';
   import type { Mapp } from '../mapp';
@@ -11,9 +11,8 @@
   $: sample = $sSample;
   export let map: Mapp;
 
-  const setOpacity = oneLRU(async (name: string, opacity: string) => {
-    await $overlays[name].promise;
-    $overlays[name]?.layer!.updateStyleVariables({ opacity: Number(opacity) });
+  const setOpacity = oneLRU((name: string, opacity: string) => {
+    $overlays[name]?.layer?.updateStyleVariables({ opacity: Number(opacity) });
   });
 
   const outlinevis: Record<string, boolean> = {};
@@ -84,7 +83,7 @@
 >
   <table class="table-fixed">
     {#if sample}
-      {#each Object.values($overlays) as ov}
+      {#each Object.entries($overlays) as [uid, ov]}
         <tr>
           <td class="flex">
             <!-- Outline checkbox -->
@@ -92,8 +91,7 @@
               type="checkbox"
               class="mr-1 cursor-pointer"
               use:tooltip={{ content: 'Border' }}
-              checked
-              on:change={(e) => setVisible(ov.uid, e.currentTarget.checked, true)}
+              on:change={(e) => setVisible(uid, e.currentTarget.checked, true)}
             />
 
             <!-- Fill checkbox -->
@@ -102,24 +100,24 @@
               class="cursor-pointer"
               checked
               use:tooltip={{ content: 'Fill' }}
-              on:change={(e) => setVisible(ov.uid, e.currentTarget.checked)}
+              on:change={(e) => setVisible(uid, e.currentTarget.checked)}
             />
             &nbsp;
           </td>
           <!-- Overlay name -->
           <td>
             <span
-              on:click={() => ($sOverlay = ov.uid)}
+              on:click={() => ($sOverlay = uid)}
               class={classes(
                 'mr-2 max-w-[10rem] cursor-pointer select-none text-ellipsis capitalize',
                 $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
-              )}>{ov.uid ? $sFeature[ov.uid]?.feature ?? 'None' : ''}</span
+              )}>{ov.uid ? $overlaysFeature[uid]?.feature ?? 'None' : ''}</span
             >
           </td>
 
           <!-- Feature name -->
           <td
-            on:click={() => ($sOverlay = ov.uid)}
+            on:click={() => ($sOverlay = uid)}
             class={classes(
               'min-w-[4rem] cursor-pointer pr-3',
               $sOverlay === ov.uid ? 'text-yellow-300' : 'text-yellow-300/70'
@@ -135,10 +133,10 @@
               type="range"
               min="0"
               max="1"
-              value="0.9"
+              value="0.8"
               step="0.01"
-              on:change={(e) => setOpacity(ov.uid, e.currentTarget.value)}
-              on:mousemove={(e) => setOpacity(ov.uid, e.currentTarget.value)}
+              on:change={(e) => setOpacity(uid, e.currentTarget.value)}
+              on:mousemove={(e) => setOpacity(uid, e.currentTarget.value)}
               use:tooltip={{ content: 'Opacity' }}
             />
           </td>

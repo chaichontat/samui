@@ -79,7 +79,7 @@ export function genSpotStyle(type: FeatureType, spotDiamPx: number): LiteralStyl
     const colors = [...Array(10).keys()].flatMap((i) => [i, d3.interpolateTurbo(i / 10)]);
     colors[1] += 'ff';
     return {
-      variables: { opacity: 1 },
+      variables: { opacity: 0.8 },
       symbol: {
         ...common,
         color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
