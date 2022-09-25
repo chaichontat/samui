@@ -1,5 +1,5 @@
 <script lang="ts">
-  import List from '$lib/components/List.svelte';
+  import List from '$lib/components/list.svelte';
   import { mapIdSample, mapTiles, samples, sMapId } from '$lib/store';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
