@@ -82,8 +82,9 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         key: `${sample.name}-${fn.group}-${fn.feature}`,
         args: [data]
       }));
+    } else {
+      this.currLegend = undefined;
     }
-    console.log(this.currLegend);
 
     this.currStyle = dataType;
 

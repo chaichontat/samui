@@ -40,7 +40,7 @@
 </section>
 
 {#if colorbar}
-  <div class="pointer-events-none absolute right-6 bottom-4 z-20">
+  <div class="absolute right-6 bottom-4 z-20">
     <Colorbar title="Log" color="turbo" min={0} max={10} />
   </div>
 {/if}

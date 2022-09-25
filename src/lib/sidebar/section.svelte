@@ -1,8 +1,10 @@
 <script lang="ts">
   import { Disclosure, DisclosureButton, DisclosurePanel } from '@rgossiaux/svelte-headlessui';
-  import { fade, slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
   import { classes } from '../utils';
 
+  let cl = '';
+  export { cl as class };
   export let title: string;
   export let defaultOpen = false;
 </script>
@@ -31,9 +33,11 @@
     {#if open}
       <div class="rounded-b-lg bg-slate-800" transition:slide>
         <DisclosurePanel class="px-[13px] py-2" static>
-          <slot>
-            <div class="text-slate-100">No content</div>
-          </slot>
+          <div class={cl}>
+            <slot>
+              <div class="text-slate-100">No content</div>
+            </slot>
+          </div>
         </DisclosurePanel>
       </div>
     {/if}

@@ -78,6 +78,7 @@
     // Prevents update when state is inconsistent.
     if (!fn || isEqual(ol.currFeature, fn)) return;
     await ol.update(sample, fn);
+    document.dispatchEvent(new Event('updatedFeature'));
   };
 
   $: small = width < 500;
@@ -111,7 +112,6 @@
     class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
 
-  <!-- Channel indicator -->
   {#if sample}
     <!-- Overlay and Colorbar -->
     <MapTools {map} {width} bind:showImgControl />

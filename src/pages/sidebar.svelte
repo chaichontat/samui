@@ -1,6 +1,7 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
   import { sSample } from '$lib/store';
+  import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
 </script>
@@ -16,9 +17,16 @@
       <!-- <Annotate /> -->
     </Section>
 
+    {#if $sSample?.overlayParams?.importantFeatures}
+      <Section title="Features of Interest" defaultOpen class="flex gap-x-3">
+        {#each $sSample?.overlayParams?.importantFeatures as feature}
+          <HoverableFeature {feature} />
+        {/each}
+      </Section>
+    {/if}
+
     <Section title="Notes" defaultOpen>
-      {$sSample?.notes}
-      <!-- <Annotate /> -->
+      {$sSample?.notes ?? 'No notes'}
     </Section>
   </div>
 
