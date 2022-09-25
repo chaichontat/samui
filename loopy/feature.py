@@ -1,14 +1,11 @@
-# pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 
-import gzip
-import json
-from typing import Any, Literal
+from typing import Literal
 
-import numpy as np
+import pandas as pd
 from anndata import AnnData
 from scipy.sparse import csc_matrix, csr_matrix
 
-from .utils import ReadonlyModel, Url
+from .utils import ReadonlyModel, Url, concat, concat_csv, concat_json
 
 
 class Coord(ReadonlyModel):
@@ -20,12 +17,15 @@ class CoordId(Coord):
     id: str
 
 
-class OverlayParams(ReadonlyModel):
+class CoordParams(ReadonlyModel):
     """
     name: Name of the overlay
+    type: Type of the overlay 'single', 'multi'
     shape: Shape of the overlay (currently only circle)
     url: points to a json file with the coordinates of the overlay
         in {x: number, y: number, id?: string}[].
+        or
+        ChunkedHeader
     mPerPx: micrometers per pixel
     size: size of the overlay in micrometers
     """
@@ -37,56 +37,35 @@ class OverlayParams(ReadonlyModel):
     size: float | None = None
 
 
-class PlainJSONParams(ReadonlyModel):
-    type: Literal["plainJSON"] = "plainJSON"
+class PlainCSVParams(ReadonlyModel):
+    type: Literal["plainCSV"] = "plainCSV"
     name: str
     url: Url
-    dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
-    overlay: str | None = None
+    dataType: Literal["categorical", "quantitative"] = "quantitative"
+    coordName: str | None = None
 
-
-class ChunkedJSONParams(ReadonlyModel):
-    type: Literal["chunkedJSON"] = "chunkedJSON"
+class ChunkedCSVParams(ReadonlyModel):
+    type: Literal["chunkedCSV"] = "chunkedCSV"
     name: str
     url: Url
     headerUrl: Url
-    dataType: Literal["categorical", "quantitative", "coords"] = "quantitative"
-    overlay: str | None = None
+    dataType: Literal["categorical", "quantitative"] = "quantitative"
 
-
-class ChunkedJSONHeader(ReadonlyModel):
-    names: dict[str, int] | None = None
+class ChunkedCSVHeader(ReadonlyModel):
+    names: list[str] | None = None
     ptr: list[int]
     length: int
     activeDefault: str | None = None
     sparseMode: Literal["record", "array"] | None = None
+    coordName: str | None = None
 
 
-FeatureParams = ChunkedJSONParams | PlainJSONParams
-
-
-def concat(objs: list[Any]) -> tuple[np.ndarray, bytearray]:
-    """Concatenate a list of JSON serializable objects into a single gzipped binary
-    along with pointers to the start of each object.
-
-    Returns:
-        tuple[np.ndarray, bytearray]: Pointer array and binary data
-    """
-    ptr = np.zeros(len(objs) + 1, dtype=int)
-    curr = 0
-    outbytes = bytearray()
-    for i, o in enumerate(objs):
-        if o is not None:
-            comped = gzip.compress(json.dumps(o).encode())
-            outbytes += comped
-            curr += len(comped)
-        ptr[i + 1] = curr
-    return ptr, outbytes
+FeatureParams = ChunkedCSVParams | PlainCSVParams
 
 
 def get_compressed_genes(
-    vis: AnnData, mode: Literal["csr", "csc"] = "csc"
-) -> tuple[ChunkedJSONHeader, bytearray]:
+    vis: AnnData,coordName: str, mode: Literal["csr", "csc"] = "csc"
+) -> tuple[ChunkedCSVHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(vis.X)  # csR
     elif mode == "csc":
@@ -107,14 +86,13 @@ def get_compressed_genes(
             objs.append(None)
         else:
             objs.append(
-                {
+                pd.DataFrame({
                     "index": indices[indptr[i] : indptr[i + 1]].tolist(),
                     "value": [round(x, 3) for x in data[indptr[i] : indptr[i + 1]].tolist()],
-                }
+                })
             )
 
-    names = {name: i for i, name in enumerate(names)}
-    ptr, outbytes = concat(objs)
+    ptr, outbytes = concat(objs, lambda x: x.to_csv(index=False).encode())
     match mode:
         case "csr":
             length = cs.shape[1]
@@ -124,11 +102,12 @@ def get_compressed_genes(
             raise ValueError("Unknown mode")
 
     return (
-        ChunkedJSONHeader(
-            names=names,
+        ChunkedCSVHeader(
+            names=names.to_list(),
             ptr=ptr.tolist(),
             length=length,
             sparseMode="array" if mode == "csc" else "record",
+            coordName=coordName,
         ),
         outbytes,
     )

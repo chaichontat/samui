@@ -1,138 +1,53 @@
 <script lang="ts">
-  import Annotate from '$lib/sidebar/annotate.svelte';
-
-  import Status from '$lib/sidebar/status.svelte';
-  import Nav from '$src/lib/nav.svelte';
-  import Section from '$src/lib/sidebar/section.svelte';
-  import { userState } from '$src/lib/store';
-  import { tooltip } from '$src/lib/utils';
-  import type { ChartConfiguration } from 'chart.js';
-  import 'tippy.js/dist/tippy.css';
-  import Bar from './bar.svelte';
-  import Scatter from './scatter.svelte';
-  import Scatterxy from './scatterxy.svelte';
-  let showing = 0;
-
-  let sections: typeof Scatterxy[] = [];
-  let showNavigator = false;
-
-  $: if (showing === 1) vegaShown = true;
-
-  let intensity;
-
-  // $: if ($sample) {
-  //   const f = $sample.getFeature($features[$focus.overlay]);
-  //   intensity = f
-  //     ? {
-  //         name: `${$sample.name}-${$focus.overlay}-${$features[$focus.overlay]?.feature}`,
-  //         dataType: f.dataType,
-  //         values: f.values
-  //       }
-  //     : undefined;
-  // }
-
-  // const naviChartOptions: ChartConfiguration<'scatter'> = {
-  //   scales: {
-  //     x: {
-  //       display: false
-  //     },
-  //     y: {
-  //       display: false,
-  //       reverse: true
-  //     }
-  //   }
-  // };
+  import Section from '$lib/sidebar/section.svelte';
+  import { sSample } from '$lib/store';
+  import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
+  import Nav from '$src/lib/sidebar/nav.svelte';
+  import Recent from '$src/lib/sidebar/recent.svelte';
+  import Plot from './plot.svelte';
 </script>
 
-<aside class="relative mx-4 flex h-full w-full flex-1 flex-col overflow-y-auto">
+<aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4">
   <div class="z-40 w-full">
     <Nav />
   </div>
 
-  <div class="mt-3 flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
-    <Section title="Annotations">
-      <Annotate />
+  <div class="mt-3 flex flex-col items-center gap-y-4 ">
+    <Section title="Recent Features" defaultOpen>
+      <Recent />
+      <!-- <Annotate /> -->
     </Section>
 
-    <!-- <section>
-      <label
-        use:tooltip={{ content: 'Can be slow if there are many points.' }}
-        class="cursor-pointer"
-      >
-        <input
-          type="checkbox"
-          class="mb-2 mr-1 translate-y-0.5 cursor-pointer"
-          bind:checked={showNavigator}
-        /><span>Show Navigator</span>
-      </label>
-      {#if $sample && showNavigator}
-        {#await $sample.promise then _}
-          <Scatter
-            coordsSource={{
-              name: `${$sample.name}-${$focus.overlay}`,
-              values: $sample.overlays[$focus.overlay]?.pos
-            }}
-            intensitySource={intensity}
-            mainChartOptions={naviChartOptions}
-            hoverChartOptions={naviChartOptions}
-            bind:currHover={$userState.currIdx.idx}
-            colorbar
-            showScatter={showNavigator}
-          />
-        {/await}
-      {/if}
-    </section> -->
+    <!-- <Section title="Overlay Options" defaultOpen>
+      Min value: <input type="range" />
+      Max value: <input type="range" />
+    </Section> -->
 
-    <!-- <section class="pt-4"> -->
-    <!-- <TabGroup on:change={(e) => (showing = e.detail)}>
-      <TabList class="mx-4 flex space-x-1 rounded-xl  bg-indigo-50 p-1 dark:bg-slate-800/50">
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>+ Scatter</Tab>
-        <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>+ bar</Tab>
-        <!-- <Tab class={({ selected }) => `tab ${selected ? 'tab-selected' : ''}`}>
-        <div
-        use:tooltip={'Correlation between the read counts of 4,000 highly expressed genes and sum of signal intensity within a spot.'}
-        class="h-full w-full"
-        >
-        Intensity Correlation
-      </div>
-    </Tab> -->
-    <!-- </TabList>
-    </TabGroup> -->
-    <!-- </section> -->
+    <Section title="Plot" defaultOpen>
+      <Plot />
+    </Section>
 
-    <!--
-    {#each sections as section}
-      <section>
-        <svelte:component this={section} FeatureNamesGroup={.FeatureNamesGroup} />
-      </section>
-    {/each} -->
+    {#if $sSample?.overlayParams?.importantFeatures}
+      <Section title="Features of Interest" defaultOpen class="flex gap-x-3">
+        {#each $sSample?.overlayParams?.importantFeatures as feature}
+          <HoverableFeature {feature} />
+        {/each}
+      </Section>
+    {/if}
 
-    <!-- <section class="flex w-full justify-around">
-      <button
-        class="button flex-grow py-3 transition-colors duration-75 dark:bg-slate-800 hover:dark:bg-slate-500"
-        on:click={() => {
-          sections.push(Scatterxy);
-          sections = sections;
-        }}>Add Scatter</button
-      >
-    </section> -->
+    <Section title="Notes" defaultOpen>
+      {$sSample?.notes ?? 'No notes'}
+    </Section>
   </div>
+
   <div class="mt-6 text-sm">
-    <Status />
+    <!-- <Status /> -->
   </div>
 </aside>
 
 <style lang="postcss">
   section {
     @apply relative hidden w-[90%] pt-4 lg:block;
-  }
-
-  :global(div > .tippy-box) {
-    @apply rounded-lg bg-slate-700/80 py-0.5 px-1 text-center backdrop-blur;
-  }
-
-  :global(div > .tippy-box > .tippy-arrow) {
-    @apply text-slate-700/80;
   }
 
   :global(.tab) {

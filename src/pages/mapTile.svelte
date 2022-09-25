@@ -1,15 +1,11 @@
-<script lang="ts" context="module">
-  export type Hierarchy = { root?: true; split?: 'h' | 'v'; maps: (Hierarchy | number | null)[] };
-</script>
-
 <script lang="ts">
-  import { tooltip } from '$lib/utils';
-  import List from '$src/lib/components/list.svelte';
+  import List from '$lib/components/list.svelte';
+  import { mapIdSample, mapTiles, samples, sMapId } from '$lib/store';
   import { byod } from '$src/lib/data/byod';
-  import type { Sample } from '$src/lib/data/sample';
-  import { mapIdSample, mapList, samples, sMapId } from '$src/lib/store';
+  import { tooltip } from '$src/lib/ui/utils';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
+  import type { Hierarchy } from './mapTile';
 
   let currSampleName: string;
   $: if (typeof hie === 'number') $mapIdSample[hie] = currSampleName;
@@ -46,8 +42,8 @@
     } else {
       hie.maps[i] = { split: mode, maps: [hie.maps[i], newUId] };
     }
-    $mapList.push(-1);
-    $mapList[$mapList.length - 1] = newUId; // For reactivity.
+    $mapTiles.push(-1);
+    $mapTiles[$mapTiles.length - 1] = newUId; // For reactivity.
   }
 
   function handleDelete(i: number) {
@@ -65,11 +61,11 @@
 
     refreshPls = true;
     if (typeof old === 'number') {
-      const idx = $mapList.findIndex((x) => x === old);
-      $mapList.splice(idx, 1);
-      $mapList = $mapList;
+      const idx = $mapTiles.findIndex((x) => x === old);
+      $mapTiles.splice(idx, 1);
+      $mapTiles = $mapTiles;
       if (idx > 0) {
-        $sMapId = $mapList[idx - 1];
+        $sMapId = $mapTiles[idx - 1];
       } else {
         throw new Error('Should be impossible to delete the first map');
       }
@@ -86,6 +82,8 @@
 
   // Stop loading spinner when sample is hydrated.
   let sampleListElem: List;
+  $: console.log($samples);
+
   $: $samples[currSampleName]?.promise
     .then(() => sampleListElem.stopSpinner())
     .catch(console.error);
@@ -172,7 +170,7 @@
     <div
       class="h-full w-full border-2"
       class:border-slate-800={$sMapId !== hieN}
-      class:border-slate-100={$sMapId === hieN && $mapList.length > 1}
+      class:border-slate-100={$sMapId === hieN && $mapTiles.length > 1}
     >
       <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />
     </div>

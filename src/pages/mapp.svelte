@@ -1,26 +1,24 @@
 <script lang="ts">
-  import type { FeatureAndGroup } from '$lib/data/features';
-  import type { Sample } from '$src/lib/data/sample';
-  import { colorVarFactory, type ImageCtrl } from '$src/lib/mapp/imgControl';
-  import ImgControl from '$src/lib/mapp/imgControl.svelte';
-  import { Mapp } from '$src/lib/mapp/mapp';
-  import { keyOneLRU, oneLRU } from '$src/lib/utils';
+  import { overlays, overlaysFeature, sId, sMapp, sOverlay } from '$lib/store';
+  import type { Sample } from '$src/lib/data/objects/sample';
+  import { oneLRU } from '$src/lib/lru';
+  import ImgControl from '$src/lib/ui/background/imgControl.svelte';
+  import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
+  import { isEqual } from 'lodash-es';
   import 'ol/ol.css';
+  import View from 'ol/View';
   import { createEventDispatcher, onMount } from 'svelte';
-  import MapTools from '../lib/mapp/mapTools.svelte';
-  import { annotating, sFeature, sId, sMapp, sOverlay } from '../lib/store';
+  import { Mapp } from '../lib/ui/mapp';
 
   export let sample: Sample | undefined;
-  $: sample?.hydrate().catch(console.error);
-  let currSample = sample?.name;
-
-  $: image = sample?.image;
+  // let currSample: string;
+  $: sample?.hydrate().then(updateSample).catch(console.error);
 
   export let uid: number;
   const mapName = `map-${uid}`;
   let mapElem: HTMLDivElement;
   let tippyElem: HTMLDivElement;
-  const map = new Mapp();
+  let map = new Mapp();
   $sMapp = map;
 
   let width: number;
@@ -28,41 +26,11 @@
   let small = false;
   const dispatch = createEventDispatcher();
 
-  let imgCtrl: ImageCtrl;
   let showImgControl = true;
 
   onMount(() => {
     map.mount(mapElem, tippyElem);
-    map.attachPointerListener({
-      pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (id_) $sId = { ...id_, source: 'map' };
-      }),
-
-      click: (id_: { idx: number; id: number | string } | null) => {
-        if (!$sOverlay) return;
-        const ov = map.layers[$sOverlay]?.overlay;
-        if ($annotating.currKey !== null && id_ && ov) {
-          const idx = id_.idx;
-          const existing = map.persistentLayers.annotations.get(idx);
-          if (
-            existing === null ||
-            existing.get('value') !== $annotating.keys[$annotating.currKey]
-          ) {
-            map.persistentLayers.annotations.add(
-              idx,
-              $annotating.keys[$annotating.currKey],
-              ov,
-              $annotating.keys
-            );
-          } else {
-            map.persistentLayers.annotations.delete(idx);
-          }
-        }
-      }
-    });
   });
-
-  $: map.persistentLayers.annotations.layer?.setVisible($annotating.show);
 
   // function moveView(idx: number) {
   //   if (!coords[idx]) return;
@@ -87,53 +55,74 @@
   //   }
   // }
 
-  // Sample change.
-  let convertImgCtrl: ReturnType<typeof colorVarFactory>;
-  $: if (sample) update(sample).catch(console.error);
-  const update = async (sample: Sample) => {
-    if (currSample !== sample.name) {
-      await sample.promise;
-      const img = sample.image;
-      await map.update({ image: img, overlays: sample.overlays });
-      convertImgCtrl = colorVarFactory(img.channel);
-      currSample = sample.name;
-    } else {
-      // When adding outlines in app.
-      await map.update({ overlays: sample.overlays, refresh: true });
-    }
+  onMount(() => {
+    map.attachPointerListener({
+      pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
+        if (id_) $sId = { ...id_, source: 'map' };
+      })
+      // click: (id_: { idx: number; id: number | string } | null) => {
+      //   if (!$sOverlay) return;
+      //   const ov = map.layers[$sOverlay]?.overlay;
+      //   if ($annotating.currKey !== null && id_ && ov) {
+      //     const idx = id_.idx;
+      //     const existing = map.persistentLayers.annotations.get(idx);
+      //     if (
+      //       existing === null ||
+      //       existing.get('value') !== $annotating.keys[$annotating.currKey]
+      //     ) {
+      //       map.persistentLayers.annotations.add(
+      //         idx,
+      //         $annotating.keys[$annotating.currKey],
+      //         ov,
+      //         $annotating.keys
+      //       );
+      //     } else {
+      //       map.persistentLayers.annotations.delete(idx);
+      //     }
+      //   }
+      // }
+    });
+  });
+
+  const updateSample = async (sample: Sample) => {
+    await map.updateSample(sample);
+    map = map;
+
+    // } else {
+    // When adding outlines in app.
+    // await map.update({ sample, overlays: $overlays, refresh: true });
+    // }
   };
 
   // Feature change.
-  $: if (sample && $sOverlay && $sFeature[$sOverlay]) {
-    const ol = $sOverlay;
-    updateFeature({
-      key: `${sample.name}-${ol}-${$sFeature[ol].group}-${$sFeature[ol].feature}`,
-      args: [ol, $sFeature[ol]]
-    }).catch(console.error);
+  $: if ($overlaysFeature[$sOverlay]) {
+    updateFeature().catch(console.error);
   }
-  const updateFeature = keyOneLRU(async (ov: string, fn: FeatureAndGroup) => {
-    const res = await sample!.overlays[ov].getFeature(fn);
-    if (!res) return false;
-    map.layers[ov]?.updateProperties(res);
-  });
+  const updateFeature = async () => {
+    if (!sample) return;
+    const ol = $overlays[$sOverlay];
+    const fn = $overlaysFeature[$sOverlay];
+    // Prevents update when state is inconsistent.
+    if (!fn || isEqual(ol.currFeature, fn)) return;
+    await ol.update(sample, fn);
+  };
 
   // Hover/overlay.
-  $: if (sample && $sOverlay) changeHover($sOverlay, $sId.idx).catch(console.error);
+  $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);
 
-  const changeHover = oneLRU(async (activeol: string, idx: number | null) => {
-    await sample!.promise;
+  const changeHover = oneLRU((activeol: string, idx: number | null) => {
     const active = map.persistentLayers.active;
-    const ov = sample!.overlays[activeol];
+    const ov = $overlays[activeol];
 
     if (!ov) return false;
 
-    if (idx !== null) {
+    if (idx !== null && ov.coords) {
       active.layer!.setVisible(true);
-      const pos = ov.pos![idx];
+      const pos = ov.coords.pos![idx];
       if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
-      active.update(sample!.overlays[activeol], idx);
+      active.update(ov.coords, idx);
       if (map.tippy && pos.id) {
-        map.tippy.overlay.setPosition([pos.x * ov.mPerPx!, -pos.y * ov.mPerPx!]);
+        map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
         map.tippy.elem.removeAttribute('hidden');
         map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
       }
@@ -143,16 +132,18 @@
     }
   });
 
-  // Image control params
-  $: if (convertImgCtrl && imgCtrl) {
-    map.persistentLayers.background?.updateStyle(convertImgCtrl(imgCtrl));
-  }
-
   $: small = width < 500;
 </script>
 
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
+
+<!-- <button
+  class="h-50 w-50 absolute z-50 bg-red-500 text-xl"
+  on:click={() => console.log(map.map?.getView())}
+>
+  Meh
+</button> -->
 
 <section
   class="relative h-full w-full overflow-hidden"
@@ -166,8 +157,6 @@
     on:click={() => dispatch('mapClick')}
     class="map h-full w-full shadow-lg"
     class:small={showImgControl && small}
-    class:composite={showImgControl && image?.channel !== 'rgb' && !small}
-    class:rgb={showImgControl && image?.channel === 'rgb'}
   />
   <!-- Map tippy -->
   <div
@@ -175,39 +164,17 @@
     class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
   />
 
-  <!-- Channel indicator -->
   {#if sample}
-    <section
-      class="absolute top-8 left-4 z-10 flex flex-col gap-y-2 text-lg font-medium opacity-90 lg:top-[5rem] xl:text-xl"
-    >
-      <!-- Color indicator -->
-      <!-- <div class="flex flex-col">
-        {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
-          {#if imgCtrl?.type === 'composite' && imgCtrl.showing[i] !== 'None'}
-            <span class={`font-semibold ${color}`}>{imgCtrl.showing[i]}</span>
-          {/if}
-        {/each}
-      </div> -->
-    </section>
-
-    <!-- Top right tools -->
-    <MapTools {sample} {map} {width} bind:showImgControl />
+    <!-- Overlay and Colorbar -->
+    <MapTools {map} {width} bind:showImgControl />
 
     <!-- Img control -->
     <div
-      class="absolute bottom-3 left-1 lg:left-4 lg:bottom-6 xl:pr-4"
+      class="absolute top-[72px] left-1 lg:left-4 lg:bottom-6"
+      class:hidden={!showImgControl}
       style="max-width: calc(100% - 20px);"
     >
-      <div
-        class="flex flex-col overflow-x-auto rounded-lg bg-slate-200/80 p-2 pr-4 font-medium backdrop-blur-lg transition-colors dark:bg-slate-800/80 "
-        class:hidden={!showImgControl}
-      >
-        {#if image?.channel !== 'rgb'}
-          <svelte:component this={ImgControl} channels={image?.channel} bind:imgCtrl {small} />
-        {:else}
-          <svelte:component this={ImgControl} bind:imgCtrl {small} />
-        {/if}
-      </div>
+      <ImgControl background={map.persistentLayers.background} />
     </div>
   {/if}
 </section>
@@ -225,35 +192,31 @@
     @apply w-3;
   }
 
-  .map :global(.ol-scale-line) {
-    @apply left-6 bottom-4 float-right w-3 bg-transparent text-right font-sans;
-  }
-
-  .small :global(.ol-scale-line) {
-    @apply bottom-[8.5rem];
-  }
-
-  .rgb :global(.ol-scale-line) {
-    @apply bottom-36;
-  }
-
-  .composite :global(.ol-scale-line) {
-    @apply bottom-[9.5rem];
+  /* .map :global(.ol-scale-line) {
+    @apply absolute right-16 left-auto bottom-8 float-right w-3 bg-transparent text-right font-sans;
   }
 
   .map :global(.ol-scale-line-inner) {
-    @apply pb-1 text-sm;
+    @apply absolute left-auto right-0 bottom-0 border-neutral-200 pb-1 text-sm text-neutral-200;
+  } */
+
+  .map :global(.ol-scale-line) {
+    @apply absolute left-4 bottom-8 float-right w-3 bg-transparent text-right font-sans;
+  }
+
+  .map :global(.ol-scale-line-inner) {
+    @apply absolute  bottom-0 border-neutral-200 pb-1 text-sm text-neutral-200;
   }
 
   .map :global(.ol-zoom) {
-    @apply absolute bottom-[5.5rem] left-auto right-4 top-auto backdrop-blur;
+    @apply absolute bottom-20 left-4 top-auto border-neutral-200 backdrop-blur;
   }
 
   .map :global(.ol-zoom-in) {
-    @apply bg-sky-700/90;
+    @apply bg-sky-600/90 text-neutral-200;
   }
 
   .map :global(.ol-zoom-out) {
-    @apply bg-sky-700/90;
+    @apply bg-sky-600/90 text-neutral-200;
   }
 </style>

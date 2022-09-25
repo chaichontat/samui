@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { classes } from '$lib/utils';
   import {
     Listbox,
     ListboxButton,
@@ -8,7 +9,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
-  import { classes } from '../utils';
   import Spinner from './spinner.svelte';
 
   export let items: string[];
@@ -17,6 +17,8 @@
   export let useSpinner = true;
   export let showArrow = true;
   export let addSample = true;
+
+  let lastName: string | undefined;
 
   let rows: { id: number; name: string }[] = [];
   let _active: { id: number; name: string };
@@ -39,9 +41,13 @@
       dispatch('addSample');
       return;
     }
-    dispatch('change', name);
-    active = name;
-    if (useSpinner) loading = true;
+
+    if (name !== lastName) {
+      dispatch('change', name);
+      active = name;
+      if (useSpinner) loading = true;
+    }
+    lastName = name;
   }
 
   onMount(() => handleChange(items[0]));
