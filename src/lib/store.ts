@@ -47,3 +47,6 @@ export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
 
 export const sEvent = writable(undefined as Event | undefined);
 sEvent.subscribe(console.debug);
+
+export type Idx = { id?: number | string | null; idx: number; source: string };
+export const sId = writable({ idx: -1, source: 'scatter' } as Idx);

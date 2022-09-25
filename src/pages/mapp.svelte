@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { overlays, overlaysFeature, sEvent, sFeatureData, sMapp, sOverlay } from '$lib/store';
+  import { overlays, overlaysFeature, sId, sMapp, sOverlay } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
+  import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
   import { isEqual } from 'lodash-es';
@@ -54,13 +55,38 @@
   //   }
   // }
 
-  const updateSample = async (sample: Sample) => {
-    // if (currSample !== sample.name) {
-    await map.updateSample(sample);
-    // currSample = sample.name;
-    map = map;
+  onMount(() => {
+    map.attachPointerListener({
+      pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
+        if (id_) $sId = { ...id_, source: 'map' };
+      })
+      // click: (id_: { idx: number; id: number | string } | null) => {
+      //   if (!$sOverlay) return;
+      //   const ov = map.layers[$sOverlay]?.overlay;
+      //   if ($annotating.currKey !== null && id_ && ov) {
+      //     const idx = id_.idx;
+      //     const existing = map.persistentLayers.annotations.get(idx);
+      //     if (
+      //       existing === null ||
+      //       existing.get('value') !== $annotating.keys[$annotating.currKey]
+      //     ) {
+      //       map.persistentLayers.annotations.add(
+      //         idx,
+      //         $annotating.keys[$annotating.currKey],
+      //         ov,
+      //         $annotating.keys
+      //       );
+      //     } else {
+      //       map.persistentLayers.annotations.delete(idx);
+      //     }
+      //   }
+      // }
+    });
+  });
 
-    $sEvent = new Event('updatedSample');
+  const updateSample = async (sample: Sample) => {
+    await map.updateSample(sample);
+    map = map;
 
     // } else {
     // When adding outlines in app.
@@ -81,13 +107,37 @@
     await ol.update(sample, fn);
   };
 
+  // Hover/overlay.
+  $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);
+
+  const changeHover = oneLRU((activeol: string, idx: number | null) => {
+    const active = map.persistentLayers.active;
+    const ov = $overlays[activeol];
+
+    if (!ov) return false;
+
+    if (idx !== null && ov.coords) {
+      active.layer!.setVisible(true);
+      const pos = ov.coords.pos![idx];
+      if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
+      active.update(ov.coords, idx);
+      if (map.tippy && pos.id) {
+        map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
+        map.tippy.elem.removeAttribute('hidden');
+        map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+      }
+    } else {
+      active.layer!.setVisible(false);
+      map.tippy?.elem.setAttribute('hidden', '');
+    }
+  });
+
   $: small = width < 500;
 </script>
 
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
 
-<!-- Indicator -->
 <!-- <button
   class="h-50 w-50 absolute z-50 bg-red-500 text-xl"
   on:click={() => console.log(map.map?.getView())}

@@ -1,11 +1,11 @@
 <script lang="ts">
+  import { sFeatureData, sId } from '$lib/store';
   import * as Plot from '@observablehq/plot';
-
-  import { sEvent, sFeatureData } from '$lib/store';
+  import * as d3 from 'd3';
   let div: HTMLDivElement;
   let subdiv: Element | undefined;
 
-  function updatePlot(data) {
+  function updatePlot(n: number) {
     console.log('hi');
 
     if (subdiv) {
@@ -14,30 +14,56 @@
 
     subdiv = Plot.plot({
       x: {
-        label: data.name.feature
+        label: $sFeatureData.name.feature
       },
       y: {
+        // percent: true,
         grid: true
+      },
+      color: {
+        interpolate: d3.interpolateTurbo,
+        domain: [0, 10]
       },
       marks: [
         Plot.rectY(
-          data.data.map((x) => ({ value: x })),
-          Plot.binX({ y: 'count' }, { x: 'value', thresholds: 'sturges' })
+          $sFeatureData.data.map((x) => ({ value: x })),
+          Plot.binX(
+            { y: 'count', fill: 'median' },
+            { x: 'value', thresholds: 'sturges', fill: 'value' }
+          )
         ),
-        Plot.ruleY([0])
+        Plot.ruleY([0]),
+        Plot.link(
+          [
+            { x1: n, y1: 300, x2: n, y2: 50 }
+            //   { x: 5, y: 300 }
+          ],
+          {
+            x1: 'x1',
+            y1: 'y1',
+            x2: 'x2',
+            y2: 'y2',
+            stroke: '#f97316',
+            strokeWidth: 3,
+            markerEnd: 'arrow'
+          }
+        )
       ],
-      marginTop: 30,
+      marginTop: 35,
       style: {
         background: 'transparent',
-        fontSize: '16px'
+        fontSize: '18px'
       }
     });
 
     div.appendChild(subdiv);
   }
 
-  $: console.log($sEvent);
-  $: if ($sEvent && $sFeatureData) updatePlot($sFeatureData);
+  // $: if ($sFeatureData) updatePlot($);
+
+  $: if ($sId && $sFeatureData) {
+    updatePlot($sFeatureData.data[$sId.idx]);
+  }
 </script>
 
 <div bind:this={div} class="p-2" />
