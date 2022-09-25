@@ -1,13 +1,19 @@
 <script lang="ts">
   import { Disclosure, DisclosureButton, DisclosurePanel } from '@rgossiaux/svelte-headlessui';
+  import { fade, slide } from 'svelte/transition';
+  import { classes } from '../utils';
 
   export let title: string;
+  export let defaultOpen = false;
 </script>
 
 <section class="w-full">
-  <Disclosure let:open defaultOpen class="">
+  <Disclosure let:open {defaultOpen}>
     <DisclosureButton
-      class="flex w-full items-center justify-between rounded-lg bg-white/10 py-2 pl-3 pr-4 text-left font-medium hover:bg-white/20 focus:outline-none"
+      class={classes(
+        open ? 'rounded-b-none' : 'delay-150',
+        'flex w-full items-center justify-between rounded-lg bg-white/5 py-2 pl-[13px] pr-4 text-left font-medium transition-[border-radius] ease-in-out hover:bg-white/10 focus:outline-none'
+      )}
     >
       <div class="font-xl">{title}</div>
       <svg
@@ -22,8 +28,14 @@
       </svg>
     </DisclosureButton>
 
-    <DisclosurePanel class="mx-3 mt-2">
-      <slot />
-    </DisclosurePanel>
+    {#if open}
+      <div class="rounded-b-lg bg-slate-800" transition:slide>
+        <DisclosurePanel class="px-[13px] py-2" static>
+          <slot>
+            <div class="text-slate-100">No content</div>
+          </slot>
+        </DisclosurePanel>
+      </div>
+    {/if}
   </Disclosure>
 </section>

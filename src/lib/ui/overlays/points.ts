@@ -129,7 +129,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
     const { data, dataType, coords } = res;
     // Check if coord is the same.
-    if (this.coords?.name !== coords.name) {
+    if ((this.currSample !== sample.name || this.coords?.name) !== coords.name) {
       this.source.clear();
       this.features = this.genPoints({
         key: `${sample.name}-${coords.name}`,

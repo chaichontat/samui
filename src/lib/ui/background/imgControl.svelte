@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { sSample } from '$lib/store';
   import { classes } from '$lib/utils';
   import {
     bgColors,
@@ -19,11 +20,12 @@
   const image = background.image;
   const channels = background.image?.channels;
   const bandinfo: Record<string, BandInfo> = {};
-  if (image && Array.isArray(image.channels)) {
+  if ($sSample && image && Array.isArray(image.channels)) {
     for (const c of image.channels) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       bandinfo[c] = { enabled: false, color: 'blue', max: 128 };
     }
+
     if (Object.keys(image.defaultChannels).length > 0) {
       for (const [b, c] of Object.entries(image.defaultChannels)) {
         bandinfo[b] = { enabled: true, color: c, max: 128 };
@@ -58,20 +60,20 @@
 
   onMount(() => {
     if (table) {
-      const shrink = () => (table.style.maxWidth = `${cell.clientWidth + 12}px`);
+      const shrink = () => (table.style.maxWidth = `${cell.clientWidth + 8}px`);
       table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
       table.addEventListener('mouseleave', shrink);
       setTimeout(shrink, 1000);
     }
   });
 
-  $: if (imgCtrl) background?.updateStyle(imgCtrl);
+  $: if ($sSample && imgCtrl) background?.updateStyle(imgCtrl);
 </script>
 
 {#if imgCtrl}
   <div
     bind:this={table}
-    class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 p-1.5 font-medium backdrop-blur-lg transition-all duration-1000 ease-in-out  dark:bg-slate-800/80"
+    class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1.5 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
   >
     {#if imgCtrl.type === 'composite' && Array.isArray(channels)}
       <table class="table-auto">
@@ -93,7 +95,7 @@
                       ['white', 'yellow'].includes(imgCtrl.variables[name].color)
                       ? 'text-black'
                       : '',
-                    `transition-width m-0.5 mx-auto flex items-center rounded-full pl-3 pr-3`
+                    `transition-width mx-auto flex items-center rounded-lg pl-3 pr-3`
                   )}
                 >
                   <div class="-translate-y-[1px]">{name}</div>

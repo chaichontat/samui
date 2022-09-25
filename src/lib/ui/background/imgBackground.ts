@@ -9,6 +9,7 @@ import {
   genCompStyle,
   genRGBStyle,
   type CompCtrl,
+  type ImgCtrl,
   type RGBCtrl
 } from './imgColormap';
 
@@ -17,15 +18,13 @@ export class Background extends Deferrable {
   layer?: WebGLTileLayer;
   mPerPx?: number;
   image?: ImgData;
+  imgCtrl?: ImgCtrl;
 
   constructor() {
     super();
   }
 
   mount() {
-    if (!this.layer) {
-      this.layer = new WebGLTileLayer({ zIndex: 0 });
-    }
     this._deferred.resolve();
     return this;
   }
@@ -52,6 +51,7 @@ export class Background extends Deferrable {
 
     // Necessary to prevent openlayers bug. It assumes that all images have 4 channels.
     this.source.bandCount = this.image.mode === 'rgb' ? 3 : image.channels.length;
+
     this.layer = new WebGLTileLayer({
       style: Array.isArray(image.channels) ? genCompStyle(image.channels) : genRGBStyle(),
       source: this.source,
@@ -60,21 +60,24 @@ export class Background extends Deferrable {
 
     this.mPerPx = image.mPerPx;
     map.addLayer(this.layer);
+    // TODO: Assuming same channels.
   }
 
   updateStyle(imgCtrl: CompCtrl | RGBCtrl) {
     if (!this.image) {
       console.error('No image loaded');
       return;
-    }
+    } // For later use when changing sample.
     if (imgCtrl.type === 'rgb') {
       this._updateStyle(imgCtrl as Omit<RGBCtrl, 'type'>);
       return;
     }
+    console.log('Updating background style');
     this._updateStyle(decomposeColors(this.image.channels as string[], imgCtrl));
   }
 
   _updateStyle = oneLRU((variables: Record<string, number>) => {
+    console.log('update style var');
     this.layer?.updateStyleVariables(variables);
   });
 }

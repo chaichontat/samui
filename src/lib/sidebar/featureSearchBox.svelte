@@ -61,7 +61,10 @@
     type="text"
     class="w-full rounded-md border border-slate-400 bg-slate-100 py-[7px] px-4 shadow transition-colors dark:border-slate-600 dark:bg-slate-800"
     bind:value={search}
-    on:click={() => (showSearch = true)}
+    on:click={(ev) => {
+      ev.currentTarget.select();
+      showSearch = true;
+    }}
     on:input={() => (showSearch = true)}
     placeholder={noFeature ? 'No feature' : 'Search features'}
     disabled={noFeature}

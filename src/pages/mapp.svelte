@@ -1,6 +1,5 @@
 <script lang="ts">
   import { overlays, overlaysFeature, sFeature, sMapp, sOverlay } from '$lib/store';
-  import type { FeatureAndGroup } from '$src/lib/data/objects/feature';
   import type { Sample } from '$src/lib/data/objects/sample';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
@@ -66,13 +65,6 @@
       // When adding outlines in app.
       // await map.update({ sample, overlays: $overlays, refresh: true });
     }
-
-    // for (const [name, ol] of Object.entries($overlays)) {
-    //   updateFeature({
-    //     key: `${sample.name}-${$sFeature[name].group}-${$sFeature[name].feature}`,
-    //     args: [$sFeature[name]]
-    //   }).catch(console.error);
-    // }
   };
 
   // Feature change.

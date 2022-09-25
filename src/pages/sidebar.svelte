@@ -1,5 +1,6 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
+  import { sSample } from '$lib/store';
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
 </script>
@@ -9,9 +10,14 @@
     <Nav />
   </div>
 
-  <div class="mt-3 flex flex-col items-center gap-y-4 divide-y dark:divide-slate-700">
-    <Section title="Recent Features">
+  <div class="mt-3 flex flex-col items-center gap-y-4 ">
+    <Section title="Recent Features" defaultOpen>
       <Recent />
+      <!-- <Annotate /> -->
+    </Section>
+
+    <Section title="Notes" defaultOpen>
+      {$sSample?.notes}
       <!-- <Annotate /> -->
     </Section>
   </div>

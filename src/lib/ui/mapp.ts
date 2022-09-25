@@ -11,7 +11,7 @@ import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import type { FeatureAndGroup } from '../data/objects/feature';
 import { keyOneLRU } from '../lru';
-import { mapTiles, overlays, sOverlay, sSample } from '../store';
+import { mapTiles, overlays, overlaysFeature, sOverlay, sSample } from '../store';
 
 export class Mapp extends Deferrable {
   map?: Map;
@@ -99,7 +99,14 @@ export class Mapp extends Deferrable {
       this.persistentLayers.background.dispose(this.map);
     }
 
+    // Overlays
     this.persistentLayers.active.visible = false;
+    if (sample.overlayParams?.default) {
+      const k = Object.keys(get(overlaysFeature))[0];
+      console.log(sample.overlayParams.default);
+
+      overlaysFeature.set({ ...get(overlaysFeature), [k]: sample.overlayParams.default });
+    }
     await Promise.all(Object.values(get(overlays)).map((ol) => ol.updateSample(sample)));
   }
 
