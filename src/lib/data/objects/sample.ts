@@ -6,12 +6,19 @@ import { ChunkedCSV, type ChunkedCSVParams } from './featureChunked';
 import { PlainCSV, type PlainCSVParams } from './featurePlain';
 import { ImgData, type ImageParams } from './image';
 
+export type OverlayParams = {
+  default?: FeatureAndGroup[];
+  importantFeatures?: FeatureAndGroup[];
+};
+
 export type SampleParams = {
   name: string;
   imgParams?: ImageParams;
   coordParams?: CoordsParams[];
   featParams?: (PlainCSVParams | ChunkedCSVParams)[];
   handle?: FileSystemDirectoryHandle;
+  overlayParams?: OverlayParams;
+  notes?: string;
 };
 
 export class Sample extends Deferrable {
@@ -19,6 +26,8 @@ export class Sample extends Deferrable {
   imgParams?: ImageParams;
   coordsParams?: CoordsParams[];
   featureParams?: (PlainCSVParams | ChunkedCSVParams)[];
+  overlayParams?: OverlayParams;
+  notes?: string;
 
   features: Record<string, FeatureData> = {};
   coords: Record<string, CoordsData> = {};
@@ -27,7 +36,7 @@ export class Sample extends Deferrable {
   handle?: FileSystemDirectoryHandle;
 
   constructor(
-    { name, imgParams, coordParams, featParams, handle }: SampleParams,
+    { name, imgParams, coordParams, featParams, handle, overlayParams, notes }: SampleParams,
     autoHydrate = false
   ) {
     super();
@@ -40,7 +49,9 @@ export class Sample extends Deferrable {
     const featureParams = featParams;
     this.coordsParams = coordParams;
     this.featureParams = featureParams;
+    this.overlayParams = overlayParams;
     this.handle = handle;
+    this.notes = notes;
     // this.activeDefault = activeDefault ?? {};
 
     if (coordParams) {
@@ -48,7 +59,6 @@ export class Sample extends Deferrable {
         this.coords[o.name] = new CoordsData(o);
       }
     }
-    console.log(featureParams);
 
     if (featureParams) {
       for (const f of featureParams) {

@@ -51,29 +51,34 @@ function genCategoricalColors() {
   return colors;
 }
 
-export function genSpotStyle(type: FeatureType, spotDiamPx: number): LiteralStyle {
-  const common = {
-    symbolType: 'circle',
-    size: [
-      'interpolate',
-      ['exponential', 1.2],
-      ['zoom'],
-      1,
-      spotDiamPx / 64,
-      2,
-      spotDiamPx / 32,
-      3,
-      spotDiamPx / 16,
-      4,
-      spotDiamPx / 8,
-      5,
-      spotDiamPx / 2,
-      6,
-      spotDiamPx,
-      7,
-      spotDiamPx * 2
-    ]
-  };
+export function genSpotStyle(type: FeatureType, spotDiamPx: number, scale = true): LiteralStyle {
+  const common = scale
+    ? {
+        symbolType: 'circle',
+        size: [
+          'interpolate',
+          ['exponential', 1.2],
+          ['zoom'],
+          1,
+          spotDiamPx / 64,
+          2,
+          spotDiamPx / 32,
+          3,
+          spotDiamPx / 16,
+          4,
+          spotDiamPx / 8,
+          5,
+          spotDiamPx / 2,
+          6,
+          spotDiamPx,
+          7,
+          spotDiamPx * 2
+        ]
+      }
+    : {
+        symbolType: 'circle',
+        size: spotDiamPx
+      };
 
   if (type === 'quantitative') {
     const colors = [...Array(10).keys()].flatMap((i) => [i, d3.interpolateTurbo(i / 10)]);

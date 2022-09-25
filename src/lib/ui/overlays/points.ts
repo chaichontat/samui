@@ -28,6 +28,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
   currSample?: string;
   currFeature?: FeatureAndGroup;
+  currPx?: number;
 
   constructor(map: Mapp) {
     super(map, genSpotStyle('categorical', 2));
@@ -41,7 +42,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
   set currStyle(style: string) {
     if (!this.coords) throw new Error('Must run update first.');
-    if (style === this._currStyle) return;
+    if (style === this._currStyle && this.currPx === this.coords.sizePx) return;
 
     switch (style) {
       case 'quantitative':
@@ -55,6 +56,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     this._currStyle = style;
+    this.currPx = this.coords.sizePx;
     this._rebuildLayer().catch(console.error);
   }
 
@@ -85,6 +87,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     for (const [i, f] of this.features.entries()) {
       f.setProperties({ value: data[i] });
     }
+
+    console.log(this.features);
   }
 
   _updateOutline() {

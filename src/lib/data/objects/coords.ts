@@ -60,7 +60,7 @@ export class CoordsData extends Deferrable {
   get sizePx() {
     if (!this.mPerPx) throw new Error('Must provide mPerPx');
     // Defaults to 20 for objects without size.
-    return this.size ? this.size / this.mPerPx : 2;
+    return this.size ? this.size / this.mPerPx : 10;
   }
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
