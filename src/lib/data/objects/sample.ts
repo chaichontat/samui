@@ -1,7 +1,7 @@
 import { Deferrable } from '$src/lib/definitions';
-import { genLRU, keyLRU } from '$src/lib/lru';
+import { genLRU } from '$src/lib/lru';
 import { CoordsData, type Coord, type CoordsParams } from './coords';
-import type { FeatureAndGroup, FeatureData, RetrievedData } from './feature';
+import type { FeatureAndGroup, FeatureData } from './feature';
 import { ChunkedCSV, type ChunkedCSVParams } from './featureChunked';
 import { PlainCSV, type PlainCSVParams } from './featurePlain';
 import { ImgData, type ImageParams } from './image';
@@ -134,16 +134,23 @@ export class Sample extends Deferrable {
     }
 
     // Transform value into array.
-    // Data can be in array form from the densify function.
     let data: (number | string)[];
     if (typeof res.data[0] === 'number') {
+      // Data can be in array form from the densify function.
       data = res.data as unknown as number[];
     } else {
       const k = Object.keys(res.data[0]).length === 1 ? Object.keys(res.data[0])[0] : 'value';
-      if (!(k in res.data[0])) {
-        throw new Error('value not found in CSV for ChunkedCSV with coord in feature.');
+
+      if (res.dataType === 'singular') {
+        console.assert(
+          Object.keys(res.data[0]).length === 2 && 'x' in res.data[0] && 'y' in res.data[0],
+          'x and y not found in data.'
+        );
+        data = res.data.map(() => 1);
+      } else {
+        if (!(k in res.data[0])) throw new Error(`Feature ${fn.feature} doesn't have ${k}.`);
+        data = res.data.map((o) => o[k]);
       }
-      data = res.data.map((o) => o[k]);
     }
     return { ...res, data, coords: g };
   });

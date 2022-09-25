@@ -1,9 +1,9 @@
 <script lang="ts">
   import { oneLRU } from '$lib/lru';
   import { overlays, overlaysFeature, sOverlay, sSample } from '$lib/store';
-  import Colorbar from '$src/lib/components/colorbar.svelte';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes } from '$src/lib/utils';
+  import { slide } from 'svelte/transition';
   import type { Mapp } from '../mapp';
   import { tooltip } from '../utils';
   import { WebGLSpots } from './points';
@@ -82,9 +82,9 @@
 <div
   class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur dark:bg-neutral-600/90 dark:text-white/90"
 >
-  <table class="table-fixed">
+  <table class="min-w-[250px] table-fixed">
     {#if sample}
-      {#each Object.entries($overlays) as [uid, ov]}
+      {#each Object.entries($overlays) as [uid, ov], i}
         <tr>
           <td class="flex">
             <!-- Outline checkbox -->
@@ -115,18 +115,7 @@
               )}>{ov.uid ? $overlaysFeature[uid]?.feature ?? 'None' : ''}</span
             >
           </td>
-
-          <!-- Feature name -->
-          <td
-            on:click={() => ($sOverlay = uid)}
-            class={classes(
-              'min-w-[4rem] cursor-pointer pr-3',
-              $sOverlay === ov.uid ? 'text-yellow-300' : 'text-yellow-300/70'
-            )}
-          >
-            <!-- {$sFeature[ovName]?.feature ?? 'None'} -->
-          </td>
-
+          <td class="w-full" />
           <!-- Opacity bar -->
           <td>
             <input
@@ -141,15 +130,14 @@
               use:tooltip={{ content: 'Opacity' }}
             />
           </td>
-          <!-- Delete -->
-          <!-- {#if sample.overlays[ovName].addedOnline}
-            <td class="">
+          <td class="h-4 w-4">
+            {#if i !== 0}
               <button
-                class="flex items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
-                on:click={async () => {
-                  delete sample.overlays[ov.uid];
-                  sample.overlays = sample.overlays;
-                  await map.update({ overlays: sample.overlays, refresh: true });
+                class="flex cursor-pointer items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
+                on:click={() => {
+                  $overlays[uid].dispose();
+                  delete $overlays[uid];
+                  $overlays = $overlays;
                 }}
                 ><svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -160,8 +148,8 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg></button
               >
-            </td>
-          {/if} -->
+            {/if}
+          </td>
         </tr>
       {/each}
     {/if}
@@ -171,10 +159,7 @@
   <div class="flex w-full justify-center border-t border-t-white/30">
     <!-- <FileInput accept=".csv" on:import={addOverlay}> -->
     <div
-      class="mt-1.5 flex cursor-pointer items-center opacity-90 transition-opacity hover:opacity-100"
-      use:tooltip={{
-        content: 'CSV file with columns: `x`, `y` in pixels, and optional `id`.'
-      }}
+      class="mt-1.5 flex cursor-pointer items-center transition-opacity hover:font-semibold hover:text-white"
       on:click={addOverlay}
     >
       <svg
@@ -190,3 +175,7 @@
     <!-- </FileInput> -->
   </div>
 </div>
+
+<!-- use:tooltip={{
+        content: 'CSV file with columns: `x`, `y` in pixels, and optional `id`.'
+      }} -->

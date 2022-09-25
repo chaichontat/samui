@@ -9,9 +9,7 @@ import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
-import type { FeatureAndGroup } from '../data/objects/feature';
-import { keyOneLRU } from '../lru';
-import { mapTiles, overlays, overlaysFeature, sOverlay, sSample } from '../store';
+import { mapTiles, overlays, overlaysFeature, sOverlay } from '../store';
 
 export class Mapp extends Deferrable {
   map?: Map;
@@ -26,6 +24,7 @@ export class Mapp extends Deferrable {
   tippy?: { overlay: Overlay; elem: HTMLElement };
   mounted = false;
   mPerPx?: number;
+  _needNewView = true;
 
   constructor() {
     super();
@@ -83,20 +82,34 @@ export class Mapp extends Deferrable {
     // Image
     // TODO: Persistent view when returning to same sample.
     const image = sample.image;
+    const bg = this.persistentLayers.background;
+    const promises = [];
+    bg.image = image; // Necessary to mark image as non-existent.
     if (image) {
-      const bg = this.persistentLayers.background;
       await bg.update(this.map, image);
-      bg.source!.getView()
-        .then((v) => {
-          return new View({
-            ...v,
-            resolutions: [...v.resolutions!, v.resolutions!.at(-1)! / 2, v.resolutions!.at(-1)! / 4]
-          });
-        })
-        .then((v) => this.map!.setView(v))
-        .catch(console.error);
+      promises.push(
+        bg
+          .source!.getView()
+          .then((v) => {
+            return new View({
+              ...v,
+              resolutions: [
+                ...v.resolutions!,
+                v.resolutions!.at(-1)! / 2,
+                v.resolutions!.at(-1)! / 4
+              ]
+            });
+          })
+          .then((v) => {
+            this.map!.setView(v);
+            this._needNewView = false;
+          })
+          .catch(console.error)
+      );
     } else {
       this.persistentLayers.background.dispose(this.map);
+      // No image. View must come from overlay.
+      this._needNewView = true;
     }
 
     // Overlays
@@ -104,42 +117,13 @@ export class Mapp extends Deferrable {
     if (sample.overlayParams?.default) {
       const k = Object.keys(get(overlaysFeature))[0];
       console.log(sample.overlayParams.default);
-
       overlaysFeature.set({ ...get(overlaysFeature), [k]: sample.overlayParams.default });
     }
-    await Promise.all(Object.values(get(overlays)).map((ol) => ol.updateSample(sample)));
+    await Promise.all([
+      ...promises,
+      ...Object.values(get(overlays)).map((ol) => ol.updateSample(sample))
+    ]);
   }
-
-  updateFeature = keyOneLRU(async (ol: WebGLSpots, fn: FeatureAndGroup) => {
-    if (!fn.feature) return false;
-
-    $overlays[$sOverlay]?.updateProperties(res);
-    if (!map.map?.getView().getCenter()) {
-      let mx = 0;
-      let my = 0;
-      let max = [0, 0];
-      for (const { x, y } of res.data) {
-        mx += Number(x);
-        my += Number(y);
-        max[0] = Math.max(max[0], Number(x));
-        max[1] = Math.max(max[1], Number(y));
-      }
-      mx /= res.data.length;
-      my /= res.data.length;
-      console.log(res.data, mx, my);
-
-      // TODO: Deal with hard-coded zoom.
-      map.map?.setView(
-        new View({
-          center: [mx * mPerPx, -my * mPerPx],
-          projection: 'EPSG:3857',
-          resolution: 1e-4,
-          minResolution: 1e-7,
-          maxResolution: Math.max(max[0], max[1]) * mPerPx
-        })
-      );
-    }
-  });
 
   moveView({ x, y }: { x: number; y: number }, zoom?: number) {
     if (!this.map) throw new Error('Map not initialized.');

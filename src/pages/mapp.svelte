@@ -122,9 +122,7 @@
       class:hidden={!showImgControl}
       style="max-width: calc(100% - 20px);"
     >
-      <!-- {#if map.persistentLayers.background.image?.channels} -->
       <ImgControl background={map.persistentLayers.background} />
-      <!-- {/if} -->
     </div>
   {/if}
 </section>

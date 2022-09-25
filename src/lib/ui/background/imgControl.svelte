@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { sEvent, sSample } from '$lib/store';
+  import { sEvent } from '$lib/store';
   import { classes } from '$lib/utils';
+  import type { ImgData } from '$src/lib/data/objects/image';
   import {
     bgColors,
     colors,
@@ -17,13 +18,15 @@
   let cell: HTMLTableCellElement;
 
   let imgCtrl: ImgCtrl | undefined;
+  let image: ImgData | undefined;
 
   const bandinfo: Record<string, BandInfo> = {};
-  $: channels = $sSample?.image?.channels;
+  $: channels = image?.channels;
 
   function setColors() {
-    const image = background.image;
-    if (!image) return;
+    image = background.image;
+    if (!image) return { image: undefined, imgCtrl: undefined };
+
     if (image.channels === 'rgb') {
       imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
     } else if (Array.isArray(image.channels)) {
@@ -45,7 +48,7 @@
       throw new Error('Invalid channels');
     }
     console.debug('Set colors', imgCtrl);
-    return imgCtrl;
+    return { image, imgCtrl };
   }
 
   function handleClick(name: string, color: BandInfo['color'] | undefined) {
@@ -63,10 +66,12 @@
     }
   }
 
-  $: if ($sEvent?.type === 'updatedSample') imgCtrl = setColors();
+  $: if ($sEvent?.type === 'updatedSample') ({ imgCtrl, image } = setColors());
   $: if (imgCtrl) background?.updateStyle(imgCtrl);
 
-  const shrink = () => (table.style.maxWidth = `${cell.clientWidth + 8}px`);
+  const shrink = () => {
+    if (table) table.style.maxWidth = `${cell.clientWidth + 8}px`;
+  };
   $: if (table) {
     table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
     table.addEventListener('mouseleave', shrink);
@@ -74,7 +79,7 @@
   }
 </script>
 
-{#if imgCtrl}
+{#if image && imgCtrl}
   <div
     bind:this={table}
     class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1.5 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"

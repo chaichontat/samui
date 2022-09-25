@@ -12,6 +12,7 @@ import type { Sample } from '$src/lib/data/objects/sample';
 import { keyLRU } from '$src/lib/lru';
 import { rand } from '$src/lib/utils';
 import { isEqual } from 'lodash-es';
+import { View } from 'ol';
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
@@ -142,6 +143,33 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         args: [coords]
       });
       this.coords = coords;
+
+      // Set the view to new coords when no image is available.
+      if (this.map._needNewView) {
+        let mx = 0;
+        let my = 0;
+        const max = [0, 0];
+        for (const { x, y } of coords.pos!) {
+          mx += Number(x);
+          my += Number(y);
+          max[0] = Math.max(max[0], Number(x));
+          max[1] = Math.max(max[1], Number(y));
+        }
+        mx /= res.data.length;
+        my /= res.data.length;
+
+        // TODO: Deal with hard-coded zoom.
+        this.map.map!.setView(
+          new View({
+            center: [mx * coords.mPerPx, -my * coords.mPerPx],
+            projection: 'EPSG:3857',
+            resolution: 1e-4,
+            minResolution: 1e-7,
+            maxResolution: Math.max(max[0], max[1]) * coords.mPerPx
+          })
+        );
+        this.map._needNewView = false;
+      }
     }
 
     if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
@@ -164,7 +192,12 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     return await this.update(sample, this.currFeature);
   }
 
-  // Do not use static, LRU will be linked between instances.
+  dispose() {
+    if (this.outline) this.outline.dispose();
+    super.dispose();
+  }
+
+  // Do not use static, LRU would be linked between instances.
   genPoints = keyLRU((coords: CoordsData) => {
     return coords.pos!.map(({ x, y, id, idx }) => {
       const f = new Feature({
