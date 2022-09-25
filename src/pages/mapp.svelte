@@ -86,12 +86,14 @@
 
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
-<button
+
+<!-- Indicator -->
+<!-- <button
   class="h-50 w-50 absolute z-50 bg-red-500 text-xl"
   on:click={() => console.log(map.map?.getView())}
 >
   Meh
-</button>
+</button> -->
 
 <section
   class="relative h-full w-full overflow-hidden"

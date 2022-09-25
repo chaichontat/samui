@@ -1,6 +1,5 @@
 <script lang="ts">
   import Colorbar from '$lib/components/colorbar.svelte';
-  import { Legend } from '$src/lib/components/legend';
   import type { Mapp } from '../mapp';
   import OverlayTool from './overlayTool.svelte';
 
@@ -8,7 +7,6 @@
   export let showImgControl: boolean;
   export let colorbar = true;
   export let width = 0;
-  let colorOpacity = 1;
 </script>
 
 <section

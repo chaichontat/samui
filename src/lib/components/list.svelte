@@ -18,6 +18,8 @@
   export let showArrow = true;
   export let addSample = true;
 
+  let lastName: string | undefined;
+
   let rows: { id: number; name: string }[] = [];
   let _active: { id: number; name: string };
 
@@ -39,9 +41,13 @@
       dispatch('addSample');
       return;
     }
-    dispatch('change', name);
-    active = name;
-    if (useSpinner) loading = true;
+
+    if (name !== lastName) {
+      dispatch('change', name);
+      active = name;
+      if (useSpinner) loading = true;
+    }
+    lastName = name;
   }
 
   onMount(() => handleChange(items[0]));

@@ -1,19 +1,18 @@
 <script lang="ts">
   import { Fzf } from 'fzf';
-  import { debounce } from 'lodash-es';
-  import { cubicInOut, cubicOut } from 'svelte/easing';
-  import { fade, slide } from 'svelte/transition';
-  import type { FeatureAndGroup } from '../data/objects/feature';
+  import { cubicOut } from 'svelte/easing';
+  import { fade } from 'svelte/transition';
   import { oneLRU } from '../lru';
   import { hoverSelect, overlaysFeature, setHoverSelect, sOverlay } from '../store';
   import { clickOutside } from '../ui/utils';
-  import type { FeatureGroupList, HoverSelect } from './searchBox';
+  import HoverableFeature from './hoverableFeature.svelte';
+  import type { FeatureGroupList } from './searchBox';
 
   let fzf: [string | undefined, Fzf<readonly string[]>][];
 
   export let featureGroup: FeatureGroupList[];
 
-  let showSearch = true;
+  let showSearch = false;
 
   let search = '';
   let candidates: {
@@ -75,33 +74,26 @@
     <!-- See clickOutside for on:outclick. -->
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg p-2 backdrop-blur"
+      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg px-2 py-0.5"
       use:clickOutside
+      on:click={() => (showSearch = false)}
       on:outclick={() => (showSearch = false)}
       on:mouseout={() => setHoverSelect({ hover: undefined })}
       on:blur={() => setHoverSelect({ hover: undefined })}
     >
       {#each candidates as { group, values }}
         {#if values.length > 0}
-          <div>
-            <span class="px-2 py-1.5 font-medium capitalize text-yellow-300"
+          <div class="flex flex-col">
+            <span class="px-2 pt-1.5 pb-0.5 font-medium capitalize text-yellow-300"
               >{group ?? 'Misc.'}</span
             >
             {#each values as v}
-              <div
-                class="hover-default cursor-pointer rounded px-4 py-1.5 text-base"
-                on:mousemove={() =>
-                  setHoverSelect({ hover: { group: v.group, feature: v.feature } })}
-                on:click={() => {
-                  setHoverSelect({
-                    selected: { group: v.group, feature: v.feature }
-                  });
-                  showSearch = false;
-                }}
-                transition:slide={{ duration: 100, easing: cubicInOut }}
+              <HoverableFeature
+                feature={v}
+                class="hover-default cursor-pointer rounded px-4 py-0.5 text-left text-base"
               >
                 {@html v.embellished}
-              </div>
+              </HoverableFeature>
             {/each}
           </div>
         {/if}

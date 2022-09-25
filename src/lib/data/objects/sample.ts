@@ -7,7 +7,7 @@ import { PlainCSV, type PlainCSVParams } from './featurePlain';
 import { ImgData, type ImageParams } from './image';
 
 export type OverlayParams = {
-  default?: FeatureAndGroup[];
+  defaults?: FeatureAndGroup[];
   importantFeatures?: FeatureAndGroup[];
 };
 
@@ -95,10 +95,7 @@ export class Sample extends Deferrable {
   }
 
   getFeature = genLRU(async (fn: FeatureAndGroup) => {
-    const res =
-      fn.group === 'Misc'
-        ? await this.features[fn.feature]?.retrieve()
-        : await this.features[fn.group]?.retrieve(fn.feature);
+    const res = await this.features[fn.group]?.retrieve(fn.feature);
 
     if (!res || !res.data) {
       console.error(`getFeature: ${fn.feature} not found.`);
@@ -136,7 +133,7 @@ export class Sample extends Deferrable {
     // Transform value into array.
     let data: (number | string)[];
     if (typeof res.data[0] === 'number') {
-      // Data can be in array form from the densify function.
+      // Data can be in array from the densify function.
       data = res.data as unknown as number[];
     } else {
       const k = Object.keys(res.data[0]).length === 1 ? Object.keys(res.data[0])[0] : 'value';
@@ -155,19 +152,19 @@ export class Sample extends Deferrable {
     return { ...res, data, coords: g };
   });
 
-  genFeatureList() {
+  async genFeatureList() {
+    await this.promise;
+
     const featureList = [];
-    const misc = [];
     for (const f of Object.values(this.features)) {
       if (f instanceof ChunkedCSV) {
         featureList.push({ group: f.name, features: Object.keys(f.names!) });
       } else if (f instanceof PlainCSV) {
-        misc.push(f.name);
+        featureList.push({ group: f.name, features: f.features! });
       } else {
         throw new Error('Unsupported feature type at Sample.genFeatureList');
       }
     }
-    featureList.push({ group: 'Misc', features: misc });
     return featureList;
   }
 }

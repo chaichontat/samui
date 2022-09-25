@@ -85,6 +85,7 @@
   <table class="min-w-[250px] table-fixed">
     {#if sample}
       {#each Object.entries($overlays) as [uid, ov], i}
+        {@const fg = $overlaysFeature[uid]}
         <tr>
           <td class="flex">
             <!-- Outline checkbox -->
@@ -110,9 +111,9 @@
             <span
               on:click={() => ($sOverlay = uid)}
               class={classes(
-                'mr-2 max-w-[10rem] cursor-pointer select-none text-ellipsis capitalize',
+                'mr-2 max-w-[10rem] cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
                 $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
-              )}>{ov.uid ? $overlaysFeature[uid]?.feature ?? 'None' : ''}</span
+              )}>{ov.uid ? `${fg?.group} > ${fg?.feature}` ?? 'None' : ''}</span
             >
           </td>
           <td class="w-full" />

@@ -9,6 +9,7 @@
     type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
   import { zip } from 'lodash-es';
+  import { onMount } from 'svelte';
   import type { Background } from './imgBackground';
 
   export let background: Background;
@@ -72,18 +73,19 @@
   const shrink = () => {
     if (table) table.style.maxWidth = `${cell.clientWidth + 8}px`;
   };
-  $: if (table) {
+  onMount(() => {
     table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
     table.addEventListener('mouseleave', shrink);
     setTimeout(shrink, 1000);
-  }
+  });
 </script>
 
-{#if image && imgCtrl}
-  <div
-    bind:this={table}
-    class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1.5 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
-  >
+<div
+  bind:this={table}
+  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1.5 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
+  class:hidden={!(image && imgCtrl)}
+>
+  {#if image && imgCtrl}
     {#if imgCtrl.type === 'composite' && Array.isArray(channels)}
       <table class="table-auto">
         <tbody class="hide-second-col">
@@ -99,7 +101,7 @@
                     imgCtrl.variables[name].enabled
                       ? bgColors[colors.findIndex((x) => x === imgCtrl.variables[name].color)] +
                           ' text-white'
-                      : 'opacity-60 hover:opacity-80',
+                      : 'opacity-80 hover:opacity-100',
                     imgCtrl.variables[name].enabled &&
                       ['white', 'yellow'].includes(imgCtrl.variables[name].color)
                       ? 'text-black'
@@ -119,7 +121,7 @@
                       bg,
                       color !== 'white' ? 'opacity-90' : '',
                       i === 0 ? 'ml-1.5' : '',
-                      `mx-[1px] my-1 flex h-[18px] w-[18px] items-center rounded-full opacity-70 transition-opacity duration-500 group-hover:opacity-100`
+                      `mx-[1px] my-1 flex h-[18px] w-[18px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`
                     )}
                   />
                 {/each}
@@ -152,8 +154,8 @@
         {/each}
       </div>
     {/if}
-  </div>
-{/if}
+  {/if}
+</div>
 
 <style lang="postcss">
   .transition-width {

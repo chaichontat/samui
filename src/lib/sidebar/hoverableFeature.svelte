@@ -17,5 +17,7 @@
   on:blur={() => setHoverSelect({ hover: undefined })}
   on:click={() => setHoverSelect({ selected: feature })}
 >
-  {feature.feature}
+  <slot>
+    {feature.feature}
+  </slot>
 </button>

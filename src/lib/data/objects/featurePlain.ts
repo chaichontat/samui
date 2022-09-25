@@ -1,5 +1,6 @@
 import { Deferrable } from '$src/lib/definitions';
 import { convertLocalToNetwork, fromCSV, type Url } from '$src/lib/io';
+import { difference } from 'lodash-es';
 import type { CSVRetrievedData, FeatureParams, FeatureType } from './feature';
 
 export interface PlainCSVParams extends FeatureParams {
@@ -19,6 +20,7 @@ export class PlainCSV extends Deferrable {
   readonly coordName: string | undefined;
   readonly mPerPx: number | undefined;
   readonly size: number | undefined;
+  features?: string[];
   values?: CSVRetrievedData;
 
   constructor(
@@ -51,27 +53,37 @@ export class PlainCSV extends Deferrable {
         console.error(`Cannot fetch ${this.url.url}.`);
         return this;
       }
-
       this.values = retrieved.data as Record<string, number | string>[];
-      //   if (Object.keys(v[0]).length === 1) {
-      //     const key = Object.keys(v[0])[0];
-      //     this.values = v.map((d) => d[key]);
-      //   } else {
-      //     console.error('CSV must have only one column.');
-      //     // throw new Error('Cannot handle multiple columns');
-      //   }
+      this.features = difference(Object.keys(this.values[0]), ['id', 'idx', 'x', 'y']);
     }
     this.hydrated = true;
     return this;
   }
 
-  async retrieve() {
+  async retrieve(feature: string) {
     if (!this.hydrated) {
       await this.hydrate();
     }
+
+    if (!this.values) {
+      console.error(`Cannot retrieve ${feature}.`);
+    }
+
+    let k: string;
+    if (feature.includes(feature)) {
+      k = feature;
+    } else if (feature.includes('value')) {
+      k = 'value';
+    } else if (feature.includes(this.name)) {
+      k = this.name;
+    } else {
+      console.error(`Feature ${feature} not found.`);
+      return;
+    }
+
     return {
       dataType: this.dataType,
-      data: this.values!,
+      data: this.values!.map((o) => ({ x: o.x, y: o.y, value: o[k] })),
       coordName: this.coordName,
       mPerPx: this.mPerPx,
       size: this.size

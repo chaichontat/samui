@@ -11,7 +11,7 @@
   $: if (sample) {
     (async () => {
       await sample.promise;
-      featureGroup = sample.genFeatureList();
+      featureGroup = await sample.genFeatureList();
     })().catch(console.error);
   }
 </script>

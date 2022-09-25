@@ -3,13 +3,13 @@ import { WebGLColorFunc } from '../webglcolor';
 
 export const colors = ['blue', 'green', 'red', 'magenta', 'cyan', 'yellow', 'white'] as const;
 export const bgColors = [
-  'bg-blue-700',
-  'bg-green-600',
-  'bg-red-700',
-  'bg-fuchsia-500',
-  'bg-cyan-500',
-  'bg-yellow-500',
-  'bg-gray-200'
+  'bg-blue-700 hover:bg-blue-600',
+  'bg-green-600 hover:bg-green-500',
+  'bg-red-700 hover:bg-red-600',
+  'bg-fuchsia-500 hover:bg-fuchsia-400',
+  'bg-cyan-500 hover:bg-cyan-400',
+  'bg-yellow-500 hover:bg-yellow-400',
+  'bg-gray-200 hover:bg-gray-100'
 ] as const;
 
 export type BandInfo = { enabled: boolean; color: typeof colors[number]; max: number };

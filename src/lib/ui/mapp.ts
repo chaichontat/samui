@@ -9,7 +9,7 @@ import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
-import { mapTiles, overlays, overlaysFeature, sOverlay } from '../store';
+import { mapTiles, overlays, overlaysFeature, setHoverSelect, sOverlay } from '../store';
 
 export class Mapp extends Deferrable {
   map?: Map;
@@ -123,6 +123,14 @@ export class Mapp extends Deferrable {
       ...promises,
       ...Object.values(get(overlays)).map((ol) => ol.updateSample(sample))
     ]);
+
+    // Defaults
+    console.log('hi');
+    console.log(sample.overlayParams?.defaults);
+
+    if (sample.overlayParams?.defaults && !get(overlays)[get(sOverlay)]?.currFeature) {
+      setHoverSelect({ selected: sample.overlayParams.defaults[0] });
+    }
   }
 
   moveView({ x, y }: { x: number; y: number }, zoom?: number) {
