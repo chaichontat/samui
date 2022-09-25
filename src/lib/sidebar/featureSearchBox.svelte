@@ -74,7 +74,7 @@
     <!-- See clickOutside for on:outclick. -->
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg px-2 py-0.5"
+      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg px-2 pt-2 pb-4"
       use:clickOutside
       on:click={() => (showSearch = false)}
       on:outclick={() => (showSearch = false)}

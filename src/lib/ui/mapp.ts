@@ -114,20 +114,13 @@ export class Mapp extends Deferrable {
 
     // Overlays
     this.persistentLayers.active.visible = false;
-    if (sample.overlayParams?.default) {
-      const k = Object.keys(get(overlaysFeature))[0];
-      console.log(sample.overlayParams.default);
-      overlaysFeature.set({ ...get(overlaysFeature), [k]: sample.overlayParams.default });
-    }
+
     await Promise.all([
       ...promises,
       ...Object.values(get(overlays)).map((ol) => ol.updateSample(sample))
     ]);
 
     // Defaults
-    console.log('hi');
-    console.log(sample.overlayParams?.defaults);
-
     if (sample.overlayParams?.defaults && !get(overlays)[get(sOverlay)]?.currFeature) {
       setHoverSelect({ selected: sample.overlayParams.defaults[0] });
     }

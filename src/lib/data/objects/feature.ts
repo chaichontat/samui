@@ -16,6 +16,7 @@ export interface RetrievedData {
   coordName?: string;
   mPerPx?: number;
   size?: number;
+  unit?: string;
 }
 
 export interface FeatureParams {
@@ -41,4 +42,16 @@ export const convertCategoricalToNumber = keyLRU((arr: (number | string)[]) => {
   // TODO: Overwrite old thing?
   const converted = arr.map((v) => legend[v]);
   return { legend: legendArr, converted };
+});
+
+export const stats = keyLRU((arr: (number | string)[]) => {
+  const minmax = [0, 0];
+  if (typeof arr[0] === 'number') {
+    for (const n of arr) {
+      minmax[0] = Math.min(minmax[0], n as number);
+      minmax[1] = Math.max(minmax[1], n as number);
+    }
+    return minmax;
+  }
+  return undefined;
 });

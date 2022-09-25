@@ -10,6 +10,7 @@ export interface PlainCSVParams extends FeatureParams {
   coordName?: string;
   mPerPx?: number;
   size?: number;
+  unit?: string;
 }
 
 export class PlainCSV extends Deferrable {
@@ -20,11 +21,12 @@ export class PlainCSV extends Deferrable {
   readonly coordName: string | undefined;
   readonly mPerPx: number | undefined;
   readonly size: number | undefined;
+  readonly unit: string | undefined;
   features?: string[];
   values?: CSVRetrievedData;
 
   constructor(
-    { name, url, dataType, values, coordName, mPerPx, size }: PlainCSVParams,
+    { name, url, dataType, values, coordName, mPerPx, size, unit }: PlainCSVParams,
     autoHydrate = false
   ) {
     super();
@@ -35,6 +37,7 @@ export class PlainCSV extends Deferrable {
     this.coordName = coordName;
     this.mPerPx = mPerPx;
     this.size = size;
+    this.unit = unit;
 
     if (!this.url && !this.values) throw new Error('Must provide url or value');
     if (autoHydrate) {
@@ -86,7 +89,8 @@ export class PlainCSV extends Deferrable {
       data: this.values!.map((o) => ({ x: o.x, y: o.y, value: o[k] })),
       coordName: this.coordName,
       mPerPx: this.mPerPx,
-      size: this.size
+      size: this.size,
+      unit: this.unit
     };
   }
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { overlays, overlaysFeature, sEvent, sFeature, sMapp, sOverlay } from '$lib/store';
+  import { overlays, overlaysFeature, sEvent, sFeatureData, sMapp, sOverlay } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
@@ -61,6 +61,7 @@
     map = map;
 
     $sEvent = new Event('updatedSample');
+
     // } else {
     // When adding outlines in app.
     // await map.update({ sample, overlays: $overlays, refresh: true });
@@ -78,7 +79,6 @@
     // Prevents update when state is inconsistent.
     if (!fn || isEqual(ol.currFeature, fn)) return;
     await ol.update(sample, fn);
-    $sEvent = new Event('updatedFeature');
   };
 
   $: small = width < 500;

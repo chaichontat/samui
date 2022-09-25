@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { hoverSelect, sFeature } from '$lib/store';
+  import { hoverSelect, sFeatureData } from '$lib/store';
   import { isEqual } from 'lodash-es';
   import type { FeatureAndGroup } from '../data/objects/feature';
   import HoverableFeature from './hoverableFeature.svelte';
@@ -8,13 +8,8 @@
 
   let queue = [] as FeatureAndGroup[];
 
-  $: if (
-    $sFeature &&
-    !queue.find((x) => isEqual($sFeature, x)) &&
-    isEqual($sFeature, $hoverSelect.selected)
-  ) {
-    console.log('recent', $sFeature);
-    queue.push($sFeature);
+  $: if ($hoverSelect.selected && !queue.find((x) => isEqual($hoverSelect.selected, x))) {
+    queue.push($hoverSelect.selected);
     if (queue.length > maxLength) queue.shift();
     queue = queue;
   }

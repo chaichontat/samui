@@ -10,6 +10,7 @@ import {
 } from '$src/lib/data/objects/feature';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { keyLRU } from '$src/lib/lru';
+import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { rand } from '$src/lib/utils';
 import { isEqual } from 'lodash-es';
 import { View } from 'ol';
@@ -17,6 +18,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
+import { get } from 'svelte/store';
 import { MapComponent } from '../definitions';
 import type { Mapp } from '../mapp';
 import { genSpotStyle } from './featureColormap';
@@ -31,6 +33,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   currFeature?: FeatureAndGroup;
   currPx?: number;
   currLegend?: (string | number)[];
+  currUnit?: string;
 
   constructor(map: Mapp) {
     super(map, genSpotStyle('categorical', 2));
@@ -183,8 +186,15 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       ? this.source.addFeatures(this.features!)
       : this.source.changed();
 
+    this.currUnit = res.unit;
     this._updateOutline();
-    return;
+
+    // When changing between samples, all overlays are updated.
+    if (get(sOverlay) === this.uid) {
+      sFeatureData.set({ ...res, name: fn });
+      sEvent.set(new Event('updatedFeature'));
+    }
+    return res;
   }
 
   async updateSample(sample: Sample) {

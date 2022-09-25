@@ -4,6 +4,7 @@
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
+  import Plot from './plot.svelte';
 </script>
 
 <aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4">
@@ -15,6 +16,15 @@
     <Section title="Recent Features" defaultOpen>
       <Recent />
       <!-- <Annotate /> -->
+    </Section>
+
+    <!-- <Section title="Overlay Options" defaultOpen>
+      Min value: <input type="range" />
+      Max value: <input type="range" />
+    </Section> -->
+
+    <Section title="Plot" defaultOpen>
+      <Plot />
     </Section>
 
     {#if $sSample?.overlayParams?.importantFeatures}

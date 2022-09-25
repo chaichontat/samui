@@ -22,7 +22,7 @@ export const overlays: Writable<Record<string, WebGLSpots>> = writable({});
 /// Overlay -> Group/feature
 export const sOverlay = writable(undefined as string | undefined);
 export const overlaysFeature = writable({} as Record<string, FeatureAndGroup | undefined>);
-export const sFeature = writable(undefined as FeatureAndGroup | undefined);
+export const sFeatureData = writable(undefined as { name: FeatureAndGroup } | undefined);
 
 export const annotating = writable({
   currKey: null as number | null,

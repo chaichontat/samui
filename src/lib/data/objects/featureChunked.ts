@@ -15,6 +15,7 @@ export interface ChunkedCSVParams extends FeatureParams {
   headerUrl?: Url;
   header?: ChunkedCSVHeader;
   dataType: 'categorical' | 'quantitative';
+  unit?: string;
 }
 
 export type ChunkedCSVHeader = {
@@ -43,6 +44,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
   names?: Record<string, number>;
   featNames: string[] = [];
   length?: number;
+  unit?: string;
 
   url: Url;
   readonly dataType: FeatureType;
@@ -54,13 +56,17 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
   sparseMode?: SparseMode;
   allData?: ArrayBuffer;
 
-  constructor({ name, url, headerUrl, header, dataType }: ChunkedCSVParams, autoHydrate = false) {
+  constructor(
+    { name, url, headerUrl, header, dataType, unit }: ChunkedCSVParams,
+    autoHydrate = false
+  ) {
     super();
     this.name = name;
     this.url = url;
     this.header = header;
     this.headerUrl = headerUrl;
     this.dataType = dataType;
+    this.unit = unit;
 
     if (!this.header && !this.headerUrl) throw new Error('Must provide header or headerUrl');
     if (autoHydrate) {
@@ -131,7 +137,8 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
         data,
         coordName: this.header?.coordName,
         mPerPx: this.header?.mPerPx,
-        size: this.header?.size
+        size: this.header?.size,
+        unit: this.unit
       };
     });
   }

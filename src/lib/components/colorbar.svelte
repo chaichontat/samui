@@ -56,7 +56,7 @@
         },
         width: 250,
         ticks: 5,
-        label: 'Log Normalized',
+        label: $overlays[ol].currUnit,
         // height: 30,
         // marginTop: -5,
         className: 'colorbar',
@@ -94,6 +94,6 @@
   }
 
   div :global(.legend-name) {
-    @apply text-end text-base font-medium text-slate-50;
+    @apply text-end text-sm font-medium text-slate-50;
   }
 </style>

@@ -1,7 +1,8 @@
 import { Deferrable } from '$src/lib/definitions';
 import { genLRU } from '$src/lib/lru';
+import { sFeatureData } from '$src/lib/store';
 import { CoordsData, type Coord, type CoordsParams } from './coords';
-import type { FeatureAndGroup, FeatureData } from './feature';
+import { stats, type FeatureAndGroup, type FeatureData } from './feature';
 import { ChunkedCSV, type ChunkedCSVParams } from './featureChunked';
 import { PlainCSV, type PlainCSVParams } from './featurePlain';
 import { ImgData, type ImageParams } from './image';
@@ -149,7 +150,10 @@ export class Sample extends Deferrable {
         data = res.data.map((o) => o[k]);
       }
     }
-    return { ...res, data, coords: g };
+
+    const processed = { ...res, data, coords: g, minmax: stats({ key, args: [data] }) };
+
+    return processed;
   });
 
   async genFeatureList() {
