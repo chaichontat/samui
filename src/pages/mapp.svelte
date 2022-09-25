@@ -142,16 +142,24 @@
     @apply w-3;
   }
 
-  .map :global(.ol-scale-line) {
-    @apply left-8 bottom-8 float-right w-3 bg-transparent text-right font-sans;
+  /* .map :global(.ol-scale-line) {
+    @apply absolute right-16 left-auto bottom-8 float-right w-3 bg-transparent text-right font-sans;
   }
 
   .map :global(.ol-scale-line-inner) {
-    @apply border-neutral-200 pb-1 text-sm text-neutral-200;
+    @apply absolute left-auto right-0 bottom-0 border-neutral-200 pb-1 text-sm text-neutral-200;
+  } */
+
+  .map :global(.ol-scale-line) {
+    @apply absolute left-4 bottom-8 float-right w-3 bg-transparent text-right font-sans;
+  }
+
+  .map :global(.ol-scale-line-inner) {
+    @apply absolute  bottom-0 border-neutral-200 pb-1 text-sm text-neutral-200;
   }
 
   .map :global(.ol-zoom) {
-    @apply absolute bottom-8 left-auto right-6 top-auto border-neutral-200 backdrop-blur;
+    @apply absolute bottom-20 left-4 top-auto border-neutral-200 backdrop-blur;
   }
 
   .map :global(.ol-zoom-in) {

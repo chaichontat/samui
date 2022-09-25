@@ -1,6 +1,7 @@
 <script lang="ts">
   import { oneLRU } from '$lib/lru';
   import { overlays, overlaysFeature, sOverlay, sSample } from '$lib/store';
+  import Colorbar from '$src/lib/components/colorbar.svelte';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes } from '$src/lib/utils';
   import type { Mapp } from '../mapp';

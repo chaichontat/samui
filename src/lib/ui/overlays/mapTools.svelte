@@ -1,5 +1,6 @@
 <script lang="ts">
   import Colorbar from '$lib/components/colorbar.svelte';
+  import { Legend } from '$src/lib/components/legend';
   import type { Mapp } from '../mapp';
   import OverlayTool from './overlayTool.svelte';
 
@@ -31,13 +32,15 @@
   </button>
 
   <!-- Overlay selector -->
-  {#if showImgControl}
-    <OverlayTool {map} />
-  {/if}
+  <div>
+    {#if showImgControl}
+      <OverlayTool {map} />
+    {/if}
+  </div>
 </section>
 
 {#if colorbar}
-  <div class="absolute right-16 bottom-[1.5rem] z-20 items-end">
-    <Colorbar bind:opacity={colorOpacity} title="Log" color="turbo" min={0} max={10} />
+  <div class="absolute right-6 bottom-4 z-20 items-end">
+    <Colorbar title="Log" color="turbo" min={0} max={10} />
   </div>
 {/if}

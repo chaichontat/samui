@@ -29,6 +29,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   currSample?: string;
   currFeature?: FeatureAndGroup;
   currPx?: number;
+  currLegend?: (string | number)[];
 
   constructor(map: Mapp) {
     super(map, genSpotStyle('categorical', 2));
@@ -77,18 +78,18 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
     // Set style cateogrical or quantitative.
     if (dataType === 'categorical') {
-      ({ converted: data } = convertCategoricalToNumber({
+      ({ legend: this.currLegend, converted: data } = convertCategoricalToNumber({
         key: `${sample.name}-${fn.group}-${fn.feature}`,
         args: [data]
       }));
     }
+    console.log(this.currLegend);
+
     this.currStyle = dataType;
 
     for (const [i, f] of this.features.entries()) {
       f.setProperties({ value: data[i] });
     }
-
-    console.log(this.features);
   }
 
   _updateOutline() {
