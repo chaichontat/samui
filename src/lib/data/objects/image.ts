@@ -6,13 +6,13 @@ export type ImageParams = {
   urls: Url[];
   channels: string[] | 'rgb';
   mPerPx: number;
-  defaultChannels?: Record<string, BandInfo['color']>;
+  defaultChannels?: Record<BandInfo['color'], string | undefined>;
 };
 
 export class ImgData extends Deferrable {
   urls: readonly Url[];
   channels: string[] | 'rgb';
-  defaultChannels: Record<string, BandInfo['color']>;
+  defaultChannels: Record<BandInfo['color'], string | undefined>;
   mPerPx: number;
 
   constructor({ urls, channels, defaultChannels, mPerPx }: ImageParams, autoHydrate = false) {

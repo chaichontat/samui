@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { hoverSelect, overlays, sFeature, sOverlay } from '$lib/store';
+  import { overlays, sEvent, sOverlay } from '$lib/store';
   import * as Plot from '@observablehq/plot';
   import * as d3 from 'd3';
-  import { onMount } from 'svelte';
-  import { Legend } from './legend';
   export let color = 'viridis' | 'turbo';
 
   let svg: SVGSVGElement;
@@ -80,11 +78,7 @@
     div.appendChild(divs[ol]);
   }
 
-  onMount(() => {
-    document.addEventListener('updatedFeature', updateLegend);
-  });
-
-  // $: d3.select(svg).select('image').attr('opacity', opacity);
+  $: if ($sEvent?.type === 'updatedFeature') updateLegend();
 </script>
 
 <!-- <svg bind:this={svg} /> -->

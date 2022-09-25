@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { overlays, overlaysFeature, sFeature, sMapp, sOverlay } from '$lib/store';
+  import { overlays, overlaysFeature, sEvent, sFeature, sMapp, sOverlay } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
@@ -10,8 +10,8 @@
   import { Mapp } from '../lib/ui/mapp';
 
   export let sample: Sample | undefined;
-  $: sample?.hydrate().catch(console.error);
-  let currSample = sample?.name;
+  // let currSample: string;
+  $: sample?.hydrate().then(updateSample).catch(console.error);
 
   export let uid: number;
   const mapName = `map-${uid}`;
@@ -54,17 +54,17 @@
   //   }
   // }
 
-  // Sample change.
-  $: if (sample) updateSample(sample).catch(console.error);
   const updateSample = async (sample: Sample) => {
-    if (currSample !== sample.name) {
-      await map.updateSample(sample);
-      currSample = sample.name;
-      map = map;
-    } else {
-      // When adding outlines in app.
-      // await map.update({ sample, overlays: $overlays, refresh: true });
-    }
+    // if (currSample !== sample.name) {
+    await map.updateSample(sample);
+    // currSample = sample.name;
+    map = map;
+
+    $sEvent = new Event('updatedSample');
+    // } else {
+    // When adding outlines in app.
+    // await map.update({ sample, overlays: $overlays, refresh: true });
+    // }
   };
 
   // Feature change.
@@ -78,7 +78,7 @@
     // Prevents update when state is inconsistent.
     if (!fn || isEqual(ol.currFeature, fn)) return;
     await ol.update(sample, fn);
-    document.dispatchEvent(new Event('updatedFeature'));
+    $sEvent = new Event('updatedFeature');
   };
 
   $: small = width < 500;
@@ -122,9 +122,9 @@
       class:hidden={!showImgControl}
       style="max-width: calc(100% - 20px);"
     >
-      {#if map.persistentLayers.background.image?.channels}
-        <ImgControl background={map.persistentLayers.background} />
-      {/if}
+      <!-- {#if map.persistentLayers.background.image?.channels} -->
+      <ImgControl background={map.persistentLayers.background} />
+      <!-- {/if} -->
     </div>
   {/if}
 </section>

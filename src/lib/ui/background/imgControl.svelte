@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { sSample } from '$lib/store';
+  import { sEvent, sSample } from '$lib/store';
   import { classes } from '$lib/utils';
   import {
     bgColors,
@@ -8,7 +8,6 @@
     type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
   import { zip } from 'lodash-es';
-  import { onMount } from 'svelte';
   import type { Background } from './imgBackground';
 
   export let background: Background;
@@ -17,31 +16,37 @@
   let table: HTMLDivElement;
   let cell: HTMLTableCellElement;
 
-  const image = background.image;
-  const channels = background.image?.channels;
+  let imgCtrl: ImgCtrl | undefined;
+
   const bandinfo: Record<string, BandInfo> = {};
-  if ($sSample && image && Array.isArray(image.channels)) {
-    for (const c of image.channels) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      bandinfo[c] = { enabled: false, color: 'blue', max: 128 };
-    }
+  $: channels = $sSample?.image?.channels;
 
-    if (Object.keys(image.defaultChannels).length > 0) {
-      for (const [b, c] of Object.entries(image.defaultChannels)) {
-        bandinfo[b] = { enabled: true, color: c, max: 128 };
+  function setColors() {
+    const image = background.image;
+    if (!image) return;
+    if (image.channels === 'rgb') {
+      imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
+    } else if (Array.isArray(image.channels)) {
+      for (const c of image.channels) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        bandinfo[c] = { enabled: false, color: 'blue', max: 128 };
       }
-    }
-  }
 
-  const imgCtrl: ImgCtrl | undefined =
-    image?.channels === 'rgb'
-      ? { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 }
-      : Array.isArray(image?.channels)
-      ? {
-          type: 'composite',
-          variables: bandinfo
+      if (Object.keys(image.defaultChannels).length > 0) {
+        for (const [c, b] of Object.entries(image.defaultChannels)) {
+          if (b) bandinfo[b] = { enabled: true, color: c, max: 128 };
         }
-      : undefined;
+      }
+      imgCtrl = {
+        type: 'composite',
+        variables: bandinfo
+      };
+    } else {
+      throw new Error('Invalid channels');
+    }
+    console.debug('Set colors', imgCtrl);
+    return imgCtrl;
+  }
 
   function handleClick(name: string, color: BandInfo['color'] | undefined) {
     if (!imgCtrl) return;
@@ -58,16 +63,15 @@
     }
   }
 
-  onMount(() => {
-    if (table) {
-      const shrink = () => (table.style.maxWidth = `${cell.clientWidth + 8}px`);
-      table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
-      table.addEventListener('mouseleave', shrink);
-      setTimeout(shrink, 1000);
-    }
-  });
+  $: if ($sEvent?.type === 'updatedSample') imgCtrl = setColors();
+  $: if (imgCtrl) background?.updateStyle(imgCtrl);
 
-  $: if ($sSample && imgCtrl) background?.updateStyle(imgCtrl);
+  const shrink = () => (table.style.maxWidth = `${cell.clientWidth + 8}px`);
+  $: if (table) {
+    table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
+    table.addEventListener('mouseleave', shrink);
+    setTimeout(shrink, 1000);
+  }
 </script>
 
 {#if imgCtrl}

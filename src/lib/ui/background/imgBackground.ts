@@ -3,7 +3,6 @@ import WebGLTileLayer from 'ol/layer/WebGLTile';
 import GeoTIFF from 'ol/source/GeoTIFF';
 import type { ImgData } from '../../data/objects/image';
 import { Deferrable } from '../../definitions';
-import { oneLRU } from '../../lru';
 import {
   decomposeColors,
   genCompStyle,
@@ -67,17 +66,18 @@ export class Background extends Deferrable {
     if (!this.image) {
       console.error('No image loaded');
       return;
-    } // For later use when changing sample.
+    }
     if (imgCtrl.type === 'rgb') {
       this._updateStyle(imgCtrl as Omit<RGBCtrl, 'type'>);
-      return;
+    } else if (imgCtrl.type === 'composite') {
+      this._updateStyle(decomposeColors(this.image.channels as string[], imgCtrl));
+    } else {
+      console.error('Unknown type');
     }
-    console.log('Updating background style');
-    this._updateStyle(decomposeColors(this.image.channels as string[], imgCtrl));
   }
 
-  _updateStyle = oneLRU((variables: Record<string, number>) => {
-    console.log('update style var');
+  _updateStyle = (variables: Record<string, number>) => {
+    console.debug('update style var');
     this.layer?.updateStyleVariables(variables);
-  });
+  };
 }

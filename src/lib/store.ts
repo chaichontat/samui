@@ -44,3 +44,6 @@ export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
     _setHoverNow(v);
   }
 });
+
+export const sEvent = writable(undefined as Event | undefined);
+sEvent.subscribe(console.debug);
