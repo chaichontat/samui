@@ -61,7 +61,7 @@
 
   // $: if ($sFeatureData) updatePlot($);
 
-  $: if ($sId && $sFeatureData) {
+  $: if ($sId && $sFeatureData && $sFeatureData.dataType !== 'singular') {
     updatePlot($sFeatureData.data[$sId.idx]);
   }
 </script>
