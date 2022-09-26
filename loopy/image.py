@@ -15,12 +15,13 @@ from rasterio.io import DatasetWriter
 from loopy.utils import ReadonlyModel, Url
 
 Meter = Annotated[float, "meter"]
-Colors = Literal['blue', 'green', 'red', 'magenta', 'yellow', 'cyan', 'white']
+Colors = Literal["blue", "green", "red", "magenta", "yellow", "cyan", "white"]
+
 
 class ImageParams(ReadonlyModel):
     urls: list[Url]
     channels: list[str] | Literal["rgb"]
-    defaultChannels: dict[str, Colors] | None = None
+    defaultChannels: dict[Colors, str] | None = None
     mPerPx: float
 
 
@@ -54,7 +55,7 @@ def gen_geotiff(img: np.ndarray, path: Path, scale: float, rgb: bool = False) ->
             driver="GTiff",
             height=height,
             width=width,
-            count=min(4, z) if i == 0 else z-4,
+            count=min(4, z) if i == 0 else z - 4,
             photometric="RGB" if rgb else "MINISBLACK",
             transform=rasterio.Affine(
                 scale, 0, 0, 0, -scale, 0

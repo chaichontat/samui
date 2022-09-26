@@ -1,11 +1,12 @@
-
 from typing import Literal
 
 import pandas as pd
 from anndata import AnnData
 from scipy.sparse import csc_matrix, csr_matrix
 
-from .utils import ReadonlyModel, Url, concat, concat_csv, concat_json
+from .utils import ReadonlyModel, Url, concat
+
+FeatureType = Literal["categorical", "quantitative", "singular"]
 
 
 class Coord(ReadonlyModel):
@@ -41,15 +42,20 @@ class PlainCSVParams(ReadonlyModel):
     type: Literal["plainCSV"] = "plainCSV"
     name: str
     url: Url
-    dataType: Literal["categorical", "quantitative"] = "quantitative"
+    dataType: FeatureType = "quantitative"
     coordName: str | None = None
+    unit: str | None = None
+    size: float | None = None
+
 
 class ChunkedCSVParams(ReadonlyModel):
     type: Literal["chunkedCSV"] = "chunkedCSV"
     name: str
     url: Url
     headerUrl: Url
-    dataType: Literal["categorical", "quantitative"] = "quantitative"
+    dataType: FeatureType = "quantitative"
+    unit: str | None = None
+
 
 class ChunkedCSVHeader(ReadonlyModel):
     names: list[str] | None = None
@@ -60,11 +66,16 @@ class ChunkedCSVHeader(ReadonlyModel):
     coordName: str | None = None
 
 
+class FeatureAndGroup(ReadonlyModel):
+    feature: str
+    group: str | None = None
+
+
 FeatureParams = ChunkedCSVParams | PlainCSVParams
 
 
 def get_compressed_genes(
-    vis: AnnData,coordName: str, mode: Literal["csr", "csc"] = "csc"
+    vis: AnnData, coordName: str, mode: Literal["csr", "csc"] = "csc"
 ) -> tuple[ChunkedCSVHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(vis.X)  # csR
@@ -86,10 +97,12 @@ def get_compressed_genes(
             objs.append(None)
         else:
             objs.append(
-                pd.DataFrame({
-                    "index": indices[indptr[i] : indptr[i + 1]].tolist(),
-                    "value": [round(x, 3) for x in data[indptr[i] : indptr[i + 1]].tolist()],
-                })
+                pd.DataFrame(
+                    {
+                        "index": indices[indptr[i] : indptr[i + 1]].tolist(),
+                        "value": [round(x, 3) for x in data[indptr[i] : indptr[i + 1]].tolist()],
+                    }
+                )
             )
 
     ptr, outbytes = concat(objs, lambda x: x.to_csv(index=False).encode())

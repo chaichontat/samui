@@ -40,7 +40,7 @@ def concat_csv(objs: list[Any]) -> tuple[np.ndarray, bytearray]:
     return concat(objs, lambda x: ",".join(x).encode())
 
 
-def concat(objs: list[Any], f: Callable[[Any], bytes] = lambda x:x) -> tuple[np.ndarray, bytearray]:
+def concat(objs: list[Any], f: Callable[[Any], bytes] = lambda x: x) -> tuple[np.ndarray, bytearray]:
     """Concatenate a list of JSON serializable objects into a single gzipped binary
     along with pointers to the start of each object.
 

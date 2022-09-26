@@ -14,7 +14,7 @@
     <DisclosureButton
       class={classes(
         open ? 'rounded-b-none' : 'delay-150',
-        'flex w-full items-center justify-between rounded-lg bg-white/5 py-2 pl-[13px] pr-4 text-left font-medium transition-[border-radius] ease-in-out hover:bg-white/10 focus:outline-none'
+        'flex w-full items-center justify-between rounded-lg bg-white/[8%] py-2 pl-[13px] pr-4 text-left font-medium transition-[border-radius] ease-in-out hover:bg-white/10 focus:outline-none'
       )}
     >
       <div class="font-xl">{title}</div>
@@ -31,7 +31,7 @@
     </DisclosureButton>
 
     {#if open}
-      <div class="rounded-b-lg bg-slate-800" transition:slide>
+      <div class="rounded-b-lg bg-white/[15%]" transition:slide>
         <DisclosurePanel class="px-[13px] py-2" static>
           <div class={cl}>
             <slot>
