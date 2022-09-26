@@ -66,6 +66,13 @@
     "ol": "^7.1.0",
     "pako": "^2.0.4",
     "papaparse": "^5.3.2",
-    "tippy.js": "^6.3.7"
+    "rehype-highlight": "^5.0.2",
+    "rehype-stringify": "^9.0.3",
+    "remark-gfm": "^3.0.1",
+    "remark-parse": "^10.0.1",
+    "remark-rehype": "^10.1.0",
+    "remark-validate-links": "^12.1.0",
+    "tippy.js": "^6.3.7",
+    "unified": "^10.1.2"
   }
 }
