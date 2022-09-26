@@ -110,15 +110,15 @@ def run(s: str) -> None:
                 name="cellType", url=Url("cellType.csv"), dataType="categorical", coordName="cells"
             ),
             PlainCSVParams(
-                name="cellsFiltered", url=Url("cellsFiltered.csv"), dataType="quantitative", size=30e-6
+                name="cellsFiltered", url=Url("cellsFiltered.csv"), dataType="quantitative", size=10e-6
             ),
+            PlainCSVParams(
+                name="cellsUnfiltered", url=Url("cellsUnfiltered.csv"), dataType="quantitative", size=10e-6
+            ),
+             PlainCSVParams(name='kmeans', url=Url("kmeans.csv"), dataType="categorical", coordName="spots")
             # PlainJSONParams(name="oligo", url=Url("oligo.json"), dataType="quantitative", overlay="spots"),
             # PlainJSONParams(name="Excit_A", url=Url("excita.json"), dataType="quantitative", overlay="spots"),
         ]
-        + [
-            PlainCSVParams(name=k, url=Url(k + ".csv"), dataType="categorical", coordName="spots")
-            for k in analyses
-        ],
     )
 
     vis = better_visium(directory / s, features=analyses)
@@ -129,6 +129,7 @@ def run(s: str) -> None:
     o.mkdir(exist_ok=True, parents=True)
     (o / "sample.json").write_text(sample.json())
 
+    vis.obs.filter(regex='^k', axis=1).to_csv(f'{o}/kmeans.csv', index=False)
     # for orient in ["csc"]:
     #     header, bytedict = get_compressed_genes(vis, "spots", cast(Literal["csc", "csr"], orient))
     #     (o / f"gene_{orient}.json").write_text(header.json().replace(" ", ""))
@@ -153,4 +154,10 @@ def run(s: str) -> None:
 for s in samples:
     run(s)
 
+# %%
+out = Path("C:/Users/Chaichontat/GitHub/loopynew/static")
+samples = ["Br2720_Ant_IF", "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]
+for s in samples:
+    (out / s / f"{s}_filtered.csv").rename(out / s / "cellsFiltered.csv")
+    (out / s / f"{s}_unfiltered.csv").rename(out / s / "cellsUnfiltered.csv")
 # %%

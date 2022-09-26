@@ -6,8 +6,6 @@
   let subdiv: Element | undefined;
 
   function updatePlot(n: number) {
-    console.log('hi');
-
     if (subdiv) {
       div.removeChild(subdiv);
     }
@@ -60,9 +58,7 @@
     div.appendChild(subdiv);
   }
 
-  // $: if ($sFeatureData) updatePlot($);
-
-  $: if ($sId && $sFeatureData && $sFeatureData.dataType !== 'singular') {
+  $: if (div && $sId && $sFeatureData && $sFeatureData.dataType !== 'singular') {
     updatePlot($sFeatureData.data[$sId.idx]);
   }
 </script>
