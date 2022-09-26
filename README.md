@@ -12,16 +12,18 @@ Head over to https://loopy-browser.pages.dev/ to see the Loopy Browser with exam
 
 All data must be processed prior to being used in the Loopy Browser.
 
-This is run using a Jupyter notebook.
+### Installation
 
 ```sh
 git clone https://github.com/chaichontat/loopy-browser/
-conda create -n loopy -f loopy-browser/environment.yml
+conda env create -n loopy -f loopy-browser/environment.yml
+conda activate loopy
 conda install jupyter jupyterlab
-pip install .
+pip install ./loopy-browser
 ```
 
 An example script is available at [`scripts/run_sample.ipynb`](scripts/run_sample.ipynb).
+This is run using a Jupyter notebook. To start, run `jupyter lab` at the cloned directory.
 
 ## Nomenclature
 
