@@ -13,6 +13,7 @@
   export let featureGroup: FeatureGroupList[];
 
   let showSearch = false;
+  const firstTime = true;
 
   let search = '';
   let candidates: {
@@ -46,12 +47,13 @@
 
   // Top-down update of the search box.
   const setSearch = oneLRU((v: string) => (search = v));
-  $: $hoverSelect.selected?.feature && setSearch($hoverSelect.selected?.feature);
+  $: !firstTime && $hoverSelect.selected?.feature && setSearch($hoverSelect.selected?.feature);
+
   $: noFeature = !featureGroup?.length || featureGroup.find((f) => f.features.length) === undefined;
 
   // Change search box when overlay is changed.
   sOverlay.subscribe((ov) => {
-    if (ov) search = $overlaysFeature[ov]?.feature ?? '';
+    if (ov && !firstTime) search = $overlaysFeature[ov]?.feature ?? '';
   });
 </script>
 
@@ -108,6 +110,6 @@
 
 <style lang="postcss">
   .dark input::placeholder {
-    @apply text-slate-200;
+    @apply text-slate-100;
   }
 </style>

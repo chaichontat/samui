@@ -23,12 +23,12 @@
       Max value: <input type="range" />
     </Section> -->
 
-    <Section title="Plot" defaultOpen>
+    <Section title="Plot" defaultOpen class="overflow-visible">
       <Plot />
     </Section>
 
     {#if $sSample?.overlayParams?.importantFeatures}
-      <Section title="Features of Interest" defaultOpen class="flex gap-x-3">
+      <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
         {#each $sSample?.overlayParams?.importantFeatures as feature}
           <HoverableFeature {feature} />
         {/each}

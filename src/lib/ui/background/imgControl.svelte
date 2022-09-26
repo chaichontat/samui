@@ -82,13 +82,14 @@
 
 <div
   bind:this={table}
-  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1.5 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
+  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-0.5 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
   class:hidden={!(image && imgCtrl)}
 >
   {#if image && imgCtrl}
     {#if imgCtrl.type === 'composite' && Array.isArray(channels)}
-      <table class="table-auto">
-        <tbody class="hide-second-col">
+      <table class="table-auto text-sm">
+        <tbody>
+          <!-- Each channel -->
           {#each channels as name}
             <tr class="">
               <td
@@ -106,7 +107,7 @@
                       ['white', 'yellow'].includes(imgCtrl.variables[name].color)
                       ? 'text-black'
                       : '',
-                    `transition-width mx-auto flex items-center rounded-lg pl-3 pr-3`
+                    `transition-width mx-auto flex items-center rounded-lg px-2`
                   )}
                 >
                   <div class="-translate-y-[1px]">{name}</div>
@@ -121,7 +122,7 @@
                       bg,
                       color !== 'white' ? 'opacity-90' : '',
                       i === 0 ? 'ml-1.5' : '',
-                      `mx-[1px] my-1 flex h-[18px] w-[18px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`
+                      `mx-[1px] my-1 flex h-[16px] w-[16px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`
                     )}
                   />
                 {/each}
@@ -163,17 +164,4 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 1000ms;
   }
-
-  /* .hide-second-col td:nth-child(2),
-  .hide-second-col td:nth-child(3) {
-    @apply w-0;
-  }
-
-  .hide-second-col:hover td:nth-child(2) {
-    @apply flex;
-  }
-
-  .hide-second-col:hover td:nth-child(3) {
-    @apply table-cell;
-  } */
 </style>

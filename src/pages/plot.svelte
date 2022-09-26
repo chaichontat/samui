@@ -49,6 +49,7 @@
           }
         )
       ],
+      marginLeft: 40,
       marginTop: 35,
       style: {
         background: 'transparent',
@@ -66,4 +67,4 @@
   }
 </script>
 
-<div bind:this={div} class="p-2" />
+<div bind:this={div} class="overflow-visible p-2" />

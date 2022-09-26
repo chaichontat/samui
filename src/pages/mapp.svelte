@@ -14,6 +14,8 @@
   // let currSample: string;
   $: sample?.hydrate().then(updateSample).catch(console.error);
 
+  $: console.log(sample);
+
   export let uid: number;
   const mapName = `map-${uid}`;
   let mapElem: HTMLDivElement;

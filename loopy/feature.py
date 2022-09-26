@@ -45,6 +45,7 @@ class PlainCSVParams(ReadonlyModel):
     dataType: FeatureType = "quantitative"
     coordName: str | None = None
     unit: str | None = None
+    size: float | None = None
 
 
 class ChunkedCSVParams(ReadonlyModel):
