@@ -36,3 +36,7 @@
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium-IF Data</span>
   </button>
 </div>
+
+<div class="absolute bottom-5 left-1/2 translate-x-[-50%] text-gray-300">
+  All processing is done locally. Your data never leave your computer.
+</div>

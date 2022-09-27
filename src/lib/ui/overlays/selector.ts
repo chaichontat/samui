@@ -10,7 +10,7 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style, Text } from 'ol/style.js';
 import { get } from 'svelte/store';
-import type { Named } from '../../utils';
+import { rand, type Named } from '../../utils';
 import type { Mapp } from '../mapp';
 import type { MutableSpots } from './points';
 
@@ -68,15 +68,16 @@ export class Draww {
     this._attachDraw();
   }
 
-  mount(map: Map) {
-    this._attachModify(map);
+  mount() {
+    this._attachModify(this.map.map!);
+    this.points.mount();
+    this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
-    map.addLayer(this.selectionLayer);
   }
 
   clear() {
     this.source.clear();
-    this.points.source.clear();
+    this.points.clear();
   }
 
   update(template: Feature[]) {
@@ -99,7 +100,7 @@ export class Draww {
 
     feature.set('color', schemeTableau10[keyIdx % 10]);
     feature.set('keyIdx', keyIdx);
-    feature.setId(Math.random());
+    feature.setId(rand());
     feature.on('propertychange', (e) => {
       if (e.key === 'keyIdx' || e.key === 'color') {
         this._updatePolygonStyle(feature);
@@ -119,6 +120,7 @@ export class Draww {
   _attachModify(map: Map) {
     map.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => {
+      console.debug('modifyend');
       const keyIdx = get(annotating).currKey;
       if (keyIdx == undefined) throw new Error('keyIdx is null');
 

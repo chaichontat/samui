@@ -192,7 +192,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     // When changing between samples, all overlays are updated.
     if (get(sOverlay) === this.uid) {
       sFeatureData.set({ ...res, name: fn });
-      sEvent.set(new Event('updatedFeature'));
+      sEvent.set({ type: 'featureUpdated' });
     }
     return res;
   }
@@ -297,7 +297,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     idx,
     mPerPx,
     size
-  }: Coord & { idx: number; mPerPx: number; size?: number | null }) {
+  }: Coord & { idx: number; mPerPx: number; size?: number }) {
     const c = [x * mPerPx, -y * mPerPx];
     const f = new Feature({
       geometry: size != undefined && size != undefined ? new Circle(c, size / 4) : new Point(c),
@@ -312,6 +312,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   update(coords: CoordsData) {
     if (coords.mPerPx == undefined) throw new Error('mPerPx undefined.');
     if (coords.name === this.coords?.name || !coords.size) return;
+
     this.source.clear();
     this.source.addFeatures(
       coords.pos!.map((c) =>
@@ -327,6 +328,12 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 }
 
 export class MutableSpots extends CanvasSpots {
+  mount() {
+    super.mount();
+    this.layer!.setZIndex(Infinity);
+    return this;
+  }
+
   names: string[] = [];
 
   add(idx: number, name: string, ov: CoordsData, ant: string[]) {
@@ -354,6 +361,14 @@ export class MutableSpots extends CanvasSpots {
     );
   }
 
+  get length() {
+    return this.source.getFeatures().length;
+  }
+
+  clear() {
+    this.source.clear();
+  }
+
   addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
     idxs.forEach((idx) => this.add(idx, name, ov, ant));
   }
@@ -372,6 +387,8 @@ export class MutableSpots extends CanvasSpots {
     const filtered = ov
       .pos!.filter((f) => polygon.intersectsCoordinate([f.x * ov.mPerPx!, -f.y * ov.mPerPx!]))
       .map((p) => p.idx);
+
+    console.log(filtered);
 
     this.addMultiple(filtered, name, ov, ant);
   }

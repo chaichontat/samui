@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { annotating, sMapp, sSample } from '$lib/store';
+  import { annotating, sEvent, sFeatureData, sMapp, sSample } from '$lib/store';
   import type { Draww } from '$lib/ui/overlays/selector';
   import { tooltip } from '$lib/ui/utils';
   import { schemeTableau10 } from 'd3';
@@ -9,6 +9,13 @@
   import { classes } from '../utils';
 
   export let toggled: boolean;
+
+  $: $annotating.annotating = toggled ? $sFeatureData.name : undefined;
+
+  $: if ($sEvent?.type === 'sampleUpdated') {
+    toggled = false;
+    $sMapp.persistentLayers.annotations.clear();
+  }
 
   function handleNewKey(name: string | null) {
     if (name == null) {
@@ -33,33 +40,31 @@
 
   onMount(async () => {
     await map.promise;
-    map.draw!.draw.on('drawend', () => ($annotating.selecting = false));
-    draw = map.draw;
+    map.persistentLayers.annotations.draw.on('drawend', () => ($annotating.selecting = false));
+    draw = map.persistentLayers.annotations;
   });
 
   // Enable/disable polygon draw
-  $: if (map.map && map.draw) {
-    if ($annotating.selecting) {
+  $: if (map.map) {
+    if ($annotating.selecting && $annotating.annotating) {
       if ($annotating.currKey == undefined) {
         alert('Set annotation name first');
         $annotating.selecting = false;
       } else {
-        map.map?.addInteraction(map.draw.draw);
+        map.map?.addInteraction(map.persistentLayers.annotations.draw);
         map.map.getViewport().style.cursor = 'crosshair';
       }
     } else {
-      map.map.removeInteraction(map.draw.draw);
-      map.map.getViewport().style.cursor = 'grab';
+      map.map.removeInteraction(map.persistentLayers.annotations.draw);
+      map.map.getViewport().style.cursor = 'default';
     }
   }
-
-  $: $annotating.selecting = toggled;
 
   const disabled =
     'disabled:cursor-auto disabled:bg-slate-500 hover:disabled:bg-slate-500 disabled:text-slate-300';
 </script>
 
-<section class="flex flex-col gap-y-3">
+<section class="flex flex-col gap-y-2">
   <!-- Labels -->
   <div class="flex">
     <button
@@ -68,7 +73,7 @@
         disabled
       )}
       on:click={() => ($annotating.currKey = handleNewKey(prompt('Enter new key.')))}
-      disabled={$annotating.selecting}
+      disabled={$annotating.selecting || !$annotating.annotating}
     >
       <Plus class="h-4 w-4 translate-y-[1px] stroke-current stroke-[2.5]" />
       Label
@@ -89,18 +94,30 @@
 
   <!-- <div class="mx-auto mt-1 h-[1px] w-1/2 bg-slate-700" /> -->
   <!-- Selections -->
-  {#if $annotating.currKey != undefined}
+  {#if $annotating.annotating && $annotating.keys.length > 0}
     <div class="flex items-center gap-x-2">
       <button
         class={classes(
-          'mr-4 flex items-center gap-x-0.5 rounded-lg bg-emerald-700 py-1 pl-2 pr-3 font-medium transition-colors hover:bg-emerald-600',
+          'relative mr-4 flex items-center gap-x-0.5 rounded-lg py-1 px-3 font-medium transition-[background-color]',
+          $annotating.selecting
+            ? ' bg-orange-700 hover:bg-orange-600'
+            : 'bg-emerald-700  hover:bg-emerald-600',
           disabled
         )}
-        on:click={() => ($annotating.selecting = true)}
-        disabled={$annotating.selecting}
+        on:click={() => ($annotating.selecting = !$annotating.selecting)}
       >
-        <Plus class="h-4 w-4 translate-y-[1px] stroke-current stroke-[2.5]" />
-        Selections
+        {#if $annotating.selecting}
+          <span
+            class="absolute inline-flex h-full w-full animate-ping rounded-lg bg-orange-400 opacity-30"
+          />
+
+          <!-- content here -->
+          <!-- else content here -->
+          Stop Selecting
+        {:else}
+          <Plus class="-ml-1 h-4 w-4 translate-y-[1px] stroke-current stroke-[2.5]" />
+          Selections
+        {/if}
       </button>
     </div>
 
@@ -119,9 +136,10 @@
       Show overlay
     </label>
 
+    <!-- Download -->
     <button
       class={classes('button my-0 w-min flex-grow py-1.5 transition-colors duration-75', disabled)}
-      disabled={!$annotating.currKey}
+      disabled={$annotating.keys.length === 0}
       use:tooltip={{ content: 'Export annotated overlay as CSV' }}
       on:click={() =>
         toCSV(`annotations_${$sSample.name}.csv`, $sMapp.persistentLayers.annotations.dump())}

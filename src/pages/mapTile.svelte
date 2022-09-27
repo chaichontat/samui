@@ -1,6 +1,6 @@
 <script lang="ts">
   import List from '$lib/components/list.svelte';
-  import { mapIdSample, mapTiles, samples, sMapId } from '$lib/store';
+  import { mapIdSample, mapTiles, samples, sMapId, sMapp } from '$lib/store';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
   import { afterUpdate, createEventDispatcher } from 'svelte';
@@ -118,7 +118,18 @@
           <List
             bind:this={sampleListElem}
             items={Object.keys($samples)}
-            bind:active={currSampleName}
+            on:change={(e) => {
+              if (
+                $sMapp.persistentLayers.annotations.length > 0 &&
+                !confirm(
+                  'You have unsaved annotations. If you change sample, they will be lost. Are you sure you want to continue?'
+                )
+              ) {
+                return;
+              }
+              currSampleName = e.detail;
+            }}
+            active={currSampleName}
             on:addSample={byod}
           />
         </div>

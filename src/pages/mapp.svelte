@@ -77,19 +77,19 @@
         const sfd = $sFeatureData;
         if ($annotating.currKey != undefined && id_ && sfd) {
           const idx = id_.idx;
-          const existing = map.persistentLayers.annotations.get(idx);
+          const existing = map.persistentLayers.annotations.points.get(idx);
           if (
             existing == undefined ||
             existing.get('value') !== $annotating.keys[$annotating.currKey]
           ) {
-            map.persistentLayers.annotations.add(
+            map.persistentLayers.annotations.points.add(
               idx,
               $annotating.keys[$annotating.currKey],
               sfd.coords,
               $annotating.keys
             );
           } else {
-            map.persistentLayers.annotations.delete(idx);
+            map.persistentLayers.annotations.points.delete(idx);
           }
         }
       }

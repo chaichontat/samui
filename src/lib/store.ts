@@ -30,7 +30,14 @@ export const annotating = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
+  annotating: undefined as FeatureAndGroup | undefined,
   selecting: false
+});
+
+annotating.subscribe((ann) => {
+  if (ann.selecting) {
+    document.body.style.cursor = 'crosshair';
+  }
 });
 
 type SimpleHS<T> = { hover?: T; selected?: T };
@@ -39,15 +46,19 @@ const _setHoverNow = (v: SimpleHS<FeatureAndGroup>) => hoverSelect.set(get(hover
 const _setHover = debounce(_setHoverNow, 50);
 
 export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
-  _setHover(v);
-  if (v.selected) {
-    // Prevents hover from overriding actual selected.
-    _setHover.flush();
-    _setHoverNow(v);
+  if (!get(annotating).selecting) {
+    _setHover(v);
+    if (v.selected) {
+      // Prevents hover from overriding actual selected.
+      _setHover.flush();
+      _setHoverNow(v);
+    }
   }
 });
 
-export const sEvent = writable(undefined as Event | undefined);
+export const sEvent = writable(
+  undefined as { type: 'sampleUpdated' | 'featureUpdated' } | undefined
+);
 sEvent.subscribe(console.debug);
 
 export type Idx = { id?: number | string; idx?: number; source: string };

@@ -67,7 +67,7 @@
     }
   }
 
-  $: if ($sEvent?.type === 'updatedSample') ({ imgCtrl, image } = setColors());
+  $: if ($sEvent?.type === 'sampleUpdated') ({ imgCtrl, image } = setColors());
   $: if (imgCtrl) background?.updateStyle(imgCtrl);
 
   const shrink = () => {

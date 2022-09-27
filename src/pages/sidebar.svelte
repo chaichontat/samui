@@ -1,6 +1,6 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
-  import { sSample } from '$lib/store';
+  import { annotating, sSample } from '$lib/store';
   import Annotate from '$src/lib/sidebar/annotate.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Markdown from '$src/lib/sidebar/markdown.svelte';
