@@ -5,7 +5,7 @@
   import Github from '../components/github.svelte';
   import FeatureSearchBox from './featureSearchBox.svelte';
   import type { FeatureGroupList } from './searchBox';
-  // Feature list
+
   let featureGroup: FeatureGroupList[];
   $: sample = $samples[$mapIdSample[$sMapId]];
   $: if (sample) {
@@ -20,6 +20,6 @@
   <div class="mt-1 flex-grow">
     <FeatureSearchBox {featureGroup} />
   </div>
-  <Darkswitch />
+  <!-- <Darkswitch /> Will be back! -->
   <Github />
 </nav>

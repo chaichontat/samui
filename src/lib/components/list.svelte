@@ -86,12 +86,12 @@
       >
       {#if open}
         <div
-          class="bg-default absolute z-40 mt-2 w-full rounded-md backdrop-blur "
+          class="bg-default absolute z-40 mt-2 w-full rounded-lg shadow shadow-blue-900 backdrop-blur "
           out:fade={{ duration: 100, easing: cubicOut }}
         >
           <ListboxOptions
             static
-            class="overflow-auto rounded-md pt-1 pb-1 leading-6 shadow focus:outline-none sm:leading-5"
+            class="overflow-auto rounded-lg pt-1 pb-1 leading-6 focus:outline-none sm:leading-5"
           >
             {#each rows as name (name)}
               <div class="px-1">
@@ -99,7 +99,7 @@
                   value={name}
                   class={({ active }) => {
                     return classes(
-                      'relative cursor-pointer select-none rounded py-2 pl-3 pr-9 focus:outline-none',
+                      'relative cursor-pointer select-none rounded-lg py-2 pl-3 pr-9 focus:outline-none',
                       active ? 'hover-default' : ''
                     );
                   }}
@@ -129,7 +129,7 @@
               </div>
             {/each}
 
-            {#if addSample}
+            <!-- {#if addSample}
               <div class="mt-1 border-t border-gray-500 px-1 pt-1">
                 <ListboxOption
                   value="addSample"
@@ -138,7 +138,7 @@
                   Add Sample
                 </ListboxOption>
               </div>
-            {/if}
+            {/if} -->
           </ListboxOptions>
         </div>
       {/if}

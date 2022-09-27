@@ -1,4 +1,5 @@
 import { browser, dev } from '$app/environment';
+import type { Url } from '../io';
 import { samples } from '../store';
 import { Sample, type SampleParams } from './objects/sample';
 
@@ -24,18 +25,22 @@ async function getSamples(n: string[]) {
   return await Promise.all(n.map((u) => getSample(`${s3_url}/${u}`)));
 }
 
+function subsNetwork(dirUrl: string): (url: Url) => Url {
+  return (url: Url) =>
+    url.type === 'network' ? url : { url: `${dirUrl}/${url.url}`, type: 'network' };
+}
+
 function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
-  if (r.imgParams) {
-    for (const url of r.imgParams.urls) {
-      url.url = `${dirUrl}/${url.url}`;
-      url.type = 'network';
-    }
-  }
+  const sub = subsNetwork(dirUrl);
+
+  r.notesMd && (r.notesMd = sub(r.notesMd));
+  r.metadataMd && (r.metadataMd = sub(r.metadataMd));
+  r.imgParams && (r.imgParams.urls = r.imgParams.urls.map(sub));
 
   if (r.coordParams) {
     for (const o of r.coordParams) {
       if (o.url) {
-        o.url = { url: `${dirUrl}/${o.url.url}`, type: 'network' };
+        o.url = sub(o.url);
       }
     }
   }
@@ -43,10 +48,10 @@ function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
   if (r.featParams) {
     for (const f of r.featParams) {
       if (f.url) {
-        f.url = { url: `${dirUrl}/${f.url.url}`, type: 'network' };
+        f.url = sub(f.url);
       }
       if ('headerUrl' in f && f.headerUrl) {
-        f.headerUrl = { url: `${dirUrl}/${f.headerUrl.url}`, type: 'network' };
+        f.headerUrl = sub(f.headerUrl);
       }
     }
   }

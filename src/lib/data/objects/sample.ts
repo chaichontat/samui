@@ -1,6 +1,6 @@
 import { Deferrable } from '$src/lib/definitions';
+import type { Url } from '$src/lib/io';
 import { genLRU } from '$src/lib/lru';
-import { sFeatureData } from '$src/lib/store';
 import { CoordsData, type Coord, type CoordsParams } from './coords';
 import { stats, type FeatureAndGroup, type FeatureData } from './feature';
 import { ChunkedCSV, type ChunkedCSVParams } from './featureChunked';
@@ -19,8 +19,8 @@ export type SampleParams = {
   featParams?: (PlainCSVParams | ChunkedCSVParams)[];
   handle?: FileSystemDirectoryHandle;
   overlayParams?: OverlayParams;
-  notesMd?: string;
-  metadataMd?: string;
+  notesMd?: Url;
+  metadataMd?: Url;
 };
 
 export class Sample extends Deferrable {
@@ -29,8 +29,8 @@ export class Sample extends Deferrable {
   coordsParams?: CoordsParams[];
   featureParams?: (PlainCSVParams | ChunkedCSVParams)[];
   overlayParams?: OverlayParams;
-  notesMd?: string;
-  metadataMd?: string;
+  notesMd?: Url;
+  metadataMd?: Url;
 
   features: Record<string, FeatureData> = {};
   coords: Record<string, CoordsData> = {};

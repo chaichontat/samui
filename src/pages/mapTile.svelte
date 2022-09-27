@@ -120,7 +120,7 @@
             items={Object.keys($samples)}
             on:change={(e) => {
               if (
-                $sMapp.persistentLayers.annotations.length > 0 &&
+                $sMapp.persistentLayers.annotations.points.length > 0 &&
                 !confirm(
                   'You have unsaved annotations. If you change sample, they will be lost. Are you sure you want to continue?'
                 )

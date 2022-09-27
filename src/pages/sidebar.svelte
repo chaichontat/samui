@@ -44,7 +44,7 @@
 
     <Section title="Notes" defaultOpen>
       {#if $sSample?.notesMd}
-        <Markdown url={$sSample.notesMd} />
+        <Markdown url={$sSample.notesMd.url} />
       {:else}
         No notes.
       {/if}
@@ -54,7 +54,7 @@
       {#if $sSample?.metadataMd}
         <Markdown
           class="overflow-x-scroll pl-4 -indent-4 font-mono text-sm"
-          url={$sSample?.metadataMd}
+          url={$sSample?.metadataMd.url}
         />
       {:else}
         No metadata.
