@@ -336,7 +336,7 @@ export class MutableSpots extends CanvasSpots {
 
   names: string[] = [];
 
-  add(idx: number, name: string, ov: CoordsData, ant: string[]) {
+  add(idx: number, name: string, ov: CoordsData, ant: string[], fromMultiple = false) {
     if (ov.mPerPx == undefined) throw new Error('mPerPx undefined.');
     let f = this.get(idx);
     if (f == undefined) {
@@ -359,10 +359,19 @@ export class MutableSpots extends CanvasSpots {
         })
       })
     );
+    if (!fromMultiple) sEvent.set({ type: 'pointsAdded' });
   }
 
   get length() {
     return this.source.getFeatures().length;
+  }
+
+  getComposition() {
+    const counts = {} as Record<string, number>;
+    for (const f of this.source.getFeatures()) {
+      counts[f.get('value')] = (counts[f.get('value')] ?? 0) + 1;
+    }
+    return counts;
   }
 
   clear() {
@@ -370,7 +379,8 @@ export class MutableSpots extends CanvasSpots {
   }
 
   addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
-    idxs.forEach((idx) => this.add(idx, name, ov, ant));
+    idxs.forEach((idx) => this.add(idx, name, ov, ant, true));
+    sEvent.set({ type: 'pointsAdded' });
   }
 
   addFromPolygon(polygonFeat: Feature<Polygon>, name: string, ov: CoordsData, ant: string[]) {

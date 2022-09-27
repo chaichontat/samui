@@ -1,4 +1,4 @@
-import { annotating, sFeatureData } from '$src/lib/store';
+import { annotating, sEvent, sFeatureData } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
