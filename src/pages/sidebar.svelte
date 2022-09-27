@@ -30,7 +30,7 @@
       <Plot />
     </Section>
 
-    <Section title="Annotations" bind:toggled={annToggled} togglable defaultOpen>
+    <Section title="Annotations" bind:toggled={annToggled} togglable>
       <Annotate toggled={annToggled} />
     </Section>
 
