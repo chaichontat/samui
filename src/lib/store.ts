@@ -22,10 +22,12 @@ export const overlays: Writable<Record<string, WebGLSpots>> = writable({});
 /// Overlay -> Group/feature
 export const sOverlay = writable(undefined as string | undefined);
 export const overlaysFeature = writable({} as Record<string, FeatureAndGroup | undefined>);
-export const sFeatureData = writable(undefined as { name: FeatureAndGroup } | undefined);
+export const sFeatureData = writable(
+  undefined as Awaited<ReturnType<Sample['getFeature']>> | undefined
+);
 
 export const annotating = writable({
-  currKey: null as number | null,
+  currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
   selecting: false
@@ -48,5 +50,5 @@ export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
 export const sEvent = writable(undefined as Event | undefined);
 sEvent.subscribe(console.debug);
 
-export type Idx = { id?: number | string | null; idx: number; source: string };
-export const sId = writable({ idx: -1, source: 'scatter' } as Idx);
+export type Idx = { id?: number | string; idx?: number; source: string };
+export const sId = writable({ source: 'map' } as Idx);

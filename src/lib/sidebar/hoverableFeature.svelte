@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { FeatureAndGroup } from '../data/objects/feature';
-  import { setHoverSelect } from '../store';
+  import { hoverSelect, setHoverSelect } from '../store';
   import { clickOutside } from '../ui/utils';
 
   export let feature: FeatureAndGroup;
   export { cl as class };
-  let cl = 'cursor-pointer font-semibold text-yellow-300 hover:text-yellow-200';
+  let cl = 'cursor-pointer underline-offset-2 text-yellow-300 hover:text-yellow-200';
 </script>
 
 <button
@@ -18,6 +18,12 @@
   on:click={() => setHoverSelect({ selected: feature })}
 >
   <slot>
-    {feature.feature}
+    <div
+      class={$hoverSelect.selected?.feature === feature.feature
+        ? 'drop-shadow-3xl font-semibold shadow-white'
+        : ''}
+    >
+      {feature.feature}
+    </div>
   </slot>
 </button>

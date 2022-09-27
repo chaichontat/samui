@@ -49,7 +49,7 @@
   const setSearch = oneLRU((v: string) => (search = v));
   $: !firstTime && $hoverSelect.selected?.feature && setSearch($hoverSelect.selected?.feature);
 
-  $: noFeature = !featureGroup?.length || featureGroup.find((f) => f.features.length) === undefined;
+  $: noFeature = !featureGroup?.length || featureGroup.find((f) => f.features.length) == undefined;
 
   // Change search box when overlay is changed.
   sOverlay.subscribe((ov) => {

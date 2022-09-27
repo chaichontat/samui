@@ -121,13 +121,13 @@ export function Legend<S extends Scales>(
 
     // scaleSequentialQuantile doesn't implement ticks or tickFormat.
     if (!('ticks' in x)) {
-      if (tickValues === undefined) {
+      if (tickValues == undefined) {
         const n = Math.round(ticks + 1);
         if (n == 1) throw new Error('Cannot generate 0 ticks.');
         tickValues = d3.range(n).map((i) => d3.quantile(color.domain(), i / (n - 1)) as number);
       }
       if (typeof tickFormat !== 'function') {
-        tickFormat = d3.format(tickFormat === undefined ? ',f' : tickFormat);
+        tickFormat = d3.format(tickFormat == undefined ? ',f' : tickFormat);
       }
     }
   }
@@ -142,7 +142,7 @@ export function Legend<S extends Scales>(
         : color.domain(); // scaleThreshold
 
     const thresholdFormat =
-      tickFormat === undefined
+      tickFormat == undefined
         ? (d: string) => d
         : typeof tickFormat === 'string'
         ? d3.format(tickFormat)
@@ -235,13 +235,13 @@ export function Legend<S extends Scales>(
 //   const unknown = formatUnknown == null ? undefined : color.unknown();
 //   const unknowns = unknown == null || unknown === d3.scaleImplicit ? [] : [unknown];
 //   const domain = color.domain().concat(unknowns);
-//   if (format === undefined) format = (x) => (x === unknown ? formatUnknown : x);
+//   if (format == undefined) format = (x) => (x === unknown ? formatUnknown : x);
 
 //   function entity(character) {
 //     return `&#${character.charCodeAt(0).toString()};`;
 //   }
 
-//   if (columns !== null)
+//   if (columns != undefined)
 //     return htl.html`<div style="display: flex; align-items: center; margin-left: ${+marginLeft}px; min-height: 33px; font: 10px sans-serif;">
 //   <style>
 

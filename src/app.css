@@ -18,6 +18,14 @@
   .button {
     @apply button-base mr-2 mb-2 rounded-lg;
   }
+
+  .splash-button {
+    @apply relative inline-flex items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br p-0.5 focus:outline-none focus:ring-2;
+  }
+
+  .splash-button > span {
+    @apply flex items-center gap-x-2 rounded-md bg-slate-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in  dark:bg-gray-900 dark:bg-opacity-80;
+  }
 }
 @tailwind utilities;
 @layer utilities {

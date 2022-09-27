@@ -1,6 +1,7 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
   import { sSample } from '$lib/store';
+  import Annotate from '$src/lib/sidebar/annotate.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Markdown from '$src/lib/sidebar/markdown.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
@@ -27,7 +28,9 @@
       <Plot />
     </Section>
 
-    <!-- <Annotate /> -->
+    <Section title="Annotations" let:toggled togglable defaultOpen>
+      <Annotate {toggled} />
+    </Section>
 
     {#if $sSample?.overlayParams?.importantFeatures}
       <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { sFeatureData, sId } from '$lib/store';
+  import { oneLRU } from '$src/lib/lru';
   import * as Plot from '@observablehq/plot';
   import Chart from 'chart.js/auto';
   import * as d3 from 'd3';
@@ -12,33 +13,42 @@
 
   onMount(() => {
     chart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        datasets: []
-      },
-
+      type: 'bar',
+      data: { labels: [], datasets: [] },
       options: {
-        parsing: false,
-        scales: { x: { min: 0, max: 10 } },
-        plugins: { legend: { display: false } }
+        responsive: false,
+        animation: false,
+        // parsing: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { drawBorder: false, color: '#ffffff55', lineWidth: 0.5 } }
+        }
       }
     });
   });
 
-  function updatePlot(n: number) {
+  const updatePlot = oneLRU((name: any) => {
     // if (subdiv) {
     //   div.removeChild(subdiv);
     // }
 
     const data = $sFeatureData.data;
-    const binned = d3.bin()(data);
-    // const b = [];
+    // if (typeof data[0] !== 'string') return;
+
+    const binned = d3.bin()(data as number[]);
+    const label = [];
+    const b = [];
 
     for (let i = 0; i < binned.length; i++) {
-      b.push({ x: binned[i].x0, y: binned[i].length });
+      label.push(binned[i].x0);
+      b.push(binned[i].length);
     }
 
-    chart.data.datasets = [{ data: b }];
+    chart.data = {
+      labels: label,
+      datasets: [{ data: b, borderWidth: 0, backgroundColor: '#fde68a' }]
+    };
     chart.update();
     console.log(b);
 
@@ -86,12 +96,12 @@
     // });
 
     // div.appendChild(subdiv);
-  }
+  });
 
-  $: if (div && $sId && $sFeatureData && $sFeatureData.dataType !== 'singular') {
-    updatePlot($sFeatureData.data[$sId.idx]);
+  $: if (div && $sId.idx != undefined && $sFeatureData && $sFeatureData.dataType !== 'singular') {
+    updatePlot($sFeatureData.name);
   }
 </script>
 
 <div bind:this={div} class="overflow-visible p-2" />
-<canvas bind:this={canvas} />
+<canvas bind:this={canvas} class="mr-2 -ml-2 -mt-2" />

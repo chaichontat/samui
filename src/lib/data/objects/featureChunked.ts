@@ -106,7 +106,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
           idx = name;
         }
       }
-      if (idx === undefined) {
+      if (idx == undefined) {
         console.error("Couldn't find index for", name);
         return undefined;
       }

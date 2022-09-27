@@ -300,7 +300,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   }: Coord & { idx: number; mPerPx: number; size?: number | null }) {
     const c = [x * mPerPx, -y * mPerPx];
     const f = new Feature({
-      geometry: size !== undefined && size !== null ? new Circle(c, size / 4) : new Point(c),
+      geometry: size != undefined && size != undefined ? new Circle(c, size / 4) : new Point(c),
       value: 0,
       id: id ?? idx
     });
@@ -310,7 +310,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 
   /// Replace entire feature.
   update(coords: CoordsData) {
-    if (coords.mPerPx === undefined) throw new Error('mPerPx undefined.');
+    if (coords.mPerPx == undefined) throw new Error('mPerPx undefined.');
     if (coords.name === this.coords?.name || !coords.size) return;
     this.source.clear();
     this.source.addFeatures(
@@ -330,9 +330,9 @@ export class MutableSpots extends CanvasSpots {
   names: string[] = [];
 
   add(idx: number, name: string, ov: CoordsData, ant: string[]) {
-    if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
+    if (ov.mPerPx == undefined) throw new Error('mPerPx undefined.');
     let f = this.get(idx);
-    if (f === null) {
+    if (f == undefined) {
       // Null to generate Point, instead of Circle.
       f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
       this.source.addFeature(f);

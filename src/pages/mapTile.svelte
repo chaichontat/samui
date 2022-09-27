@@ -37,7 +37,7 @@
 
     const newUId = Math.random();
     if (hie.split === mode) {
-      if (hie.maps.at(-1) !== null) hie.maps.push(null);
+      if (hie.maps.at(-1) != undefined) hie.maps.push(null);
       hie.maps[hie.maps.length - 1] = newUId;
     } else {
       hie.maps[i] = { split: mode, maps: [hie.maps[i], newUId] };
@@ -55,7 +55,7 @@
       hie.maps.pop();
     }
 
-    if (hie.maps.every((x) => x === null)) {
+    if (hie.maps.every((x) => x == undefined)) {
       dispatch('delete');
     }
 
@@ -155,14 +155,10 @@
       {#if hie === 0 && width > 800}
         <!-- Upload your data -->
         <button
-          class="group relative mb-2 mr-2 inline-flex translate-y-1 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
+          class="splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
           on:click={byod}
         >
-          <span
-            class="relative rounded-md bg-slate-50 bg-opacity-80 px-5 py-2 backdrop-blur transition-all duration-75 ease-in group-hover:bg-opacity-0 dark:bg-gray-900 dark:bg-opacity-80"
-          >
-            Add Sample
-          </span>
+          <span class="px-5 py-2 group-hover:bg-opacity-0"> Add Sample </span>
         </button>
       {/if}
     </div>
@@ -178,7 +174,7 @@
 {:else}
   <div class="flex h-full w-full" class:flex-col={hie.split === 'v'}>
     {#each hie.maps as h, i}
-      {#if h !== null}
+      {#if h != undefined}
         <svelte:self
           hie={h}
           on:split={(ev) => handleSplit(i, ev.detail)}

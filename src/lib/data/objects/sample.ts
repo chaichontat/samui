@@ -163,7 +163,7 @@ export class Sample extends Deferrable {
       }
     }
 
-    const processed = { ...res, data, coords: g, minmax: stats({ key, args: [data] }) };
+    const processed = { ...res, data, coords: g, minmax: stats({ key, args: [data] }), name: fn };
 
     return processed;
   });
