@@ -2,6 +2,7 @@
   import Section from '$lib/sidebar/section.svelte';
   import { sSample } from '$lib/store';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
+  import Markdown from '$src/lib/sidebar/markdown.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
   import Plot from './plot.svelte';
@@ -15,7 +16,6 @@
   <div class="mt-3 flex flex-col items-center gap-y-4 ">
     <Section title="Recent Features" defaultOpen>
       <Recent />
-      <!-- <Annotate /> -->
     </Section>
 
     <!-- <Section title="Overlay Options" defaultOpen>
@@ -23,9 +23,11 @@
       Max value: <input type="range" />
     </Section> -->
 
-    <Section title="Plot" defaultOpen class="overflow-visible">
+    <Section title="Histogram" defaultOpen class="overflow-visible">
       <Plot />
     </Section>
+
+    <!-- <Annotate /> -->
 
     {#if $sSample?.overlayParams?.importantFeatures}
       <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
@@ -36,7 +38,22 @@
     {/if}
 
     <Section title="Notes" defaultOpen>
-      {$sSample?.notes ?? 'No notes'}
+      {#if $sSample?.notesMd}
+        <Markdown url={$sSample.notesMd} />
+      {:else}
+        No notes.
+      {/if}
+    </Section>
+
+    <Section title="Metadata">
+      {#if $sSample?.metadataMd}
+        <Markdown
+          class="overflow-x-scroll pl-4 -indent-4 font-mono text-sm"
+          url={$sSample?.metadataMd}
+        />
+      {:else}
+        No metadata.
+      {/if}
     </Section>
   </div>
 

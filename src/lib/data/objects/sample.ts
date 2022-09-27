@@ -19,7 +19,8 @@ export type SampleParams = {
   featParams?: (PlainCSVParams | ChunkedCSVParams)[];
   handle?: FileSystemDirectoryHandle;
   overlayParams?: OverlayParams;
-  notes?: string;
+  notesMd?: string;
+  metadataMd?: string;
 };
 
 export class Sample extends Deferrable {
@@ -28,7 +29,8 @@ export class Sample extends Deferrable {
   coordsParams?: CoordsParams[];
   featureParams?: (PlainCSVParams | ChunkedCSVParams)[];
   overlayParams?: OverlayParams;
-  notes?: string;
+  notesMd?: string;
+  metadataMd?: string;
 
   features: Record<string, FeatureData> = {};
   coords: Record<string, CoordsData> = {};
@@ -37,7 +39,16 @@ export class Sample extends Deferrable {
   handle?: FileSystemDirectoryHandle;
 
   constructor(
-    { name, imgParams, coordParams, featParams, handle, overlayParams, notes }: SampleParams,
+    {
+      name,
+      imgParams,
+      coordParams,
+      featParams,
+      handle,
+      overlayParams,
+      notesMd,
+      metadataMd
+    }: SampleParams,
     autoHydrate = false
   ) {
     super();
@@ -52,7 +63,8 @@ export class Sample extends Deferrable {
     this.featureParams = featureParams;
     this.overlayParams = overlayParams;
     this.handle = handle;
-    this.notes = notes;
+    this.notesMd = notesMd;
+    this.metadataMd = metadataMd;
     // this.activeDefault = activeDefault ?? {};
 
     if (coordParams) {

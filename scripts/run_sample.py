@@ -4,6 +4,7 @@ from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from anndata import AnnData
 from scanpy import read_visium
 from tifffile import imread
@@ -87,7 +88,7 @@ def run(s: str) -> None:
             ],
             defaults=[
                 FeatureAndGroup(feature="GFAP", group="genes"),
-            ]
+            ],
         ),
         imgParams=ImageParams(
             urls=[Url(f"{s}_1.tif"), Url(f"{s}_2.tif")],
@@ -100,7 +101,9 @@ def run(s: str) -> None:
             CoordParams(name="cells", shape="circle", mPerPx=mPerPx, url=Url("cellCoords.csv")),
         ],
         featParams=[
-            ChunkedCSVParams(name="genes", headerUrl=Url("gene_csc.json"), url=Url("gene_csc.bin"), unit="Log counts"),
+            ChunkedCSVParams(
+                name="genes", headerUrl=Url("gene_csc.json"), url=Url("gene_csc.bin"), unit="Log counts"
+            ),
             # ChunkedCSVParams(
             #     name="spotGenes",
             #     headerUrl=Url("gene_csr.json"),
@@ -115,10 +118,10 @@ def run(s: str) -> None:
             PlainCSVParams(
                 name="cellsUnfiltered", url=Url("cellsUnfiltered.csv"), dataType="quantitative", size=10e-6
             ),
-             PlainCSVParams(name='kmeans', url=Url("kmeans.csv"), dataType="categorical", coordName="spots")
+            PlainCSVParams(name="kmeans", url=Url("kmeans.csv"), dataType="categorical", coordName="spots")
             # PlainJSONParams(name="oligo", url=Url("oligo.json"), dataType="quantitative", overlay="spots"),
             # PlainJSONParams(name="Excit_A", url=Url("excita.json"), dataType="quantitative", overlay="spots"),
-        ]
+        ],
     )
 
     vis = better_visium(directory / s, features=analyses)
@@ -129,11 +132,11 @@ def run(s: str) -> None:
     o.mkdir(exist_ok=True, parents=True)
     (o / "sample.json").write_text(sample.json())
 
-    vis.obs.filter(regex='^k', axis=1).to_csv(f'{o}/kmeans.csv', index=False)
-    # for orient in ["csc"]:
-    #     header, bytedict = get_compressed_genes(vis, "spots", cast(Literal["csc", "csr"], orient))
-    #     (o / f"gene_{orient}.json").write_text(header.json().replace(" ", ""))
-    #     (o / f"gene_{orient}.bin").write_bytes(bytedict)
+    vis.obs.filter(regex="^k", axis=1).to_csv(f"{o}/kmeans.csv", index=False)
+    for orient in ["csc"]:
+        header, bytedict = get_compressed_genes(vis, "spots", cast(Literal["csc", "csr"], orient))
+        (o / f"gene_{orient}.json").write_text(header.json().replace(" ", ""))
+        (o / f"gene_{orient}.bin").write_bytes(bytedict)
 
     # for k in analyses:
     #     if k in ["umap", "tsne"]:
@@ -151,6 +154,7 @@ def run(s: str) -> None:
     # compress(tifs)
 
 
+#%%
 for s in samples:
     run(s)
 
@@ -160,4 +164,17 @@ samples = ["Br2720_Ant_IF", "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]
 for s in samples:
     (out / s / f"{s}_filtered.csv").rename(out / s / "cellsFiltered.csv")
     (out / s / f"{s}_unfiltered.csv").rename(out / s / "cellsUnfiltered.csv")
+# %%
+df = pl.read_csv(directory / samples[0] / "metrics_summary.csv")
+
+
+# %%
+import math
+
+Path(out / "Br2720_Ant_IF" / "README.md").write_text(
+    "```\n"
+    + "\n".join([f"{i.name}: {round(i[0], 3) if isinstance(i[0], float) else i[0]}" for i in df[0]])
+    + "\n```"
+)
+
 # %%

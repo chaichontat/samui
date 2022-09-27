@@ -1,4 +1,5 @@
 <script lang="ts">
+  import rehypeExternalLinks from 'rehype-external-links';
   import rehypeHighlight from 'rehype-highlight';
   import rehypeStringify from 'rehype-stringify';
   import remarkGfm from 'remark-gfm';
@@ -21,6 +22,7 @@
       .use(remarkGfm)
       .use(remarkRehype)
       .use(rehypeHighlight)
+      .use(rehypeExternalLinks)
       .use(rehypeStringify)
       .process(text);
 

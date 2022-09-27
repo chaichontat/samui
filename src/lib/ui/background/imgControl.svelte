@@ -107,10 +107,10 @@
                       ['white', 'yellow'].includes(imgCtrl.variables[name].color)
                       ? 'text-black'
                       : '',
-                    `transition-width mx-auto flex items-center rounded-lg px-2`
+                    `transition-width mx-auto flex items-center rounded-lg px-2 py-[1px]`
                   )}
                 >
-                  <div class="-translate-y-[1px]">{name}</div>
+                  <div>{name}</div>
                 </button>
               </td>
 

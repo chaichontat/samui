@@ -66,6 +66,7 @@
     "ol": "^7.1.0",
     "pako": "^2.0.4",
     "papaparse": "^5.3.2",
+    "rehype-external-links": "^2.0.1",
     "rehype-highlight": "^5.0.2",
     "rehype-stringify": "^9.0.3",
     "remark-gfm": "^3.0.1",
