@@ -30,7 +30,8 @@ export const annotating = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
-  annotating: undefined as FeatureAndGroup | undefined,
+  annotating: false,
+  annotatingCoordName: undefined as string | undefined,
   selecting: false
 });
 

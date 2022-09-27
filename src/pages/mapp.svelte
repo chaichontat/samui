@@ -73,7 +73,15 @@
       }),
       // For annotation stuffs.
       click: (id_: { idx: number; id: number | string } | null) => {
-        if (!$sOverlay) return;
+        if (!$sOverlay || !$annotating.annotating) return;
+
+        if (!isEqual($sFeatureData.coords.name, $annotating.annotatingCoordName)) {
+          alert(
+            `Annotation: coords mismatch. Started with ${$sFeatureData.coords.name}. Current active overlay is ${$annotating.annotatingCoordName}.`
+          );
+          return;
+        }
+
         const sfd = $sFeatureData;
         if ($annotating.currKey != undefined && id_ && sfd) {
           const idx = id_.idx;

@@ -10,11 +10,28 @@
 
   export let toggled: boolean;
 
-  $: $annotating.annotating = toggled ? $sFeatureData.name : undefined;
+  $: updateAnnotating(toggled);
+  function updateAnnotating(toggled: boolean) {
+    if (!$sFeatureData?.coords) return;
+    if (!$annotating.annotatingCoordName) {
+      $annotating.annotatingCoordName = $sFeatureData.coords.name;
+    }
+    $annotating.annotating = toggled;
+  }
 
   $: if ($sEvent?.type === 'sampleUpdated') {
     toggled = false;
     $sMapp.persistentLayers.annotations.clear();
+  }
+
+  $: if (
+    $sEvent?.type === 'featureUpdated' &&
+    $annotating.annotating &&
+    $annotating.annotatingCoordName !== $sFeatureData.coords.name
+  ) {
+    alert(
+      `This feature has different points. Annotation not possible. Please select a feature with the same points or reset annotations.`
+    );
   }
 
   function handleNewKey(name: string | null) {
@@ -66,7 +83,7 @@
 
 <section class="flex flex-col gap-y-2">
   <!-- Labels -->
-  <div class="flex">
+  <div class="flex items-center">
     <button
       class={classes(
         'mr-4 flex items-center gap-x-0.5 rounded-lg bg-blue-700 py-1 pl-2 pr-3 font-medium transition-colors hover:bg-blue-600',
@@ -90,6 +107,16 @@
         </label>
       {/each}
     </div>
+    <div class="flex-grow" />
+    <div class="float-right text-right">
+      {!$annotating.annotating
+        ? 'Not annotating.'
+        : $annotating.keys.length === 0
+        ? 'Add labels to start annotating.'
+        : $annotating.selecting
+        ? `Selecting ${$annotating.annotatingCoordName}.`
+        : `Annotating ${$annotating.annotatingCoordName}.`}
+    </div>
   </div>
 
   <!-- <div class="mx-auto mt-1 h-[1px] w-1/2 bg-slate-700" /> -->
@@ -108,7 +135,7 @@
       >
         {#if $annotating.selecting}
           <span
-            class="absolute inline-flex h-full w-full animate-ping rounded-lg bg-orange-400 opacity-30"
+            class="absolute inline-flex h-full w-full animate-ping rounded-lg bg-orange-400 opacity-30 delay-200"
           />
 
           <!-- content here -->

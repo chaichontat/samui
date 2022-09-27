@@ -7,6 +7,8 @@
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
   import Plot from './plot.svelte';
+
+  let annToggled = false;
 </script>
 
 <aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4">
@@ -28,8 +30,8 @@
       <Plot />
     </Section>
 
-    <Section title="Annotations" let:toggled togglable defaultOpen>
-      <Annotate {toggled} />
+    <Section title="Annotations" bind:toggled={annToggled} togglable defaultOpen>
+      <Annotate toggled={annToggled} />
     </Section>
 
     {#if $sSample?.overlayParams?.importantFeatures}

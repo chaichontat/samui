@@ -70,13 +70,12 @@
   $: if ($sEvent?.type === 'sampleUpdated') ({ imgCtrl, image } = setColors());
   $: if (imgCtrl) background?.updateStyle(imgCtrl);
 
-  const shrink = () => {
-    if (table) table.style.maxWidth = `${cell.clientWidth + 8}px`;
-  };
+  const shrink = () => table && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
+
   onMount(() => {
     table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
     table.addEventListener('mouseleave', shrink);
-    setTimeout(shrink, 1000);
+    setTimeout(shrink, 1500);
   });
 </script>
 
