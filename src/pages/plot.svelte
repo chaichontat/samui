@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { sFeatureData, sId } from '$lib/store';
+  import { sEvent, sFeatureData, sId } from '$lib/store';
   import { oneLRU } from '$src/lib/lru';
   import * as Plot from '@observablehq/plot';
-  // import Chart from 'chart.js/auto';
   import * as d3 from 'd3';
   import { onMount } from 'svelte';
   let div: HTMLDivElement;
-  let canvas: HTMLCanvasElement;
   let subdiv: Element | undefined;
 
   const tooltip = (Plot) => {
@@ -256,38 +254,6 @@
       }
     });
 
-    const another = Plot.plot({
-      x: { label: $sFeatureData.unit ?? '' },
-      y: {
-        // percent: true,
-        grid: true
-      },
-      marks: [
-        Plot.link(
-          [
-            { x1: n, y1: 300, x2: n, y2: 50 }
-            //   { x: 5, y: 300 }
-          ],
-          {
-            x1: 'x1',
-            y1: 'y1',
-            x2: 'x2',
-            y2: 'y2',
-            stroke: '#f97316',
-            strokeWidth: 3,
-            markerEnd: 'arrow'
-          }
-        )
-      ],
-      marginLeft: 40,
-      marginTop: 35,
-      marginBottom: 30,
-      style: {
-        background: 'transparent',
-        fontSize: '18px'
-      }
-    });
-
     const x = Plot.rectY(
       $sFeatureData.data.map((x) => ({ value: x })),
       Plot.binX(
@@ -296,18 +262,17 @@
       )
     );
 
-    console.log(x);
-
-    another.classList.add('absolute', 'top-0', 'left-0');
-
     div.appendChild(subdiv);
-    // div.appendChild(another);
   });
 
-  $: if (div && $sId.idx != undefined && $sFeatureData && $sFeatureData.dataType !== 'singular') {
+  $: if (
+    $sEvent?.type === 'featureUpdated' &&
+    div &&
+    $sId.idx != undefined &&
+    $sFeatureData.dataType !== 'singular'
+  ) {
     updatePlot($sFeatureData.name);
   }
 </script>
 
 <div bind:this={div} class="relative overflow-visible p-2" />
-<!-- <canvas bind:this={canvas} class="mr-2 -ml-2 -mt-2" /> -->

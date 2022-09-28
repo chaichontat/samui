@@ -37,6 +37,6 @@
   </button>
 </div>
 
-<div class="absolute bottom-5 left-1/2 translate-x-[-50%] text-gray-300">
+<div class="absolute bottom-5 left-1/2 translate-x-[-50%] text-center text-gray-300">
   All processing is done locally. Your data never leave your computer.
 </div>

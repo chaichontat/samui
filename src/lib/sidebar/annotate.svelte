@@ -78,7 +78,7 @@
     }
   }
 
-  $: if ($sEvent?.type === 'pointsAdded') {
+  $: if (['pointsAdded', 'sampleUpdated'].includes($sEvent?.type)) {
     nPoints = {
       _total: $sMapp.persistentLayers.annotations.points.length,
       ...$sMapp.persistentLayers.annotations.points.getComposition()
@@ -113,7 +113,7 @@
             : 'bg-emerald-700  hover:bg-emerald-600',
           disabled
         )}
-        disabled={$annotating.selecting || !$annotating.annotating || $annotating.keys.length === 0}
+        disabled={!$annotating.annotating || $annotating.keys.length === 0}
         on:click={() => ($annotating.selecting = !$annotating.selecting)}
       >
         {#if $annotating.selecting}
@@ -180,7 +180,7 @@
       ? 'Add labels to start annotating.'
       : $annotating.selecting
       ? `Selecting ${$annotating.annotatingCoordName}.`
-      : `Annotating ${$annotating.annotatingCoordName}.`}
+      : `Click on points to annotate ${$annotating.annotatingCoordName}.`}
   </div>
   <div class="flex">
     <div>{nPoints._total} points annotated.</div>
