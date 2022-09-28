@@ -117,7 +117,7 @@
                     `transition-width mx-auto flex items-center rounded-lg px-2 py-[1px]`
                   )}
                 >
-                  <div>{name}</div>
+                  <div class="whitespace-nowrap">{name}</div>
                 </button>
               </td>
 

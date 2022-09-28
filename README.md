@@ -6,24 +6,32 @@ Loopy Browser is a performant visualization tool for spatial transcriptomics exp
 
 ## Usage
 
-Head over to https://loopy-browser.pages.dev/ to see the Loopy Browser with example data.
+Head over to https://loopybrowser.com/ to see the Loopy Browser with example Visium-IF data.
 
-## Data Preparation
+You need to preprocess an image prior to being used in the Loopy Browser.
+See the preprocessing package installation details below.
 
-All data must be processed prior to being used in the Loopy Browser.
+### Example Preprocessing
 
-### Installation
+Download a sample TIFF image from https://data.loopybrowser.com/VisiumIF/sample.tif.
+
+```sh
+conda activate loopy
+loopy [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
+```
+
+The output folder has the same name as the input file.
+You can drag this folder to https://loopybrowser.com/.
+Despite the Browser being a webpage, all data are processed locally on your computer.
+
+## Installation
 
 ```sh
 git clone https://github.com/chaichontat/loopy-browser/
-conda env create -n loopy -f loopy-browser/environment.yml
-conda activate loopy
-conda install jupyter jupyterlab
-pip install ./loopy-browser
+cd loopy-browser
+conda env create -n loopy -f environment.yml
 ```
 
-An example script is available at [`scripts/run_sample.ipynb`](scripts/run_sample.ipynb).
-This is run using a Jupyter notebook. To start, run `jupyter lab` at the cloned directory.
 
 ## Nomenclature
 
