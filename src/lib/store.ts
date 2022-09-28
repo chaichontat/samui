@@ -25,6 +25,7 @@ export const overlaysFeature = writable({} as Record<string, FeatureAndGroup | u
 export const sFeatureData = writable(
   undefined as Awaited<ReturnType<Sample['getFeature']>> | undefined
 );
+export const sPixel = writable(undefined as [number, number] | undefined);
 
 export const annotating = writable({
   currKey: undefined as number | undefined,
