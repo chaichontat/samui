@@ -8,11 +8,13 @@
     sMapp,
     sOverlay
   } from '$lib/store';
+  import Colorbar from '$src/lib/components/colorbar.svelte';
   import Squircle from '$src/lib/components/squircle.svelte';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
+
   import { isEqual } from 'lodash-es';
   import 'ol/ol.css';
   import View from 'ol/View';
@@ -104,6 +106,18 @@
     });
   });
 
+  var exportOptions = {
+    filter: function (element) {
+      var className = element.className || '';
+      // return (
+      //   className.indexOf('ol-control') === -1 ||
+      //   className.indexOf('ol-legend') > -1 ||
+      //   (className.indexOf('ol-attribution') > -1 && className.indexOf('ol-uncollapsible'))
+      // );
+      return true;
+    }
+  };
+
   const updateSample = async (sample: Sample) => {
     await map.updateSample(sample);
     $sId = { source: 'map' };
@@ -159,12 +173,7 @@
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
 
-<!-- <button
-  class="h-50 w-50 absolute z-50 bg-red-500 text-xl"
-  on:click={() => console.log(map.map?.getView())}
->
-  Meh
-</button> -->
+<!-- <button id="export-png" class="h-50 w-50 absolute z-50 bg-red-500 text-xl"> Meh </button> -->
 
 <section
   class="relative h-full w-full overflow-hidden"
@@ -197,6 +206,10 @@
       style="max-width: calc(100% - 20px);"
     >
       <ImgControl background={map.persistentLayers.background} />
+    </div>
+
+    <div class="pointer-events-none absolute right-6 bottom-4 z-20">
+      <Colorbar />
     </div>
   {/if}
 </section>

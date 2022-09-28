@@ -136,7 +136,7 @@
       </div>
 
       <button
-        class="h-9"
+        class="donotsave h-9"
         use:tooltip={{ content: 'Split vertical' }}
         on:click={() => dispatch('split', 'v')}
       >
@@ -150,7 +150,7 @@
       </button>
 
       <button
-        class="h-9"
+        class="donotsave h-9"
         use:tooltip={{ content: 'Split horizontal' }}
         on:click={() => dispatch('split', 'h')}
       >
@@ -166,7 +166,7 @@
       {#if hie === 0 && width > 800}
         <!-- Upload your data -->
         <button
-          class="splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
+          class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
           on:click={byod}
         >
           <span class="px-5 py-2 group-hover:bg-opacity-0"> Add Sample </span>
@@ -178,6 +178,7 @@
       class="h-full w-full border-2"
       class:border-slate-800={$sMapId !== hieN}
       class:border-slate-100={$sMapId === hieN && $mapTiles.length > 1}
+      class:border-transparent={$sMapId === hieN && $mapTiles.length === 1}
     >
       <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />
     </div>
