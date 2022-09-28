@@ -1,3 +1,4 @@
+import { throttle } from 'lodash-es';
 import type { Map } from 'ol';
 import WebGLTileLayer from 'ol/layer/WebGLTile';
 import GeoTIFF from 'ol/source/GeoTIFF';
@@ -60,7 +61,7 @@ export class Background extends Deferrable {
     // TODO: Assuming same channels.
   }
 
-  updateStyle(imgCtrl: CompCtrl | RGBCtrl) {
+  updateStyle = throttle((imgCtrl: CompCtrl | RGBCtrl) => {
     if (!this.image) {
       console.error('No image loaded');
       return;
@@ -72,7 +73,7 @@ export class Background extends Deferrable {
     } else {
       console.error('Unknown type');
     }
-  }
+  }, 30);
 
   _updateStyle = (variables: Record<string, number>) => {
     console.debug('update style var');

@@ -56,7 +56,7 @@
 
   <!-- Overlay selector -->
   <div>
-    {#if showImgControl}
+    {#if (showImgControl && Object.keys($sSample?.coords ?? {}).length > 0) || Object.keys($sSample?.features ?? {}).length > 0}
       <OverlayTool {map} />
     {/if}
   </div>

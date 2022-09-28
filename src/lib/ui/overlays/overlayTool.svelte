@@ -115,7 +115,7 @@
               class={classes(
                 'mr-2 max-w-[10rem] cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
                 $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
-              )}>{ov.uid ? `${fg?.group} > ${fg?.feature}` ?? 'None' : ''}</span
+              )}>{ov.uid ? (fg ? `${fg?.group} > ${fg?.feature}` : 'None') : ''}</span
             >
           </td>
           <td class="w-full" />

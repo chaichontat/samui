@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isOnline, mapTiles } from '$lib/store';
+  import { isOnline, mapTiles, sSample } from '$lib/store';
   import Dragdrop from '$src/lib/components/dragdrop.svelte';
   import { processFolder } from '$src/lib/data/byod';
   import { samples } from '$src/lib/store';
@@ -54,7 +54,9 @@
   let dragging = false;
   let timeout: ReturnType<typeof setTimeout>;
 
-  $: console.log(dragging);
+  $: showSidebar =
+    Object.keys($sSample?.coords ?? {}).length > 0 ||
+    Object.keys($sSample?.features ?? {}).length > 0;
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -81,14 +83,16 @@
   }}
 >
   {#if Object.keys($samples).length > 0}
-    <div class="relative h-[600px] w-full overflow-hidden lg:h-full lg:w-[75%]">
+    <div class="relative h-[600px] w-full overflow-hidden lg:h-full" class:lg:w-[75%]={showSidebar}>
       <article class="h-full w-full" id="allMaps">
         <MapTile {hie} />
       </article>
     </div>
 
-    <div class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800" use:resizable />
-    <Sidebar />
+    {#if showSidebar}
+      <div class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800" use:resizable />
+      <Sidebar />
+    {/if}
   {:else}
     <Splash />
   {/if}

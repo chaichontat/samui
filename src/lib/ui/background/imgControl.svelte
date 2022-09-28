@@ -22,11 +22,10 @@
   let image: ImgData | undefined;
 
   const bandinfo: Record<string, BandInfo> = {};
-  $: channels = image?.channels;
 
-  function setColors() {
+  function setColors(): ImgCtrl | undefined {
     image = background.image;
-    if (!image) return { image: undefined, imgCtrl: undefined };
+    if (!image) return undefined;
 
     if (image.channels === 'rgb') {
       imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
@@ -54,7 +53,6 @@
       throw new Error('Invalid channels');
     }
     console.debug('Set colors', imgCtrl);
-    return { image, imgCtrl };
   }
 
   function handleClick(name: string, color: BandInfo['color'] | undefined) {
@@ -72,7 +70,7 @@
     }
   }
 
-  $: if (console.log('hi') || $sEvent?.type === 'sampleUpdated') ({ imgCtrl, image } = setColors());
+  $: if ($sEvent?.type === 'sampleUpdated') setColors();
   $: if (imgCtrl) s();
   const s = () => background?.updateStyle(imgCtrl!);
 
@@ -95,11 +93,11 @@
   draggable
 >
   {#if image && imgCtrl}
-    {#if imgCtrl.type === 'composite' && Array.isArray(channels)}
+    {#if imgCtrl?.type === 'composite'}
       <table class="table-auto text-sm">
         <tbody>
           <!-- Each channel -->
-          {#each channels as name}
+          {#each image.channels as name}
             <tr class="">
               <td
                 class=""
@@ -149,7 +147,7 @@
           {/each}
         </tbody>
       </table>
-    {:else}
+    {:else if imgCtrl.type === 'rgb'}
       <div class="grid grid-cols-3 gap-y-1.5 gap-x-1">
         {#each ['Exposure', 'Contrast', 'Saturation'] as name}
           <div class="px-1">{small ? name.slice(0, 3) : name}:</div>
@@ -163,6 +161,8 @@
           />
         {/each}
       </div>
+    {:else}
+      <div>This should never show up.</div>
     {/if}
   {/if}
 </div>
