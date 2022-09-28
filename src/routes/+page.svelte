@@ -18,7 +18,15 @@
   //       .then((sample) => ($samples[sample.name] = sample))
   //       .catch(console.error);
   //   }
-  // });
+  // })
+
+  onMount(() => {
+    if (!navigator.userAgent.match(/chrome|chromium|crios/i)) {
+      alert(
+        'Loopy Browser is optimized for Google Chrome. Please use Google Chrome for the best experience.'
+      );
+    }
+  });
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
