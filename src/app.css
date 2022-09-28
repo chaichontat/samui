@@ -20,11 +20,15 @@
   }
 
   .splash-button {
-    @apply relative inline-flex items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br p-0.5 focus:outline-none focus:ring-2;
+    @apply relative inline-flex w-fit items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br p-0.5 focus:outline-none focus:ring-2;
   }
 
   .splash-button > span {
     @apply flex items-center gap-x-2 rounded-md bg-slate-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in  dark:bg-gray-900 dark:bg-opacity-80;
+  }
+
+  .svg-icon {
+    @apply h-4 w-4 stroke-current stroke-2 transition-[stroke-width] hover:stroke-[2.5];
   }
 }
 @tailwind utilities;
@@ -55,10 +59,6 @@
 
   .center {
     @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
-  }
-
-  .svg-icon {
-    @apply stroke-current stroke-2 transition-all hover:stroke-[3];
   }
 
   div > .tippy-box {

@@ -1,6 +1,6 @@
 import { browser, dev } from '$app/environment';
 import type { Url } from '../io';
-import { samples } from '../store';
+import { isOnline, samples } from '../store';
 import { Sample, type SampleParams } from './objects/sample';
 
 const s3_url = dev ? '' : 'https://data2.loopybrowser.com/VisiumIF';
@@ -9,6 +9,7 @@ const names = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_I
 
 export default browser
   ? async () => {
+      isOnline.set(true);
       const out = {} as Record<string, Sample>;
       (await getSamples(names)).forEach((s) => (out[s.name] = s));
       samples.set(out);

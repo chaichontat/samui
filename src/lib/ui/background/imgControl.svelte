@@ -22,11 +22,10 @@
   let image: ImgData | undefined;
 
   const bandinfo: Record<string, BandInfo> = {};
-  $: channels = image?.channels;
 
-  function setColors() {
+  function setColors(): ImgCtrl | undefined {
     image = background.image;
-    if (!image) return { image: undefined, imgCtrl: undefined };
+    if (!image) return undefined;
 
     if (image.channels === 'rgb') {
       imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
@@ -40,7 +39,12 @@
         for (const [c, b] of Object.entries(image.defaultChannels)) {
           if (b) bandinfo[b] = { enabled: true, color: c, max: 128 };
         }
+      } else {
+        bandinfo[image.channels[0]] = { enabled: true, color: 'red', max: 128 };
+        bandinfo[image.channels[1]] = { enabled: true, color: 'green', max: 128 };
+        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', max: 128 };
       }
+
       imgCtrl = {
         type: 'composite',
         variables: bandinfo
@@ -49,7 +53,6 @@
       throw new Error('Invalid channels');
     }
     console.debug('Set colors', imgCtrl);
-    return { image, imgCtrl };
   }
 
   function handleClick(name: string, color: BandInfo['color'] | undefined) {
@@ -67,15 +70,19 @@
     }
   }
 
-  $: if ($sEvent?.type === 'sampleUpdated') ({ imgCtrl, image } = setColors());
-  $: if (imgCtrl) background?.updateStyle(imgCtrl);
+  $: if ($sEvent?.type === 'sampleUpdated') setColors();
+  $: if (imgCtrl) s();
+  const s = () => background?.updateStyle(imgCtrl!);
 
   const shrink = () => table && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
-
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   onMount(() => {
-    table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
+    table.addEventListener('mouseenter', () => {
+      clearTimeout(timeout);
+      table.style.maxWidth = '2000px';
+    });
     table.addEventListener('mouseleave', shrink);
-    setTimeout(shrink, 1500);
+    timeout = setTimeout(shrink, 1500);
   });
 </script>
 
@@ -83,13 +90,14 @@
   bind:this={table}
   class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
   class:hidden={!(image && imgCtrl)}
+  draggable
 >
   {#if image && imgCtrl}
-    {#if imgCtrl.type === 'composite' && Array.isArray(channels)}
+    {#if imgCtrl?.type === 'composite'}
       <table class="table-auto text-sm">
         <tbody>
           <!-- Each channel -->
-          {#each channels as name}
+          {#each image.channels as name}
             <tr class="">
               <td
                 class=""
@@ -109,7 +117,7 @@
                     `transition-width mx-auto flex items-center rounded-lg px-2 py-[1px]`
                   )}
                 >
-                  <div>{name}</div>
+                  <div class="whitespace-nowrap">{name}</div>
                 </button>
               </td>
 
@@ -130,7 +138,7 @@
                 <input
                   type="range"
                   min="0"
-                  max="254"
+                  max="255"
                   class="mx-4 min-w-[4rem] max-w-[8rem] cursor-pointer opacity-70 transition-opacity duration-500 group-hover:opacity-100"
                   bind:value={imgCtrl.variables[name].max}
                 />
@@ -139,7 +147,7 @@
           {/each}
         </tbody>
       </table>
-    {:else}
+    {:else if imgCtrl.type === 'rgb'}
       <div class="grid grid-cols-3 gap-y-1.5 gap-x-1">
         {#each ['Exposure', 'Contrast', 'Saturation'] as name}
           <div class="px-1">{small ? name.slice(0, 3) : name}:</div>
@@ -153,6 +161,8 @@
           />
         {/each}
       </div>
+    {:else}
+      <div>This should never show up.</div>
     {/if}
   {/if}
 </div>

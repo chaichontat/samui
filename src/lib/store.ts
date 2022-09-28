@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import type { Mapp } from '$src/lib/ui/mapp';
 import { debounce } from 'lodash-es';
 import { get, writable, type Writable } from 'svelte/store';
@@ -37,8 +38,12 @@ export const annotating = writable({
 });
 
 annotating.subscribe((ann) => {
-  if (ann.selecting) {
-    document.body.style.cursor = 'crosshair';
+  if (browser) {
+    if (ann.selecting) {
+      document.body.style.cursor = 'crosshair';
+    } else {
+      document.body.style.cursor = 'default';
+    }
   }
 });
 
@@ -65,3 +70,5 @@ sEvent.subscribe(console.debug);
 
 export type Idx = { id?: number | string; idx?: number; source: string };
 export const sId = writable({ source: 'map' } as Idx);
+
+export const isOnline = writable(false);

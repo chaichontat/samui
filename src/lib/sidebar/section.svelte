@@ -5,6 +5,8 @@
     DisclosurePanel,
     Switch
   } from '@rgossiaux/svelte-headlessui';
+  import { ChevronDown } from '@steeze-ui/heroicons';
+  import { Icon } from '@steeze-ui/svelte-icon';
   import { slide } from 'svelte/transition';
   import { classes } from '../utils';
 
@@ -48,16 +50,10 @@
             />
           </Switch>
         {/if}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4 stroke-current"
-          class:rotate-180={open}
-          fill="none"
-          stroke-width="3"
-          viewBox="0 0 24 24"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <Icon
+          src={ChevronDown}
+          class={classes(`svg-icon h-4 w-4 stroke-current stroke-[3]`, open ? 'rotate-180' : '')}
+        />
       </div>
     </DisclosureButton>
 

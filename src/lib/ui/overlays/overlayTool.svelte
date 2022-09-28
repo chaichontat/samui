@@ -3,6 +3,8 @@
   import { overlays, overlaysFeature, sOverlay, sSample } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes } from '$src/lib/utils';
+  import { Plus, XMark } from '@steeze-ui/heroicons';
+  import { Icon } from '@steeze-ui/svelte-icon';
   import { slide } from 'svelte/transition';
   import type { Mapp } from '../mapp';
   import { tooltip } from '../utils';
@@ -113,7 +115,7 @@
               class={classes(
                 'mr-2 max-w-[10rem] cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
                 $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
-              )}>{ov.uid ? `${fg?.group} > ${fg?.feature}` ?? 'None' : ''}</span
+              )}>{ov.uid ? (fg ? `${fg?.group} > ${fg?.feature}` : 'None') : ''}</span
             >
           </td>
           <td class="w-full" />
@@ -140,15 +142,9 @@
                   delete $overlays[uid];
                   $overlays = $overlays;
                 }}
-                ><svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4 stroke-white stroke-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg></button
               >
+                <Icon src={XMark} class="svg-icon" />
+              </button>
             {/if}
           </td>
         </tr>
@@ -156,21 +152,13 @@
     {/if}
   </table>
 
-  <!-- Upload -->
   <div class="flex w-full justify-center border-t border-t-white/30">
     <!-- <FileInput accept=".csv" on:import={addOverlay}> -->
     <div
       class="mt-1.5 flex cursor-pointer items-center transition-opacity hover:font-semibold hover:text-white"
       on:click={addOverlay}
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="mr-0.5 h-4 w-4 stroke-slate-300 stroke-[2]"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-      </svg>
+      <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
       <div class="font-normal">Add Overlay</div>
     </div>
     <!-- </FileInput> -->
