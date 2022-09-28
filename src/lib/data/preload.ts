@@ -16,7 +16,7 @@ export default browser
     }
   : () => {};
 
-async function getSample(s: string) {
+export async function getSample(s: string) {
   const params = await fetch(`${s}/sample.json`).then((r) => r.json() as Promise<SampleParams>);
   const converted = convertSamplePreload(params, s);
   return new Sample(converted);
@@ -58,4 +58,12 @@ function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
   }
 
   return r as SampleParams;
+}
+
+// From URL
+export function getSampleListFromQuery(winlocsearch: string) {
+  const params = new URLSearchParams(winlocsearch);
+  const url = params.get('url');
+  const s = params.getAll('s');
+  return s.map((ss) => `https://${url ?? ''}${ss}`);
 }
