@@ -1,6 +1,6 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
-  import { annotating, sSample } from '$lib/store';
+  import { sPixel, sSample } from '$lib/store';
   import Annotate from '$src/lib/sidebar/annotate.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Markdown from '$src/lib/sidebar/markdown.svelte';
@@ -60,6 +60,12 @@
         No metadata.
       {/if}
     </Section>
+
+    <div class="font-mono text-sm">
+      {#if $sPixel}
+        Position: ({Math.round($sPixel[0])}, {Math.round($sPixel[1])})
+      {/if}
+    </div>
   </div>
 
   <div class="mt-6 text-sm">
