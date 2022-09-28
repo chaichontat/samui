@@ -79,8 +79,6 @@ export function genStyle(bands: string[]) {
     vars[`${b}blueMask`] = 1;
   });
 
-  console.log(genF(bands));
-
   return {
     variables: vars,
     color: genF(bands)

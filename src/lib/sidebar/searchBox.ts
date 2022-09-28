@@ -1,6 +1,3 @@
-import type { FeatureAndGroup } from '../data/objects/feature';
-import { oneLRU } from '../lru';
-
 /// Only for search box.
 export type FeatureGroupList = {
   group: string | null;

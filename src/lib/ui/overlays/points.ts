@@ -68,7 +68,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   _updateProperties(sample: Sample, fn: FeatureAndGroup, { dataType, data }: RetrievedData) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
-    console.log(`Updating ${this.uid} to ${fn.feature}.`);
+    console.debug(`Updating ${this.uid} to ${fn.feature}.`);
 
     // TODO: Subsample if coords subsampled.
     if (data?.length !== this.features.length) {
@@ -129,7 +129,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       prev.dispose();
     }
     this.layer = newLayer;
-    console.log(`Overlay ${this.uid} rebuilt.`);
+    console.debug(`Overlay ${this.uid} rebuilt.`);
   }
 
   async update(sample: Sample, fn: FeatureAndGroup) {
@@ -397,8 +397,6 @@ export class MutableSpots extends CanvasSpots {
     const filtered = ov
       .pos!.filter((f) => polygon.intersectsCoordinate([f.x * ov.mPerPx!, -f.y * ov.mPerPx!]))
       .map((p) => p.idx);
-
-    console.log(filtered);
 
     this.addMultiple(filtered, name, ov, ant);
   }

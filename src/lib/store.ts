@@ -65,3 +65,5 @@ sEvent.subscribe(console.debug);
 
 export type Idx = { id?: number | string; idx?: number; source: string };
 export const sId = writable({ source: 'map' } as Idx);
+
+export const isOnline = writable(false);

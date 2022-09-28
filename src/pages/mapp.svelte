@@ -9,7 +9,6 @@
     sOverlay
   } from '$lib/store';
   import Colorbar from '$src/lib/components/colorbar.svelte';
-  import Squircle from '$src/lib/components/squircle.svelte';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
@@ -106,27 +105,10 @@
     });
   });
 
-  var exportOptions = {
-    filter: function (element) {
-      var className = element.className || '';
-      // return (
-      //   className.indexOf('ol-control') === -1 ||
-      //   className.indexOf('ol-legend') > -1 ||
-      //   (className.indexOf('ol-attribution') > -1 && className.indexOf('ol-uncollapsible'))
-      // );
-      return true;
-    }
-  };
-
   const updateSample = async (sample: Sample) => {
     await map.updateSample(sample);
     $sId = { source: 'map' };
     map = map;
-
-    // } else {
-    // When adding outlines in app.
-    // await map.update({ sample, overlays: $overlays, refresh: true });
-    // }
   };
 
   // Feature change.
@@ -152,10 +134,11 @@
     if (!ov) return false;
 
     if (idx != undefined && ov.coords) {
-      active.layer!.setVisible(true);
       const pos = ov.coords.pos![idx];
       if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
+      active.layer!.setVisible(true);
       active.update(ov.coords, idx);
+
       if (map.tippy && pos.id) {
         map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
         map.tippy.elem.removeAttribute('hidden');

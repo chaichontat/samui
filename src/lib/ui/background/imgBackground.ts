@@ -8,7 +8,6 @@ import {
   genCompStyle,
   genRGBStyle,
   type CompCtrl,
-  type ImgCtrl,
   type RGBCtrl
 } from './imgColormap';
 
@@ -17,7 +16,6 @@ export class Background extends Deferrable {
   layer?: WebGLTileLayer;
   mPerPx?: number;
   image?: ImgData;
-  imgCtrl?: ImgCtrl;
 
   constructor() {
     super();

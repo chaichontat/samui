@@ -24,22 +24,22 @@ export async function byod() {
     return;
   }
 
-  // if (window.location.protocol == 'http:') {
-  //   alert('File system access requires HTTPS.');
-  //   return;
-  // }
+  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  const handle = (await window.showDirectoryPicker()) as Promise<FileSystemDirectoryHandle>;
+  return processFolder(handle);
+}
 
-  const directoryHandle = await window.showDirectoryPicker();
-
+export async function processFolder(handle: Promise<FileSystemDirectoryHandle>) {
   let sp: SampleParams;
   try {
-    sp = (await readFile<SampleParams>(directoryHandle, 'sample.json', 'plain')) as SampleParams;
+    sp = (await readFile<SampleParams>(await handle, 'sample.json', 'plain')) as SampleParams;
   } catch (e) {
     alert('Cannot find sample.json in the specified directory');
     return;
   }
 
-  sp.handle = directoryHandle;
+  sp.handle = await handle;
   const sample = new Sample(sp);
   samples.set({ ...get(samples), [sample.name]: sample });
 }

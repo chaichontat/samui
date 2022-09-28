@@ -72,15 +72,19 @@
     }
   }
 
-  $: if ($sEvent?.type === 'sampleUpdated') ({ imgCtrl, image } = setColors());
-  $: if (imgCtrl) background?.updateStyle(imgCtrl);
+  $: if (console.log('hi') || $sEvent?.type === 'sampleUpdated') ({ imgCtrl, image } = setColors());
+  $: if (imgCtrl) s();
+  const s = () => background?.updateStyle(imgCtrl!);
 
   const shrink = () => table && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
-
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   onMount(() => {
-    table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
+    table.addEventListener('mouseenter', () => {
+      clearTimeout(timeout);
+      table.style.maxWidth = '2000px';
+    });
     table.addEventListener('mouseleave', shrink);
-    setTimeout(shrink, 1500);
+    timeout = setTimeout(shrink, 1500);
   });
 </script>
 
@@ -88,6 +92,7 @@
   bind:this={table}
   class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
   class:hidden={!(image && imgCtrl)}
+  draggable
 >
   {#if image && imgCtrl}
     {#if imgCtrl.type === 'composite' && Array.isArray(channels)}
@@ -135,7 +140,7 @@
                 <input
                   type="range"
                   min="0"
-                  max="254"
+                  max="255"
                   class="mx-4 min-w-[4rem] max-w-[8rem] cursor-pointer opacity-70 transition-opacity duration-500 group-hover:opacity-100"
                   bind:value={imgCtrl.variables[name].max}
                 />

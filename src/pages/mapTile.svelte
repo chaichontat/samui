@@ -1,6 +1,6 @@
 <script lang="ts">
   import List from '$lib/components/list.svelte';
-  import { mapIdSample, mapTiles, samples, sMapId, sMapp } from '$lib/store';
+  import { isOnline, mapIdSample, mapTiles, samples, sMapId, sMapp } from '$lib/store';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
   import { ArrowsRightLeft, ArrowsUpDown, XMark } from '@steeze-ui/heroicons';
@@ -151,7 +151,7 @@
         <Icon src={ArrowsRightLeft} class="svg-icon h-5 w-5" />
       </button>
 
-      {#if hie === 0 && width > 800}
+      {#if hie === 0 && width > 800 && !$isOnline}
         <!-- Upload your data -->
         <button
           class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
