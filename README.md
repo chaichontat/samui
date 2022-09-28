@@ -24,6 +24,12 @@ The output folder has the same name as the input file.
 You can drag this folder to https://loopybrowser.com/.
 Despite the Browser being a webpage, all data are processed locally on your computer.
 
+This link opens the expected result: https://loopybrowser.com/?url=data2.loopybrowser.com/VisiumIF/&s=sample.
+
+Here, the browser retrieves the processed folder hosted on an external server.
+You could simply use your own file server, AWS S3, or equivalent services to share your files with your collaborators.
+The images are available instantly and no installation is needed on their end!
+
 ## Installation
 
 ```sh

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getSample, getSampleListFromQuery } from '$lib/data/preload';
   import { isOnline, mapTiles, sSample } from '$lib/store';
   import Dragdrop from '$src/lib/components/dragdrop.svelte';
   import { processFolder } from '$src/lib/data/byod';
@@ -15,13 +16,13 @@
   let hie: Hierarchy = { root: true, maps: $mapTiles };
 
   // Load data from URL.
-  // onMount(() => {
-  //   for (const url of getSampleList(window.location.search)) {
-  //     getSample(url)
-  //       .then((sample) => ($samples[sample.name] = sample))
-  //       .catch(console.error);
-  //   }
-  // })
+  onMount(() => {
+    for (const url of getSampleListFromQuery(window.location.search)) {
+      getSample(url)
+        .then((sample) => ($samples[sample.name] = sample))
+        .catch(console.error);
+    }
+  });
 
   onMount(() => {
     if (!navigator.userAgent.match(/chrome|chromium|crios/i)) {
