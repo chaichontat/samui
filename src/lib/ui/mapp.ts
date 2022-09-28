@@ -9,7 +9,8 @@ import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, MutableSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
-import { mapTiles, overlays, overlaysFeature, setHoverSelect, sEvent, sOverlay } from '../store';
+import { throttle } from 'lodash-es';
+import { mapTiles, overlays, setHoverSelect, sEvent, sOverlay, sPixel } from '../store';
 import { Draww } from './overlays/selector';
 
 export class Mapp extends Deferrable {
@@ -22,7 +23,6 @@ export class Mapp extends Deferrable {
   overlays?: Record<string, CoordsData>;
   tippy?: { overlay: Overlay; elem: HTMLElement };
   mounted = false;
-  mPerPx?: number;
   _needNewView = true;
 
   constructor() {
@@ -122,6 +122,10 @@ export class Mapp extends Deferrable {
     sEvent.set({ type: 'sampleUpdated' });
   }
 
+  get mPerPx() {
+    return this.persistentLayers.background?.mPerPx;
+  }
+
   moveView({ x, y }: { x: number; y: number }, zoom?: number) {
     if (!this.map) throw new Error('Map not initialized.');
 
@@ -134,6 +138,12 @@ export class Mapp extends Deferrable {
     }
   }
 
+  setCurrPixel = throttle((meter: [number, number]) => {
+    if (this.mPerPx) {
+      sPixel.set([meter[0] / this.mPerPx, -meter[1] / this.mPerPx]);
+    }
+  });
+
   // Handle all clicks and hovers on the map.
   attachPointerListener(funs: {
     pointermove?: (
@@ -145,6 +155,7 @@ export class Mapp extends Deferrable {
     for (const [k, v] of Object.entries(funs)) {
       this.map!.on(k as 'pointermove' | 'click', (e) => {
         // Outlines take precedence. Either visible is fine.
+        this.setCurrPixel(e.coordinate as [number, number]);
         const ol = get(sOverlay);
         if (!ol) return;
         const comp = get(overlays)[ol];

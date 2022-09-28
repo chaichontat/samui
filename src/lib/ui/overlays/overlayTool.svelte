@@ -92,7 +92,7 @@
             <input
               type="checkbox"
               class="mr-1 cursor-pointer"
-              use:tooltip={{ content: 'Border' }}
+              use:tooltip={{ content: 'Border. Disabled for samples with >100,000 points.' }}
               on:change={(e) => setVisible(uid, e.currentTarget.checked, true)}
             />
 
