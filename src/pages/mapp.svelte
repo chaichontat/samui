@@ -184,7 +184,7 @@
 
     <!-- Img control -->
     <div
-      class="absolute top-[72px] left-1 lg:left-4 lg:bottom-6"
+      class="absolute top-[72px] left-1 h-fit lg:left-4 lg:bottom-6"
       class:hidden={!showImgControl}
       style="max-width: calc(100% - 20px);"
     >
@@ -223,7 +223,7 @@
   }
 
   .map :global(.ol-scale-line-inner) {
-    @apply absolute  bottom-0 border-neutral-200 pb-1 text-sm text-neutral-200;
+    @apply absolute bottom-0 border-neutral-200 pb-1 text-sm text-neutral-200;
   }
 
   .map :global(.ol-zoom) {
@@ -231,10 +231,10 @@
   }
 
   .map :global(.ol-zoom-in) {
-    @apply bg-sky-600/90 text-neutral-200;
+    @apply bg-blue-800/90 text-neutral-200;
   }
 
   .map :global(.ol-zoom-out) {
-    @apply bg-sky-600/90 text-neutral-200;
+    @apply bg-blue-800/90 text-neutral-200;
   }
 </style>
