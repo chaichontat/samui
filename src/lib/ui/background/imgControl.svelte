@@ -40,7 +40,12 @@
         for (const [c, b] of Object.entries(image.defaultChannels)) {
           if (b) bandinfo[b] = { enabled: true, color: c, max: 128 };
         }
+      } else {
+        bandinfo[image.channels[0]] = { enabled: true, color: 'red', max: 128 };
+        bandinfo[image.channels[1]] = { enabled: true, color: 'green', max: 128 };
+        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', max: 128 };
       }
+
       imgCtrl = {
         type: 'composite',
         variables: bandinfo
