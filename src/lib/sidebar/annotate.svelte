@@ -2,9 +2,10 @@
   import { annotating, sEvent, sFeatureData, sMapp, sSample } from '$lib/store';
   import type { Draww } from '$lib/ui/overlays/selector';
   import { tooltip } from '$lib/ui/utils';
+  import { ArrowUpOnSquare, Plus } from '@steeze-ui/heroicons';
+  import { Icon } from '@steeze-ui/svelte-icon';
   import { schemeTableau10 } from 'd3';
   import { onMount } from 'svelte';
-  import Plus from '../components/plus.svelte';
   import { getFileFromEvent, toCSV, toJSON } from '../io';
   import { classes } from '../utils';
 
@@ -99,7 +100,7 @@
       on:click={() => ($annotating.currKey = handleNewKey(prompt('Enter new key.')))}
       disabled={$annotating.selecting || !$annotating.annotating}
     >
-      <Plus class="h-4 w-4 translate-y-[1px] stroke-current stroke-[2.5]" />
+      <Icon src={Plus} class="mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]" />
       Label
     </button>
 
@@ -122,7 +123,10 @@
           />
           Stop Selecting
         {:else}
-          <Plus class="-ml-1 h-4 w-4 translate-y-[1px] stroke-current stroke-[2.5]" />
+          <Icon
+            src={Plus}
+            class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]"
+          />
           Selections
         {/if}
       </button>
@@ -139,21 +143,9 @@
             `annotations_${$sSample.name}.csv`,
             $sMapp.persistentLayers.annotations.points.dump()
           )}
-        ><svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-          />
-        </svg></button
       >
+        <Icon src={ArrowUpOnSquare} class="svg-icon" />
+      </button>
     </div>
 
     <div class="flex-grow" />

@@ -6,6 +6,8 @@
     ListboxOption,
     ListboxOptions
   } from '@rgossiaux/svelte-headlessui';
+  import { Check, ChevronUpDown } from '@steeze-ui/heroicons';
+  import { Icon } from '@steeze-ui/svelte-icon';
   import { createEventDispatcher, onMount } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
@@ -68,22 +70,14 @@
           {#if loading}
             <Spinner />
           {:else}
-            <svg
-              class="h-5 w-5 text-slate-500 dark:text-slate-200"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path
-                d="M7 7l3-3 3 3m0 6l-3 3-3-3"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <Icon
+              src={ChevronUpDown}
+              class="h-5 w-5 stroke-current stroke-2 text-slate-500 dark:text-slate-200"
+            />
           {/if}
-        </span></ListboxButton
-      >
+        </span>
+      </ListboxButton>
+
       {#if open}
         <div
           class="bg-default absolute z-40 mt-2 w-full rounded-lg shadow shadow-blue-900 backdrop-blur "
@@ -116,13 +110,7 @@
                         active ? '' : ''
                       )}
                     >
-                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path
-                          fill-rule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
+                      <Icon src={Check} class="h-5 w-5 stroke-current stroke-2" />
                     </span>
                   {/if}
                 </ListboxOption>

@@ -2,6 +2,8 @@
   import preload from '$lib/data/preload';
   import Github from '$src/lib/components/github.svelte';
   import { byod } from '$src/lib/data/byod';
+  import { Icon } from '@steeze-ui/svelte-icon';
+  import { Plus } from '@steeze-ui/heroicons';
 </script>
 
 <!-- Splash import -->
@@ -16,15 +18,8 @@
     on:click={byod}
   >
     <span class="flex items-center gap-x-2 px-5 py-3 group-hover:bg-opacity-0">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-4 w-4 translate-y-[1px] stroke-[4]"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-      </svg>
+      <Icon src={Plus} class="h-4 w-4 translate-y-[1px] stroke-current stroke-[4]" />
+
       Import Sample
     </span>
   </button>

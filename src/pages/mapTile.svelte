@@ -3,6 +3,8 @@
   import { mapIdSample, mapTiles, samples, sMapId, sMapp } from '$lib/store';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
+  import { ArrowsRightLeft, ArrowsUpDown, XMark } from '@steeze-ui/heroicons';
+  import { Icon } from '@steeze-ui/svelte-icon';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import Mapp from './mapp.svelte';
   import type { Hierarchy } from './mapTile';
@@ -100,9 +102,7 @@
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
-          <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <Icon src={XMark} class="svg-icon h-5 w-5" />
         </button>
       {/if}
 
@@ -140,13 +140,7 @@
         use:tooltip={{ content: 'Split vertical' }}
         on:click={() => dispatch('split', 'v')}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          />
-        </svg>
+        <Icon src={ArrowsUpDown} class="svg-icon h-5 w-5" />
       </button>
 
       <button
@@ -154,13 +148,7 @@
         use:tooltip={{ content: 'Split horizontal' }}
         on:click={() => dispatch('split', 'h')}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="svg-icon h-5 w-5" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-          />
-        </svg>
+        <Icon src={ArrowsRightLeft} class="svg-icon h-5 w-5" />
       </button>
 
       {#if hie === 0 && width > 800}

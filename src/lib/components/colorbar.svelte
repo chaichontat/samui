@@ -4,26 +4,9 @@
   import * as d3 from 'd3';
   export let color = 'viridis' | 'turbo';
 
-  let svg: SVGSVGElement;
   let div: HTMLDivElement;
 
   let divs: Record<string, Element> = {};
-
-  // onMount(() => {
-  //   Legend(
-  //     d3.select(svg),
-  //     d3.scaleSequential(
-  //       [min, max],
-  //       // @ts-ignore
-  //       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  //       d3[`interpolate${color.charAt(0).toUpperCase() + color.slice(1)}`]
-  //     ),
-  //     {
-  //       title,
-  //       legendAnchor: 'end'
-  //     }
-  //   );
-  // });
 
   function updateLegend() {
     const ol = $sOverlay;
@@ -81,7 +64,6 @@
   $: if ($sEvent?.type === 'featureUpdated') updateLegend();
 </script>
 
-<!-- <svg bind:this={svg} /> -->
 <div bind:this={div} />
 
 <style lang="postcss">
