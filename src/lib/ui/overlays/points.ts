@@ -192,7 +192,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     // When changing between samples, all overlays are updated.
     if (get(sOverlay) === this.uid) {
       sFeatureData.set({ ...res, name: fn });
-      sEvent.set(new Event('updatedFeature'));
+      sEvent.set({ type: 'featureUpdated' });
     }
     return res;
   }
@@ -297,10 +297,10 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     idx,
     mPerPx,
     size
-  }: Coord & { idx: number; mPerPx: number; size?: number | null }) {
+  }: Coord & { idx: number; mPerPx: number; size?: number }) {
     const c = [x * mPerPx, -y * mPerPx];
     const f = new Feature({
-      geometry: size !== undefined && size !== null ? new Circle(c, size / 4) : new Point(c),
+      geometry: size != undefined && size != undefined ? new Circle(c, size / 4) : new Point(c),
       value: 0,
       id: id ?? idx
     });
@@ -310,8 +310,9 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 
   /// Replace entire feature.
   update(coords: CoordsData) {
-    if (coords.mPerPx === undefined) throw new Error('mPerPx undefined.');
+    if (coords.mPerPx == undefined) throw new Error('mPerPx undefined.');
     if (coords.name === this.coords?.name || !coords.size) return;
+
     this.source.clear();
     this.source.addFeatures(
       coords.pos!.map((c) =>
@@ -327,12 +328,18 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 }
 
 export class MutableSpots extends CanvasSpots {
+  mount() {
+    super.mount();
+    this.layer!.setZIndex(Infinity);
+    return this;
+  }
+
   names: string[] = [];
 
-  add(idx: number, name: string, ov: CoordsData, ant: string[]) {
-    if (ov.mPerPx === undefined) throw new Error('mPerPx undefined.');
+  add(idx: number, name: string, ov: CoordsData, ant: string[], fromMultiple = false) {
+    if (ov.mPerPx == undefined) throw new Error('mPerPx undefined.');
     let f = this.get(idx);
-    if (f === null) {
+    if (f == undefined) {
       // Null to generate Point, instead of Circle.
       f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
       this.source.addFeature(f);
@@ -352,10 +359,28 @@ export class MutableSpots extends CanvasSpots {
         })
       })
     );
+    if (!fromMultiple) sEvent.set({ type: 'pointsAdded' });
+  }
+
+  get length() {
+    return this.source.getFeatures().length;
+  }
+
+  getComposition() {
+    const counts = {} as Record<string, number>;
+    for (const f of this.source.getFeatures()) {
+      counts[f.get('value')] = (counts[f.get('value')] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  clear() {
+    this.source.clear();
   }
 
   addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
-    idxs.forEach((idx) => this.add(idx, name, ov, ant));
+    idxs.forEach((idx) => this.add(idx, name, ov, ant, true));
+    sEvent.set({ type: 'pointsAdded' });
   }
 
   addFromPolygon(polygonFeat: Feature<Polygon>, name: string, ov: CoordsData, ant: string[]) {
@@ -372,6 +397,8 @@ export class MutableSpots extends CanvasSpots {
     const filtered = ov
       .pos!.filter((f) => polygon.intersectsCoordinate([f.x * ov.mPerPx!, -f.y * ov.mPerPx!]))
       .map((p) => p.idx);
+
+    console.log(filtered);
 
     this.addMultiple(filtered, name, ov, ant);
   }

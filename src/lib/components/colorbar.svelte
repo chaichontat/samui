@@ -78,7 +78,7 @@
     div.appendChild(divs[ol]);
   }
 
-  $: if ($sEvent?.type === 'updatedFeature') updateLegend();
+  $: if ($sEvent?.type === 'featureUpdated') updateLegend();
 </script>
 
 <!-- <svg bind:this={svg} /> -->

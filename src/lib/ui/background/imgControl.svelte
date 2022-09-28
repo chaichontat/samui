@@ -67,22 +67,21 @@
     }
   }
 
-  $: if ($sEvent?.type === 'updatedSample') ({ imgCtrl, image } = setColors());
+  $: if ($sEvent?.type === 'sampleUpdated') ({ imgCtrl, image } = setColors());
   $: if (imgCtrl) background?.updateStyle(imgCtrl);
 
-  const shrink = () => {
-    if (table) table.style.maxWidth = `${cell.clientWidth + 8}px`;
-  };
+  const shrink = () => table && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
+
   onMount(() => {
     table.addEventListener('mouseenter', () => (table.style.maxWidth = '2000px'));
     table.addEventListener('mouseleave', shrink);
-    setTimeout(shrink, 1000);
+    setTimeout(shrink, 1500);
   });
 </script>
 
 <div
   bind:this={table}
-  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-0.5 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
+  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-slate-200/80 bg-opacity-80 px-1 py-1 font-medium ring-4 ring-slate-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-slate-800/80"
   class:hidden={!(image && imgCtrl)}
 >
   {#if image && imgCtrl}
@@ -107,10 +106,10 @@
                       ['white', 'yellow'].includes(imgCtrl.variables[name].color)
                       ? 'text-black'
                       : '',
-                    `transition-width mx-auto flex items-center rounded-lg px-2`
+                    `transition-width mx-auto flex items-center rounded-lg px-2 py-[1px]`
                   )}
                 >
-                  <div class="-translate-y-[1px]">{name}</div>
+                  <div>{name}</div>
                 </button>
               </td>
 

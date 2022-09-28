@@ -13,11 +13,11 @@
       // click: (id_: { idx: number; id: number | string } | null) => {
       //   if (!$sOverlay) return;
       //   const ov = map.layers[$sOverlay]?.overlay;
-      //   if ($annotating.currKey !== null && id_ && ov) {
+      //   if ($annotating.currKey != undefined && id_ && ov) {
       //     const idx = id_.idx;
       //     const existing = map.persistentLayers.annotations.get(idx);
       //     if (
-      //       existing === null ||
+      //       existing == undefined ||
       //       existing.get('value') !== $annotating.keys[$annotating.currKey]
       //     ) {
       //       map.persistentLayers.annotations.add(
@@ -117,7 +117,7 @@
 
   //   if (!ov) return false;
 
-  //   if (idx !== null && ov.coords) {
+  //   if (idx != undefined && ov.coords) {
   //     active.layer!.setVisible(true);
   //     const pos = ov.coords.pos![idx];
   //     if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.

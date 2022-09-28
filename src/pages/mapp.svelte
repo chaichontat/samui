@@ -1,9 +1,20 @@
 <script lang="ts">
-  import { overlays, overlaysFeature, sId, sMapp, sOverlay } from '$lib/store';
+  import {
+    annotating,
+    overlays,
+    overlaysFeature,
+    sFeatureData,
+    sId,
+    sMapp,
+    sOverlay
+  } from '$lib/store';
+  import Colorbar from '$src/lib/components/colorbar.svelte';
+  import Squircle from '$src/lib/components/squircle.svelte';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
+
   import { isEqual } from 'lodash-es';
   import 'ol/ol.css';
   import View from 'ol/View';
@@ -61,33 +72,55 @@
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
         if (id_) $sId = { ...id_, source: 'map' };
-      })
-      // click: (id_: { idx: number; id: number | string } | null) => {
-      //   if (!$sOverlay) return;
-      //   const ov = map.layers[$sOverlay]?.overlay;
-      //   if ($annotating.currKey !== null && id_ && ov) {
-      //     const idx = id_.idx;
-      //     const existing = map.persistentLayers.annotations.get(idx);
-      //     if (
-      //       existing === null ||
-      //       existing.get('value') !== $annotating.keys[$annotating.currKey]
-      //     ) {
-      //       map.persistentLayers.annotations.add(
-      //         idx,
-      //         $annotating.keys[$annotating.currKey],
-      //         ov,
-      //         $annotating.keys
-      //       );
-      //     } else {
-      //       map.persistentLayers.annotations.delete(idx);
-      //     }
-      //   }
-      // }
+      }),
+      // For annotation stuffs.
+      click: (id_: { idx: number; id: number | string } | null) => {
+        if (!$sOverlay || !$annotating.annotating) return;
+
+        if (!isEqual($sFeatureData.coords.name, $annotating.annotatingCoordName)) {
+          alert(
+            `Annotation: coords mismatch. Started with ${$sFeatureData.coords.name}. Current active overlay is ${$annotating.annotatingCoordName}.`
+          );
+          return;
+        }
+
+        const sfd = $sFeatureData;
+        if ($annotating.currKey != undefined && id_ && sfd) {
+          const idx = id_.idx;
+          const existing = map.persistentLayers.annotations.points.get(idx);
+          if (
+            existing == undefined ||
+            existing.get('value') !== $annotating.keys[$annotating.currKey]
+          ) {
+            map.persistentLayers.annotations.points.add(
+              idx,
+              $annotating.keys[$annotating.currKey],
+              sfd.coords,
+              $annotating.keys
+            );
+          } else {
+            map.persistentLayers.annotations.points.delete(idx);
+          }
+        }
+      }
     });
   });
 
+  var exportOptions = {
+    filter: function (element) {
+      var className = element.className || '';
+      // return (
+      //   className.indexOf('ol-control') === -1 ||
+      //   className.indexOf('ol-legend') > -1 ||
+      //   (className.indexOf('ol-attribution') > -1 && className.indexOf('ol-uncollapsible'))
+      // );
+      return true;
+    }
+  };
+
   const updateSample = async (sample: Sample) => {
     await map.updateSample(sample);
+    $sId = { source: 'map' };
     map = map;
 
     // } else {
@@ -112,13 +145,13 @@
   // Hover/overlay.
   $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);
 
-  const changeHover = oneLRU((activeol: string, idx: number | null) => {
+  const changeHover = oneLRU((activeol: string, idx: number | undefined) => {
     const active = map.persistentLayers.active;
     const ov = $overlays[activeol];
 
     if (!ov) return false;
 
-    if (idx !== null && ov.coords) {
+    if (idx != undefined && ov.coords) {
       active.layer!.setVisible(true);
       const pos = ov.coords.pos![idx];
       if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
@@ -140,12 +173,7 @@
 <!-- For pane resize. -->
 <svelte:body on:resize={() => map.map?.updateSize()} />
 
-<!-- <button
-  class="h-50 w-50 absolute z-50 bg-red-500 text-xl"
-  on:click={() => console.log(map.map?.getView())}
->
-  Meh
-</button> -->
+<!-- <button id="export-png" class="h-50 w-50 absolute z-50 bg-red-500 text-xl"> Meh </button> -->
 
 <section
   class="relative h-full w-full overflow-hidden"
@@ -153,6 +181,7 @@
   bind:clientWidth={width}
 >
   <!-- Map -->
+  <!-- on:mouseleave={() => ($sId = { source: 'map' })} -->
   <div
     id={mapName}
     bind:this={mapElem}
@@ -163,7 +192,7 @@
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
-    class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 p-2 text-xs backdrop-blur-lg"
+    class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 px-2 py-1.5 text-xs backdrop-blur-lg"
   />
 
   {#if sample}
@@ -177,6 +206,10 @@
       style="max-width: calc(100% - 20px);"
     >
       <ImgControl background={map.persistentLayers.background} />
+    </div>
+
+    <div class="pointer-events-none absolute right-6 bottom-4 z-20">
+      <Colorbar />
     </div>
   {/if}
 </section>

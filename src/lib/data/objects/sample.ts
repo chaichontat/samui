@@ -1,6 +1,6 @@
 import { Deferrable } from '$src/lib/definitions';
+import type { Url } from '$src/lib/io';
 import { genLRU } from '$src/lib/lru';
-import { sFeatureData } from '$src/lib/store';
 import { CoordsData, type Coord, type CoordsParams } from './coords';
 import { stats, type FeatureAndGroup, type FeatureData } from './feature';
 import { ChunkedCSV, type ChunkedCSVParams } from './featureChunked';
@@ -19,7 +19,8 @@ export type SampleParams = {
   featParams?: (PlainCSVParams | ChunkedCSVParams)[];
   handle?: FileSystemDirectoryHandle;
   overlayParams?: OverlayParams;
-  notes?: string;
+  notesMd?: Url;
+  metadataMd?: Url;
 };
 
 export class Sample extends Deferrable {
@@ -28,7 +29,8 @@ export class Sample extends Deferrable {
   coordsParams?: CoordsParams[];
   featureParams?: (PlainCSVParams | ChunkedCSVParams)[];
   overlayParams?: OverlayParams;
-  notes?: string;
+  notesMd?: Url;
+  metadataMd?: Url;
 
   features: Record<string, FeatureData> = {};
   coords: Record<string, CoordsData> = {};
@@ -37,7 +39,16 @@ export class Sample extends Deferrable {
   handle?: FileSystemDirectoryHandle;
 
   constructor(
-    { name, imgParams, coordParams, featParams, handle, overlayParams, notes }: SampleParams,
+    {
+      name,
+      imgParams,
+      coordParams,
+      featParams,
+      handle,
+      overlayParams,
+      notesMd,
+      metadataMd
+    }: SampleParams,
     autoHydrate = false
   ) {
     super();
@@ -52,7 +63,8 @@ export class Sample extends Deferrable {
     this.featureParams = featureParams;
     this.overlayParams = overlayParams;
     this.handle = handle;
-    this.notes = notes;
+    this.notesMd = notesMd;
+    this.metadataMd = metadataMd;
     // this.activeDefault = activeDefault ?? {};
 
     if (coordParams) {
@@ -151,7 +163,7 @@ export class Sample extends Deferrable {
       }
     }
 
-    const processed = { ...res, data, coords: g, minmax: stats({ key, args: [data] }) };
+    const processed = { ...res, data, coords: g, minmax: stats({ key, args: [data] }), name: fn };
 
     return processed;
   });

@@ -1,10 +1,14 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
-  import { sSample } from '$lib/store';
+  import { annotating, sSample } from '$lib/store';
+  import Annotate from '$src/lib/sidebar/annotate.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
+  import Markdown from '$src/lib/sidebar/markdown.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
   import Plot from './plot.svelte';
+
+  let annToggled = false;
 </script>
 
 <aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4">
@@ -15,7 +19,6 @@
   <div class="mt-3 flex flex-col items-center gap-y-4 ">
     <Section title="Recent Features" defaultOpen>
       <Recent />
-      <!-- <Annotate /> -->
     </Section>
 
     <!-- <Section title="Overlay Options" defaultOpen>
@@ -23,8 +26,12 @@
       Max value: <input type="range" />
     </Section> -->
 
-    <Section title="Plot" defaultOpen class="overflow-visible">
+    <Section title="Histogram" defaultOpen class="overflow-visible">
       <Plot />
+    </Section>
+
+    <Section title="Annotations" bind:toggled={annToggled} togglable>
+      <Annotate toggled={annToggled} />
     </Section>
 
     {#if $sSample?.overlayParams?.importantFeatures}
@@ -36,7 +43,22 @@
     {/if}
 
     <Section title="Notes" defaultOpen>
-      {$sSample?.notes ?? 'No notes'}
+      {#if $sSample?.notesMd}
+        <Markdown url={$sSample.notesMd.url} />
+      {:else}
+        No notes.
+      {/if}
+    </Section>
+
+    <Section title="Metadata">
+      {#if $sSample?.metadataMd}
+        <Markdown
+          class="overflow-x-scroll pl-4 -indent-4 font-mono text-sm"
+          url={$sSample?.metadataMd.url}
+        />
+      {:else}
+        No metadata.
+      {/if}
     </Section>
   </div>
 

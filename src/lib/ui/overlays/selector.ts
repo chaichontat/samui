@@ -1,3 +1,4 @@
+import { annotating, sEvent, sFeatureData } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
 import { Feature, type Map } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
@@ -9,8 +10,9 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style, Text } from 'ol/style.js';
 import { get } from 'svelte/store';
-import type { Named } from '../../utils';
+import { rand, type Named } from '../../utils';
 import type { Mapp } from '../mapp';
+import type { MutableSpots } from './points';
 
 export class Draww {
   readonly draw: Draw;
@@ -66,15 +68,16 @@ export class Draww {
     this._attachDraw();
   }
 
-  mount(map: Map) {
-    this._attachModify(map);
+  mount() {
+    this._attachModify(this.map.map!);
+    this.points.mount();
+    this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
-    map.addLayer(this.selectionLayer);
   }
 
   clear() {
     this.source.clear();
-    this.points.source.clear();
+    this.points.clear();
   }
 
   update(template: Feature[]) {
@@ -93,11 +96,11 @@ export class Draww {
   _afterDraw(feature: Feature<Polygon>) {
     // Not called after modify.
     const keyIdx = get(annotating).currKey;
-    if (keyIdx === null) throw new Error('keyIdx is null');
+    if (keyIdx == undefined) throw new Error('keyIdx is null');
 
     feature.set('color', schemeTableau10[keyIdx % 10]);
     feature.set('keyIdx', keyIdx);
-    feature.setId(Math.random());
+    feature.setId(rand());
     feature.on('propertychange', (e) => {
       if (e.key === 'keyIdx' || e.key === 'color') {
         this._updatePolygonStyle(feature);
@@ -109,7 +112,7 @@ export class Draww {
     this.points.addFromPolygon(
       feature,
       get(annotating).keys[keyIdx],
-      this.map.layers[get(sOverlay)].overlay!,
+      get(sFeatureData).coords,
       get(annotating).keys
     );
   }
@@ -117,8 +120,9 @@ export class Draww {
   _attachModify(map: Map) {
     map.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => {
+      console.debug('modifyend');
       const keyIdx = get(annotating).currKey;
-      if (keyIdx === null) throw new Error('keyIdx is null');
+      if (keyIdx == undefined) throw new Error('keyIdx is null');
 
       const feature = e.features.getArray()[0] as Feature<Polygon>;
       const idx = feature.getId() as number;
@@ -129,7 +133,7 @@ export class Draww {
       this.points.addFromPolygon(
         feature,
         get(annotating).keys[keyIdx],
-        this.map.layers[get(sOverlay)].overlay!,
+        get(sFeatureData).coords,
         get(annotating).keys
       );
 
@@ -138,9 +142,9 @@ export class Draww {
   }
 
   highlightPolygon(i: number | null) {
-    if (i === undefined) throw new Error('i is undefined');
+    if (i == undefined) throw new Error('i is undefined');
     this.unhighlightPolygon();
-    if (i === null) return;
+    if (i == undefined) return;
     const feat = this.source.getFeatures().at(i);
     if (!feat) throw new Error('No feature at index ' + i.toString());
     this._currHighlight = i;
@@ -148,7 +152,7 @@ export class Draww {
   }
 
   unhighlightPolygon() {
-    if (this._currHighlight === null) return;
+    if (this._currHighlight == undefined) return;
     const feat = this.source.getFeatures().at(this._currHighlight);
     if (!feat) throw new Error('No feature at index ' + this._currHighlight.toString());
     this._updatePolygonStyle(feat);

@@ -8,18 +8,17 @@ import type { CoordsData } from '$src/lib/data/objects/coords';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
 import { Background } from '$src/lib/ui/background/imgBackground';
-import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
+import { ActiveSpots, MutableSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import { mapTiles, overlays, overlaysFeature, setHoverSelect, sEvent, sOverlay } from '../store';
+import { Draww } from './overlays/selector';
 
 export class Mapp extends Deferrable {
   map?: Map;
-  // layers: Record<string, MapComponent<OLLayer>>;
   persistentLayers: {
     background: Background;
     active: ActiveSpots;
-    // annotations: MutableSpots;
+    annotations: Draww;
   };
-  // draw?: Draww;
   overlays?: Record<string, CoordsData>;
   tippy?: { overlay: Overlay; elem: HTMLElement };
   mounted = false;
@@ -31,27 +30,23 @@ export class Mapp extends Deferrable {
     // this.layers = {};
     this.persistentLayers = {
       background: new Background(),
-      active: new ActiveSpots(this)
-      // annotations: new MutableSpots(this)
+      active: new ActiveSpots(this),
+      annotations: new Draww(this, new MutableSpots(this))
     };
-    // this.persistentLayers.annotations.z = Infinity;
-    // this.draw = new Draww(this, this.persistentLayers.annotations);
   }
 
   mount(target: HTMLElement, tippyElem: HTMLElement) {
     // Mount components
     this.map = new Map({ target });
-    // Object.values(this.layers).map((l) => l.mount());
     Object.values(this.persistentLayers).map((l) => l.mount());
-    // this.draw!.mount(this.map);
 
     // Move controls
     this.map.removeControl(this.map.getControls().getArray()[0]);
     this.map.addControl(new Zoom({ delta: 0.4 }));
     this.map.addControl(new ScaleLine({ text: true, minWidth: 140 }));
 
-    this.map.on('movestart', () => (this.map!.getViewport().style.cursor = 'grabbing'));
-    this.map.on('moveend', () => (this.map!.getViewport().style.cursor = 'grab'));
+    // this.map.on('movestart', () => (this.map!.getViewport().style.cursor = 'grabbing'));
+    // this.map.on('moveend', () => (this.map!.getViewport().style.cursor = 'grab'));
 
     this.tippy = {
       overlay: new Overlay({
@@ -124,7 +119,7 @@ export class Mapp extends Deferrable {
     if (sample.overlayParams?.defaults && !get(overlays)[get(sOverlay)]?.currFeature) {
       setHoverSelect({ selected: sample.overlayParams.defaults[0] });
     }
-    sEvent.set(new Event('updatedSample'));
+    sEvent.set({ type: 'sampleUpdated' });
   }
 
   moveView({ x, y }: { x: number; y: number }, zoom?: number) {
@@ -159,14 +154,13 @@ export class Mapp extends Deferrable {
           return;
         }
         if (this.map!.hasFeatureAtPixel(e.pixel)) {
-          this.map!.getViewport().style.cursor = 'auto';
           // feature is overlay in our parlance.
           this.map!.forEachFeatureAtPixel(
             e.pixel,
             (f) => {
               const idx = f.getId() as number | undefined;
               const id = f.get('id') as number | string;
-              if (idx === undefined) {
+              if (idx == undefined) {
                 // 0 is falsy.
                 console.error("Overlay doesn't have an id.");
                 return true;
@@ -180,7 +174,6 @@ export class Mapp extends Deferrable {
             }
           );
         } else {
-          this.map!.getViewport().style.cursor = 'grab';
           v(null, e);
         }
       });
