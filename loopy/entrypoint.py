@@ -14,13 +14,13 @@ from loopy.utils import Url
 @click.option("--channels", "-c", type=str, help="Channel names, split by comma.")
 @click.option("--scale", "-s", default=1, type=float, help="Scale in meters per pixel.")
 @click.option("--quality", default=90, type=int, help="JPEG compression quality")
-def run(tiff: Path, outdir: Path | None = None, channels: str | None = None, quality: int = 90, scale: float = 1) -> None:
+def run(tiff: Path, out: Path | None = None, channels: str | None = None, quality: int = 90, scale: float = 1) -> None:
     s = tiff.stem
     if not tiff.exists():
         raise FileNotFoundError(tiff)
 
-    if outdir is None:
-        outdir = tiff.parent
+    if out is None:
+        out = tiff.parent
 
     if tiff.suffix != ".tif" and tiff.suffix != ".tiff":
         raise ValueError("Input file must be a tiff.")
@@ -61,12 +61,12 @@ def run(tiff: Path, outdir: Path | None = None, channels: str | None = None, qua
         ),
     )
 
-    o = Path(outdir / s)
+    o = Path(out / s)
     o.mkdir(exist_ok=True, parents=True)
     (o / "sample.json").write_text(sample.json())
 
     img = tifffile.imread(tiff)
-    ps = gen_geotiff(img, s, outdir / s, scale)
+    ps = gen_geotiff(img, s, out / s, scale)
     print("Compressing image...")
     compress(ps, quality)
     print(f"Saved to {o.absolute()}.")

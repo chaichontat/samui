@@ -16,7 +16,6 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
-        python-version: ['3.10']
 
     steps:
       - uses: actions/checkout@v3
@@ -33,6 +32,12 @@ jobs:
         run: |
           curl -o sample.tif https://data.loopybrowser.com/VisiumIF/sample.tif
 
+      - name: Install ncurses if Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          pip install windows-curses
+
       - name: Test run
         run: |
+          pip install -e .
           loopy ./sample.tif --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
