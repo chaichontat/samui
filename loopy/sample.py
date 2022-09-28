@@ -1,6 +1,6 @@
 from loopy.feature import CoordParams, FeatureAndGroup, FeatureParams
 from loopy.image import ImageParams
-from loopy.utils import ReadonlyModel
+from loopy.utils import ReadonlyModel, Url
 
 
 class OverlayParams(ReadonlyModel):
@@ -14,4 +14,5 @@ class Sample(ReadonlyModel):
     coordParams: list[CoordParams] | None = None
     featParams: list[FeatureParams] | None = None
     overlayParams: OverlayParams | None = None
-    notes: str | None = None
+    notesMd: Url | None = None
+    metadataMd: Url | None = None
