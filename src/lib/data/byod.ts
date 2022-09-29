@@ -1,7 +1,7 @@
 // Bring your own data.
 
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
-import { samples } from '$lib/store';
+import { samples, sSample } from '$lib/store';
 import { get } from 'svelte/store';
 
 async function readFile<T extends object>(
@@ -30,7 +30,7 @@ export async function byod() {
   return processFolder(handle);
 }
 
-export async function processFolder(handle: Promise<FileSystemDirectoryHandle>) {
+export async function processFolder(handle: Promise<FileSystemDirectoryHandle>, setSample = false) {
   let sp: SampleParams;
   try {
     sp = (await readFile<SampleParams>(await handle, 'sample.json', 'plain')) as SampleParams;
@@ -42,4 +42,7 @@ export async function processFolder(handle: Promise<FileSystemDirectoryHandle>) 
   sp.handle = await handle;
   const sample = new Sample(sp);
   samples.set({ ...get(samples), [sample.name]: sample });
+  if (setSample) {
+    sSample.set(sample);
+  }
 }

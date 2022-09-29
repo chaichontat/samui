@@ -1,6 +1,7 @@
 <script lang="ts">
   import List from '$lib/components/list.svelte';
   import { isOnline, mapIdSample, mapTiles, samples, sMapId, sMapp } from '$lib/store';
+  import type { Mapp as MappObj } from '$lib/ui/mapp';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
   import { ArrowsRightLeft, ArrowsUpDown, XMark } from '@steeze-ui/heroicons';
@@ -27,6 +28,7 @@
   //     .then(() => ($focus = $focus))
   //     .catch(console.error);
   // }
+  const adjustSize = (map: MappObj) => setTimeout(() => map.map!.updateSize(), 15);
 
   function handleSplit(i: number, mode: 'h' | 'v') {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
@@ -36,6 +38,7 @@
       console.debug(`Set mode to ${mode}`);
       hie.split = mode;
     }
+    adjustSize($sMapp);
 
     const newUId = Math.random();
     if (hie.split === mode) {
@@ -50,6 +53,7 @@
 
   function handleDelete(i: number) {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
+    adjustSize($sMapp);
     const old = hie.maps[i];
     hie.maps[i] = null;
     if (i === hie.maps.length - 1) {

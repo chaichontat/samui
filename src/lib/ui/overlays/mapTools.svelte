@@ -1,6 +1,6 @@
 <script lang="ts">
   import { sId, sMapp, sSample, userState } from '$lib/store';
-  import type Mapp from '$src/pages/mapp.svelte';
+  import type { Mapp } from '$lib/ui/mapp';
   import { Camera, EyeSlash } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { saveAs } from 'file-saver';
@@ -49,7 +49,7 @@
     </div>
   {/if}
 
-  <div class="mt-[48px] mr-2 flex flex-col gap-y-4">
+  <div class="mt-[47px] mr-2 flex flex-col gap-y-4">
     <!-- Show/hide -->
     <button
       class="z-20"

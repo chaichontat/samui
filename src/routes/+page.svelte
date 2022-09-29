@@ -50,7 +50,7 @@
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const handle = file.getAsFileSystemHandle() as Promise<FileSystemDirectoryHandle>;
-    processFolder(handle).catch(console.error);
+    processFolder(handle, true).catch(console.error);
   }
   let dragging = false;
   let dragTimeout: ReturnType<typeof setTimeout>;

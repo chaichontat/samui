@@ -63,7 +63,9 @@ export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
 });
 
 export const sEvent = writable(
-  undefined as { type: 'sampleUpdated' | 'featureUpdated' | 'pointsAdded' } | undefined
+  undefined as
+    | { type: 'sampleUpdated' | 'featureUpdated' | 'pointsAdded' | 'viewAdjusted' }
+    | undefined
 );
 sEvent.subscribe(console.debug);
 
