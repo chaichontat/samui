@@ -8,70 +8,69 @@
   import Recent from '$src/lib/sidebar/recent.svelte';
   import Plot from './plot.svelte';
 
+  export let showSidebar: boolean;
   let annToggled = false;
 </script>
 
-<aside class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4">
-  <div class="z-40 w-full">
-    <Nav />
-  </div>
+<div class="z-40 w-full">
+  <Nav />
+</div>
 
-  <div class="mt-3 flex flex-col items-center gap-y-4 ">
-    <Section title="Recent Features" defaultOpen>
-      <Recent />
-    </Section>
+<div class="mt-3 flex flex-col items-center gap-y-4 ">
+  <Section title="Recent Features" defaultOpen>
+    <Recent />
+  </Section>
 
-    <!-- <Section title="Overlay Options" defaultOpen>
+  <!-- <Section title="Overlay Options" defaultOpen>
       Min value: <input type="range" />
       Max value: <input type="range" />
     </Section> -->
 
-    <Section title="Histogram" defaultOpen class="overflow-visible">
-      <Plot />
-    </Section>
+  <Section title="Histogram" defaultOpen class="overflow-visible">
+    <Plot />
+  </Section>
 
-    <Section title="Annotations" bind:toggled={annToggled} togglable>
-      <Annotate toggled={annToggled} />
-    </Section>
+  <Section title="Annotations" bind:toggled={annToggled} togglable>
+    <Annotate toggled={annToggled} />
+  </Section>
 
-    {#if $sSample?.overlayParams?.importantFeatures}
-      <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
-        {#each $sSample?.overlayParams?.importantFeatures as feature}
-          <HoverableFeature {feature} />
-        {/each}
-      </Section>
+  {#if $sSample?.overlayParams?.importantFeatures}
+    <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
+      {#each $sSample?.overlayParams?.importantFeatures as feature}
+        <HoverableFeature {feature} />
+      {/each}
+    </Section>
+  {/if}
+
+  <Section title="Notes" defaultOpen>
+    {#if $sSample?.notesMd}
+      <Markdown url={$sSample.notesMd.url} />
+    {:else}
+      No notes.
     {/if}
+  </Section>
 
-    <Section title="Notes" defaultOpen>
-      {#if $sSample?.notesMd}
-        <Markdown url={$sSample.notesMd.url} />
-      {:else}
-        No notes.
-      {/if}
-    </Section>
+  <Section title="Metadata">
+    {#if $sSample?.metadataMd}
+      <Markdown
+        class="overflow-x-scroll pl-4 -indent-4 font-mono text-sm"
+        url={$sSample?.metadataMd.url}
+      />
+    {:else}
+      No metadata.
+    {/if}
+  </Section>
 
-    <Section title="Metadata">
-      {#if $sSample?.metadataMd}
-        <Markdown
-          class="overflow-x-scroll pl-4 -indent-4 font-mono text-sm"
-          url={$sSample?.metadataMd.url}
-        />
-      {:else}
-        No metadata.
-      {/if}
-    </Section>
-
-    <div class="font-mono text-sm">
-      {#if $sPixel}
-        Position: ({Math.round($sPixel[0])}, {Math.round($sPixel[1])})
-      {/if}
-    </div>
+  <div class="font-mono text-sm">
+    {#if $sPixel}
+      Position: ({Math.round($sPixel[0])}, {Math.round($sPixel[1])})
+    {/if}
   </div>
+</div>
 
-  <div class="mt-6 text-sm">
-    <!-- <Status /> -->
-  </div>
-</aside>
+<div class="mt-6 text-sm">
+  <!-- <Status /> -->
+</div>
 
 <style lang="postcss">
   section {

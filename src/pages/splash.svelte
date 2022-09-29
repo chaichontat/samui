@@ -7,7 +7,7 @@
 </script>
 
 <!-- Splash import -->
-<nav class="flex w-full justify-between py-3 px-5">
+<nav class="flex w-full justify-between py-[18px] pl-4 pr-4">
   <div class="text-2xl font-medium text-yellow-300">Loopy Browser</div>
   <Github />
 </nav>

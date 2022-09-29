@@ -5,7 +5,6 @@
   export let color = 'viridis' | 'turbo';
 
   let div: HTMLDivElement;
-
   let divs: Record<string, Element> = {};
 
   function updateLegend() {
@@ -61,7 +60,7 @@
     div.appendChild(divs[ol]);
   }
 
-  $: if ($sEvent?.type === 'featureUpdated') updateLegend();
+  $: if ($sEvent?.type === 'featureUpdated' && div) updateLegend();
 </script>
 
 <div bind:this={div} />

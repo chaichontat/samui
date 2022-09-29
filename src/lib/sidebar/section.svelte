@@ -24,7 +24,7 @@
     <DisclosureButton
       class={classes(
         open ? 'rounded-b-none' : 'delay-150',
-        'flex w-full items-center justify-between rounded-lg bg-white/[8%] py-1.5 pl-[12px] pr-4 text-left font-medium transition-[border-radius] ease-in-out hover:bg-white/10 focus:outline-none'
+        'flex w-full items-center justify-between rounded-lg bg-white/[8%] py-1.5 pl-[12px] pr-4 text-left text-mb font-medium transition-[border-radius] ease-in-out hover:bg-white/10 focus:outline-none'
       )}
     >
       <div class="text-mb">{title}</div>

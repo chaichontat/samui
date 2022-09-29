@@ -81,88 +81,84 @@
   // }
 </script>
 
-<div
-  class="inline-flex flex-col gap-y-1 rounded-lg bg-slate-100/80 p-2 px-3 text-sm font-medium backdrop-blur dark:bg-neutral-600/90 dark:text-white/90"
->
-  <table class="min-w-[250px] table-fixed">
-    {#if sample}
-      {#each Object.entries($overlays) as [uid, ov], i}
-        {@const fg = $overlaysFeature[uid]}
-        <tr>
-          <td class="flex">
-            <!-- Outline checkbox -->
-            <input
-              type="checkbox"
-              class="mr-1 cursor-pointer"
-              use:tooltip={{ content: 'Border. Disabled for samples with >100,000 points.' }}
-              on:change={(e) => setVisible(uid, e.currentTarget.checked, true)}
-            />
+<table class="min-w-[250px] table-fixed">
+  {#if sample}
+    {#each Object.entries($overlays) as [uid, ov], i}
+      {@const fg = $overlaysFeature[uid]}
+      <tr>
+        <td class="flex">
+          <!-- Outline checkbox -->
+          <input
+            type="checkbox"
+            class="mr-1 cursor-pointer"
+            use:tooltip={{ content: 'Border. Disabled for samples with >100,000 points.' }}
+            on:change={(e) => setVisible(uid, e.currentTarget.checked, true)}
+          />
 
-            <!-- Fill checkbox -->
-            <input
-              type="checkbox"
-              class="cursor-pointer"
-              checked
-              use:tooltip={{ content: 'Fill' }}
-              on:change={(e) => setVisible(uid, e.currentTarget.checked)}
-            />
-            &nbsp;
-          </td>
-          <!-- Overlay name -->
-          <td>
-            <span
-              on:click={() => ($sOverlay = uid)}
-              class={classes(
-                'mr-2 max-w-[10rem] cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
-                $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
-              )}>{ov.uid ? (fg ? `${fg?.group} > ${fg?.feature}` : 'None') : ''}</span
+          <!-- Fill checkbox -->
+          <input
+            type="checkbox"
+            class="cursor-pointer"
+            checked
+            use:tooltip={{ content: 'Fill' }}
+            on:change={(e) => setVisible(uid, e.currentTarget.checked)}
+          />
+          &nbsp;
+        </td>
+        <!-- Overlay name -->
+        <td>
+          <span
+            on:click={() => ($sOverlay = uid)}
+            class={classes(
+              'mr-2 max-w-[10rem] cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
+              $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
+            )}>{ov.uid ? (fg ? `${fg?.group} > ${fg?.feature}` : 'None') : ''}</span
+          >
+        </td>
+        <td class="w-full" />
+        <!-- Opacity bar -->
+        <td>
+          <input
+            class="max-w-[5rem] -translate-y-0.5 cursor-pointer align-middle opacity-80"
+            type="range"
+            min="0"
+            max="1"
+            value="0.8"
+            step="0.01"
+            on:change={(e) => setOpacity(uid, e.currentTarget.value)}
+            on:mousemove={(e) => setOpacity(uid, e.currentTarget.value)}
+            use:tooltip={{ content: 'Opacity' }}
+          />
+        </td>
+        <td class="h-4 w-4">
+          {#if i !== 0}
+            <button
+              class="flex cursor-pointer items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
+              on:click={() => {
+                $overlays[uid].dispose();
+                delete $overlays[uid];
+                $overlays = $overlays;
+              }}
             >
-          </td>
-          <td class="w-full" />
-          <!-- Opacity bar -->
-          <td>
-            <input
-              class="max-w-[5rem] -translate-y-0.5 cursor-pointer align-middle opacity-80"
-              type="range"
-              min="0"
-              max="1"
-              value="0.8"
-              step="0.01"
-              on:change={(e) => setOpacity(uid, e.currentTarget.value)}
-              on:mousemove={(e) => setOpacity(uid, e.currentTarget.value)}
-              use:tooltip={{ content: 'Opacity' }}
-            />
-          </td>
-          <td class="h-4 w-4">
-            {#if i !== 0}
-              <button
-                class="flex cursor-pointer items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
-                on:click={() => {
-                  $overlays[uid].dispose();
-                  delete $overlays[uid];
-                  $overlays = $overlays;
-                }}
-              >
-                <Icon src={XMark} class="svg-icon" />
-              </button>
-            {/if}
-          </td>
-        </tr>
-      {/each}
-    {/if}
-  </table>
+              <Icon src={XMark} class="svg-icon" />
+            </button>
+          {/if}
+        </td>
+      </tr>
+    {/each}
+  {/if}
+</table>
 
-  <div class="flex w-full justify-center border-t border-t-white/30">
-    <!-- <FileInput accept=".csv" on:import={addOverlay}> -->
-    <div
-      class="mt-1.5 flex cursor-pointer items-center transition-opacity hover:font-semibold hover:text-white"
-      on:click={addOverlay}
-    >
-      <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
-      <div class="font-normal">Add Overlay</div>
-    </div>
-    <!-- </FileInput> -->
+<div class="flex w-full justify-center border-t border-t-white/30">
+  <!-- <FileInput accept=".csv" on:import={addOverlay}> -->
+  <div
+    class="mt-1.5 flex cursor-pointer items-center transition-opacity hover:font-semibold hover:text-white"
+    on:click={addOverlay}
+  >
+    <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
+    <div class="font-normal">Add Overlay</div>
   </div>
+  <!-- </FileInput> -->
 </div>
 
 <!-- use:tooltip={{
