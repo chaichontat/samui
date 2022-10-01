@@ -65,6 +65,20 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this._rebuildLayer().catch(console.error);
   }
 
+  updateMask(mask: boolean[]) {
+    if (!this.features) {
+      console.error('No features to update');
+      return;
+    }
+    if (mask.length !== this.features.length) {
+      throw new Error('Mask length does not match features');
+    }
+
+    for (const [i, f] of this.features.entries()) {
+      f.set('opacity', mask[i] ? 1 : 0.15);
+    }
+  }
+
   _updateProperties(sample: Sample, fn: FeatureAndGroup, { dataType, data }: RetrievedData) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
@@ -93,8 +107,10 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this.currStyle = dataType;
 
     for (const [i, f] of this.features.entries()) {
-      f.setProperties({ value: data[i] });
+      f.set('value', data[i]); // Cannot use silent. Update seems specific to each feature and value.
+      f.set('opacity', 1);
     }
+    this.layer?.changed();
   }
 
   _updateOutline() {

@@ -1,8 +1,10 @@
 <script lang="ts">
   import {
     annotating,
+    mask,
     overlays,
     overlaysFeature,
+    sEvent,
     sFeatureData,
     sId,
     sMapp,
@@ -123,6 +125,10 @@
     if (!fn || isEqual(ol.currFeature, fn)) return;
     await ol.update(sample, fn);
   };
+
+  $: if ($sEvent?.type === 'maskUpdated') {
+    $overlays[$sOverlay]?.updateMask($mask);
+  }
 
   // Hover/overlay.
   $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);

@@ -1,278 +1,215 @@
 <script lang="ts">
-  import { sEvent, sFeatureData, sId } from '$lib/store';
+  import { mask, sEvent, sFeatureData, sId } from '$lib/store';
   import { oneLRU } from '$src/lib/lru';
-  import * as Plot from '@observablehq/plot';
   import * as d3 from 'd3';
+  import { throttle } from 'lodash-es';
   import { onMount } from 'svelte';
   let div: HTMLDivElement;
-  let subdiv: Element | undefined;
 
-  const tooltip = (Plot) => {
-    class Tooltip extends Plot.Mark {
-      constructor(
-        data,
-        {
-          x,
-          y,
-          z,
-          stroke = 'black',
-          fill = 'none',
-          r = 4,
-          content = (d) => d,
-          direction = 'down',
-          tx,
-          ty,
-          dx = 0,
-          dy = 0,
-          onclick,
-          onmouseover,
-          annotate,
-          ...options
-        } = {}
-      ) {
-        super(
-          data,
-          [
-            { name: 'x', value: x, scale: 'x', optional: true },
-            { name: 'y', value: y, scale: 'y', optional: true },
-            { name: 'z', value: z, optional: true },
-            { name: 'content', value: content }
-          ],
-          options
-        );
+  let minmax = [0, 10];
 
-        this.r = r;
-        this.fill = fill;
-        this.stroke = stroke;
-        this.annotate = annotate;
-        this.direction = direction;
-        this.tx = tx;
-        this.ty = ty;
-        this.dx = dx;
-        this.dy = dy;
-        this.onclick = onclick;
-        this.onmouseover = onmouseover;
-      }
-      render(
-        index,
-        scales,
-        { x: X, y: Y, z: Z, content: T },
-        { width, height, marginTop, marginRight, marginBottom, marginLeft }
-      ) {
-        const {
-          r,
-          stroke,
-          fill,
-          annotate,
-          direction,
-          tx,
-          ty,
-          dx,
-          dy,
-          onclick,
-          onmouseover,
-          formatter
-        } = this;
-        const x = X ? (i) => X[i] : constant((marginLeft + width - marginRight) / 2);
-        const y = Y ? (i) => Y[i] : constant((marginTop + height - marginBottom) / 2);
+  function Histogram<T = number[]>(
+    data: T[],
+    {
+      domain, // convenience alias for xDomain
+      label, // convenience alias for xLabel
+      format, // convenience alias for xFormat
+      type = d3.scaleLinear, // convenience alias for xType
+      x = (d) => d, // given d in data, returns the (quantitative) x-value
+      y = () => 1, // given d in data, returns the (quantitative) weight
+      thresholds = 40, // approximate number of bins to generate, or threshold function
+      normalize, // whether to normalize values to a total of 100%
+      marginTop = 30, // top margin, in pixels
+      marginRight = 30, // right margin, in pixels
+      marginBottom = 30, // bottom margin, in pixels
+      marginLeft = 40, // left margin, in pixels
+      width = 320, // outer width of chart, in pixels
+      height = 160, // outer height of chart, in pixels
+      insetLeft = 0.5, // inset left edge of bar
+      insetRight = 0.5, // inset right edge of bar
+      xOption = { type: d3.scaleLinear },
+      yOption = { type: d3.scaleLinear },
+      xType = type, // type of x-scale
+      xDomain = domain, // [xmin, xmax]
+      xRange = [marginLeft, width - marginRight], // [left, right]
+      xLabel = label, // a label for the x-axis
+      xFormat = format, // a format specifier string for the x-axis
+      yType = d3.scaleLinear, // type of y-scale
+      yDomain, // [ymin, ymax]
+      yRange = [height - marginBottom, marginTop], // [bottom, top]
+      yLabel = '↑ Frequency', // a label for the y-axis
+      yFormat = normalize ? '%' : undefined, // a format specifier string for the y-axis
+      color = 'currentColor' // bar fill color
+    } = {}
+  ) {
+    // Compute values.
+    const X = d3.map(data, x);
+    const Y0 = d3.map(data, y);
+    const I = d3.range(X.length);
 
-        const quadtree = d3
-          .quadtree()
-          .x(x)
-          .y(y)
-          .addAll(index.filter((i) => x(i) !== undefined && y(i) !== undefined));
-
-        const g = d3.create('svg:g');
-        const highlights = g.append('g');
-
-        let frozen = -1; // freeze the tooltip on click
-
-        const catcher = g
-          .append('rect')
-          .attr('height', height)
-          .attr('width', width)
-          .style('fill', 'none')
-          .attr('pointer-events', 'all')
-          .on('pointerenter', () => {})
-          .on('pointerout', (event) => frozen === -1 && hide())
-          .on('pointermove', move);
-
-        catcher.on('click', (event) => {
-          const i = find(event);
-          if (frozen > -1 && i > -1 && i !== frozen) {
-            show((frozen = i));
-          } else {
-            frozen = frozen === -1 ? i : -1;
-          }
-          if (typeof onclick === 'function' && i >= 0) onclick(event, i, g.node());
-        });
-
-        function find(event) {
-          const p = d3.pointers(event)[0],
-            i = quadtree.find(...p);
-          if (Math.hypot(p[0] - x(i), p[1] - y(i)) < 30) return i;
-          return -1;
-        }
-
-        function move(event) {
-          if (frozen > -1) return;
-          const i = find(event);
-          if (i > -1) {
-            show(i);
-            if (typeof onmouseover === 'function') {
-              onmouseover(event, i, g.node());
-            }
-          } else hide();
-        }
-
-        let tooltip;
-        let xy;
-        hide();
-
-        return g.node();
-
-        function show(i) {
-          highlights
-            .selectAll('circle')
-            .data(index.filter((j) => i === j || (Z && Z[i] === Z[j])))
-            .join('circle')
-            .attr('r', r)
-            .style('fill', fill)
-            .style('stroke', stroke)
-            .attr('cx', x)
-            .attr('cy', y);
-
-          tooltip &&
-            tooltip.call(callout, {
-              formatter,
-              direction,
-              text: T[i],
-              x: tx === undefined ? x(i) : tx,
-              y: ty === undefined ? y(i) : ty,
-              transform: xy,
-              dx,
-              dy
-            });
-        }
-
-        function hide() {
-          tooltip && tooltip.call(callout);
-          highlights.html('');
-
-          if (annotate !== undefined && index.includes(annotate)) {
-            setTimeout(() => show(annotate), 200);
-          }
-        }
-      }
+    // Compute bins.
+    const bins = d3
+      .bin()
+      .thresholds(thresholds)
+      .value((i) => X[i])(I);
+    const Y = Array.from(bins, (I) => d3.sum(I, (i) => Y0[i]));
+    if (normalize) {
+      const total = d3.sum(Y);
+      for (let i = 0; i < Y.length; ++i) Y[i] /= total;
     }
 
-    return function tooltip(data, options) {
-      return new Tooltip(data, options);
+    // Compute default domains.
+    if (xDomain === undefined) xDomain = [bins[0].x0, bins[bins.length - 1].x1];
+    if (yDomain === undefined) yDomain = [0, d3.max(Y)];
+
+    // Construct scales and axes.
+    const xScale = xType(xDomain, xRange);
+    const yScale = yType(yDomain, yRange);
+    const xAxis = d3
+      .axisBottom(xScale)
+      .ticks(width / 80, xFormat)
+      .tickSizeOuter(0);
+    const yAxis = d3.axisLeft(yScale).ticks(height / 80, yFormat); // Number of ticks here
+    yFormat = yScale.tickFormat(100, yFormat);
+
+    const svg = d3
+      .create('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', [0, 0, width, height])
+      .attr('class', 'svg-plot w-full h-auto h-intrinsic');
+    // .attr('style', 'max-width: 100%; height: auto; height: intrinsic;');
+    const margin = { top: 30, right: 30, bottom: 30, left: 40 };
+    // YAxis
+    svg
+      .append('g')
+      .attr('transform', `translate(${marginLeft},0)`)
+      .call(yAxis)
+      .call((g) => g.select('.domain').remove()) // Remove axis line
+      .call((g) =>
+        g
+          .selectAll('.tick line')
+          .clone()
+          .attr('x2', width - marginLeft - marginRight)
+          .attr('stroke-opacity', 0.1)
+      ) // tick line for every step
+      .call((g) =>
+        g
+          .append('text')
+          .attr('x', -marginLeft)
+          .attr('y', marginTop - 14)
+          .attr('fill', 'currentColor')
+          .attr('font-size', '14px')
+          .attr('text-anchor', 'start')
+          .text(yLabel)
+      );
+
+    // Bars
+    const bars = svg
+      .append('g')
+
+      .selectAll('rect')
+      .data(bins)
+      .join('rect')
+      .attr('x', (d) => xScale(d.x0) + insetLeft)
+      .attr('width', (d) => Math.max(0, xScale(d.x1) - xScale(d.x0) - insetLeft - insetRight))
+      .attr('y', (d, i) => yScale(Y[i]))
+      .attr('height', (d, i) => yScale(0) - yScale(Y[i]))
+      .attr('fill', (d) => d3.interpolateViridis((d.x0! + d.x1!) / 20))
+      .attr('stroke', '#ffffff44');
+
+    // bars.append('title').text((d, i) => [`${d.x0} ≤ x < ${d.x1}`, yFormat(Y[i])].join('\n'));
+
+    // xAxis
+    svg
+      .append('g')
+      .attr('transform', `translate(0,${height - marginBottom})`)
+      .call(xAxis)
+      .call((g) =>
+        g
+          .append('text')
+          .attr('x', width - marginRight)
+          .attr('y', marginBottom)
+          .attr('fill', 'currentColor')
+          .attr('font-size', '14px')
+          .attr('text-anchor', 'end')
+          .text(xLabel)
+      );
+
+    const update = (x0: number, x1: number) => {
+      $mask = $sFeatureData?.data.map((v) => v > x0 && v < x1);
+      $sEvent = { type: 'maskUpdated' };
     };
 
-    function constant(x) {
-      return () => x;
-    }
-  };
+    const brushended = (event: d3.D3BrushEvent<T>): [number, number] | undefined => {
+      const { selection } = event;
+      if (!event.sourceEvent || !selection) {
+        bars.attr('fill', (d) => d3.interpolateViridis((d.x0! + d.x1!) / 20));
+        $mask = new Array($sFeatureData?.data.length).fill(true);
+        $sEvent = { type: 'maskUpdated' };
+        return undefined;
+      }
 
-  // let chart: Chart;
+      const [x0, x1] = selection.map(xScale.invert);
+      if (x0 === null || x1 === null) return;
+
+      bars.attr('fill', (d) =>
+        d.x0! < x0! || d.x1! > x1! ? '#dddddd' : d3.interpolateViridis((d.x0! + d.x1!) / 20)
+      );
+
+      update(x0, x1);
+      //     d3.select(this).transition().call(brush.move, x1 > x0 ? [x0, x1].map(xScale) : null);
+    };
+
+    // const f = throttle(brushended, 10);
+    const brushF = d3
+      .brushX()
+      .extent([
+        [margin.left, margin.top],
+        [width - margin.right, height - margin.bottom]
+      ])
+      .on('start brush end', throttle(brushended, 10));
+
+    const brush = svg.append('g').call(brushF);
+
+    brush.selectAll().enter().attr('stroke', 'none');
+    return svg;
+  }
 
   // onMount(() => {
-  //   chart = new Chart(canvas, {
-  //     type: 'bar',
-  //     data: { labels: [], datasets: [] },
-  //     options: {
-  //       responsive: false,
-  //       animation: false,
-  //       // parsing: false,
-  //       plugins: { legend: { display: false } },
-  //       scales: {
-  //         x: { grid: { display: false } },
-  //         y: { grid: { drawBorder: false, color: '#ffffff55', lineWidth: 0.5 } }
-  //       }
-  //     }
-  //   });
+  //   const rand = d3.randomUniform();
+  //   const data = Array.from({ length: 100 }, () => ({ x: rand() }));
+
+  //   console.log(data);
+
+  //   const svg = Histogram(data, { x: (d) => d.x, label: 'hi' });
+  //   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  //   div.appendChild(svg.node()!);
   // });
-
-  const updatePlot = oneLRU((name: any) => {
-    if (subdiv) {
-      div.removeChild(subdiv);
-    }
-
-    // const data = $sFeatureData.data;
-
-    // const binned = d3.bin()(data as number[]);
-    // const label = [];
-    // const b = [];
-
-    // for (let i = 0; i < binned.length; i++) {
-    //   label.push(binned[i].x0);
-    //   b.push(binned[i].length);
-    // }
-
-    // chart.data = {
-    //   labels: label,
-    //   datasets: [{ data: b, borderWidth: 0, backgroundColor: '#fde68a' }]
-    // };
-    // chart.update();
-    // console.log(b);
-    const n = $sFeatureData.data[$sId.idx!];
-
-    subdiv = Plot.plot({
-      x: { label: $sFeatureData.unit ?? '' },
-      y: {
-        // percent: true,
-        grid: true
-      },
-      color: {
-        interpolate: d3.interpolateTurbo,
-        domain: [0, 10]
-      },
-      marks: [
-        Plot.rectY(
-          $sFeatureData.data.map((x) => ({ value: x })),
-          Plot.binX(
-            { y: 'count', fill: 'median' },
-            { x: 'value', thresholds: 'sturges', fill: 'value' }
-          )
-        ),
-        Plot.ruleY([0]),
-        tooltip(Plot)(
-          $sFeatureData.data.map((x) => ({ value: x })),
-          Plot.binX(
-            { y: 'count', fill: 'median' },
-            { x: 'value', thresholds: 'sturges', fill: 'value' }
-          )
-        )
-      ],
-      marginLeft: 40,
-      marginTop: 35,
-      marginBottom: 30,
-      style: {
-        background: 'transparent',
-        fontSize: '18px'
-      }
-    });
-
-    const x = Plot.rectY(
-      $sFeatureData.data.map((x) => ({ value: x })),
-      Plot.binX(
-        { y: 'count', fill: 'median' },
-        { x: 'value', thresholds: 'sturges', fill: 'value' }
-      )
-    );
-
-    div.appendChild(subdiv);
-  });
-
+  let svg;
   $: if (
-    $sEvent?.type === 'featureUpdated' &&
     div &&
     $sId.idx != undefined &&
-    $sFeatureData.dataType !== 'singular'
+    $sFeatureData.dataType !== 'singular' &&
+    ($sEvent?.type === 'featureUpdated' || $sEvent?.type === 'sampleUpdated')
   ) {
-    updatePlot($sFeatureData.name);
+    if (svg) div.removeChild(svg.node());
+    svg = Histogram($sFeatureData.data, { x: (x) => x });
+    div.appendChild(svg.node()!);
+    // updatePlot($sFeatureData.name);
   }
+
+  // $: if (minmax) {
+  //   $mask = $sFeatureData?.data.map((v) => v > minmax[0] && v < minmax[1]);
+  //   $sEvent = { type: 'maskUpdated' };
+  // }
 </script>
 
+<button
+  class="h-4 w-4"
+  on:click={() => {
+    $mask = $sFeatureData?.data.map((v) => v > 2 - Math.random() && v < 4 + 2 * Math.random() - 1);
+    $sEvent = { type: 'maskUpdated' };
+  }}>Hi</button
+>
 <div bind:this={div} class="relative overflow-visible p-2" />

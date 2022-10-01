@@ -64,7 +64,7 @@ export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
 
 export const sEvent = writable(
   undefined as
-    | { type: 'sampleUpdated' | 'featureUpdated' | 'pointsAdded' | 'viewAdjusted' }
+    | { type: 'sampleUpdated' | 'featureUpdated' | 'pointsAdded' | 'viewAdjusted' | 'maskUpdated' }
     | undefined
 );
 sEvent.subscribe(console.debug);
@@ -76,3 +76,5 @@ export const isOnline = writable(false);
 export const userState = writable({
   showImgControl: true
 });
+
+export const mask = writable(undefined as boolean[] | undefined);
