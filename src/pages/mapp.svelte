@@ -181,7 +181,7 @@
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
-    class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 px-2 py-1.5 text-xs backdrop-blur-lg"
+    class="ol-tippy pointer-events-none max-w-sm rounded bg-neutral-800/60 px-2 py-1.5 text-xs backdrop-blur-lg"
   />
 
   {#if sample}

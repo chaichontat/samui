@@ -60,7 +60,7 @@
 <Store />
 
 <main
-  class="flex flex-col overflow-x-hidden bg-slate-50 dark:divide-slate-800 dark:bg-slate-900 lg:h-screen lg:flex-row"
+  class="flex flex-col divide-neutral-800 overflow-x-hidden bg-neutral-900 lg:h-screen lg:flex-row"
   on:drop={handleDrop}
   on:dragenter={(e) => {
     if (dragTimeout) clearTimeout(dragTimeout); // Prevents flicker when drop div appears.

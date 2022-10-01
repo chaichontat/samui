@@ -60,7 +60,7 @@
 <div class="relative w-full">
   <input
     type="text"
-    class="w-full rounded-md border border-slate-400 bg-slate-100 py-[7px] px-4 shadow transition-colors dark:border-slate-600 dark:bg-slate-800"
+    class="w-full rounded-md border border-neutral-400 bg-neutral-100 py-[5px] px-3 shadow transition-colors dark:border-neutral-600 dark:bg-neutral-800"
     bind:value={search}
     on:click={(ev) => {
       ev.currentTarget.select();
@@ -76,7 +76,7 @@
     <!-- See clickOutside for on:outclick. -->
     <div
       out:fade={{ duration: 100, easing: cubicOut }}
-      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg px-2 pt-2 pb-4"
+      class="bg-default absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg px-2 pt-2 pb-4 shadow shadow-white"
       use:clickOutside
       on:click={() => (showSearch = false)}
       on:outclick={() => (showSearch = false)}
@@ -102,7 +102,7 @@
       {/each}
 
       {#if candidates.length === 0}
-        <i class="py-1 px-3 text-slate-300">No features found.</i>
+        <i class="py-1 px-3 text-neutral-300">No features found.</i>
       {/if}
     </div>
   {/if}
@@ -110,6 +110,6 @@
 
 <style lang="postcss">
   .dark input::placeholder {
-    @apply text-slate-100;
+    @apply text-neutral-100;
   }
 </style>

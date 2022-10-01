@@ -75,6 +75,6 @@
   }
 
   div :global(.legend-name) {
-    @apply text-end text-sm font-medium text-slate-50;
+    @apply text-end text-sm font-medium text-neutral-50;
   }
 </style>

@@ -86,7 +86,7 @@
     };
   }
   const disabled =
-    'disabled:cursor-auto disabled:bg-slate-500 hover:disabled:bg-slate-500 disabled:text-slate-300';
+    'disabled:cursor-auto disabled:bg-neutral-500 hover:disabled:bg-neutral-500 disabled:text-neutral-300';
 </script>
 
 <section class="flex flex-col gap-y-1">
@@ -133,7 +133,7 @@
 
       <button
         class={classes(
-          'button my-0 h-full w-min bg-slate-600 py-1 px-2 duration-75 hover:bg-slate-500',
+          'button my-0 h-full w-min bg-neutral-600 py-1 px-2 duration-75 hover:bg-neutral-500',
           disabled
         )}
         disabled={$annotating.keys.length === 0}
@@ -156,7 +156,7 @@
       <label class="flex items-center gap-x-1 hover:underline">
         <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
         <button
-          class={classes($annotating.currKey === i ? 'font-bold' : 'font-normal text-slate-300')}
+          class={classes($annotating.currKey === i ? 'font-bold' : 'font-normal text-neutral-300')}
           on:click={() => ($annotating.currKey = i)}>{key}</button
         >
         {nPoints[key] ?? 0}
@@ -184,7 +184,7 @@
       </label>
     </div>
   </div>
-  <!-- <div class="mx-auto mt-1 h-[1px] w-1/2 bg-slate-700" /> -->
+  <!-- <div class="mx-auto mt-1 h-[1px] w-1/2 bg-neutral-700" /> -->
   <!-- Selections -->
   {#if $annotating.annotating && $annotating.keys.length > 0}
     <!-- <SelectionBox

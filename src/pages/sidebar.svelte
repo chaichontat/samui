@@ -16,7 +16,7 @@
   <Nav />
 </div>
 
-<div class="mt-3 flex flex-col items-center gap-y-4 ">
+<div class="flex flex-col items-center divide-y divide-neutral-600 border-y border-y-neutral-600">
   <Section title="Recent Features" defaultOpen>
     <Recent />
   </Section>
@@ -30,7 +30,7 @@
     <Plot />
   </Section>
 
-  <Section title="Annotations" bind:toggled={annToggled} togglable>
+  <Section title="Annotations" bind:toggled={annToggled} togglable class="overflow-visible">
     <Annotate toggled={annToggled} />
   </Section>
 
@@ -53,19 +53,19 @@
   <Section title="Metadata">
     {#if $sSample?.metadataMd}
       <Markdown
-        class="overflow-x-scroll pl-4 -indent-4 font-mono text-sm"
+        class="overflow-x-scroll pl-4 -indent-4 font-mono text-xs"
         url={$sSample?.metadataMd.url}
       />
     {:else}
       No metadata.
     {/if}
   </Section>
+</div>
 
-  <div class="font-mono text-sm">
-    {#if $sPixel}
-      Position: ({Math.round($sPixel[0])}, {Math.round($sPixel[1])})
-    {/if}
-  </div>
+<div class="mt-3 text-center font-mono text-sm">
+  {#if $sPixel}
+    Position: ({Math.round($sPixel[0])}, {Math.round($sPixel[1])})
+  {/if}
 </div>
 
 <div class="mt-6 text-sm">
@@ -78,11 +78,11 @@
   }
 
   :global(.tab) {
-    @apply w-full rounded-lg py-2.5 px-2 text-sm font-medium leading-5 text-slate-500 ring-opacity-60 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
+    @apply w-full rounded-lg py-2.5 px-2 text-sm font-medium leading-5 text-neutral-500 ring-opacity-60 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
   }
 
   :global(.dark .tab) {
-    @apply bg-slate-800 text-slate-100 ring-white ring-offset-slate-500 hover:bg-slate-700;
+    @apply bg-neutral-800 text-neutral-100 ring-white ring-offset-neutral-500 hover:bg-neutral-700;
   }
 
   :global(.tab-selected) {
@@ -90,6 +90,6 @@
   }
 
   :global(.dark .tab-selected) {
-    @apply bg-slate-600 text-white hover:bg-slate-600 active:bg-slate-500;
+    @apply bg-neutral-600 text-white hover:bg-neutral-600 active:bg-neutral-500;
   }
 </style>

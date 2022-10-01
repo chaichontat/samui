@@ -39,12 +39,12 @@
 
 <!-- Sidebar -->
 <div
-  class="resizer h-full w-1 cursor-ew-resize bg-gray-200 dark:bg-gray-800"
+  class="resizer h-full w-1 cursor-ew-resize bg-neutral-200 dark:bg-neutral-800"
   class:hidden={!showSidebar}
   use:resizable
 />
 <aside
-  class="relative flex h-full w-full flex-1 flex-col overflow-y-auto px-4"
+  class="relative flex h-full w-full flex-1 flex-col overflow-y-auto"
   class:hidden={!showSidebar}
 >
   <Sidebar bind:showSidebar />
