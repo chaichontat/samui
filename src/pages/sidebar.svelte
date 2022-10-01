@@ -1,7 +1,8 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
   import { sPixel, sSample } from '$lib/store';
-  import Annotate from '$src/lib/sidebar/annotate.svelte';
+  import FeatAnnotate from '$src/lib/sidebar/annotation/featAnnotate.svelte';
+  import ROIAnnotate from '$src/lib/sidebar/annotation/roiAnnotate.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Markdown from '$src/lib/sidebar/markdown.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
@@ -21,6 +22,14 @@
     <Recent />
   </Section>
 
+  {#if $sSample?.overlayParams?.importantFeatures}
+    <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
+      {#each $sSample?.overlayParams?.importantFeatures as feature}
+        <HoverableFeature {feature} />
+      {/each}
+    </Section>
+  {/if}
+
   <!-- <Section title="Overlay Options" defaultOpen>
       Min value: <input type="range" />
       Max value: <input type="range" />
@@ -30,17 +39,13 @@
     <Plot />
   </Section>
 
-  <Section title="Annotations" bind:toggled={annToggled} togglable class="overflow-visible">
-    <Annotate toggled={annToggled} />
+  <Section title="ROI Annotation" class="overflow-visible" defaultOpen>
+    <ROIAnnotate />
   </Section>
 
-  {#if $sSample?.overlayParams?.importantFeatures}
-    <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
-      {#each $sSample?.overlayParams?.importantFeatures as feature}
-        <HoverableFeature {feature} />
-      {/each}
-    </Section>
-  {/if}
+  <Section title="Feature Annotation" bind:toggled={annToggled} togglable class="overflow-visible">
+    <!-- <FeatAnnotate toggled={annToggled} /> -->
+  </Section>
 
   <Section title="Notes" defaultOpen>
     {#if $sSample?.notesMd}

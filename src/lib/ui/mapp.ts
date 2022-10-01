@@ -4,6 +4,7 @@ import Zoom from 'ol/control/Zoom.js';
 
 import { get } from 'svelte/store';
 
+import { Draww } from '$lib/sidebar/annotation/selector';
 import type { CoordsData } from '$src/lib/data/objects/coords';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
@@ -11,7 +12,6 @@ import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, MutableSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import { throttle } from 'lodash-es';
 import { mapTiles, overlays, setHoverSelect, sEvent, sOverlay, sPixel } from '../store';
-import { Draww } from './overlays/selector';
 
 export class Mapp extends Deferrable {
   map?: Map;

@@ -2,7 +2,7 @@
   import { getSample, getSampleListFromQuery } from '$lib/data/preload';
   import { isOnline } from '$lib/store';
   import Modal from '$src/lib/components/modal.svelte';
-  import { processFolder } from '$src/lib/data/byod';
+  import { processHandle } from '$src/lib/data/byod';
   import { samples } from '$src/lib/store';
   import Store from '$src/lib/store.svelte';
   import MainMap from '$src/pages/mainMap.svelte';
@@ -38,19 +38,16 @@
     e.preventDefault();
     e.stopPropagation();
 
-    if ($isOnline) {
-      alert('You cannot add samples while browsing web-based sample(s).');
-      return;
-    }
-
     const file = (e as DragEvent).dataTransfer?.items[0];
     if (!file) return;
 
     // https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/getAsFileSystemHandle
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    const handle = file.getAsFileSystemHandle() as Promise<FileSystemDirectoryHandle>;
-    processFolder(handle, true).catch(console.error);
+    const handle = file.getAsFileSystemHandle() as Promise<
+      FileSystemDirectoryHandle | FileSystemFileHandle
+    >;
+    processHandle(handle, true).catch(console.error);
   }
   let dragging = false;
   let dragTimeout: ReturnType<typeof setTimeout>;
