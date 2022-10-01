@@ -352,15 +352,7 @@ export class MutableSpots extends CanvasSpots {
 
   names: string[] = [];
 
-  add(idx: number, name: string, ov: CoordsData, ant: string[], fromMultiple = false) {
-    if (ov.mPerPx == undefined) throw new Error('mPerPx undefined.');
-    let f = this.get(idx);
-    if (f == undefined) {
-      // Null to generate Point, instead of Circle.
-      f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
-      this.source.addFeature(f);
-    }
-
+  updateFeature(f: Feature<Geometry>, name: string, ant: string[]) {
     f.set('value', name);
     f.setStyle(
       new Style({
@@ -375,7 +367,33 @@ export class MutableSpots extends CanvasSpots {
         })
       })
     );
+    return f;
+  }
+
+  add(idx: number, name: string, ov: CoordsData, ant: string[], fromMultiple = false) {
+    if (ov.mPerPx == undefined) throw new Error('mPerPx undefined.');
+    let f = this.get(idx);
+    if (f == undefined) {
+      // Null to generate Point, instead of Circle.
+      f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
+      this.source.addFeature(f);
+    }
+    this.updateFeature(f, name, ant);
     if (!fromMultiple) sEvent.set({ type: 'pointsAdded' });
+  }
+
+  addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
+    const toAdd = [];
+    for (const idx of idxs) {
+      let f = this.get(idx);
+      if (f == undefined) {
+        f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
+        toAdd.push(f);
+      }
+      this.updateFeature(f, name, ant);
+    }
+    this.source.addFeatures(toAdd);
+    sEvent.set({ type: 'pointsAdded' });
   }
 
   get length() {
@@ -392,11 +410,6 @@ export class MutableSpots extends CanvasSpots {
 
   clear() {
     this.source.clear();
-  }
-
-  addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
-    idxs.forEach((idx) => this.add(idx, name, ov, ant, true));
-    sEvent.set({ type: 'pointsAdded' });
   }
 
   addFromPolygon(polygonFeat: Feature<Polygon>, name: string, ov: CoordsData, ant: string[]) {
