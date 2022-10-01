@@ -63,7 +63,7 @@
   <span class="inline-block w-full rounded-md shadow-sm">
     <Listbox value={_active} on:change={(e) => handleChange(e.detail.name ?? e.detail)} let:open>
       <ListboxButton
-        class="relative w-full max-w-md cursor-pointer rounded-md border bg-neutral-100/90 py-2 pl-3 pr-10 text-left text-neutral-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-neutral-800/80 dark:text-neutral-100 sm:leading-5"
+        class="relative w-full max-w-md cursor-pointer rounded-md border border-neutral-400 bg-neutral-100/90 py-2 pl-3 pr-10 text-left text-neutral-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-neutral-800/80 dark:text-neutral-100 sm:leading-5"
       >
         <span class="block truncate font-medium">{_active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">

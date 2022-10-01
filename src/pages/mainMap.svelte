@@ -39,7 +39,7 @@
 
 <!-- Sidebar -->
 <div
-  class="resizer h-full w-1 cursor-ew-resize bg-neutral-200 dark:bg-neutral-800"
+  class="h-full w-0.5 cursor-ew-resize bg-neutral-800"
   class:hidden={!showSidebar}
   use:resizable
 />

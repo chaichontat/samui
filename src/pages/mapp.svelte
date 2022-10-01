@@ -175,13 +175,13 @@
     id={mapName}
     bind:this={mapElem}
     on:click={() => dispatch('mapClick')}
-    class="map h-full w-full shadow-lg"
+    class="map h-full w-full"
     class:small={showImgControl && small}
   />
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
-    class="ol-tippy pointer-events-none max-w-sm rounded bg-neutral-800/60 px-2 py-1.5 text-xs backdrop-blur-lg"
+    class="ol-tippy pointer-events-none max-w-sm rounded bg-neutral-800/80 px-2 py-1.5 text-xs backdrop-blur-lg"
   />
 
   {#if sample}
@@ -230,10 +230,10 @@
   }
 
   .map :global(.ol-zoom-in) {
-    @apply bg-blue-800/90 text-neutral-200;
+    @apply bg-slate-800/90 text-neutral-200;
   }
 
   .map :global(.ol-zoom-out) {
-    @apply bg-blue-800/90 text-neutral-200;
+    @apply bg-slate-800/90 text-neutral-200;
   }
 </style>

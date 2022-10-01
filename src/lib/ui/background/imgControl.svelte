@@ -88,7 +88,7 @@
 
 <div
   bind:this={table}
-  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-neutral-200/80 bg-opacity-80 px-1 py-1 font-medium ring-4 ring-neutral-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out dark:bg-neutral-800/80"
+  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-neutral-800/80 px-1 py-1 font-medium ring-4 ring-neutral-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out"
   class:hidden={!(image && imgCtrl)}
   draggable
 >

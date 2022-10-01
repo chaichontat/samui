@@ -358,7 +358,7 @@ export class MutableSpots extends CanvasSpots {
       new Style({
         image: new RegularShape({
           fill: new Fill({
-            color: d3.schemeTableau10[ant.findIndex((x) => x === name) % 10] + 'ee'
+            color: d3.schemeTableau10[ant.findIndex((x) => x === name) % 10] + 'aa'
           }),
           points: 5,
           radius: 10,

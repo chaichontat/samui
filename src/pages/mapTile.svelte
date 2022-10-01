@@ -167,10 +167,9 @@
     </div>
 
     <div
-      class="h-full w-full border-2"
-      class:border-neutral-800={$sMapId !== hieN}
+      class="h-full w-full border"
+      class:border-neutral-900={$sMapId !== hieN || ($sMapId === hieN && $mapTiles.length === 1)}
       class:border-neutral-100={$sMapId === hieN && $mapTiles.length > 1}
-      class:border-transparent={$sMapId === hieN && $mapTiles.length === 1}
     >
       <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />
     </div>
