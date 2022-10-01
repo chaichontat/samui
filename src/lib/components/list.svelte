@@ -63,7 +63,7 @@
   <span class="inline-block w-full rounded-md shadow-sm">
     <Listbox value={_active} on:change={(e) => handleChange(e.detail.name ?? e.detail)} let:open>
       <ListboxButton
-        class="relative w-full max-w-md cursor-pointer rounded-md border bg-slate-100/90 py-2 pl-3 pr-10 text-left text-slate-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-slate-800/80 dark:text-slate-100 sm:leading-5"
+        class="relative w-full max-w-md cursor-pointer rounded-md border border-neutral-400 bg-neutral-100/90 py-2 pl-3 pr-10 text-left text-neutral-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-neutral-800/80 dark:text-neutral-100 sm:leading-5"
       >
         <span class="block truncate font-medium">{_active?.name}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -72,7 +72,7 @@
           {:else}
             <Icon
               src={ChevronUpDown}
-              class="h-5 w-5 stroke-current stroke-2 text-slate-500 dark:text-slate-200"
+              class="h-5 w-5 stroke-current stroke-2 text-neutral-500 dark:text-neutral-200"
             />
           {/if}
         </span>
@@ -118,7 +118,7 @@
             {/each}
 
             <!-- {#if addSample}
-              <div class="mt-1 border-t border-gray-500 px-1 pt-1">
+              <div class="mt-1 border-t border-neutral-500 px-1 pt-1">
                 <ListboxOption
                   value="addSample"
                   class="hover-default relative cursor-pointer select-none rounded py-2 pl-3 pr-9 italic focus:outline-none"

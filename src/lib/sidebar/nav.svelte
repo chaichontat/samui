@@ -16,8 +16,8 @@
   }
 </script>
 
-<nav class="flex items-center gap-x-3 bg-gray-100 py-3 shadow backdrop-blur dark:bg-gray-900">
-  <div class="mt-1 flex-grow">
+<nav class="flex items-center gap-x-3 bg-neutral-900 px-3 pt-4 pb-3 text-mb backdrop-blur">
+  <div class="flex-grow">
     <FeatureSearchBox {featureGroup} />
   </div>
   <!-- <Darkswitch /> Will be back! -->

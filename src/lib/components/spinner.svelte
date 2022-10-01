@@ -1,5 +1,5 @@
 <svg
-  class="-ml-1 mr-3 h-5 w-5 animate-spin text-slate-700 dark:text-slate-200"
+  class="-ml-1 mr-3 h-5 w-5 animate-spin text-neutral-700 dark:text-neutral-200"
   xmlns="http://www.w3.org/2000/svg"
   fill="none"
   viewBox="0 0 24 24"

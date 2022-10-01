@@ -1,10 +1,12 @@
-from typing import Literal
+from pathlib import Path
+from typing import Callable, Literal
 
 import pandas as pd
 from anndata import AnnData
 from scipy.sparse import csc_matrix, csr_matrix
+from typing_extensions import Self
 
-from .utils import ReadonlyModel, Url, concat
+from .utils import ReadonlyModel, Url, Writable, concat
 
 FeatureType = Literal["categorical", "quantitative", "singular"]
 
@@ -18,7 +20,7 @@ class CoordId(Coord):
     id: str
 
 
-class CoordParams(ReadonlyModel):
+class CoordParams(Writable):
     """
     name: Name of the overlay
     type: Type of the overlay 'single', 'multi'
@@ -38,7 +40,7 @@ class CoordParams(ReadonlyModel):
     size: float | None = None
 
 
-class PlainCSVParams(ReadonlyModel):
+class PlainCSVParams(Writable):
     type: Literal["plainCSV"] = "plainCSV"
     name: str
     url: Url
@@ -55,6 +57,12 @@ class ChunkedCSVParams(ReadonlyModel):
     headerUrl: Url
     dataType: FeatureType = "quantitative"
     unit: str | None = None
+
+    def write(self, f: Callable[[Path], None], header: Callable[[Path], None] | None = None) -> Self:
+        f(Path(self.url.url))
+        if header:
+            header(Path(self.headerUrl.url))
+        return self
 
 
 class ChunkedCSVHeader(ReadonlyModel):

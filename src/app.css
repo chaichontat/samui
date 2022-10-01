@@ -7,7 +7,7 @@
       'Apple Color Emoji', 'Segoe UI Emoji';
   }
   body {
-    @apply text-slate-900 dark:bg-slate-900 dark:text-slate-100;
+    @apply text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100;
   }
 }
 @tailwind components;
@@ -24,7 +24,7 @@
   }
 
   .splash-button > span {
-    @apply flex items-center gap-x-2 rounded-md bg-slate-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in  dark:bg-gray-900 dark:bg-opacity-80;
+    @apply flex items-center gap-x-2 rounded-md bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in  dark:bg-neutral-900 dark:bg-opacity-80;
   }
 
   .svg-icon {
@@ -34,19 +34,19 @@
 @tailwind utilities;
 @layer utilities {
   .text-default {
-    @apply text-slate-800  dark:text-slate-100;
+    @apply text-neutral-800  dark:text-neutral-100;
   }
 
   .bg-default {
-    @apply bg-slate-100/90 text-slate-800  dark:bg-slate-800/90 dark:text-slate-100;
+    @apply bg-neutral-100/90 text-neutral-800  dark:bg-neutral-800/90 dark:text-neutral-100;
   }
 
   .border-default {
-    @apply border-slate-300 dark:border-slate-600;
+    @apply border-neutral-300 dark:border-neutral-600;
   }
 
   .hover-default {
-    @apply hover:bg-slate-300/80 active:bg-slate-400/80 dark:hover:bg-slate-700/80 dark:active:bg-slate-600/80;
+    @apply hover:bg-neutral-300/80 active:bg-neutral-400/80 dark:hover:bg-neutral-700/80 dark:active:bg-neutral-600/80;
   }
 
   .picker {
@@ -62,10 +62,10 @@
   }
 
   div > .tippy-box {
-    @apply rounded-lg bg-slate-700/80 py-0.5 px-1 text-center backdrop-blur;
+    @apply rounded-lg bg-neutral-700/80 py-0.5 px-1 text-center backdrop-blur;
   }
 
   div > .tippy-box > .tippy-arrow {
-    @apply text-slate-700/80;
+    @apply text-neutral-700/80;
   }
 }

@@ -82,14 +82,13 @@ export function genSpotStyle(type: FeatureType, spotDiamPx: number, scale = true
 
   if (type === 'quantitative') {
     const colors = [...Array(10).keys()].flatMap((i) => [i, d3.interpolateTurbo(i / 10)]);
-    colors[1] += 'ff';
+    // colors[1] += 'ff';
     return {
       variables: { opacity: 0.8 },
       symbol: {
         ...common,
         color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
-        opacity: ['var', 'opacity']
-        // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
+        opacity: ['clamp', ['*', ['var', 'opacity'], ['get', 'opacity']], 0.15, 1] // Floor before can't hover above.
       }
     };
   } else {

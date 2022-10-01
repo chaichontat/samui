@@ -65,6 +65,20 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this._rebuildLayer().catch(console.error);
   }
 
+  updateMask(mask: boolean[]) {
+    if (!this.features) {
+      console.error('No features to update');
+      return;
+    }
+    if (mask.length !== this.features.length) {
+      throw new Error('Mask length does not match features');
+    }
+
+    for (const [i, f] of this.features.entries()) {
+      f.set('opacity', mask[i] ? 1 : 0.15);
+    }
+  }
+
   _updateProperties(sample: Sample, fn: FeatureAndGroup, { dataType, data }: RetrievedData) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
@@ -93,8 +107,10 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this.currStyle = dataType;
 
     for (const [i, f] of this.features.entries()) {
-      f.setProperties({ value: data[i] });
+      f.set('value', data[i]); // Cannot use silent. Update seems specific to each feature and value.
+      f.set('opacity', 1);
     }
+    this.layer?.changed();
   }
 
   _updateOutline() {
@@ -336,21 +352,13 @@ export class MutableSpots extends CanvasSpots {
 
   names: string[] = [];
 
-  add(idx: number, name: string, ov: CoordsData, ant: string[], fromMultiple = false) {
-    if (ov.mPerPx == undefined) throw new Error('mPerPx undefined.');
-    let f = this.get(idx);
-    if (f == undefined) {
-      // Null to generate Point, instead of Circle.
-      f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
-      this.source.addFeature(f);
-    }
-
+  updateFeature(f: Feature<Geometry>, name: string, ant: string[]) {
     f.set('value', name);
     f.setStyle(
       new Style({
         image: new RegularShape({
           fill: new Fill({
-            color: d3.schemeTableau10[ant.findIndex((x) => x === name) % 10] + 'ee'
+            color: d3.schemeTableau10[ant.findIndex((x) => x === name) % 10] + 'aa'
           }),
           points: 5,
           radius: 10,
@@ -359,7 +367,33 @@ export class MutableSpots extends CanvasSpots {
         })
       })
     );
+    return f;
+  }
+
+  add(idx: number, name: string, ov: CoordsData, ant: string[], fromMultiple = false) {
+    if (ov.mPerPx == undefined) throw new Error('mPerPx undefined.');
+    let f = this.get(idx);
+    if (f == undefined) {
+      // Null to generate Point, instead of Circle.
+      f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
+      this.source.addFeature(f);
+    }
+    this.updateFeature(f, name, ant);
     if (!fromMultiple) sEvent.set({ type: 'pointsAdded' });
+  }
+
+  addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
+    const toAdd = [];
+    for (const idx of idxs) {
+      let f = this.get(idx);
+      if (f == undefined) {
+        f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
+        toAdd.push(f);
+      }
+      this.updateFeature(f, name, ant);
+    }
+    this.source.addFeatures(toAdd);
+    sEvent.set({ type: 'pointsAdded' });
   }
 
   get length() {
@@ -376,11 +410,6 @@ export class MutableSpots extends CanvasSpots {
 
   clear() {
     this.source.clear();
-  }
-
-  addMultiple(idxs: number[], name: string, ov: CoordsData, ant: string[]) {
-    idxs.forEach((idx) => this.add(idx, name, ov, ant, true));
-    sEvent.set({ type: 'pointsAdded' });
   }
 
   addFromPolygon(polygonFeat: Feature<Polygon>, name: string, ov: CoordsData, ant: string[]) {

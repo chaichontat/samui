@@ -9,7 +9,7 @@ export const bgColors = [
   'bg-fuchsia-500 hover:bg-fuchsia-400',
   'bg-cyan-500 hover:bg-cyan-400',
   'bg-yellow-500 hover:bg-yellow-400',
-  'bg-gray-200 hover:bg-gray-100'
+  'bg-neutral-200 hover:bg-neutral-100'
 ] as const;
 
 export type BandInfo = { enabled: boolean; color: typeof colors[number]; max: number };

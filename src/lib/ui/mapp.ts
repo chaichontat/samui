@@ -67,6 +67,8 @@ export class Mapp extends Deferrable {
     }
 
     this._deferred.resolve();
+    // Deals with sidebar showing up or not.
+    setTimeout(() => this.map.updateSize(), 100);
     this.mounted = true;
   }
 

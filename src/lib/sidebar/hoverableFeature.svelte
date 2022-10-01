@@ -20,8 +20,8 @@
   <slot>
     <div
       class={$hoverSelect.selected?.feature === feature.feature
-        ? 'drop-shadow-3xl font-semibold shadow-white'
-        : ''}
+        ? 'drop-shadow-3xl font-semibold underline opacity-100 shadow-white'
+        : 'opacity-80'}
     >
       {feature.feature}
     </div>

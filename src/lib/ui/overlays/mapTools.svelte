@@ -1,16 +1,21 @@
 <script lang="ts">
-  import { sId, sSample } from '$lib/store';
+  import { sId, sMapp, sSample, userState } from '$lib/store';
+  import type { Mapp } from '$lib/ui/mapp';
   import { Camera, EyeSlash } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { saveAs } from 'file-saver';
   import { toBlob } from 'html-to-image';
-  import type { Mapp } from '../mapp';
   import { tooltip } from '../utils';
   import OverlayTool from './overlayTool.svelte';
 
-  export let map: Mapp;
-  export let showImgControl: boolean;
   export let width = 0;
+  let map: Mapp;
+  $: map = $sMapp;
+  $: showImgControl = $userState.showImgControl;
+
+  $: haveFeatures =
+    Object.keys($sSample?.coords ?? {}).length > 0 ||
+    Object.keys($sSample?.features ?? {}).length > 0;
 
   function screenshot() {
     if (!map.map) return;
@@ -35,29 +40,30 @@
   }
 </script>
 
-<section
-  class="donotsave absolute right-4 top-4 z-20 flex gap-x-4"
-  class:top-16={width < 500 && showImgControl}
->
-  <!-- Screenshot -->
-  <button class="z-20 mt-1 h-9" use:tooltip={{ content: 'Screenshot' }} on:click={screenshot}>
-    <Icon src={Camera} class="svg-icon h-6 w-6" />
-  </button>
+<section class="donotsave absolute right-1 top-2 z-20 flex gap-x-4">
+  {#if showImgControl && haveFeatures}
+    <div
+      class="inline-flex h-min flex-col gap-y-1 rounded-lg bg-neutral-800/80 p-2 px-3 text-sm font-medium backdrop-blur-lg dark:text-white/90"
+    >
+      <OverlayTool {map} />
+    </div>
+  {/if}
 
-  <!-- Show/hide -->
-  <button
-    class="z-20 mt-1 h-9"
-    class:pr-2={showImgControl}
-    on:click={() => (showImgControl = !showImgControl)}
-    use:tooltip={{ content: 'Show/hide' }}
-  >
-    <Icon src={EyeSlash} class="svg-icon h-6 w-6" />
-  </button>
+  <div class="mt-[47px] mr-2 flex flex-col gap-y-4">
+    <!-- Show/hide -->
+    <button
+      class="z-20"
+      on:click={() => ($userState.showImgControl = !showImgControl)}
+      use:tooltip={{ content: 'Show/hide' }}
+    >
+      <Icon src={EyeSlash} class="svg-icon h-6 w-6" />
+    </button>
+
+    <!-- Screenshot -->
+    <button class="z-20" use:tooltip={{ content: 'Screenshot' }} on:click={screenshot}>
+      <Icon src={Camera} class="svg-icon h-6 w-6" />
+    </button>
+  </div>
 
   <!-- Overlay selector -->
-  <div>
-    {#if (showImgControl && Object.keys($sSample?.coords ?? {}).length > 0) || Object.keys($sSample?.features ?? {}).length > 0}
-      <OverlayTool {map} />
-    {/if}
-  </div>
 </section>

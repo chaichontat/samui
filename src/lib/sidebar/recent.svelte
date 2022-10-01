@@ -21,6 +21,6 @@
       <HoverableFeature {feature} />
     {/each}
   {:else}
-    <span class="mx-auto text-gray-400">No recent features (yet).</span>
+    <span class="mx-auto text-neutral-400">No recent features (yet).</span>
   {/if}
 </div>

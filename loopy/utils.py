@@ -1,10 +1,14 @@
 # pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 import gzip
 import json
-from typing import Any, Callable, Literal
+import os
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any, Callable, Generator, Literal
 
 import numpy as np
 from pydantic import BaseModel
+from typing_extensions import Self
 
 
 class ReadonlyModel(BaseModel):
@@ -18,6 +22,28 @@ class Url(ReadonlyModel):
 
     def __init__(self, url: str, type: Literal["local", "network"] = "local"):
         super().__init__(url=url, type=type)  # type: ignore
+
+    def write(self, f: Callable[[Path], None]) -> Self:
+        f(Path(self.url))
+        return self
+
+
+class Writable(ReadonlyModel):
+    url: Url
+
+    def write(self, f: Callable[[Path], None]) -> Self:
+        f(Path(self.url.url))
+        return self
+
+
+@contextmanager
+def setwd(path: Path) -> Generator[None, None, None]:
+    ori = Path().absolute()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(ori)
 
 
 def concat_json(objs: list[Any]) -> tuple[np.ndarray, bytearray]:

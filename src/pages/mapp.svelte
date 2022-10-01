@@ -1,14 +1,16 @@
 <script lang="ts">
   import {
     annotating,
+    mask,
     overlays,
     overlaysFeature,
+    sEvent,
     sFeatureData,
     sId,
     sMapp,
-    sOverlay
+    sOverlay,
+    userState
   } from '$lib/store';
-  import Colorbar from '$src/lib/components/colorbar.svelte';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
@@ -23,7 +25,7 @@
   export let sample: Sample | undefined;
   // let currSample: string;
   $: sample?.hydrate().then(updateSample).catch(console.error);
-
+  $: showImgControl = $userState.showImgControl;
   $: console.log(sample);
 
   export let uid: number;
@@ -37,8 +39,6 @@
   let height: number;
   let small = false;
   const dispatch = createEventDispatcher();
-
-  let showImgControl = true;
 
   onMount(() => {
     map.mount(mapElem, tippyElem);
@@ -78,7 +78,9 @@
 
         if (!isEqual($sFeatureData.coords.name, $annotating.annotatingCoordName)) {
           alert(
-            `Annotation: coords mismatch. Started with ${$sFeatureData.coords.name}. Current active overlay is ${$annotating.annotatingCoordName}.`
+            `Annotation: coords mismatch. Started with ${
+              $sFeatureData.coords.name
+            }. Current active overlay is ${$annotating.annotatingCoordName!}.`
           );
           return;
         }
@@ -123,6 +125,10 @@
     if (!fn || isEqual(ol.currFeature, fn)) return;
     await ol.update(sample, fn);
   };
+
+  $: if ($sEvent?.type === 'maskUpdated') {
+    $overlays[$sOverlay]?.updateMask($mask);
+  }
 
   // Hover/overlay.
   $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);
@@ -169,19 +175,16 @@
     id={mapName}
     bind:this={mapElem}
     on:click={() => dispatch('mapClick')}
-    class="map h-full w-full shadow-lg"
+    class="map h-full w-full"
     class:small={showImgControl && small}
   />
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
-    class="ol-tippy pointer-events-none max-w-sm rounded bg-slate-800/60 px-2 py-1.5 text-xs backdrop-blur-lg"
+    class="ol-tippy pointer-events-none max-w-sm rounded bg-neutral-800/80 px-2 py-1.5 text-xs backdrop-blur-lg"
   />
 
   {#if sample}
-    <!-- Overlay and Colorbar -->
-    <MapTools {map} {width} bind:showImgControl />
-
     <!-- Img control -->
     <div
       class="absolute top-[72px] left-1 h-fit lg:left-4 lg:bottom-6"
@@ -189,10 +192,6 @@
       style="max-width: calc(100% - 20px);"
     >
       <ImgControl background={map.persistentLayers.background} />
-    </div>
-
-    <div class="pointer-events-none absolute right-6 bottom-4 z-20">
-      <Colorbar />
     </div>
   {/if}
 </section>
@@ -231,10 +230,10 @@
   }
 
   .map :global(.ol-zoom-in) {
-    @apply bg-blue-800/90 text-neutral-200;
+    @apply bg-slate-800/90 text-neutral-200;
   }
 
   .map :global(.ol-zoom-out) {
-    @apply bg-blue-800/90 text-neutral-200;
+    @apply bg-slate-800/90 text-neutral-200;
   }
 </style>

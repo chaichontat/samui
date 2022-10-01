@@ -108,6 +108,7 @@ export class Draww {
     });
 
     this.featuresBeforeMod[feature.getId() as number] = feature.clone();
+    console.log(feature);
     this._updatePolygonStyle(feature);
     this.points.addFromPolygon(
       feature,

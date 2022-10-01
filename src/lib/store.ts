@@ -11,7 +11,6 @@ import type { WebGLSpots } from './ui/overlays/points';
 export const samples: Writable<Record<string, Sample>> = writable({});
 
 export const sMapp = writable(undefined as Mapp | undefined);
-
 export const sMapId: Writable<number> = writable(0);
 export const mapTiles: Writable<number[]> = writable([0]);
 export const mapIdSample: Writable<Record<number, string>> = writable({});
@@ -64,7 +63,9 @@ export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
 });
 
 export const sEvent = writable(
-  undefined as { type: 'sampleUpdated' | 'featureUpdated' | 'pointsAdded' } | undefined
+  undefined as
+    | { type: 'sampleUpdated' | 'featureUpdated' | 'pointsAdded' | 'viewAdjusted' | 'maskUpdated' }
+    | undefined
 );
 sEvent.subscribe(console.debug);
 
@@ -72,3 +73,8 @@ export type Idx = { id?: number | string; idx?: number; source: string };
 export const sId = writable({ source: 'map' } as Idx);
 
 export const isOnline = writable(false);
+export const userState = writable({
+  showImgControl: true
+});
+
+export const mask = writable(undefined as boolean[] | undefined);

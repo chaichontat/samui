@@ -3,12 +3,13 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Callable, Literal
 
 import numpy as np
 import rasterio
 from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
+from typing_extensions import Self
 
 from loopy.utils import ReadonlyModel, Url
 
@@ -21,6 +22,10 @@ class ImageParams(ReadonlyModel):
     channels: list[str] | Literal["rgb"]
     defaultChannels: dict[Colors, str] | None = None
     mPerPx: float
+
+    def write(self, f: Callable[[Self], None]) -> Self:
+        f(self)
+        return self
 
 
 def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool = False) -> list[Path]:
@@ -42,13 +47,13 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
     else:
         names = ("_1", "_2")
 
-    ps = [path / (name + x + ".tif_") for x in names]
+    ps = [path / (name + x + ".tif") for x in names]
 
     for i in range(len(names)):
         # Not compressing here since we cannot control compression level.
         dst: DatasetWriter
         with rasterio.open(
-            ps[i],
+            ps[i].as_posix() + "_",
             "w",
             driver="GTiff",
             height=height,
@@ -76,7 +81,7 @@ def compress(ps: list[Path], quality: int = 90) -> None:
         with ThreadPoolExecutor() as executor:
             executor.map(
                 lambda p: subprocess.run(
-                    f"gdal_translate {p.as_posix()} {p.as_posix()[:-1]} -co TILED=YES -co COMPRESS=JPEG -co COPY_SRC_OVERVIEWS=YES -co JPEG_QUALITY={quality}",
+                    f"gdal_translate {p.as_posix() + '_'} {p.as_posix()} -co TILED=YES -co COMPRESS=JPEG -co COPY_SRC_OVERVIEWS=YES -co JPEG_QUALITY={quality}",
                     shell=True,
                     capture_output=True,
                     text=True,

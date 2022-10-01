@@ -1,6 +1,7 @@
 <script lang="ts">
   import List from '$lib/components/list.svelte';
   import { isOnline, mapIdSample, mapTiles, samples, sMapId, sMapp } from '$lib/store';
+  import type { Mapp as MappObj } from '$lib/ui/mapp';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
   import { ArrowsRightLeft, ArrowsUpDown, XMark } from '@steeze-ui/heroicons';
@@ -27,6 +28,7 @@
   //     .then(() => ($focus = $focus))
   //     .catch(console.error);
   // }
+  const adjustSize = (map: MappObj) => setTimeout(() => map.map!.updateSize(), 15);
 
   function handleSplit(i: number, mode: 'h' | 'v') {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
@@ -36,6 +38,7 @@
       console.debug(`Set mode to ${mode}`);
       hie.split = mode;
     }
+    adjustSize($sMapp);
 
     const newUId = Math.random();
     if (hie.split === mode) {
@@ -50,6 +53,7 @@
 
   function handleDelete(i: number) {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
+    adjustSize($sMapp);
     const old = hie.maps[i];
     hie.maps[i] = null;
     if (i === hie.maps.length - 1) {
@@ -109,7 +113,7 @@
       <!-- Sample list -->
       <div class="flex h-10 items-center gap-x-2 pr-4 lg:pr-0">
         {#if hie === 0 && width > 400}
-          <div class="font-semibold text-slate-900 dark:font-medium dark:text-slate-100">
+          <div class="font-semibold text-neutral-900 dark:font-medium dark:text-neutral-100">
             Sample:
           </div>
         {/if}
@@ -154,7 +158,7 @@
       {#if hie === 0 && width > 800 && !$isOnline}
         <!-- Upload your data -->
         <button
-          class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-gray-900 hover:text-slate-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-slate-100 dark:focus:ring-cyan-800"
+          class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-neutral-900 hover:text-neutral-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
           on:click={byod}
         >
           <span class="px-5 py-2 group-hover:bg-opacity-0"> Add Sample </span>
@@ -163,10 +167,9 @@
     </div>
 
     <div
-      class="h-full w-full border-2"
-      class:border-slate-800={$sMapId !== hieN}
-      class:border-slate-100={$sMapId === hieN && $mapTiles.length > 1}
-      class:border-transparent={$sMapId === hieN && $mapTiles.length === 1}
+      class="h-full w-full border"
+      class:border-neutral-900={$sMapId !== hieN || ($sMapId === hieN && $mapTiles.length === 1)}
+      class:border-neutral-100={$sMapId === hieN && $mapTiles.length > 1}
     >
       <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />
     </div>

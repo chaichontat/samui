@@ -5,7 +5,6 @@
   export let color = 'viridis' | 'turbo';
 
   let div: HTMLDivElement;
-
   let divs: Record<string, Element> = {};
 
   function updateLegend() {
@@ -35,7 +34,7 @@
       elem = Plot.legend({
         color: {
           interpolate: d3.interpolateTurbo,
-          domain: [0, 10]
+          domain: [0, 40]
         },
         width: 250,
         ticks: 5,
@@ -61,7 +60,7 @@
     div.appendChild(divs[ol]);
   }
 
-  $: if ($sEvent?.type === 'featureUpdated') updateLegend();
+  $: if ($sEvent?.type === 'featureUpdated' && div) updateLegend();
 </script>
 
 <div bind:this={div} />
@@ -76,6 +75,6 @@
   }
 
   div :global(.legend-name) {
-    @apply text-end text-sm font-medium text-slate-50;
+    @apply text-end text-sm font-medium text-neutral-50;
   }
 </style>

@@ -9,7 +9,6 @@ const names = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_I
 
 export default browser
   ? async () => {
-      isOnline.set(true);
       const out = {} as Record<string, Sample>;
       (await getSamples(names)).forEach((s) => (out[s.name] = s));
       samples.set(out);
@@ -33,6 +32,7 @@ function subsNetwork(dirUrl: string): (url: Url) => Url {
 
 function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
   const sub = subsNetwork(dirUrl);
+  isOnline.set(true);
 
   r.notesMd && (r.notesMd = sub(r.notesMd));
   r.metadataMd && (r.metadataMd = sub(r.metadataMd));
