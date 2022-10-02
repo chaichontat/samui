@@ -157,41 +157,44 @@ export class Mapp extends Deferrable {
     click?: (obj: { idx: number; id: number | string } | null) => void;
   }) {
     for (const [k, v] of Object.entries(funs)) {
-      this.map!.on(k as 'pointermove' | 'click', (e) => {
-        // Outlines take precedence. Either visible is fine.
-        this.setCurrPixel(e.coordinate as [number, number]);
-        const ol = get(sOverlay);
-        if (!ol) return;
-        const comp = get(overlays)[ol];
-        const currLayer = comp.layer;
-        if (!currLayer) {
-          console.error('No layer');
-          return;
-        }
-        if (this.map!.hasFeatureAtPixel(e.pixel)) {
-          // feature is overlay in our parlance.
-          this.map!.forEachFeatureAtPixel(
-            e.pixel,
-            (f) => {
-              const idx = f.getId() as number | undefined;
-              const id = f.get('id') as number | string;
-              if (idx == undefined) {
-                // 0 is falsy.
-                console.error("Overlay doesn't have an id.");
-                return true;
+      this.map!.on(
+        k as 'pointermove' | 'click',
+        throttle((e) => {
+          // Outlines take precedence. Either visible is fine.
+          this.setCurrPixel(e.coordinate as [number, number]);
+          const ol = get(sOverlay);
+          if (!ol) return;
+          const comp = get(overlays)[ol];
+          const currLayer = comp.layer;
+          if (!currLayer) {
+            console.error('No layer');
+            return;
+          }
+          if (this.map!.hasFeatureAtPixel(e.pixel)) {
+            // feature is overlay in our parlance.
+            this.map!.forEachFeatureAtPixel(
+              e.pixel,
+              (f) => {
+                const idx = f.getId() as number | undefined;
+                const id = f.get('id') as number | string;
+                if (idx == undefined) {
+                  // 0 is falsy.
+                  console.error("Overlay doesn't have an id.");
+                  return true;
+                }
+                v({ idx, id }, e);
+                return true; // Terminates search.
+              },
+              {
+                layerFilter: (layer) => layer === currLayer, // Ignore active spot.
+                hitTolerance: 20
               }
-              v({ idx, id }, e);
-              return true; // Terminates search.
-            },
-            {
-              layerFilter: (layer) => layer === currLayer, // Ignore active spot.
-              hitTolerance: 20
-            }
-          );
-        } else {
-          v(null, e);
-        }
-      });
+            );
+          } else {
+            v(null, e);
+          }
+        }, 10)
+      );
     }
   }
 }
