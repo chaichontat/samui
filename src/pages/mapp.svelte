@@ -14,7 +14,6 @@
   import type { Sample } from '$src/lib/data/objects/sample';
   import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
-  import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
 
   import { isEqual } from 'lodash-es';
   import 'ol/ol.css';

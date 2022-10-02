@@ -22,7 +22,7 @@
   //   }
 
   $: if ($sEvent?.type === 'sampleUpdated') {
-    $sMapp.persistentLayers.annotations.clear();
+    $sMapp.persistentLayers.rois.clear();
   }
 
   $: if (
@@ -31,7 +31,7 @@
     $annotating.annotatingCoordName !== $sFeatureData.coords.name
   ) {
     alert(
-      `This feature has different points. Annotation not possible. Please select a feature with the same points or reset annotations.`
+      `This feature has different points. Annotation not possible. Please select a feature with the same points or reset rois.`
     );
   }
 
@@ -58,17 +58,17 @@
 
   onMount(async () => {
     await map.promise;
-    map.persistentLayers.annotations.draw.on('drawend', () => ($annotating.selecting = false));
-    draw = map.persistentLayers.annotations;
+    map.persistentLayers.rois.draw.on('drawend', () => ($annotating.selecting = false));
+    draw = map.persistentLayers.rois;
   });
 
   // Enable/disable polygon draw
   $: if (map.map) {
     if ($annotating.selecting) {
-      map.map?.addInteraction(map.persistentLayers.annotations.draw);
+      map.map?.addInteraction(map.persistentLayers.rois.draw);
       map.map.getViewport().style.cursor = 'crosshair';
     } else {
-      map.map.removeInteraction(map.persistentLayers.annotations.draw);
+      map.map.removeInteraction(map.persistentLayers.rois.draw);
       map.map.getViewport().style.cursor = 'default';
     }
   }
@@ -137,8 +137,8 @@
         )}
         use:tooltip={{ content: 'Export ROIs as JSON' }}
         on:click={() => {
-          toJSON(`annotations_${$sSample.name}.json`, {
-            rois: $sMapp.persistentLayers.annotations.dump(),
+          toJSON(`rois_${$sSample.name}.json`, {
+            rois: $sMapp.persistentLayers.rois.dump(),
             mPerPx: $sSample.imgParams?.mPerPx,
             sample: $sSample.name,
             time: new Date().toISOString()
