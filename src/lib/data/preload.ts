@@ -3,7 +3,7 @@ import type { Url } from '../io';
 import { isOnline, samples } from '../store';
 import { Sample, type SampleParams } from './objects/sample';
 
-const s3_url = dev ? '' : '';
+const s3_url = dev ? '' : 'https://data2.loopybrowser.com/VisiumIF';
 // export const names = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 const names = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 
