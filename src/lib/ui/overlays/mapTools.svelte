@@ -49,7 +49,7 @@
     </div>
   {/if}
 
-  <div class="mt-[47px] mr-2 flex flex-col gap-y-4">
+  <div class="-mt-1 mr-2 flex flex-col gap-y-4 md:mt-[47px]">
     <!-- Show/hide -->
     <button
       class="z-20"

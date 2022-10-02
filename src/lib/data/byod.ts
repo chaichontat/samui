@@ -55,18 +55,24 @@ const schema: JSONSchemaType<SelectionData> = {
           type: { type: 'string', enum: ['Polygon', 'Circle', 'Point'] },
           color: { type: 'string', nullable: true },
           coords: {
-            type: 'array',
-            items: {
-              type: 'array',
-              items: {
+            oneOf: [
+              { type: 'array', items: { type: 'number' } },
+              {
                 type: 'array',
-                items: { type: 'number' }
+                items: {
+                  type: 'array',
+                  items: {
+                    type: 'array',
+                    items: { type: 'number' }
+                  }
+                }
               }
-            }
+            ]
           },
+          radius: { type: 'number', nullable: true },
           properties: { type: 'object', nullable: true }
         },
-        required: ['name', 'coords']
+        required: ['name', 'type', 'coords']
       }
     }
   },

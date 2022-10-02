@@ -2,13 +2,14 @@ import { annotating, sFeatureData } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
 import { Feature } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
-import { Polygon } from 'ol/geom.js';
-import { Draw, Modify } from 'ol/interaction.js';
+import { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
+import { Draw, Modify, Select, Snap, Translate } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style, Text } from 'ol/style.js';
+import CircleStyle from 'ol/style/Circle';
 import { get } from 'svelte/store';
 import type { Mapp } from '../../ui/mapp';
 import type { MutableSpots } from '../../ui/overlays/points';
@@ -19,20 +20,22 @@ export type ROIData = {
   name: string;
   type: Geometries;
   color?: string;
-  coords: Coordinate[][];
+  coords: Coordinate[][] | Coordinate;
+  radius?: number;
   properties?: Record<string, any>;
 };
 
 export class Draww {
   draw: Draw;
-  // snap: Snap;
+  snap: Snap;
   modify: Modify;
+  select: Select;
+  translate: Translate;
   currDrawType: Geometries = 'Polygon';
-  readonly source: VectorSource<Polygon>;
+  readonly source: VectorSource<Geometry>;
   readonly selectionLayer: VectorLayer<typeof this.source>;
 
   readonly map: Mapp;
-  readonly featuresBeforeMod: Record<number, Feature<Polygon>> = {};
 
   _currHighlight: number | null = null;
   _colorCounter = 0; // Ensures that color increases when deleting older selections.
@@ -40,42 +43,12 @@ export class Draww {
   constructor(map: Mapp) {
     this.source = new VectorSource();
     this.map = map;
-
     this.selectionLayer = new VectorLayer({ source: this.source });
     this.draw = new Draw({ type: 'Polygon', source: this.source });
+    this.select = new Select({ layers: [this.selectionLayer], style: initialStyle });
     this.modify = new Modify({ source: this.source });
-    // this.snap = new Snap({ source: this.source });
-  }
-
-  changeDrawType(type: 'Polygon' | 'Circle' | 'Point', first = false) {
-    if (type === this.currDrawType && !first) return;
-
-    if (this.draw) this.map.map!.removeInteraction(this.draw);
-    // if (this.snap) this.map.map!.removeInteraction(this.snap);
-    // this.snap?.dispose();
-    this.draw?.dispose();
-
-    this.draw = new Draw({
-      type,
-      source: this.source,
-      // condition: platformModifierKeyOnly,
-      // freehandCondition: shiftKeyOnly,
-      style: new Style({
-        fill: new Fill({ color: 'rgba(255, 255, 255, 0.3)' }),
-        stroke: new Stroke({ color: '#d946ef', width: 3 })
-      }),
-      stopClick: true
-    });
-
-    this.draw.on('drawend', (event: DrawEvent) => {
-      event.preventDefault();
-      // this.points.remove(-1);
-      this.processFeature(event.feature as Feature<Polygon>, schemeTableau10[this._colorCounter++]);
-    });
-
-    // this.snap = new Snap({ source: this.source });
-    // this.map.map!.addInteraction(this.snap);
-    this.currDrawType = type;
+    this.translate = new Translate({ features: this.select.getFeatures() });
+    this.snap = new Snap({ source: this.source });
   }
 
   mount() {
@@ -83,6 +56,41 @@ export class Draww {
     this.map.map!.addInteraction(this.modify);
     this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
+    this.map.map!.addInteraction(this.select);
+    this.map.map!.addInteraction(this.translate);
+  }
+
+  changeDrawType(type: 'Polygon' | 'Circle' | 'Point', first = false) {
+    if (type === this.currDrawType && !first) return;
+
+    if (this.draw) this.map.map!.removeInteraction(this.draw);
+    if (this.snap) this.map.map!.removeInteraction(this.snap);
+    this.snap?.dispose();
+    this.draw?.dispose();
+
+    this.draw = new Draw({
+      type,
+      source: this.source,
+      // condition: platformModifierKeyOnly,
+      // freehandCondition: shiftKeyOnly,
+      style: initialStyle,
+      stopClick: true
+    });
+
+    this.draw.on('drawend', (e) => this.onDrawEnd_(e));
+
+    this.snap = new Snap({ source: this.source });
+    this.map.map!.addInteraction(this.snap);
+    this.currDrawType = type;
+  }
+
+  onDrawEnd_(event: DrawEvent) {
+    event.preventDefault();
+    this.processFeature(
+      event.feature as Feature<Polygon>,
+      schemeTableau10[this._colorCounter++],
+      prompt('Name') || ''
+    );
   }
 
   clear() {
@@ -126,12 +134,24 @@ export class Draww {
   }
 
   // Need to rerun on name change.
-  _updatePolygonStyle(feature: Feature<Polygon>, setStroke = true) {
-    const st = drawnStyle.clone();
-    if (setStroke) {
-      st.setStroke(new Stroke({ color: feature.get('color') as string, width: 3 }));
+  _updatePolygonStyle(feature: Feature<Geometry>, setStroke = true) {
+    const type = feature.getGeometry()!.getType();
+    let st: Style;
+    if (type === 'Point') {
+      // https://openlayers.org/en/latest/examples/synthetic-points.html
+      st = new Style({
+        image: new CircleStyle({
+          radius: 5,
+          fill: new Fill({ color: (feature.get('color') as string) + '88' })
+        })
+      });
+    } else {
+      st = drawnStyle.clone();
+      if (setStroke) {
+        st.setStroke(new Stroke({ color: feature.get('color') as string, width: 3 }));
+      }
+      st.getText().setText(feature.get('name') as string);
     }
-    st.getText().setText(feature.get('name') as string);
     feature.setStyle(st);
   }
 
@@ -139,22 +159,40 @@ export class Draww {
     this.source.removeFeature(this.source.getFeatures()[i]);
   }
 
+  static recurseCoords(coords: Coordinate[] | Coordinate[][]): string[] {
+    if (coords[0] instanceof Array) {
+      return coords.map((coord) => Draww.recurseCoords(coord));
+    }
+    return coords.map((c: number) => c.toExponential(4));
+  }
+
   dump() {
     const out: ROIData[] = [];
     for (const feature of this.source.getFeatures()) {
       const g = feature.getGeometry();
       if (!g) continue;
-      const coords = g
-        .getCoordinates()
-        .map((coord) => coord.map((c) => c.map((x) => x.toExponential(4))));
+      console.log(g);
+
+      const coords =
+        g.getType() === 'Circle'
+          ? (g as Circle).getCenter()
+          : (g as Polygon | Point).getCoordinates();
+      const radius =
+        g.getType() === 'Circle' ? (g as Circle).getRadius().toExponential(4) : undefined;
+
+      // const coords = g
+      //   .getCoordinates()
+      //   .map((coord) => coord.map((c) => c.map((x) => x.toExponential(4))));
 
       if (g)
         out.push({
           name: feature.get('name') as string,
-          type: 'Polygon',
+          type: g.getType() as Geometries,
           color: feature.get('color') as string,
           // @ts-ignore
-          coords: coords, // String here but will be converted to number once out in JSON.
+          radius: radius,
+          // @ts-ignore
+          coords: Draww.recurseCoords(coords), // String here but will be converted to number once out in JSON.
           properties: (({ name, color, ...o }) => o)(g.getProperties()) // Remove name and color.
         });
     }
@@ -162,8 +200,14 @@ export class Draww {
   }
 
   loadPolygons(cs: ROIData[]) {
-    for (const { name, color, coords, properties } of cs) {
-      const feature = new Feature({ geometry: new Polygon(coords) });
+    for (const { name, type, color, coords, radius, properties } of cs) {
+      const geometry =
+        type === 'Circle'
+          ? new Circle(coords as Coordinate, radius)
+          : type === 'Polygon'
+          ? new Polygon(coords)
+          : new Point(coords as Coordinate);
+      const feature = new Feature({ geometry });
       this.processFeature(feature, color ?? schemeTableau10[this._colorCounter++ % 10], name);
       if (properties) feature.setProperties(properties);
       this.source.addFeature(feature);
@@ -186,6 +230,13 @@ const textStyle = new Text({
     width: 4
   })
 });
+
+const initialStyle = new Style({
+  fill: new Fill({ color: 'rgba(255, 255, 255, 0.3)' }),
+  stroke: new Stroke({ color: '#d946ef', width: 3 }),
+  text: textStyle
+});
+
 // Style for finished polygon.
 const drawnStyle = new Style({
   stroke: new Stroke({ color: '#00ffe9', width: 3 }),

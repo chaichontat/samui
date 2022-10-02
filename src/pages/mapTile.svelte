@@ -111,7 +111,7 @@
       {/if}
 
       <!-- Sample list -->
-      <div class="flex h-10 items-center gap-x-2 pr-4 lg:pr-0">
+      <div class="flex h-10 items-center gap-x-2 pr-4 md:pr-0">
         {#if hie === 0 && width > 400}
           <div class="font-semibold text-neutral-900 dark:font-medium dark:text-neutral-100">
             Sample:
@@ -169,6 +169,7 @@
     <div
       class="h-full w-full border"
       class:border-neutral-900={$sMapId !== hieN || ($sMapId === hieN && $mapTiles.length === 1)}
+      class:border-b-neutral-600={$sMapId !== hieN || ($sMapId === hieN && $mapTiles.length === 1)}
       class:border-neutral-100={$sMapId === hieN && $mapTiles.length > 1}
     >
       <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />

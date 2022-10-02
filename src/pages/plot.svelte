@@ -221,4 +221,4 @@
     $sEvent = { type: 'maskUpdated' };
   }}>Hi</button
 > -->
-<div bind:this={div} class="relative overflow-visible p-2" />
+<div bind:this={div} class="relative max-w-[500px] overflow-visible p-2" />

@@ -35,7 +35,7 @@
       Max value: <input type="range" />
     </Section> -->
 
-  <Section title="Histogram" defaultOpen class="overflow-visible">
+  <Section title="Histogram" defaultOpen class="flex justify-center overflow-visible">
     <Plot />
   </Section>
 
@@ -79,7 +79,7 @@
 
 <style lang="postcss">
   section {
-    @apply relative hidden w-[90%] pt-4 lg:block;
+    @apply relative hidden w-[90%] pt-4 md:block;
   }
 
   :global(.tab) {
