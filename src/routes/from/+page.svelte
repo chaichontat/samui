@@ -1,6 +1,6 @@
 <script lang="ts">
-  import MainPage from './MainPage.svelte';
+  import MainPage from '../MainPage.svelte';
 </script>
 
 <!-- Split to give prior knowledge if url query is provided to reduce rerenders and flashing. -->
-<MainPage loadExternal={false} />
+<MainPage loadExternal={true} />

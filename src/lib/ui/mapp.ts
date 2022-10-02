@@ -84,6 +84,7 @@ export class Mapp extends Deferrable {
     const bg = this.persistentLayers.background;
     const promises = [];
     bg.image = image; // Necessary to mark image as non-existent.
+    this.map.once('rendercomplete', () => sEvent.set({ type: 'renderComplete' }));
     if (image) {
       await bg.update(this.map, image);
       promises.push(
