@@ -1,8 +1,11 @@
 // Bring your own data.
 
+import { browser } from '$app/environment';
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
-import { samples, sSample } from '$lib/store';
+import { samples, sMapp, sSample } from '$lib/store';
+import Ajv, { type JSONSchemaType } from 'ajv';
 import { get } from 'svelte/store';
+import type { ROIData } from '../sidebar/annotation/selector';
 
 async function readFile<T extends object>(
   dirHandle: FileSystemDirectoryHandle,
@@ -27,10 +30,78 @@ export async function byod() {
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const handle = (await window.showDirectoryPicker()) as Promise<FileSystemDirectoryHandle>;
-  return processFolder(handle);
+  return processHandle(handle);
 }
 
-export async function processFolder(handle: Promise<FileSystemDirectoryHandle>, setSample = false) {
+interface SelectionData {
+  sample: string;
+  time: string;
+  mPerPx: number;
+  rois: ROIData[];
+}
+
+const schema: JSONSchemaType<SelectionData> = {
+  type: 'object',
+  properties: {
+    sample: { type: 'string' },
+    time: { type: 'string' },
+    mPerPx: { type: 'number' },
+    rois: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          type: { type: 'string', enum: ['Polygon', 'Circle', 'Point'] },
+          color: { type: 'string', nullable: true },
+          coords: {
+            type: 'array',
+            items: {
+              type: 'array',
+              items: {
+                type: 'array',
+                items: { type: 'number' }
+              }
+            }
+          },
+          properties: { type: 'object', nullable: true }
+        },
+        required: ['name', 'coords']
+      }
+    }
+  },
+  required: ['sample', 'rois'],
+  additionalProperties: false
+};
+
+const ajv = new Ajv();
+const validate = ajv.compile<SelectionData>(schema);
+
+export async function processHandle(
+  handle: Promise<FileSystemDirectoryHandle | FileSystemFileHandle>,
+  setSample = false
+) {
+  const h = await handle;
+  if (h.kind === 'file') {
+    const file = await h.getFile();
+    const text = await file.text();
+    const proc = JSON.parse(text);
+
+    if ('rois' in proc) {
+      if (validate(proc)) {
+        const rois = proc.rois;
+        get(sMapp).persistentLayers.rois.loadPolygons(rois);
+        return;
+      }
+      console.error(validate.errors);
+    }
+    return;
+  }
+
+  return processFolder(handle, setSample);
+}
+
+async function processFolder(handle: Promise<FileSystemDirectoryHandle>, setSample = false) {
   let sp: SampleParams;
   try {
     sp = (await readFile<SampleParams>(await handle, 'sample.json', 'plain')) as SampleParams;

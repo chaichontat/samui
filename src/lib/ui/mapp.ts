@@ -4,6 +4,7 @@ import Zoom from 'ol/control/Zoom.js';
 
 import { get } from 'svelte/store';
 
+import { DrawFeature, Draww } from '$lib/sidebar/annotation/selector';
 import type { CoordsData } from '$src/lib/data/objects/coords';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
@@ -11,14 +12,14 @@ import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, MutableSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import { throttle } from 'lodash-es';
 import { mapTiles, overlays, setHoverSelect, sEvent, sOverlay, sPixel } from '../store';
-import { Draww } from './overlays/selector';
 
 export class Mapp extends Deferrable {
   map?: Map;
   persistentLayers: {
     background: Background;
     active: ActiveSpots;
-    annotations: Draww;
+    annotations: DrawFeature;
+    rois: Draww;
   };
   overlays?: Record<string, CoordsData>;
   tippy?: { overlay: Overlay; elem: HTMLElement };
@@ -31,7 +32,8 @@ export class Mapp extends Deferrable {
     this.persistentLayers = {
       background: new Background(),
       active: new ActiveSpots(this),
-      annotations: new Draww(this, new MutableSpots(this))
+      annotations: new DrawFeature(this, new MutableSpots(this)),
+      rois: new Draww(this)
     };
   }
 
@@ -68,7 +70,7 @@ export class Mapp extends Deferrable {
 
     this._deferred.resolve();
     // Deals with sidebar showing up or not.
-    setTimeout(() => this.map.updateSize(), 100);
+    setTimeout(() => this.map!.updateSize(), 100);
     this.mounted = true;
   }
 

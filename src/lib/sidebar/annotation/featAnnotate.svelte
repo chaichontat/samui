@@ -1,13 +1,13 @@
 <script lang="ts">
+  import { getFileFromEvent, toCSV, toJSON } from '$lib/io';
   import { annotating, sEvent, sFeatureData, sMapp, sSample } from '$lib/store';
-  import type { Draww } from '$lib/ui/overlays/selector';
   import { tooltip } from '$lib/ui/utils';
+  import { classes } from '$lib/utils';
+  import type { Draww } from '$src/lib/sidebar/annotation/selector';
   import { ArrowUpOnSquare, Plus } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { schemeTableau10 } from 'd3';
   import { onMount } from 'svelte';
-  import { getFileFromEvent, toCSV, toJSON } from '../io';
-  import { classes } from '../utils';
 
   export let toggled: boolean;
   let nPoints: Record<string, number> = { _total: 0 };

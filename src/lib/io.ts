@@ -64,7 +64,9 @@ export function toCSV(name: string, obj: object[] | string) {
 }
 
 export function toJSON(name: string, obj: object | any[] | string | number) {
-  const blob = new Blob([JSON.stringify(obj)], {
+  const regex = /"(-|)([0-9]+(?:\.[0-9]+)?)(e-?[0-9]+)?"/g;
+  const s = JSON.stringify(obj).replace(regex, '$1$2$3');
+  const blob = new Blob([s], {
     type: 'application/json'
   });
   download(name, blob);
