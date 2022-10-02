@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "npm run fetch && vite build",
     "package": "svelte-kit package",
     "preview": "vite preview",
     "fetch": "ts-node --esm getJson.ts",
