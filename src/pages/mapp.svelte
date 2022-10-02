@@ -186,7 +186,7 @@
   {#if sample}
     <!-- Img control -->
     <div
-      class="absolute top-[72px] left-1 z-40 h-fit md:left-4"
+      class="absolute top-[72px] left-1 z-30 h-fit md:left-4"
       class:hidden={!showImgControl}
       style="max-width: calc(100% - 20px);"
     >

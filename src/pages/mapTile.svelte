@@ -1,6 +1,6 @@
 <script lang="ts">
   import List from '$lib/components/list.svelte';
-  import { isOnline, mapIdSample, mapTiles, samples, sMapId, sMapp } from '$lib/store';
+  import { isOnline, mapIdSample, mapTiles, samples, sEvent, sMapId, sMapp } from '$lib/store';
   import type { Mapp as MappObj } from '$lib/ui/mapp';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
@@ -90,9 +90,9 @@
   let sampleListElem: List;
   $: console.log($samples);
 
-  $: $samples[currSampleName]?.promise
-    .then(() => sampleListElem.stopSpinner())
-    .catch(console.error);
+  $: if ($sEvent?.type === 'renderComplete') {
+    sampleListElem?.stopSpinner();
+  }
 </script>
 
 {#if typeof hie === 'number'}
@@ -102,7 +102,7 @@
     bind:clientWidth={width}
   >
     <div
-      class="absolute top-4 left-4 z-20 flex max-w-[48rem] items-center justify-between gap-x-3 text-sm md:text-base"
+      class="absolute top-4 left-4 z-50 flex max-w-[48rem] items-center justify-between gap-x-3 text-sm md:text-base"
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
