@@ -99,7 +99,6 @@ export class Sample extends Deferrable {
     console.debug(`Hydrating ${this.name}.`);
     await Promise.all([
       this.image?.hydrate(this.handle),
-      ...Object.values(this.coords).map((o) => o.hydrate(this.handle)),
       ...Object.values(this.features).map((o) => o.hydrate(this.handle))
     ]);
     this._deferred.resolve();
@@ -120,6 +119,7 @@ export class Sample extends Deferrable {
     // Coordinates stuffs.
     let g: CoordsData;
     if (res.coordName) {
+      await this.coords[res.coordName].hydrate();
       g = this.coords[res.coordName];
     } else {
       // Gen coords.

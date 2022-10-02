@@ -112,7 +112,6 @@ export class Draww {
 
     feature.set('color', color);
     feature.set('name', name);
-    console.log(feature);
   }
 
   highlightPolygon(i: number | null) {
@@ -171,7 +170,6 @@ export class Draww {
     for (const feature of this.source.getFeatures()) {
       const g = feature.getGeometry();
       if (!g) continue;
-      console.log(g);
 
       const coords =
         g.getType() === 'Circle'
@@ -196,6 +194,7 @@ export class Draww {
           properties: (({ name, color, ...o }) => o)(g.getProperties()) // Remove name and color.
         });
     }
+    // console.log(encodeURIComponent(JSON.stringify(out)));
     return out;
   }
 
@@ -295,7 +294,7 @@ export class DrawFeature extends Draww {
     // });
 
     this.featuresBeforeMod[feature.getId() as number] = feature.clone();
-    console.log(feature);
+    // console.log(feature);
     // this._updatePolygonStyle(feature);
 
     this.points.addFromPolygon(
