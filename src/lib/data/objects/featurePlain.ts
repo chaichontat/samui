@@ -47,6 +47,7 @@ export class PlainCSV extends Deferrable {
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
     if (this.hydrated) return this;
+    console.debug('plaincsv hydrating', this.name);
     if (!this.values && this.url) {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);

@@ -41,6 +41,7 @@
 </script>
 
 <section class="donotsave absolute right-1 top-2 z-20 flex gap-x-4">
+  <!-- Overlay selector -->
   {#if showImgControl && haveFeatures}
     <div
       class="inline-flex h-min flex-col gap-y-1 rounded-lg bg-neutral-800/80 p-2 px-3 text-sm font-medium backdrop-blur-lg dark:text-white/90"
@@ -64,6 +65,4 @@
       <Icon src={Camera} class="svg-icon h-6 w-6" />
     </button>
   </div>
-
-  <!-- Overlay selector -->
 </section>
