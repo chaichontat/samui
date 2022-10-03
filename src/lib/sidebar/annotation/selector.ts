@@ -6,6 +6,7 @@ import { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
 import { Draw, Modify, Select, Snap, Translate } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
+import type { SelectEvent } from 'ol/interaction/Select';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style, Text } from 'ol/style.js';
@@ -57,6 +58,27 @@ export class Draww {
     this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
     this.map.map!.addInteraction(this.select);
+    this.select.on('select', (ev: SelectEvent) => {
+      document.addEventListener('keydown', (e) => {
+        switch (e.key) {
+          case 'Escape':
+            this.select.getFeatures().clear();
+            break;
+          case 'Delete':
+            for (const s of ev.selected) {
+              this.source.removeFeature(s);
+            }
+            this.select.getFeatures().clear();
+            break;
+          case 'Backspace':
+            for (const s of ev.selected) {
+              this.source.removeFeature(s);
+            }
+            this.select.getFeatures().clear();
+            break;
+        }
+      });
+    });
     this.map.map!.addInteraction(this.translate);
   }
 
@@ -294,7 +316,6 @@ export class DrawFeature extends Draww {
     // });
 
     this.featuresBeforeMod[feature.getId() as number] = feature.clone();
-    // console.log(feature);
     // this._updatePolygonStyle(feature);
 
     this.points.addFromPolygon(
