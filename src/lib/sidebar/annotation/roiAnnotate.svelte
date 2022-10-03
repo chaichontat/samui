@@ -95,6 +95,7 @@
             on:click={() => {
               if (!confirm(`Delete key "${key}"?`)) return;
               $annoROI.keys.splice(i, 1);
+              if ($annoROI.currKey === $annoROI.keys.length) $annoROI.currKey = 0;
               $annoROI.keys = $annoROI.keys;
               map.persistentLayers.rois.removeFeaturesByName(key);
             }}

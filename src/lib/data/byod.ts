@@ -96,7 +96,7 @@ export async function processHandle(
     if ('rois' in proc) {
       if (validate(proc)) {
         const rois = proc.rois;
-        get(sMapp).persistentLayers.rois.loadPolygons(rois);
+        get(sMapp).persistentLayers.rois.loadFeatures(rois);
         return;
       }
       console.error(validate.errors);

@@ -110,12 +110,11 @@ export class Draww {
 
   onDrawEnd_(event: DrawEvent) {
     event.preventDefault();
-    const s = get(annoROI)
+    const s = get(this.store)
     this.processFeature(
       event.feature as Feature<Polygon>,
       schemeTableau10[s.currKey! % 10],
       s.keys[s.currKey!],
-      s.currKey!
     );
   }
 
@@ -128,7 +127,7 @@ export class Draww {
     // this.points.update(template);
   }
 
-  processFeature(feature: Feature<Polygon>, color: string, name:string) {
+  processFeature(feature: Feature<Polygon | Circle | Point>, color: string, name:string) {
     // Not called after modify.
     feature.setId(rand());
     feature.on(
@@ -226,7 +225,8 @@ export class Draww {
     return out;
   }
 
-  loadPolygons(cs: ROIData[]) {
+  loadFeatures(cs: ROIData[]) {
+    const keys = get(this.store).keys
     for (const { name, type, color, coords, radius, properties } of cs) {
       const geometry =
         type === 'Circle'
@@ -235,10 +235,17 @@ export class Draww {
           ? new Polygon(coords)
           : new Point(coords as Coordinate);
       const feature = new Feature({ geometry });
-      this.processFeature(feature, color ?? schemeTableau10[this._colorCounter++ % 10], name);
+      let idx = keys.findIndex(k => k === name)
+      if (idx === -1) {
+        keys.push(name)
+        idx = keys.length - 1
+      }
+      this.processFeature(feature, color ?? schemeTableau10[idx % 10], name);
       if (properties) feature.setProperties(properties);
       this.source.addFeature(feature);
     }
+    if (get(this.store).currKey == undefined) get(this.store).currKey = keys.length-1
+    this.store.set(get(this.store))
   }
 
   removeFeature(f: Feature) {
@@ -315,7 +322,7 @@ export class DrawFeature extends Draww {
     this.points.mount();
     this.modify.on('modifyend', (e: ModifyEvent) => {
       console.debug('modifyend');
-      const keyIdx = get(annoROI).currKey;
+      const keyIdx = get(this.store).currKey;
       if (keyIdx == undefined) throw new Error('keyIdx is null');
 
       const feature = e.features.getArray()[0] as Feature<Polygon>;
