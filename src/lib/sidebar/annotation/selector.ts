@@ -240,7 +240,7 @@ export class Draww {
         keys.push(name)
         idx = keys.length - 1
       }
-      this.processFeature(feature, color ?? schemeTableau10[idx % 10], name);
+      this.processFeature(feature, schemeTableau10[idx % 10], name);
       if (properties) feature.setProperties(properties);
       this.source.addFeature(feature);
     }

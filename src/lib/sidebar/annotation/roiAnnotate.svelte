@@ -77,6 +77,7 @@
       {#each $annoROI.keys as key, i}
         <label class="flex items-center gap-x-1 hover:underline">
           <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
+
           <button
             class={classes($annoROI.currKey === i ? 'font-bold' : 'font-normal text-neutral-300')}
             on:click={() => ($annoROI.currKey = i)}
@@ -94,10 +95,11 @@
           <button
             on:click={() => {
               if (!confirm(`Delete key "${key}"?`)) return;
-              $annoROI.keys.splice(i, 1);
-              if ($annoROI.currKey === $annoROI.keys.length) $annoROI.currKey = 0;
-              $annoROI.keys = $annoROI.keys;
+              // $annoROI.keys.splice(i, 1);
+              if ($annoROI.currKey === i) $annoROI.currKey = 0;
               map.persistentLayers.rois.removeFeaturesByName(key);
+              $annoROI.keys[i] = 'No one is going to name this.';
+              $annoROI.keys = $annoROI.keys;
             }}
           >
             <Icon src={XMark} class="svg-icon stroke-neutral-400 hover:stroke-white" />
@@ -177,6 +179,4 @@
     </button>
     <!-- <Checkbox bind:checked={$annoROI.nameSeparately}>Name Separately (for ROIs only)</Checkbox> -->
   </div>
-
-  <div class="flex-grow" />
 </section>
