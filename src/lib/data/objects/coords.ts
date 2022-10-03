@@ -64,6 +64,7 @@ export class CoordsData extends Deferrable {
   }
 
   async hydrate(handle?: FileSystemDirectoryHandle) {
+    if (this.hydrated) return this;
     if (!this.pos && this.url) {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);

@@ -41,6 +41,7 @@
 </script>
 
 <section class="donotsave absolute right-1 top-2 z-20 flex gap-x-4">
+  <!-- Overlay selector -->
   {#if showImgControl && haveFeatures}
     <div
       class="inline-flex h-min flex-col gap-y-1 rounded-lg bg-neutral-800/80 p-2 px-3 text-sm font-medium backdrop-blur-lg dark:text-white/90"
@@ -49,7 +50,7 @@
     </div>
   {/if}
 
-  <div class="mt-[47px] mr-2 flex flex-col gap-y-4">
+  <div class="-mt-1 mr-2 flex flex-col gap-y-4 md:mt-[47px]">
     <!-- Show/hide -->
     <button
       class="z-20"
@@ -64,6 +65,4 @@
       <Icon src={Camera} class="svg-icon h-6 w-6" />
     </button>
   </div>
-
-  <!-- Overlay selector -->
 </section>

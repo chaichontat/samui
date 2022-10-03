@@ -4,7 +4,7 @@
   import { tooltip } from '$lib/ui/utils';
   import { classes } from '$lib/utils';
   import type { Draww } from '$src/lib/sidebar/annotation/selector';
-  import { ArrowUpOnSquare, Plus } from '@steeze-ui/heroicons';
+  import { ArrowUpOnSquare, Plus, PlusCircle, PlusSmall } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { schemeTableau10 } from 'd3';
   import { onMount } from 'svelte';
@@ -79,7 +79,7 @@
 <section class="flex flex-col gap-y-1">
   <div class="flex items-center">
     <!-- Select -->
-    <div class="flex items-center gap-x-2">
+    <div class="flex flex-wrap items-center gap-1">
       <button
         class={classes(
           'relative mr-4 flex items-center gap-x-0.5 rounded-lg py-1 px-3 font-medium shadow-lg transition-[background-color]',
@@ -88,7 +88,10 @@
             : 'bg-sky-800  shadow-sky-800/20 hover:bg-sky-700',
           disabled
         )}
-        on:click={() => ($annotating.selecting = !$annotating.selecting)}
+        on:click={() => {
+          $sMapp.persistentLayers.rois.changeDrawType('Polygon');
+          $annotating.selecting = !$annotating.selecting;
+        }}
       >
         <!-- disabled={!$annotating.annotating || $annotating.keys.length === 0} -->
         {#if $annotating.selecting}
@@ -113,7 +116,10 @@
             : 'bg-sky-800  shadow-sky-800/20 hover:bg-sky-700',
           disabled
         )}
-        on:click={() => ($annotating.selecting = !$annotating.selecting)}
+        on:click={() => {
+          $sMapp.persistentLayers.rois.changeDrawType('Circle');
+          $annotating.selecting = !$annotating.selecting;
+        }}
       >
         <!-- disabled={!$annotating.annotating || $annotating.keys.length === 0} -->
         {#if $annotating.selecting}
@@ -123,10 +129,38 @@
           Stop Selecting
         {:else}
           <Icon
-            src={Plus}
+            src={PlusCircle}
             class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]"
           />
           Circle
+        {/if}
+      </button>
+
+      <button
+        class={classes(
+          'relative mr-4 flex items-center gap-x-0.5 rounded-lg py-1 px-3 font-medium shadow-lg transition-[background-color]',
+          $annotating.selecting
+            ? ' bg-orange-700 shadow-orange-700/30 hover:bg-orange-600'
+            : 'bg-sky-800  shadow-sky-800/20 hover:bg-sky-700',
+          disabled
+        )}
+        on:click={() => {
+          $sMapp.persistentLayers.rois.changeDrawType('Point');
+          $annotating.selecting = !$annotating.selecting;
+        }}
+      >
+        <!-- disabled={!$annotating.annotating || $annotating.keys.length === 0} -->
+        {#if $annotating.selecting}
+          <span
+            class="absolute inline-flex h-full w-full animate-ping rounded-lg bg-orange-400 opacity-30 delay-200"
+          />
+          Stop Selecting
+        {:else}
+          <Icon
+            src={PlusSmall}
+            class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]"
+          />
+          Point
         {/if}
       </button>
 

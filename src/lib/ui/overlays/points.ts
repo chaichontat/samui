@@ -24,7 +24,7 @@ import type { Mapp } from '../mapp';
 import { genSpotStyle } from './featureColormap';
 
 export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point>>> {
-  outline?: CanvasSpots;
+  outline: CanvasSpots;
   _currStyle: string;
   uid: string;
   features?: Feature<Point>[];
@@ -35,10 +35,14 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   currLegend?: (string | number)[];
   currUnit?: string;
 
+  // WebGLSpots only gets created after mount.
   constructor(map: Mapp) {
     super(map, genSpotStyle('categorical', 2));
     this.uid = rand();
     this._currStyle = 'categorical';
+    this.outline = new CanvasSpots(this.map);
+    this.outline.mount();
+    this.outline.visible = false;
   }
 
   get currStyle() {
@@ -116,17 +120,9 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   _updateOutline() {
     const shortEnough = this.coords!.pos!.length < 10000;
     if (shortEnough) {
-      if (!this.outline) {
-        this.outline = new CanvasSpots(this.map);
-        this.outline.mount();
-        this.outline.visible = false;
-      }
+      console.log(this.coords);
+
       this.outline.update(this.coords!);
-    } else {
-      if (this.outline) {
-        this.outline.dispose();
-        this.outline = undefined;
-      }
     }
   }
 
@@ -284,6 +280,8 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
 }
 
 export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
+  currCoordName?: string;
+
   constructor(map: Mapp, style?: Style) {
     super(
       map,
@@ -324,18 +322,37 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     return f;
   }
 
+  set visible(visible: boolean) {
+    if (!this.layer) throw new Error('No layer');
+    if (visible) {
+      this.update_();
+    }
+    this.layer.setVisible(visible);
+  }
+
   /// Replace entire feature.
   update(coords: CoordsData) {
-    if (coords.mPerPx == undefined) throw new Error('mPerPx undefined.');
-    if (coords.name === this.coords?.name || !coords.size) return;
+    this.coords = coords;
+    if (this.visible) this.update_();
+  }
+
+  update_() {
+    if (!this.coords) {
+      console.error('No coords. Probably bc points > 10000. Disabled for performance reasons.');
+      return;
+    }
+    if (this.currCoordName === this.coords.name) return;
+
+    console.debug('Updating canvasSpots (probably outline)');
+    if (this.coords.mPerPx == undefined) throw new Error('mPerPx undefined.');
 
     this.source.clear();
     this.source.addFeatures(
-      coords.pos!.map((c) =>
-        CanvasSpots._genCircle({ ...c, mPerPx: coords.mPerPx, size: coords.size })
+      this.coords.pos!.map((c) =>
+        CanvasSpots._genCircle({ ...c, mPerPx: this.coords.mPerPx, size: this.coords.size })
       )
     );
-    this.coords = coords;
+    this.currCoordName = this.coords.name;
   }
 
   get(idx: number) {

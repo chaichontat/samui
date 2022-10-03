@@ -30,9 +30,14 @@ export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { downl
   let res: () => void;
   const promise: Promise<void> = new Promise((resolve) => (res = resolve));
 
+  if (options?.download) {
+    str = str.startsWith('http') ? str : location.origin + str;
+  }
+
   Papa.parse(str, {
     dynamicTyping: true,
     header: true,
+    worker: true,
     delimiter: ',',
     skipEmptyLines: 'greedy',
     complete: (results: Papa.ParseResult<T>) => {

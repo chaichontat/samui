@@ -22,10 +22,12 @@
   const visible: Record<string, boolean> = {};
   const setVisible = (name: string, c: boolean | null, outline = false) => {
     if (outline) {
-      $overlays[name]?.outline?.layer?.setVisible(c ?? false);
+      const layer = $overlays[name]?.outline;
+      if (layer) layer.visible = c ?? false;
       outlinevis[name] = c ?? false;
     } else {
-      $overlays[name]?.layer?.setVisible(c ?? false);
+      const layer = $overlays[name];
+      if (layer) layer.visible = c ?? false;
       visible[name] = c ?? false;
     }
   };
