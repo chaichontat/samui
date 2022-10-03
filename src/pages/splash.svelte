@@ -23,7 +23,16 @@
         Import Sample
       </span>
     </button>
-    <p class="text-neutral-200">Or drag and drop your sample folder!</p>
+    <p class="text-neutral-200 text-center">
+      Or drag and drop your sample folder!<br />
+      Preprocessing instructions available
+      <a
+        class="text-blue-400 hover:underline"
+        href="https://github.com/chaichontat/loopy-browser#example-preprocessing"
+      >
+        here.
+      </a>
+    </p>
   </div>
 
   <button
