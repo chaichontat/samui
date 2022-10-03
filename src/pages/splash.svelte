@@ -24,7 +24,8 @@
       </span>
     </button>
     <p class="text-neutral-200 text-center">
-      Or drag and drop your sample folder!<br />
+      Or drag and drop your sample folder!
+      <br />
       Preprocessing instructions available
       <a
         class="text-blue-400 hover:underline"

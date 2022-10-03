@@ -161,7 +161,7 @@
           class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-neutral-900 hover:text-neutral-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
           on:click={byod}
         >
-          <span class="px-5 py-2 group-hover:bg-opacity-0"> Add Sample </span>
+          <span class="px-5 py-2 group-hover:bg-opacity-0">Add Sample</span>
         </button>
       {/if}
     </div>

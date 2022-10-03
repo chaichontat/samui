@@ -86,9 +86,9 @@
       {#each candidates as { group, values }}
         {#if values.length > 0}
           <div class="flex flex-col">
-            <span class="px-2 pt-1.5 pb-0.5 font-medium capitalize text-yellow-300"
-              >{group ?? 'Misc.'}</span
-            >
+            <span class="px-2 pt-1.5 pb-0.5 font-medium capitalize text-yellow-300">
+              {group ?? 'Misc.'}
+            </span>
             {#each values as v}
               <HoverableFeature
                 feature={v}

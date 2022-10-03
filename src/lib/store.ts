@@ -33,7 +33,8 @@ export const annotating = writable({
   show: true,
   annotating: false,
   annotatingCoordName: undefined as string | undefined,
-  selecting: false
+  selecting: false,
+  nameSeparately: true
 });
 
 const escHandler = (e: KeyboardEvent) => {
