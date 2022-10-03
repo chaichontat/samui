@@ -36,12 +36,20 @@ export const annotating = writable({
   selecting: false
 });
 
+const escHandler = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    annotating.update((a) => ({ ...a, annotating: false, selecting: false }));
+  }
+};
+
 annotating.subscribe((ann) => {
   if (browser) {
     if (ann.selecting) {
       document.body.style.cursor = 'crosshair';
+      document.addEventListener('keydown', escHandler);
     } else {
       document.body.style.cursor = 'default';
+      document.removeEventListener('keydown', escHandler);
     }
   }
 });
