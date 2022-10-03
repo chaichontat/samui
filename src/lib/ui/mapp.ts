@@ -11,7 +11,7 @@ import { Deferrable } from '$src/lib/definitions';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, MutableSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import { throttle } from 'lodash-es';
-import { mapTiles, overlays, setHoverSelect, sEvent, sOverlay, sPixel } from '../store';
+import { annoFeat, annoROI, mapTiles, overlays, setHoverSelect, sEvent, sOverlay, sPixel } from '../store';
 
 export class Mapp extends Deferrable {
   map?: Map;
@@ -32,8 +32,8 @@ export class Mapp extends Deferrable {
     this.persistentLayers = {
       background: new Background(),
       active: new ActiveSpots(this),
-      annotations: new DrawFeature(this, new MutableSpots(this)),
-      rois: new Draww(this)
+      annotations: new DrawFeature(this, annoFeat, new MutableSpots(this)),
+      rois: new Draww(this, annoROI)
     };
   }
 
