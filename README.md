@@ -10,7 +10,7 @@ Head over to https://loopybrowser.com/ to see the Loopy Browser with example Vis
 
 You need to preprocess your image to form a tiled structure prior to being used in the Loopy Browser.
 
-### Example Preprocessing
+### Preprocessing
 
 Download a sample TIFF image from https://data.loopybrowser.com/VisiumIF/sample.tif.
 The preprocessing system can be installed as described [below](#Installation).
@@ -40,6 +40,25 @@ Here, the browser retrieves the processed folder hosted on an external server.
 You could share your files with your collaborators using your own file server or AWS S3.
 More reasonably priced alternatives include [Cloudflare R2](https://www.cloudflare.com/products/r2/) and [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html).
 The images are available instantly and without any installation on their end!
+
+### Annotation
+
+There are two separate types of annotations in Loopy Browser
+Both requires you to set a label to be associated with the resulting annotation.
+The labels can be changed by double-clicking on the label names.
+
+#### ROI Annotation
+This is the typical kind of annotation you'd expect from other image viewers.
+We simply draw figures that indicate regions of interest of the image.
+The exported result is a JSON file that contains the coordinates of the drawn figures.
+That is, the outputs are _coordinates and their labels_.
+The exported results can be dragged back into the browser.
+
+#### Feature Annotation
+Here, we annotate the features or overlays that are either with the dataset to begin with or imported.
+The ability to draw ROIs is simply there to facilitate annotation.
+Each point can be annotated individually as well.
+The outputs are _feature ID and their labels_.
 
 ## Installation
 
