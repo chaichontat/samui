@@ -8,7 +8,17 @@
   let divs: Record<string, Element> = {};
 
   function updateLegend() {
+    console.log('updateLegend');
+
+    const ols = Object.keys($overlays);
     const ol = $sOverlay;
+    for (const uid of Object.keys(divs)) {
+      if (!ols.includes(uid)) {
+        div.removeChild(divs[uid]);
+        delete divs[uid];
+      }
+    }
+
     if (divs[ol]) {
       div.removeChild(divs[ol]);
       delete divs[ol];
@@ -60,7 +70,9 @@
     div.appendChild(divs[ol]);
   }
 
-  $: if ($sEvent?.type === 'featureUpdated' && div) updateLegend();
+  $: if (div && $sEvent?.type === 'featureUpdated') {
+    updateLegend();
+  }
 </script>
 
 <div bind:this={div} />
