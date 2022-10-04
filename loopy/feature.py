@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Callable, Literal, cast
 
 import pandas as pd
 from anndata import AnnData
+from pydantic import validator
 from scipy.sparse import csc_matrix, csr_matrix
 from typing_extensions import Self
 
@@ -54,13 +55,20 @@ class ChunkedCSVParams(ReadonlyModel):
     type: Literal["chunkedCSV"] = "chunkedCSV"
     name: str
     url: Url
-    headerUrl: Url
+    headerUrl: Url | None = None
     dataType: FeatureType = "quantitative"
     unit: str | None = None
 
+    @validator("headerUrl", always=True, pre=False)
+    def check_headerUrl(cls, v: Url | None, values: dict[str, str | None]):
+        if v is None:
+            path = Path(cast(Url, values["url"]).url)
+            return Url(url=path.with_suffix(".json").as_posix())
+        return v
+
     def write(self, f: Callable[[Path], None], header: Callable[[Path], None] | None = None) -> Self:
         f(Path(self.url.url))
-        if header:
+        if header and self.headerUrl:
             header(Path(self.headerUrl.url))
         return self
 

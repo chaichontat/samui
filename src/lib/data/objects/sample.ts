@@ -17,7 +17,6 @@ export type SampleParams = {
   imgParams?: ImageParams;
   coordParams?: CoordsParams[];
   featParams?: (PlainCSVParams | ChunkedCSVParams)[];
-  handle?: FileSystemDirectoryHandle;
   overlayParams?: OverlayParams;
   notesMd?: Url;
   metadataMd?: Url;
@@ -39,16 +38,8 @@ export class Sample extends Deferrable {
   handle?: FileSystemDirectoryHandle;
 
   constructor(
-    {
-      name,
-      imgParams,
-      coordParams,
-      featParams,
-      handle,
-      overlayParams,
-      notesMd,
-      metadataMd
-    }: SampleParams,
+    { name, imgParams, coordParams, featParams, overlayParams, notesMd, metadataMd }: SampleParams,
+    handle?: FileSystemDirectoryHandle,
     autoHydrate = false
   ) {
     super();

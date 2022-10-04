@@ -76,6 +76,7 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
 
     with ThreadPoolExecutor() as executor:
         executor.map(run, range(len(names)))
+    print("Generated COG", ps)
 
     return ps
 

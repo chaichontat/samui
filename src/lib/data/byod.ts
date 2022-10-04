@@ -91,9 +91,18 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = fals
     return;
   }
 
-  sp.handle = handle;
-  const sample = new Sample(sp);
-  samples.set({ ...get(samples), [sample.name]: sample });
+  const existing = get(samples);
+  const sample = new Sample(sp, handle);
+
+  // Check if sample already exists.
+  if (
+    Object.keys(existing).includes(sample.name) &&
+    !confirm(`Sample ${sample.name} already exists. Overwrite?`)
+  ) {
+    return;
+  }
+
+  samples.set({ ...existing, [sample.name]: sample });
   if (setSample) {
     sSample.set(sample);
   }
