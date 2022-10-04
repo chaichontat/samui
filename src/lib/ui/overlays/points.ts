@@ -116,15 +116,6 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     this.layer?.changed();
   }
 
-  _updateOutline() {
-    const shortEnough = this.coords!.pos!.length < 10000;
-    if (shortEnough) {
-      console.log(this.coords);
-
-      this.outline.update(this.coords!);
-    }
-  }
-
   async _rebuildLayer() {
     await this.map.promise;
     const newLayer = new WebGLPointsLayer({
@@ -198,7 +189,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       : this.source.changed();
 
     this.currUnit = res.unit;
-    this._updateOutline();
+    this.outline.updateSample(coords);
 
     // When changing between samples, all overlays are updated.
     if (get(sOverlay) === this.uid) {
@@ -321,6 +312,10 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     return f;
   }
 
+  get visible() {
+    return this.layer!.getVisible();
+  }
+
   set visible(visible: boolean) {
     if (!this.layer) throw new Error('No layer');
     if (visible) {
@@ -332,7 +327,15 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   /// Replace entire feature.
   update(coords: CoordsData) {
     this.coords = coords;
-    if (this.visible) this.update_();
+    if (this.visible) {
+      this.update_();
+    }
+  }
+
+  updateSample(coords: CoordsData) {
+    // Clear old coords.
+    this.currCoordName = undefined;
+    this.update(coords);
   }
 
   update_() {
@@ -346,6 +349,11 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     if (this.coords.mPerPx == undefined) throw new Error('mPerPx undefined.');
 
     this.source.clear();
+    const shortEnough = this.coords.pos!.length < 10000;
+    if (!shortEnough) {
+      return;
+    }
+
     this.source.addFeatures(
       this.coords.pos!.map((c) =>
         CanvasSpots._genCircle({ ...c, mPerPx: this.coords.mPerPx, size: this.coords.size })
