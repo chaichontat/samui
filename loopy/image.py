@@ -49,9 +49,9 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
 
     ps = [path / (name + x + ".tif") for x in names]
 
-    for i in range(len(names)):
-        # Not compressing here since we cannot control compression level.
+    def run(i: int):
         dst: DatasetWriter
+        # Not compressing here since we cannot control the compression level.
         with rasterio.open(
             ps[i].as_posix() + "_",
             "w",
@@ -73,6 +73,10 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
                     break
                 dst.write(img[idx] if not rgb else img[:, :, idx], j + 1)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
+
+    with ThreadPoolExecutor() as executor:
+        executor.map(run, range(len(names)))
+
     return ps
 
 
@@ -92,6 +96,6 @@ def compress(ps: list[Path], quality: int = 90) -> None:
     except subprocess.CalledProcessError as e:
         print(e.output)
         raise e
-    else:
+    finally:
         for p in ps:
-            p.unlink()
+            p.with_suffix(".tif_").unlink()

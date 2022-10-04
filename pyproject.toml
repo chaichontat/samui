@@ -44,4 +44,4 @@ minversion = "7.0"
 testpaths = ["tests"]
 
 [tool.poetry.scripts]
-loopy = 'loopy.entrypoint:run'
+loopy = 'loopy.entrypoint:cli'

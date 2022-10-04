@@ -63,8 +63,7 @@ def run_image(
     )
 
     o = Path(out / s)
-    o.mkdir(exist_ok=True, parents=True)
-    (o / "sample.json").write_text(sample.json())
+    sample.write(o / "sample.json")
 
     img = tifffile.imread(tiff)
     ps = gen_geotiff(img, s, out / s, scale)

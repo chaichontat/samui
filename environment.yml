@@ -6,6 +6,7 @@ dependencies:
   - gdal
   - pip
   - pydantic
+  - pyqt
   - rasterio
   - scanpy
   - scipy

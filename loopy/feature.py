@@ -83,7 +83,7 @@ FeatureParams = ChunkedCSVParams | PlainCSVParams
 
 
 def get_compressed_genes(
-    vis: AnnData, coordName: str, mode: Literal["csr", "csc"] = "csc"
+    vis: AnnData, coordName: str, mode: Literal["csr", "csc"] = "csc"  # type: ignore
 ) -> tuple[ChunkedCSVHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(vis.X)  # csR

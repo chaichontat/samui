@@ -17,7 +17,7 @@ Download a sample TIFF image from https://data.loopybrowser.com/VisiumIF/sample.
 
 ```sh
 conda activate loopy
-loopy [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
+loopy image [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
 ```
 
 The output folder has the same name as the input file.

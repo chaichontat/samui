@@ -40,4 +40,4 @@ jobs:
       - name: Test run
         run: |
           pip install -e .
-          loopy ./sample.tif --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
+          loopy image ./sample.tif --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119

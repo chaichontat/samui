@@ -6,8 +6,11 @@ dependencies:
   - flake8
   - hypothesis
   - isort
-  # - nodejs
+  - pip
   - poetry
   - pytest
   - pytest-cov
+  - pip:
+      - PyQt5-stubs
+
 category: dev
