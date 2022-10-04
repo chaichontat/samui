@@ -8,6 +8,7 @@
   import { ChevronDown } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { slide } from 'svelte/transition';
+  import { tooltip } from '../ui/utils';
   import { classes } from '../utils';
 
   let cl = '';
@@ -17,9 +18,10 @@
   export let togglable = false;
   export let toggled = false;
   export let toggledOff = 'opacity-50 pointer-events-none';
+  export let tooltipMsg = '';
 </script>
 
-<section class="w-full">
+<section class="w-full" use:tooltip={{ enabled: Boolean(tooltipMsg), content: tooltipMsg }}>
   <Disclosure let:open {defaultOpen}>
     <DisclosureButton
       class={classes(
