@@ -3,6 +3,7 @@ import { isEqual } from 'lodash-es';
 import type { Feature } from 'ol';
 import type { Circle, Geometry, Polygon } from 'ol/geom.js';
 import type { ModifyEvent } from 'ol/interaction/Modify';
+import type { TranslateEvent } from 'ol/interaction/Translate';
 import { get } from 'svelte/store';
 import type { Mapp } from '../../ui/mapp';
 import { Draww } from './annROI';
@@ -19,27 +20,30 @@ export class DrawFeature extends Draww {
     this.points = mutspot;
   }
 
+  afterModify(e: ModifyEvent | TranslateEvent) {
+    console.debug('modifyend');
+    const keyIdx = get(this.store as typeof annoFeat).currKey;
+    if (keyIdx == undefined) throw new Error('keyIdx is null');
+
+    const feature = e.features.getArray()[0] as Feature<Polygon>;
+    const idx = feature.getId() as number;
+    const prev = this.featuresBeforeMod[idx];
+    this.points.deleteFromPolygon(prev as Feature<Polygon | Circle>);
+    this.points.addFromPolygon(
+      feature,
+      get(annoFeat).keys[keyIdx],
+      get(sFeatureData).coords,
+      get(annoFeat).keys
+    );
+
+    this.featuresBeforeMod[idx] = feature.clone();
+  }
+
   mount() {
     super.mount();
     this.points.mount();
-    this.modify.on('modifyend', (e: ModifyEvent) => {
-      console.debug('modifyend');
-      const keyIdx = get(this.store as typeof annoFeat).currKey;
-      if (keyIdx == undefined) throw new Error('keyIdx is null');
-
-      const feature = e.features.getArray()[0] as Feature<Polygon>;
-      const idx = feature.getId() as number;
-      const prev = this.featuresBeforeMod[idx];
-      this.points.deleteFromPolygon(prev as Feature<Polygon | Circle>);
-      this.points.addFromPolygon(
-        feature,
-        get(annoFeat).keys[keyIdx],
-        get(sFeatureData).coords,
-        get(annoFeat).keys
-      );
-
-      this.featuresBeforeMod[idx] = feature.clone();
-    });
+    this.modify.on('modifyend', (e: ModifyEvent) => this.afterModify(e));
+    this.translate.on('translateend', (e: TranslateEvent) => this.afterModify(e));
 
     this.map.attachPointerListener({
       click: (id_: { idx: number; id: number | string } | null) => {
