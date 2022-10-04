@@ -62,7 +62,7 @@
   <div class="flex items-center">
     <AnnoButton
       class={labelClass}
-      onClick={() => ($store.currKey = handleNewKey(prompt('Enter new key.')))}
+      onClick={() => ($store.currKey = handleNewKey(prompt('Enter new label.')))}
     >
       <Icon src={Plus} class="mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]" />
       Label
@@ -80,7 +80,7 @@
               on:dblclick={() => {
                 const oldName = key;
                 const newName = prompt('Enter new name.', key);
-                if (newName == null) return;
+                if (!newName) return;
                 $store.keys[i] = newName;
                 draw.relabel(oldName, newName);
               }}
@@ -90,7 +90,7 @@
             {nPoints[key] ?? 0}
             <button
               on:click={() => {
-                if (!confirm(`Delete key "${key}"?`)) return;
+                if (!confirm(`Delete label "${key}"?`)) return;
                 // $store.keys.splice(i, 1);
                 if ($store.currKey === i) $store.currKey = 0;
                 draw.removeFeaturesByLabel(key);
