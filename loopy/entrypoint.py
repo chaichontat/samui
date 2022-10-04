@@ -4,8 +4,6 @@ import click
 
 from loopy.run_image import run_image
 
-stdin_text = click.get_text_stream("stdin").read()
-
 
 @click.command()
 @click.argument("tiff", nargs=1, type=click.Path(exists=True, dir_okay=False, path_type=Path))
