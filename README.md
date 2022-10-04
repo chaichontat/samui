@@ -43,8 +43,8 @@ The images are available instantly and without any installation on their end!
 
 ### Annotation
 
-There are two separate types of annotations in Loopy Browser
-Both requires you to set a label to be associated with the resulting annotation.
+There are two separate types of annotations in Loopy Browser.
+Before annotation, you must set a label first.
 The labels can be changed by double-clicking on the label names.
 
 #### ROI Annotation
