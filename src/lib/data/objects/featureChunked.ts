@@ -117,6 +117,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
           : undefined;
       }
 
+      console.debug('Retrieving', name, idx, this.ptr![idx], this.ptr![idx + 1], 'from', this.url);
       const raw = await fetch(this.url.url, {
         headers: {
           Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`

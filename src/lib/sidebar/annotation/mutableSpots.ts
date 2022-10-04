@@ -1,25 +1,14 @@
 import * as d3 from 'd3';
 import type Feature from 'ol/Feature.js';
-import type { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
+import type { Circle, Geometry, Polygon } from 'ol/geom.js';
 
 import type { Coord, CoordsData } from '$lib/data/objects/coords';
-import {
-  convertCategoricalToNumber,
-  type FeatureAndGroup,
-  type RetrievedData
-} from '$src/lib/data/objects/feature';
+import {} from '$src/lib/data/objects/feature';
 import type { Sample } from '$src/lib/data/objects/sample';
-import { keyLRU } from '$src/lib/lru';
 import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { CanvasSpots } from '$src/lib/ui/overlays/points';
-import { rand } from '$src/lib/utils';
-import { isEqual } from 'lodash-es';
-import { View } from 'ol';
-import VectorLayer from 'ol/layer/Vector.js';
-import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
-import VectorSource from 'ol/source/Vector.js';
+
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
-import { get } from 'svelte/store';
 
 export class MutableSpots extends CanvasSpots {
   mount() {

@@ -3,9 +3,10 @@
 import { browser } from '$app/environment';
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
 import { samples, sMapp, sSample } from '$lib/store';
-import Ajv, { type JSONSchemaType } from 'ajv';
 import { get } from 'svelte/store';
+import { fromCSV } from '../io';
 import type { ROIData } from '../sidebar/annotation/annROI';
+import { valROIData } from './schemas';
 
 async function readFile<T extends object>(
   dirHandle: FileSystemDirectoryHandle,
@@ -33,90 +34,64 @@ export async function byod() {
   return processHandle(handle);
 }
 
-interface SelectionData {
-  sample: string;
-  time: string;
-  mPerPx: number;
-  rois: ROIData[];
+async function processCSV(text: string) {
+  const res = (await fromCSV(text))?.data;
+  if (!res) {
+    alert('Invalid CSV file');
+    return;
+  }
+
+  if (!('label' in res[0])) {
+    alert('CSV does not contain an ID column');
+    return;
+  }
 }
-
-const schema: JSONSchemaType<SelectionData> = {
-  type: 'object',
-  properties: {
-    sample: { type: 'string' },
-    time: { type: 'string' },
-    mPerPx: { type: 'number' },
-    rois: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          type: { type: 'string', enum: ['Polygon', 'Circle', 'Point'] },
-          color: { type: 'string', nullable: true },
-          coords: {
-            oneOf: [
-              { type: 'array', items: { type: 'number' } },
-              {
-                type: 'array',
-                items: {
-                  type: 'array',
-                  items: {
-                    type: 'array',
-                    items: { type: 'number' }
-                  }
-                }
-              }
-            ]
-          },
-          radius: { type: 'number', nullable: true },
-          properties: { type: 'object', nullable: true }
-        },
-        required: ['name', 'type', 'coords']
-      }
-    }
-  },
-  required: ['sample', 'rois'],
-  additionalProperties: false
-};
-
-const ajv = new Ajv();
-const validate = ajv.compile<SelectionData>(schema);
 
 export async function processHandle(
   handle: Promise<FileSystemDirectoryHandle | FileSystemFileHandle>,
   setSample = false
 ) {
   const h = await handle;
-  if (h.kind === 'file') {
+  if (h instanceof FileSystemFileHandle) {
     const file = await h.getFile();
     const text = await file.text();
-    const proc = JSON.parse(text);
+    let proc: object | object[] | undefined;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      proc = JSON.parse(text);
+    } catch (e) {
+      await processCSV(text);
+      return;
+    }
+
+    if (!proc) return;
 
     if ('rois' in proc) {
-      if (validate(proc)) {
-        const rois = proc.rois;
-        get(sMapp).persistentLayers.rois.loadFeatures(rois);
+      if (valROIData(proc)) {
+        const roidata = proc as ROIData;
+        get(sMapp).persistentLayers.rois.loadFeatures(roidata.rois);
         return;
       }
-      console.error(validate.errors);
+      alert(valROIData.errors);
     }
+
+    alert('Unknown file type.');
     return;
   }
 
-  return processFolder(handle, setSample);
+  return processFolder(h, setSample);
 }
 
-async function processFolder(handle: Promise<FileSystemDirectoryHandle>, setSample = false) {
+async function processFolder(handle: FileSystemDirectoryHandle, setSample = false) {
   let sp: SampleParams;
   try {
-    sp = (await readFile<SampleParams>(await handle, 'sample.json', 'plain')) as SampleParams;
+    sp = (await readFile<SampleParams>(handle, 'sample.json', 'plain')) as SampleParams;
   } catch (e) {
     alert('Cannot find sample.json in the specified directory');
     return;
   }
 
-  sp.handle = await handle;
+  sp.handle = handle;
   const sample = new Sample(sp);
   samples.set({ ...get(samples), [sample.name]: sample });
   if (setSample) {

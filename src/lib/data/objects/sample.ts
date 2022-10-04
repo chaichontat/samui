@@ -119,7 +119,7 @@ export class Sample extends Deferrable {
     // Coordinates stuffs.
     let g: CoordsData;
     if (res.coordName) {
-      await this.coords[res.coordName].hydrate();
+      await this.coords[res.coordName].hydrate(this.handle);
       g = this.coords[res.coordName];
     } else {
       // Gen coords.

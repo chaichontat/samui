@@ -15,13 +15,19 @@ import type { Mapp } from '../../ui/mapp';
 import { rand } from '../../utils';
 
 export type Geometries = 'Polygon' | 'Circle' | 'Point';
-export type ROIData = {
+export type ROIInstance = {
   label: string;
   type: Geometries;
-  color?: string;
   coords: Coordinate[][] | Coordinate;
   radius?: number;
   properties?: Record<string, any>;
+};
+
+export type ROIData = {
+  sample: string;
+  time: string;
+  mPerPx: number;
+  rois: ROIInstance[];
 };
 
 export class Draww {
@@ -219,9 +225,9 @@ export class Draww {
     return out;
   }
 
-  loadFeatures(cs: ROIData[]) {
+  loadFeatures(cs: ROIInstance[]) {
     const keys = get(this.store).keys;
-    for (const { label, type, color, coords, radius, properties } of cs) {
+    for (const { label, type, coords, radius, properties } of cs) {
       const geometry =
         type === 'Circle'
           ? new Circle(coords as Coordinate, radius)

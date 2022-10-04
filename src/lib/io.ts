@@ -13,15 +13,6 @@ export async function convertLocalToNetwork(
   return url;
 }
 
-function download(name: string, blob: Blob) {
-  const elem = window.document.createElement('a');
-  elem.href = window.URL.createObjectURL(blob);
-  elem.download = name;
-  document.body.appendChild(elem);
-  elem.click();
-  document.body.removeChild(elem);
-}
-
 export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
   return await handle.getFileHandle(name).then((fh) => fh.getFile());
 }
@@ -33,7 +24,7 @@ export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { downl
 
   //@ts-ignore
   if (options?.download) {
-    str = str.startsWith('http') ? str : location.origin + str;
+    str = str.startsWith('http') || str.startsWith('blob') ? str : location.origin + str;
   }
 
   //@ts-ignore

@@ -23,9 +23,11 @@
 
   {#if $sSample?.overlayParams?.importantFeatures}
     <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
-      {#each $sSample?.overlayParams?.importantFeatures as feature}
-        <HoverableFeature {feature} />
-      {/each}
+      {#if $sSample?.overlayParams?.importantFeatures}
+        {#each $sSample.overlayParams.importantFeatures as feature}
+          <HoverableFeature {feature} />
+        {/each}
+      {/if}
     </Section>
   {/if}
 
