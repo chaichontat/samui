@@ -68,38 +68,40 @@
       Label
     </AnnoButton>
 
-    <div class="ml-4 flex items-center gap-x-3">
+    <div class="ml-4 flex items-center gap-x-3 flex-wrap">
       {#each $store.keys as key, i}
-        <label class="flex items-center gap-x-1 hover:underline">
-          <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
+        {#if key !== 'No one is going to name this.'}
+          <label class="flex items-center gap-x-1 hover:underline">
+            <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
 
-          <button
-            class={classes($store.currKey === i ? 'font-bold' : 'font-normal text-neutral-300')}
-            on:click={() => ($store.currKey = i)}
-            on:dblclick={() => {
-              const oldName = key;
-              const newName = prompt('Enter new name.', key);
-              if (newName == null) return;
-              $store.keys[i] = newName;
-              draw.relabel(oldName, newName);
-            }}
-          >
-            {key}
-          </button>
-          {nPoints[key] ?? 0}
-          <button
-            on:click={() => {
-              if (!confirm(`Delete key "${key}"?`)) return;
-              // $store.keys.splice(i, 1);
-              if ($store.currKey === i) $store.currKey = 0;
-              draw.removeFeaturesByLabel(key);
-              $store.keys[i] = 'No one is going to name this.';
-              $store.keys = $store.keys;
-            }}
-          >
-            <Icon src={XMark} class="svg-icon stroke-neutral-400 hover:stroke-white" />
-          </button>
-        </label>
+            <button
+              class={classes($store.currKey === i ? 'font-bold' : 'font-normal text-neutral-300')}
+              on:click={() => ($store.currKey = i)}
+              on:dblclick={() => {
+                const oldName = key;
+                const newName = prompt('Enter new name.', key);
+                if (newName == null) return;
+                $store.keys[i] = newName;
+                draw.relabel(oldName, newName);
+              }}
+            >
+              {key}
+            </button>
+            {nPoints[key] ?? 0}
+            <button
+              on:click={() => {
+                if (!confirm(`Delete key "${key}"?`)) return;
+                // $store.keys.splice(i, 1);
+                if ($store.currKey === i) $store.currKey = 0;
+                draw.removeFeaturesByLabel(key);
+                $store.keys[i] = 'No one is going to name this.';
+                $store.keys = $store.keys;
+              }}
+            >
+              <Icon src={XMark} class="svg-icon stroke-neutral-400 hover:stroke-white" />
+            </button>
+          </label>
+        {/if}
       {/each}
     </div>
   </div>
