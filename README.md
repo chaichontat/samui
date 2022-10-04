@@ -14,6 +14,7 @@ See the preprocessing package installation details below.
 ### Example Preprocessing
 
 Download a sample TIFF image from https://data.loopybrowser.com/VisiumIF/sample.tif.
+Install the preprocessing system.
 Call the preprocessing GUI with the following command in the terminal.
 
 #### GUI
@@ -42,6 +43,8 @@ More reasonably priced alternatives include [Cloudflare R2](https://www.cloudfla
 The images are available instantly and without any installation on their end!
 
 ## Installation
+
+Install [`conda`](https://github.com/conda-forge/miniforge#miniforge3) using these video guides: [Mac](https://www.youtube.com/watch?v=328DQUWZP48) and [Windows](https://www.youtube.com/watch?v=-H_onyfW9VE). Then, in the Terminal, run
 
 ```sh
 git clone https://github.com/chaichontat/loopy-browser/
