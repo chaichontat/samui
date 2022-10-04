@@ -1,11 +1,10 @@
 <script lang="ts">
   import { oneLRU } from '$lib/lru';
-  import { overlays, overlaysFeature, sOverlay, sSample } from '$lib/store';
+  import { overlays, overlaysFeature, sEvent, sOverlay, sSample } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes } from '$src/lib/utils';
   import { Plus, XMark } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
-  import { slide } from 'svelte/transition';
   import type { Mapp } from '../mapp';
   import { tooltip } from '../utils';
   import { WebGLSpots } from './points';
@@ -141,7 +140,9 @@
               on:click={() => {
                 $overlays[uid].dispose();
                 delete $overlays[uid];
+                $sOverlay = $sOverlay === uid ? Object.keys($overlays)[0] : $sOverlay;
                 $overlays = $overlays;
+                sEvent.set({ type: 'featureUpdated' });
               }}
             >
               <Icon src={XMark} class="svg-icon" />
