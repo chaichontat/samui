@@ -8,13 +8,12 @@ Loopy Browser is a performant visualization tool for spatial transcriptomics exp
 
 Head over to https://loopybrowser.com/ to see the Loopy Browser with example Visium-IF data.
 
-You need to preprocess an image prior to being used in the Loopy Browser.
-See the preprocessing package installation details below.
+You need to preprocess your image to form a tiled structure prior to being used in the Loopy Browser.
 
 ### Example Preprocessing
 
 Download a sample TIFF image from https://data.loopybrowser.com/VisiumIF/sample.tif.
-Install the preprocessing system.
+The preprocessing system can be installed as described [below](#Installation).
 Call the preprocessing GUI with the following command in the terminal.
 
 #### GUI
@@ -32,7 +31,7 @@ loopy image [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,Neu
 ```
 In this case, the output folder has the same name as the input file.
 
-You can drag this folder to https://loopybrowser.com/.
+You can drag this folder directly to https://loopybrowser.com/.
 Despite the Browser being a webpage, all data are processed locally on your computer.
 
 **This link opens the expected result: https://loopybrowser.com/from?url=data2.loopybrowser.com/VisiumIF/&s=sample.**
@@ -44,7 +43,7 @@ The images are available instantly and without any installation on their end!
 
 ## Installation
 
-Install [`conda`](https://github.com/conda-forge/miniforge#miniforge3) using these video guides: [Mac](https://www.youtube.com/watch?v=328DQUWZP48) and [Windows](https://www.youtube.com/watch?v=-H_onyfW9VE). Then, in the Terminal, run
+Install [`conda`](https://github.com/conda-forge/miniforge#miniforge3). These video guides can be helpful: [Mac](https://www.youtube.com/watch?v=328DQUWZP48) and [Windows](https://www.youtube.com/watch?v=-H_onyfW9VE). Then, in the Terminal, run
 
 ```sh
 git clone https://github.com/chaichontat/loopy-browser/
