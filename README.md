@@ -39,7 +39,6 @@ cd loopy-browser
 conda env create -n loopy -f environment.yml
 ```
 
-
 ## Nomenclature
 
 Being compatible with static hosting, Loopy Browser has most of its data all precomputed.
@@ -59,4 +58,4 @@ graph LR
     Overlay1 --> Feature3
     Overlay2 --> Feature4
     end
- ```
+```

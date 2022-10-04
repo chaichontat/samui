@@ -1,6 +1,6 @@
 <script lang="ts">
   import {
-    annotating,
+    annoROI,
     mask,
     overlays,
     overlaysFeature,
@@ -69,40 +69,8 @@
   onMount(() => {
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (id_) $sId = { ...id_, source: 'map' };
-      }),
-      // For annotation stuffs.
-      click: (id_: { idx: number; id: number | string } | null) => {
-        if (!$sOverlay || !$annotating.annotating) return;
-
-        if (!isEqual($sFeatureData.coords.name, $annotating.annotatingCoordName)) {
-          alert(
-            `Annotation: coords mismatch. Started with ${
-              $sFeatureData.coords.name
-            }. Current active overlay is ${$annotating.annotatingCoordName!}.`
-          );
-          return;
-        }
-
-        const sfd = $sFeatureData;
-        if ($annotating.currKey != undefined && id_ && sfd) {
-          const idx = id_.idx;
-          const existing = map.persistentLayers.annotations.points.get(idx);
-          if (
-            existing == undefined ||
-            existing.get('value') !== $annotating.keys[$annotating.currKey]
-          ) {
-            map.persistentLayers.annotations.points.add(
-              idx,
-              $annotating.keys[$annotating.currKey],
-              sfd.coords,
-              $annotating.keys
-            );
-          } else {
-            map.persistentLayers.annotations.points.delete(idx);
-          }
-        }
-      }
+        $sId = { idx: id_?.idx, id: id_?.id, source: 'map' };
+      })
     });
   });
 
@@ -132,6 +100,14 @@
   // Hover/overlay.
   $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);
 
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  function hide() {
+    map.persistentLayers.active.layer!.setVisible(false);
+    map.tippy!.elem.style.opacity = '0';
+    // map.tippy?.elem.setAttribute('hidden', '');
+  }
+
   const changeHover = oneLRU((activeol: string, idx: number | undefined) => {
     const active = map.persistentLayers.active;
     const ov = $overlays[activeol];
@@ -145,13 +121,14 @@
       active.update(ov.coords, idx);
 
       if (map.tippy && pos.id) {
+        if (timeout) clearTimeout(timeout);
         map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
-        map.tippy.elem.removeAttribute('hidden');
+        map.tippy.elem.style.opacity = '1';
+        // map.tippy.elem.removeAttribute('hidden');
         map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
       }
     } else {
-      active.layer!.setVisible(false);
-      map.tippy?.elem.setAttribute('hidden', '');
+      timeout = setTimeout(hide, 400);
     }
   });
 
@@ -180,7 +157,8 @@
   <!-- Map tippy -->
   <div
     bind:this={tippyElem}
-    class="ol-tippy pointer-events-none max-w-sm rounded bg-neutral-800/80 px-2 py-1.5 text-xs backdrop-blur-lg"
+    class="ol-tippy pointer-events-none max-w-sm rounded bg-neutral-800/80 px-2 py-1.5 text-xs
+    backdrop-blur-lg transition-opacity duration-300 ease-out"
   />
 
   {#if sample}

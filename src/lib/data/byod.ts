@@ -5,7 +5,7 @@ import { Sample, type SampleParams } from '$lib/data/objects/sample';
 import { samples, sMapp, sSample } from '$lib/store';
 import Ajv, { type JSONSchemaType } from 'ajv';
 import { get } from 'svelte/store';
-import type { ROIData } from '../sidebar/annotation/selector';
+import type { ROIData } from '../sidebar/annotation/annROI';
 
 async function readFile<T extends object>(
   dirHandle: FileSystemDirectoryHandle,
@@ -96,7 +96,7 @@ export async function processHandle(
     if ('rois' in proc) {
       if (validate(proc)) {
         const rois = proc.rois;
-        get(sMapp).persistentLayers.rois.loadPolygons(rois);
+        get(sMapp).persistentLayers.rois.loadFeatures(rois);
         return;
       }
       console.error(validate.errors);

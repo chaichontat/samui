@@ -195,10 +195,11 @@
   let svg: d3.Selection<SVGSVGElement, number[], never, never>;
   $: if (
     div &&
-    $sId.idx != undefined &&
-    $sFeatureData.dataType !== 'singular' &&
-    !isEqual($sFeatureData.name, currData) &&
-    ($sEvent?.type === 'featureUpdated' || $sEvent?.type === 'sampleUpdated')
+    $sFeatureData?.dataType !== 'singular' &&
+    !isEqual($sFeatureData?.name, currData) &&
+    ($sEvent?.type === 'featureUpdated' ||
+      $sEvent?.type === 'sampleUpdated' ||
+      $sEvent?.type === 'renderComplete')
   ) {
     currData = $sFeatureData.name;
     if (svg) div.removeChild(svg.node()!);

@@ -5,6 +5,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import type { FeatureAndGroup } from './data/objects/feature';
 import type { Sample } from './data/objects/sample';
 import { oneLRU } from './lru';
+import type { Geometries } from './sidebar/annotation/annROI';
 import { HoverSelect } from './sidebar/searchBox';
 import type { WebGLSpots } from './ui/overlays/points';
 
@@ -27,21 +28,53 @@ export const sFeatureData = writable(
 );
 export const sPixel = writable(undefined as [number, number] | undefined);
 
-export const annotating = writable({
+export const annoROI = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
-  annotating: false,
-  annotatingCoordName: undefined as string | undefined,
-  selecting: false
+  selecting: undefined as Geometries | undefined
 });
 
-annotating.subscribe((ann) => {
+const escHandlerRoi = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    annoROI.update((a) => ({ ...a, selecting: undefined }));
+  }
+};
+
+annoROI.subscribe((ann) => {
   if (browser) {
     if (ann.selecting) {
       document.body.style.cursor = 'crosshair';
+      document.addEventListener('keydown', escHandlerRoi);
     } else {
       document.body.style.cursor = 'default';
+      document.removeEventListener('keydown', escHandlerRoi);
+    }
+  }
+});
+
+export const annoFeat = writable({
+  currKey: undefined as number | undefined,
+  keys: [] as string[],
+  show: true,
+  annotatingCoordName: undefined as string | undefined,
+  selecting: undefined as Geometries | 'Select' | undefined
+});
+
+const escHandler = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    annoFeat.update((a) => ({ ...a, annotating: undefined }));
+  }
+};
+
+annoFeat.subscribe((ann) => {
+  if (browser) {
+    if (ann.selecting) {
+      document.body.style.cursor = 'crosshair';
+      document.addEventListener('keydown', escHandler);
+    } else {
+      document.body.style.cursor = 'default';
+      document.removeEventListener('keydown', escHandler);
     }
   }
 });
@@ -52,7 +85,7 @@ const _setHoverNow = (v: SimpleHS<FeatureAndGroup>) => hoverSelect.set(get(hover
 const _setHover = debounce(_setHoverNow, 50);
 
 export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
-  if (!get(annotating).selecting) {
+  if (!get(annoROI).selecting) {
     _setHover(v);
     if (v.selected) {
       // Prevents hover from overriding actual selected.

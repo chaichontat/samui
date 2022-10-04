@@ -1,8 +1,8 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
   import { sPixel, sSample } from '$lib/store';
-  import FeatAnnotate from '$src/lib/sidebar/annotation/featAnnotate.svelte';
-  import ROIAnnotate from '$src/lib/sidebar/annotation/roiAnnotate.svelte';
+  import FeatAnnotate from '$src/lib/sidebar/annotation/AnnFeat.svelte';
+  import ROIAnnotate from '$src/lib/sidebar/annotation/AnnROI.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Markdown from '$src/lib/sidebar/markdown.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
@@ -10,7 +10,6 @@
   import Plot from './plot.svelte';
 
   export let showSidebar: boolean;
-  let annToggled = false;
 </script>
 
 <div class="z-40 w-full">
@@ -39,12 +38,20 @@
     <Plot />
   </Section>
 
-  <Section title="ROI Annotation" class="overflow-visible" defaultOpen>
+  <Section
+    title="ROI Annotation"
+    class="overflow-visible"
+    tooltipMsg="Draw and label regions of the image."
+  >
     <ROIAnnotate />
   </Section>
 
-  <Section title="Feature Annotation" bind:toggled={annToggled} togglable class="overflow-visible">
-    <!-- <FeatAnnotate toggled={annToggled} /> -->
+  <Section
+    title="Feature Annotation"
+    class="overflow-visible"
+    tooltipMsg="Assign labels to existing points (overlay)."
+  >
+    <FeatAnnotate />
   </Section>
 
   <Section title="Notes" defaultOpen>
