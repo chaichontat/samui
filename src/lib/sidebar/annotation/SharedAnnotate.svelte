@@ -21,20 +21,26 @@
     draw.clear();
   }
 
+  const alphanumeric = /^[a-zA-Z0-9_]*$/;
   function handleNewKey(name: string | null) {
-    if (name == null) {
-      alert('Empty name.');
-      return;
-    }
-    const newKey = name.trim();
+    if (!name) return;
 
-    if ($store.keys.findIndex((v) => v === newKey) === -1) {
-      $store.keys.push(newKey);
+    if ($store.keys.findIndex((v) => v === name) === -1) {
+      $store.keys.push(name);
       $store.keys = $store.keys;
       return $store.keys.length - 1;
     }
     alert('Key already exists.');
     return $store.currKey;
+  }
+
+  function getPrompt(prmt: string) {
+    const name = prompt(prmt);
+    if (name && !alphanumeric.test(name)) {
+      alert('Only alphanumeric characters and underscores are allowed.');
+      return null;
+    }
+    return name;
   }
 
   //   onMount(async () => {
@@ -62,7 +68,7 @@
   <div class="flex items-center">
     <AnnoButton
       class={labelClass}
-      onClick={() => ($store.currKey = handleNewKey(prompt('Enter new label.')))}
+      onClick={() => ($store.currKey = handleNewKey(getPrompt('Enter new label.')))}
     >
       <Icon src={Plus} class="mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]" />
       Label
@@ -79,7 +85,7 @@
               on:click={() => ($store.currKey = i)}
               on:dblclick={() => {
                 const oldName = key;
-                const newName = prompt('Enter new name.', key);
+                const newName = getPrompt('Enter new label.');
                 if (!newName) return;
                 $store.keys[i] = newName;
                 draw.relabel(oldName, newName);
