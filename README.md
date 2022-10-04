@@ -14,17 +14,27 @@ See the preprocessing package installation details below.
 ### Example Preprocessing
 
 Download a sample TIFF image from https://data.loopybrowser.com/VisiumIF/sample.tif.
+Call the preprocessing GUI with the following command in the terminal.
 
+#### GUI
+```sh
+conda activate loopy
+loopy gui
+```
+
+<img width="712" alt="Loopy preprocessing" src="https://user-images.githubusercontent.com/34997334/193870809-5338cbfa-9d7d-4e12-aca7-8a2c149eb2a2.png">
+
+#### In the command line
 ```sh
 conda activate loopy
 loopy image [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
 ```
+In this case, the output folder has the same name as the input file.
 
-The output folder has the same name as the input file.
 You can drag this folder to https://loopybrowser.com/.
 Despite the Browser being a webpage, all data are processed locally on your computer.
 
-This link opens the expected result: https://loopybrowser.com/from?url=data2.loopybrowser.com/VisiumIF/&s=sample.
+**This link opens the expected result: https://loopybrowser.com/from?url=data2.loopybrowser.com/VisiumIF/&s=sample.**
 
 Here, the browser retrieves the processed folder hosted on an external server.
 You could share your files with your collaborators using your own file server or AWS S3.
