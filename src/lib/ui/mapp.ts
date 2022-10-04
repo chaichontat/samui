@@ -4,14 +4,25 @@ import Zoom from 'ol/control/Zoom.js';
 
 import { get } from 'svelte/store';
 
-import { DrawFeature, Draww } from '$lib/sidebar/annotation/selector';
 import type { CoordsData } from '$src/lib/data/objects/coords';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
+import { Draww } from '$src/lib/sidebar/annotation/annROI';
 import { Background } from '$src/lib/ui/background/imgBackground';
-import { ActiveSpots, MutableSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
+import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import { throttle } from 'lodash-es';
-import { annoFeat, annoROI, mapTiles, overlays, setHoverSelect, sEvent, sOverlay, sPixel } from '../store';
+import { DrawFeature } from '../sidebar/annotation/annFeat';
+import { MutableSpots } from '../sidebar/annotation/mutableSpots';
+import {
+  annoFeat,
+  annoROI,
+  mapTiles,
+  overlays,
+  setHoverSelect,
+  sEvent,
+  sOverlay,
+  sPixel
+} from '../store';
 
 export class Mapp extends Deferrable {
   map?: Map;

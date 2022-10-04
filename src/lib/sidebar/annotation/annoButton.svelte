@@ -12,7 +12,7 @@
   class={classes(
     ping ? ' bg-orange-700 shadow-orange-700/30 hover:bg-orange-600' : cl,
     'w-[78px] relative flex justify-center items-center gap-x-0.5 rounded-lg py-1 font-medium shadow-lg transition-[background-color]',
-    'disabled:cursor-auto disabled:bg-neutral-500 hover:disabled:bg-neutral-500 disabled:text-neutral-300'
+    'disabled:cursor-auto disabled:bg-neutral-500 hover:disabled:bg-neutral-500 disabled:text-neutral-300 disabled:shadow-none'
   )}
   {disabled}
   on:click={onClick}

@@ -1,3 +1,4 @@
+import saveAs from 'file-saver';
 import Papa, { type ParseConfig, type ParseResult } from 'papaparse';
 
 export type Url = { url: string; type: 'local' | 'network' };
@@ -30,10 +31,12 @@ export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { downl
   let res: () => void;
   const promise: Promise<void> = new Promise((resolve) => (res = resolve));
 
+  //@ts-ignore
   if (options?.download) {
     str = str.startsWith('http') ? str : location.origin + str;
   }
 
+  //@ts-ignore
   Papa.parse(str, {
     dynamicTyping: true,
     header: true,
@@ -52,20 +55,22 @@ export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { downl
 
 export function toCSV(name: string, obj: object[] | string) {
   if (!obj.length) return;
+  console.log('toCSV', obj);
 
   if (typeof obj === 'string') {
     const blob = new Blob([obj], { type: 'text/csv' });
-    download(name, blob);
+    saveAs(blob, name);
     return;
   }
 
   const key = Object.keys(obj[0]);
   const out = [key.join(',')];
   for (const o of obj) {
+    //@ts-ignore
     out.push(key.map((k) => o[k]).join(','));
   }
   const blob = new Blob([out.join('\n')], { type: 'text/csv' });
-  download(name, blob);
+  saveAs(blob, name);
 }
 
 export function toJSON(name: string, obj: object | any[] | string | number) {
@@ -74,7 +79,7 @@ export function toJSON(name: string, obj: object | any[] | string | number) {
   const blob = new Blob([s], {
     type: 'application/json'
   });
-  download(name, blob);
+  saveAs(blob, name);
 }
 
 export async function getFileFromEvent({

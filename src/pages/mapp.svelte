@@ -70,36 +70,7 @@
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
         if (id_) $sId = { ...id_, source: 'map' };
-      }),
-      // For annotation stuffs.
-      click: (id_: { idx: number; id: number | string } | null) => {
-        if (!$sOverlay || !$annoROI.annotating) return;
-
-        if (!isEqual($sFeatureData.coords.name, $annoROI.annotatingCoordName)) {
-          alert(
-            `Annotation: coords mismatch. Started with ${
-              $sFeatureData.coords.name
-            }. Current active overlay is ${$annoROI.annotatingCoordName!}.`
-          );
-          return;
-        }
-
-        const sfd = $sFeatureData;
-        if ($annoROI.currKey != undefined && id_ && sfd) {
-          const idx = id_.idx;
-          const existing = map.persistentLayers.annotations.points.get(idx);
-          if (existing == undefined || existing.get('value') !== $annoROI.keys[$annoROI.currKey]) {
-            map.persistentLayers.annotations.points.add(
-              idx,
-              $annoROI.keys[$annoROI.currKey],
-              sfd.coords,
-              $annoROI.keys
-            );
-          } else {
-            map.persistentLayers.annotations.points.delete(idx);
-          }
-        }
-      }
+      })
     });
   });
 

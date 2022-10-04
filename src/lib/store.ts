@@ -5,7 +5,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import type { FeatureAndGroup } from './data/objects/feature';
 import type { Sample } from './data/objects/sample';
 import { oneLRU } from './lru';
-import type { Geometries } from './sidebar/annotation/selector';
+import type { Geometries } from './sidebar/annotation/annROI';
 import { HoverSelect } from './sidebar/searchBox';
 import type { WebGLSpots } from './ui/overlays/points';
 
@@ -32,7 +32,7 @@ export const annoROI = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
-  selecting: undefined as Geometries | undefined,
+  selecting: undefined as Geometries | undefined
 });
 
 const escHandlerRoi = (e: KeyboardEvent) => {
@@ -57,14 +57,13 @@ export const annoFeat = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
-  annotating: false,
   annotatingCoordName: undefined as string | undefined,
-  selecting: false,
+  selecting: undefined as Geometries | 'Select' | undefined
 });
 
 const escHandler = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
-    annoFeat.update((a) => ({ ...a, annotating: false, selecting: false }));
+    annoFeat.update((a) => ({ ...a, annotating: undefined }));
   }
 };
 

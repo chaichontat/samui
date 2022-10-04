@@ -1,8 +1,8 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
   import { sPixel, sSample } from '$lib/store';
-  import FeatAnnotate from '$src/lib/sidebar/annotation/featAnnotate.svelte';
-  import ROIAnnotate from '$src/lib/sidebar/annotation/roiAnnotate.svelte';
+  import FeatAnnotate from '$src/lib/sidebar/annotation/annFeat.svelte';
+  import ROIAnnotate from '$src/lib/sidebar/annotation/AnnROI.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import Markdown from '$src/lib/sidebar/markdown.svelte';
   import Nav from '$src/lib/sidebar/nav.svelte';
@@ -43,8 +43,8 @@
     <ROIAnnotate />
   </Section>
 
-  <Section title="Feature Annotation" bind:toggled={annToggled} togglable class="overflow-visible">
-    <!-- <FeatAnnotate toggled={annToggled} /> -->
+  <Section title="Feature Annotation" class="overflow-visible">
+    <FeatAnnotate />
   </Section>
 
   <Section title="Notes" defaultOpen>
