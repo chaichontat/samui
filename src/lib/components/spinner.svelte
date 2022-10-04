@@ -1,5 +1,9 @@
+<script lang="ts">
+  export let color = 'text-neutral-200';
+</script>
+
 <svg
-  class="-ml-1 mr-3 h-5 w-5 animate-spin text-neutral-700 dark:text-neutral-200"
+  class={'-ml-1 mr-3 h-5 w-5 animate-spin ' + color}
   xmlns="http://www.w3.org/2000/svg"
   fill="none"
   viewBox="0 0 24 24"

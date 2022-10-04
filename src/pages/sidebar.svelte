@@ -16,7 +16,9 @@
   <Nav />
 </div>
 
-<div class="flex flex-col items-center divide-y divide-neutral-700 border-y border-y-neutral-700">
+<div
+  class="flex flex-col items-center divide-y divide-neutral-700 border-y border-y-neutral-700 overflow-x-visible"
+>
   <Section title="Recent Features" defaultOpen>
     <Recent />
   </Section>

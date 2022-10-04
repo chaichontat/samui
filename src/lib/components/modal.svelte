@@ -1,8 +1,5 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-
-  export let animateIn = true;
-  export let animateOut = true;
 </script>
 
 <div

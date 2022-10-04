@@ -4,6 +4,7 @@
   import Darkswitch from '../components/darkswitch.svelte';
   import Github from '../components/github.svelte';
   import FeatureSearchBox from './featureSearchBox.svelte';
+  import Feedback from './Feedback.svelte';
   import type { FeatureGroupList } from './searchBox';
 
   let featureGroup: FeatureGroupList[];
@@ -21,5 +22,6 @@
     <FeatureSearchBox {featureGroup} />
   </div>
   <!-- <Darkswitch /> Will be back! -->
+  <Feedback />
   <Github />
 </nav>
