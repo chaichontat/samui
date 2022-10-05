@@ -349,7 +349,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     if (this.coords.mPerPx == undefined) throw new Error('mPerPx undefined.');
 
     this.source.clear();
-    const shortEnough = true;
+    const shortEnough = this.coords.pos!.length < 10000;
     if (!shortEnough) {
       return;
     }
