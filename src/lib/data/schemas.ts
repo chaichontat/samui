@@ -39,8 +39,8 @@ const roidata: JSONSchemaType<ROIData> = {
       items: roiInstance
     }
   },
-  required: ['sample', 'rois'],
-  additionalProperties: false
+  required: ['sample', 'rois']
+  //   additionalProperties: false
 };
 
 const ajv = new Ajv();

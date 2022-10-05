@@ -28,6 +28,7 @@ export class Sample extends Deferrable {
   coordsParams?: CoordsParams[];
   featureParams?: (PlainCSVParams | ChunkedCSVParams)[];
   overlayParams?: OverlayParams;
+  onlineCoords: Record<string, CoordsData> = {};
   notesMd?: Url;
   metadataMd?: Url;
 

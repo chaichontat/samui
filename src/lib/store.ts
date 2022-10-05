@@ -119,3 +119,5 @@ export const userState = writable({
 });
 
 export const mask = writable(undefined as boolean[] | undefined);
+
+export const flashing = writable('');
