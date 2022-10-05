@@ -97,7 +97,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       return false;
     }
 
-    // Set style cateogrical or quantitative.
+    // Set style categorical or quantitative.
     if (dataType === 'categorical') {
       ({ legend: this.currLegend, converted: data } = convertCategoricalToNumber({
         key: `${sample.name}-${fn.group}-${fn.feature}`,
@@ -135,6 +135,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   }
 
   async update(sample: Sample, fn: FeatureAndGroup) {
+    console.debug(`Update called: ${this.uid} to ${fn.feature}.`);
     if (!fn.feature) return false;
     const res = await sample.getFeature(fn);
     if (!res) return false;

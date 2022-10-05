@@ -1,17 +1,20 @@
 <script lang="ts">
+  import { update } from 'lodash-es';
+  import type { FeatureAndGroup } from './data/objects/feature';
   import {
     hoverSelect,
     mapIdSample,
     overlaysFeature,
     samples,
-    sEvent,
     sMapId,
     sOverlay,
     sSample
   } from './store';
 
   $: $sSample = $samples[$mapIdSample[$sMapId]];
-  $: $overlaysFeature[$sOverlay] = $hoverSelect.active;
+
+  const updateOverlay = (fg: FeatureAndGroup | undefined) => ($overlaysFeature[$sOverlay] = fg);
+  $: updateOverlay($hoverSelect.active);
 
   // $: if ($sEvent?.type === 'viewAdjusted') adjustSize()
   // const adjustSize = () => {
