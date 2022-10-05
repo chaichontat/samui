@@ -30,6 +30,7 @@ export class CoordsData extends Deferrable {
   size?: number;
   mPerPx: number;
   addedOnline: boolean;
+  // Subsample if more than 100k points.
   sample: number;
 
   constructor(

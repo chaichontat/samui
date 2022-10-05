@@ -1,4 +1,4 @@
-import { annoFeat, sEvent, type annoROI } from '$src/lib/store';
+import { annoFeat, flashing, sEvent, type annoROI } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
 import { Feature } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
@@ -213,7 +213,6 @@ export class Draww {
         out.push({
           label: feature.get('label') as string,
           type: g.getType() as Geometries,
-          color: feature.get('color') as string,
           // @ts-ignore
           radius: radius,
           // @ts-ignore
@@ -246,6 +245,7 @@ export class Draww {
     }
     if (get(this.store).currKey == undefined) get(this.store).currKey = keys.length - 1;
     this.store.set(get(this.store));
+    flashing.set('ROI Annotation');
   }
 
   removeFeature(f: Feature) {

@@ -5,10 +5,12 @@ import type { Circle, Geometry, Polygon } from 'ol/geom.js';
 import type { Coord, CoordsData } from '$lib/data/objects/coords';
 import {} from '$src/lib/data/objects/feature';
 import type { Sample } from '$src/lib/data/objects/sample';
-import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
+import { annoFeat, flashing, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { CanvasSpots } from '$src/lib/ui/overlays/points';
 
+import { difference, intersection, subtract } from 'lodash-es';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
+import { get } from 'svelte/store';
 
 export class MutableSpots extends CanvasSpots {
   mount() {
@@ -135,5 +137,39 @@ export class MutableSpots extends CanvasSpots {
   dump() {
     const points = this.source.getFeatures().map((f) => [f.get('id'), f.get('label')].join(','));
     return 'id,label\n' + points.join('\n');
+  }
+
+  loadFeatures(cs: { id: number; label?: string }[]) {
+    const coords = get(sFeatureData).coords;
+    const pos = coords.pos;
+
+    if (!pos) {
+      alert('Load existing coordinates first.');
+      return;
+    }
+
+    const ins = intersection(
+      cs.map((c) => c.id),
+      pos.map((p) => p.id)
+    );
+
+    if (ins.length !== cs.length) {
+      alert('Some points are not in the current coordinates.');
+      return;
+    }
+
+    const unique = new Set(cs.map((c) => c.label ?? 'Unlabeled'));
+    const keys = get(annoFeat).keys;
+
+    const newKeys = keys.concat(difference(Array.from(unique), keys));
+    get(annoFeat).keys = newKeys;
+
+    for (const { id, label } of cs) {
+      const match = pos.find((p) => p.id === id)!;
+      this.add(match.idx, label ?? 'Unlabeled', coords, newKeys, true);
+    }
+    get(annoFeat).currKey = newKeys.length - 1;
+    sEvent.set({ type: 'pointsAdded' });
+    flashing.set('Feature Annotation');
   }
 }

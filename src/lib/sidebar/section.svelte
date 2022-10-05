@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { flashing } from '$lib/store';
   import {
     Disclosure,
     DisclosureButton,
@@ -19,9 +20,39 @@
   export let toggled = false;
   export let toggledOff = 'opacity-50 pointer-events-none';
   export let tooltipMsg = '';
+
+  let interval: ReturnType<typeof setInterval>;
+
+  function flash(element: HTMLElement) {
+    interval = setInterval(() => {
+      requestAnimationFrame(() => {
+        element.style.transition = 'none';
+        element.style.color = 'rgba(255,62,0,1)';
+        element.style.backgroundColor = 'rgba(255,62,0,0.2)';
+
+        setTimeout(() => {
+          element.style.transition = 'color 1s, background 1s';
+          element.style.color = '';
+          element.style.backgroundColor = '';
+        });
+      });
+    }, 1000);
+  }
+  let div: HTMLElement;
+
+  $: if ($flashing === title) {
+    flash(div);
+  } else {
+    clearInterval(interval);
+  }
 </script>
 
-<section class="w-full" use:tooltip={{ enabled: Boolean(tooltipMsg), content: tooltipMsg }}>
+<section
+  class="w-full"
+  use:tooltip={{ enabled: Boolean(tooltipMsg), content: tooltipMsg }}
+  bind:this={div}
+  on:click={() => ($flashing === title ? ($flashing = '') : '')}
+>
   <Disclosure let:open {defaultOpen}>
     <DisclosureButton
       class={classes(

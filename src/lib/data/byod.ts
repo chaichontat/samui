@@ -6,6 +6,7 @@ import { samples, sMapp, sSample } from '$lib/store';
 import { get } from 'svelte/store';
 import { fromCSV } from '../io';
 import type { ROIData } from '../sidebar/annotation/annROI';
+import { CoordsData, type Coord } from './objects/coords';
 import { valROIData } from './schemas';
 
 async function readFile<T extends object>(
@@ -34,17 +35,32 @@ export async function byod() {
   return processHandle(handle);
 }
 
-async function processCSV(text: string) {
+async function processCSV(name: string, text: string) {
   const res = (await fromCSV(text))?.data;
   if (!res) {
     alert('Invalid CSV file');
     return;
   }
 
-  if (!('label' in res[0])) {
-    alert('CSV does not contain an ID column');
+  if ('x' in res[0] && 'y' in res[0]) {
+    get(sSample).onlineCoords[name] = new CoordsData({
+      name,
+      shape: 'circle',
+      size: 5,
+      mPerPx: get(sSample).image?.mPerPx ?? 1,
+      pos: res as Coord[],
+      addedOnline: true
+    });
     return;
   }
+
+  if ('id' in res[0]) {
+    const ann = get(sMapp).persistentLayers.annotations;
+    ann.points.loadFeatures(res as any);
+    return;
+  }
+
+  alert('Unknown CSV data format');
 }
 
 export async function processHandle(
@@ -60,7 +76,7 @@ export async function processHandle(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       proc = JSON.parse(text);
     } catch (e) {
-      await processCSV(text);
+      await processCSV(file.name, text);
       return;
     }
 
@@ -72,7 +88,8 @@ export async function processHandle(
         get(sMapp).persistentLayers.rois.loadFeatures(roidata.rois);
         return;
       }
-      alert(valROIData.errors);
+      alert('Validation error: ' + JSON.stringify(valROIData.errors));
+      return;
     }
 
     alert('Unknown file type.');
