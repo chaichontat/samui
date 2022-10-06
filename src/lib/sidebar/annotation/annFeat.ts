@@ -35,7 +35,6 @@ export class DrawFeature extends Draww {
       get(sFeatureData).coords,
       get(annoFeat).keys
     );
-
     this.featuresBeforeMod[idx] = feature.clone();
   }
 
@@ -51,8 +50,6 @@ export class DrawFeature extends Draww {
         if (!get(sOverlay) || !(anno.selecting === 'Select')) return;
 
         const sfd = get(sFeatureData);
-        console.log(sfd);
-
         if (!isEqual(sfd.coords.name, anno.annotatingCoordName)) {
           alert(
             `Annotation: coords mismatch. Started with ${anno.annotatingCoordName!} but now ${
@@ -79,9 +76,11 @@ export class DrawFeature extends Draww {
     return this.points.getComposition();
   }
 
-  processFeature(feature: Feature<Polygon | Circle>, color: string, label: string) {
+  processFeature(feature: Feature<Polygon | Circle>, color: string, label: string, newDraw = true) {
     super.processFeature(feature, color, label);
-    this.featuresBeforeMod[feature.getId() as number] = feature.clone();
+    if (newDraw) {
+      this.featuresBeforeMod[feature.getId() as number] = feature.clone();
+    }
     this.points.addFromPolygon(
       feature,
       get(annoFeat).keys[get(this.store as typeof annoFeat).currKey!],

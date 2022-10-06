@@ -124,8 +124,14 @@ export class Draww {
     } else {
       feature = (event as ModifyEvent).features.item(0) as Feature<Polygon>;
     }
+    console.log(feature.getGeometry().getCoordinates());
 
-    this.processFeature(feature, schemeTableau10[s.currKey! % 10], s.keys[s.currKey!]);
+    this.processFeature(
+      feature,
+      schemeTableau10[s.currKey! % 10],
+      s.keys[s.currKey!],
+      event.type === 'drawend'
+    );
   }
 
   clear() {
@@ -137,7 +143,13 @@ export class Draww {
     // this.points.update(template);
   }
 
-  processFeature(feature: Feature<Polygon | Circle | Point>, color: string, label: string) {
+  processFeature(
+    feature: Feature<Polygon | Circle | Point>,
+    color: string,
+    label: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    newDraw = true
+  ) {
     if (feature.getId() == undefined) {
       feature.setId(rand());
       feature.on(
