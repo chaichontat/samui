@@ -4,10 +4,10 @@
   import FeatAnnotate from '$src/lib/sidebar/annotation/AnnFeat.svelte';
   import ROIAnnotate from '$src/lib/sidebar/annotation/AnnROI.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
-  import Markdown from '$src/lib/sidebar/markdown.svelte';
+  // import Markdown from '$src/lib/sidebar/markdown.svelte'; // Dynamic import
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
-  import Plot from './plot.svelte';
+  // import Plot from './plot.svelte'; // Dynamic import
 
   $: hasFeature =
     $sSample &&
@@ -50,7 +50,9 @@
     </Section> -->
 
     <Section title="Histogram" defaultOpen class="flex justify-center overflow-visible">
-      <Plot />
+      {#await import('./plot.svelte') then plot}
+        <svelte:component this={plot.default} />
+      {/await}
     </Section>
 
     <Section
@@ -64,19 +66,24 @@
 
   <Section title="Notes" defaultOpen>
     {#if $sSample?.notesMd}
-      <Markdown url={$sSample.notesMd.url} />
+      {#await import('$src/lib/sidebar/markdown.svelte') then markdown}
+        <svelte:component this={markdown.default} url={$sSample.notesMd.url} />
+      {/await}
     {:else}
       No notes.
     {/if}
   </Section>
 
   {#if $sSample?.metadataMd}
-    <Section title="Metadata">
-      <Markdown
-        class="overflow-x-scroll pl-4 -indent-4 font-mono text-xs"
-        url={$sSample?.metadataMd.url}
-      />
-    </Section>
+    {#await import('$src/lib/sidebar/markdown.svelte') then markdown}
+      <Section title="Metadata">
+        <svelte:component
+          this={markdown.default}
+          class="overflow-x-scroll pl-4 -indent-4 font-mono text-xs"
+          url={$sSample?.metadataMd.url}
+        />
+      </Section>
+    {/await}
   {/if}
 </div>
 
