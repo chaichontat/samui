@@ -10,6 +10,7 @@
 
   export let store: typeof annoROI | typeof annoFeat;
   export let draw: Draww;
+  export let onLabelClick = () => {};
   export let labelClass = 'bg-cyan-700 shadow-cyan-800/20 hover:bg-cyan-600';
   export let buttonClass = 'bg-blue-700 shadow-blue-700/20 hover:bg-blue-600';
 
@@ -68,7 +69,10 @@
   <div class="flex items-center">
     <AnnoButton
       class={labelClass}
-      onClick={() => ($store.currKey = handleNewKey(getPrompt('Enter new label.')))}
+      onClick={() => {
+        onLabelClick();
+        $store.currKey = handleNewKey(getPrompt('Enter new label.'));
+      }}
     >
       <Icon src={Plus} class="mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]" />
       Label

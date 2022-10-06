@@ -1,3 +1,4 @@
+import type { CoordsData } from '$src/lib/data/objects/coords';
 import { annoFeat, annoROI, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { isEqual } from 'lodash-es';
 import type { Feature } from 'ol';
@@ -14,6 +15,7 @@ export class DrawFeature extends Draww {
 
   // Comparison point for points after modifying event.
   featuresBeforeMod: Record<number, Feature<Geometry>> = {};
+  coordsSource?: CoordsData;
 
   constructor(map: Mapp, store: typeof annoROI, mutspot: MutableSpots) {
     super(map, store);
@@ -32,7 +34,7 @@ export class DrawFeature extends Draww {
     this.points.addFromPolygon(
       feature,
       get(annoFeat).keys[keyIdx],
-      get(sFeatureData).coords,
+      this.coordsSource!,
       get(annoFeat).keys
     );
     this.featuresBeforeMod[idx] = feature.clone();
@@ -50,9 +52,9 @@ export class DrawFeature extends Draww {
         if (!get(sOverlay) || !(anno.selecting === 'Select')) return;
 
         const sfd = get(sFeatureData);
-        if (!isEqual(sfd.coords.name, anno.annotatingCoordName)) {
+        if (!isEqual(sfd.coords.name, anno.annotating?.coordName)) {
           alert(
-            `Annotation: coords mismatch. Started with ${anno.annotatingCoordName!} but now ${
+            `Annotation: coords mismatch. Started with ${anno.annotating!.coordName} but now ${
               sfd.coords.name
             }`
           );
@@ -72,6 +74,11 @@ export class DrawFeature extends Draww {
     });
   }
 
+  startDraw(coords: CoordsData) {
+    console.log('Start drawing at', coords.name);
+    this.coordsSource = coords;
+  }
+
   getComposition() {
     return this.points.getComposition();
   }
@@ -84,7 +91,7 @@ export class DrawFeature extends Draww {
     this.points.addFromPolygon(
       feature,
       get(annoFeat).keys[get(this.store as typeof annoFeat).currKey!],
-      get(sFeatureData).coords,
+      this.coordsSource!,
       get(annoFeat).keys
     );
   }

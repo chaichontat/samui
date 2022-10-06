@@ -57,13 +57,13 @@ export const annoFeat = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
-  annotatingCoordName: undefined as string | undefined,
+  annotating: undefined as { coordName: string; overlay: string } | undefined,
   selecting: undefined as Geometries | 'Select' | undefined
 });
 
 const escHandler = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
-    annoFeat.update((a) => ({ ...a, annotating: undefined }));
+    annoFeat.update((a) => ({ ...a, selecting: undefined }));
   }
 };
 
@@ -84,14 +84,22 @@ export const hoverSelect = writable(new HoverSelect<FeatureAndGroup>());
 const _setHoverNow = (v: SimpleHS<FeatureAndGroup>) => hoverSelect.set(get(hoverSelect).update(v));
 const _setHover = debounce(_setHoverNow, 50);
 
-export const setHoverSelect = oneLRU((v: SimpleHS<FeatureAndGroup>) => {
-  if (!get(annoROI).selecting) {
-    _setHover(v);
-    if (v.selected) {
-      // Prevents hover from overriding actual selected.
-      _setHover.flush();
-      _setHoverNow(v);
+export const setHoverSelect = oneLRU(async (v: SimpleHS<FeatureAndGroup>) => {
+  if (v.selected && get(annoFeat).annotating?.overlay === get(sOverlay)) {
+    const feat = await get(sSample).getFeature(v.selected);
+    if (feat?.coords.name !== get(annoFeat).annotating?.coordName) {
+      alert(
+        `You cannot change this layer's feature while annotating points from this layer. To see other features while annotating, add a new layer or change the active layer.`
+      );
+      return;
     }
+  }
+
+  _setHover(v);
+  if (v.selected) {
+    // Prevents hover from overriding actual selected.
+    _setHover.flush();
+    _setHoverNow(v);
   }
 });
 

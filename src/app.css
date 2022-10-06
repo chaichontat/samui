@@ -9,6 +9,10 @@
   body {
     @apply text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100;
   }
+
+  input[type='checkbox'] {
+    @apply rounded;
+  }
 }
 @tailwind components;
 @layer components {

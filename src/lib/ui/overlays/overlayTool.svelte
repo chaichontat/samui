@@ -1,9 +1,9 @@
 <script lang="ts">
   import { oneLRU } from '$lib/lru';
-  import { overlays, overlaysFeature, sEvent, sOverlay, sSample } from '$lib/store';
+  import { annoFeat, overlays, overlaysFeature, sEvent, sOverlay, sSample } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes } from '$src/lib/utils';
-  import { Plus, XMark } from '@steeze-ui/heroicons';
+  import { ArrowLongRight, Plus, XMark } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import type { Mapp } from '../mapp';
   import { tooltip } from '../utils';
@@ -86,8 +86,14 @@
   {#if sample}
     {#each Object.entries($overlays) as [uid, ov], i}
       {@const fg = $overlaysFeature[uid]}
-      <tr>
-        <td class="flex">
+      <tr class:opacity-70={$sOverlay !== ov.uid}>
+        <td>
+          <Icon
+            src={ArrowLongRight}
+            class={classes('svg-icon mr-1', $sOverlay === ov.uid ? '' : 'invisible')}
+          />
+        </td>
+        <td class="flex items-center">
           <!-- Outline checkbox -->
           <input
             type="checkbox"
@@ -112,10 +118,16 @@
             on:click={() => ($sOverlay = uid)}
             class={classes(
               'mr-2 max-w-[10rem] cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
-              $sOverlay === ov.uid ? 'text-white' : 'text-white/70'
+              uid === $annoFeat.annotating?.overlay ? 'text-teal-400' : 'text-white'
             )}
           >
-            {ov.uid ? (fg ? `${fg?.group} > ${fg?.feature}` : 'None') : ''}
+            {ov.uid
+              ? fg
+                ? `${uid === $annoFeat.annotating?.overlay ? 'Anno: ' : ''}${fg?.group} > ${
+                    fg?.feature
+                  }`
+                : 'None'
+              : ''}
           </span>
         </td>
         <td class="w-full" />
@@ -161,7 +173,7 @@
     on:click={addOverlay}
   >
     <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
-    <div class="font-normal">Add Overlay</div>
+    <div class="font-normal">Add Layer</div>
   </div>
   <!-- </FileInput> -->
 </div>

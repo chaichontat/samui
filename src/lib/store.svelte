@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { update } from 'lodash-es';
   import type { FeatureAndGroup } from './data/objects/feature';
   import {
     hoverSelect,
