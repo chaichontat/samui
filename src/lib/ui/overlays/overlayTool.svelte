@@ -150,6 +150,10 @@
             <button
               class="flex cursor-pointer items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
               on:click={() => {
+                if ($annoFeat.annotating?.overlay === ov.uid) {
+                  alert('You cannot delete the layer you are annotating.');
+                  return;
+                }
                 $overlays[uid].dispose();
                 delete $overlays[uid];
                 $sOverlay = $sOverlay === uid ? Object.keys($overlays)[0] : $sOverlay;
