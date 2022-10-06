@@ -6,7 +6,7 @@
   import { classes } from '$src/lib/utils';
   import type { Hierarchy } from '$src/pages/mapTile';
   import MapTile from '$src/pages/mapTile.svelte';
-  import Sidebar from '$src/pages/sidebar.svelte';
+  // import Sidebar from '$src/pages/sidebar.svelte'; // Dynamic import
   import { Bars3 } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
 
@@ -17,6 +17,8 @@
     Object.keys($sSample?.features ?? {}).length > 0;
 
   const updateSize = () => $sMapp.map?.updateSize();
+  let shownOnce = false;
+  $: if (showSidebar) shownOnce = true;
   $: if ($sMapp && (showSidebar || !showSidebar)) setTimeout(updateSize, 10);
 </script>
 
@@ -52,13 +54,15 @@
 />
 
 <!-- Sidebar -->
-<aside
-  class={classes(
-    'relative flex w-full flex-1 flex-col overflow-hidden overflow-y-scroll',
-    showSidebar ? 'md:h-full' : 'hidden'
-  )}
->
-  <!-- <div class=""> -->
-  <Sidebar bind:showSidebar />
-  <!-- </div> -->
-</aside>
+{#if showSidebar || shownOnce}
+  <aside
+    class={classes(
+      'relative flex w-full flex-1 flex-col overflow-hidden overflow-y-scroll',
+      showSidebar ? 'md:h-full' : 'hidden'
+    )}
+  >
+    {#await import('$src/pages/sidebar.svelte') then sidebar}
+      <svelte:component this={sidebar.default} />
+    {/await}
+  </aside>
+{/if}
