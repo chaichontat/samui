@@ -12,16 +12,13 @@
   import { onMount } from 'svelte';
 
   export let loadExternal: boolean;
-  let MainMap: typeof import('$src/pages/mainMap.svelte').default;
 
   onMount(() => {
-    import('$src/pages/mainMap.svelte')
-      .then((module) => (MainMap = module.default))
-      .catch(console.error);
-
     if (!navigator.userAgent.match(/chrome|chromium|crios/i)) {
       alert(
-        'Loopy Browser is optimized for Google Chrome. Please use Google Chrome for the best experience.'
+        `Loopy Browser is optimized for Google Chrome.
+        Dragging and dropping files may not work on other browsers.
+        If you face issues, please try Google Chrome.`
       );
     }
 
@@ -101,7 +98,9 @@
   }}
 >
   {#if Object.keys($samples).length > 0}
-    <MainMap />
+    {#await import('$src/pages/mainMap.svelte') then MainMap}
+      <svelte:component this={MainMap.default} />
+    {/await}
   {:else if loadExternal}
     <Modal>Loading data...</Modal>
   {:else}
