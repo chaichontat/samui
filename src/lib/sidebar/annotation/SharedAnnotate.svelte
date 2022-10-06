@@ -24,7 +24,7 @@
 
   const alphanumeric = /^[a-zA-Z0-9_]*$/;
   function handleNewKey(name: string | null) {
-    if (!name) return;
+    if (!name) return $store.currKey;
 
     if ($store.keys.findIndex((v) => v === name) === -1) {
       $store.keys.push(name);
@@ -36,12 +36,16 @@
   }
 
   function getPrompt(prmt: string) {
-    const name = prompt(prmt);
-    if (name && !alphanumeric.test(name)) {
-      alert('Only alphanumeric characters and underscores are allowed.');
-      return null;
+    let name = prompt(prmt);
+    if (name) {
+      while (!alphanumeric.test(name)) {
+        alert('Only alphanumeric characters and underscores are allowed.');
+        name = prompt(prmt);
+        if (!name) return null;
+      }
+      return name;
     }
-    return name;
+    return null;
   }
 
   //   onMount(async () => {
