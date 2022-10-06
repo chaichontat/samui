@@ -6,5 +6,5 @@ module.exports = {
     fontSize: { ...defaultTheme.fontSize, mb: '15px' }
   },
   darkMode: 'class',
-  plugins: [require('@tailwindcss/typography')]
+  plugins: [require('@tailwindcss/typography'), require('@tailwindcss/forms')]
 };
