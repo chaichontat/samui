@@ -27,7 +27,10 @@
   }
 
   $: if (featureGroup) {
-    fzf = featureGroup.map((f) => [f.group, new Fzf(f.features, { limit: 6 })]);
+    fzf = featureGroup.map((f) => [
+      f.group,
+      new Fzf(f.features, { limit: 6, casing: 'case-insensitive' })
+    ]);
   }
 
   $: if (fzf) {
