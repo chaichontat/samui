@@ -1,6 +1,5 @@
 // Bring your own data.
 
-import { browser } from '$app/environment';
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
 import { samples, sMapp, sSample } from '$lib/store';
 import { get } from 'svelte/store';

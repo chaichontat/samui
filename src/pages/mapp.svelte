@@ -1,11 +1,9 @@
 <script lang="ts">
   import {
-    annoROI,
     mask,
     overlays,
     overlaysFeature,
     sEvent,
-    sFeatureData,
     sId,
     sMapp,
     sOverlay,
@@ -17,8 +15,7 @@
 
   import { isEqual } from 'lodash-es';
   import 'ol/ol.css';
-  import View from 'ol/View';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { Mapp } from '../lib/ui/mapp';
 
   export let sample: Sample | undefined;
@@ -37,7 +34,6 @@
   let width: number;
   let height: number;
   let small = false;
-  const dispatch = createEventDispatcher();
 
   onMount(() => {
     map.mount(mapElem, tippyElem);
@@ -150,7 +146,6 @@
   <div
     id={mapName}
     bind:this={mapElem}
-    on:click={() => dispatch('mapClick')}
     class="map h-full w-full"
     class:small={showImgControl && small}
   />

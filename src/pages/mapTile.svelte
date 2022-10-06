@@ -7,7 +7,7 @@
   import { ArrowsRightLeft, ArrowsUpDown, XMark } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { afterUpdate, createEventDispatcher } from 'svelte';
-  import Mapp from './mapp.svelte';
+  // import Mapp from './mapp.svelte'; // Dynamic import
   import type { Hierarchy } from './mapTile';
 
   let currSampleName: string;
@@ -124,7 +124,7 @@
             items={Object.keys($samples)}
             on:change={(e) => {
               if (
-                $sMapp.persistentLayers.annotations.points.length > 0 &&
+                $sMapp?.persistentLayers.annotations.points.length > 0 &&
                 !confirm(
                   'You have unsaved annotations. If you change sample, they will be lost. Are you sure you want to continue?'
                 )
@@ -171,8 +171,11 @@
       class:border-neutral-900={$sMapId !== hieN || ($sMapId === hieN && $mapTiles.length === 1)}
       class:border-b-neutral-600={$sMapId !== hieN || ($sMapId === hieN && $mapTiles.length === 1)}
       class:border-neutral-100={$sMapId === hieN && $mapTiles.length > 1}
+      on:click={() => ($sMapId = hieN)}
     >
-      <Mapp on:mapClick={() => ($sMapId = hieN)} sample={$samples[currSampleName]} uid={hie} />
+      {#await import('./mapp.svelte') then mapp}
+        <svelte:component this={mapp.default} sample={$samples[currSampleName]} uid={hie} />
+      {/await}
     </div>
   </section>
 {:else}
