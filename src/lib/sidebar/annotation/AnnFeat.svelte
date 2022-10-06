@@ -21,6 +21,8 @@
       `annotations_${$sSample.name}_${$annoFeat.annotatingCoordName!}.csv`,
       $sMapp.persistentLayers.annotations.dumpPoints()
     );
+
+  $: $sMapp.persistentLayers.annotations.points.visible = $annoFeat.show;
 </script>
 
 <SharedAnnotate
