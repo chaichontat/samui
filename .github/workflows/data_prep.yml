@@ -39,5 +39,5 @@ jobs:
 
       - name: Test
         run: |
-          micromamba env update -f environment-dev.yml
+          micromamba install -c conda-forge pytest
           pytest
