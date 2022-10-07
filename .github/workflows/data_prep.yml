@@ -37,7 +37,7 @@ jobs:
         run: |
           pip install windows-curses
 
-      - name: Test run
+      - name: Test
         run: |
-          pip install -e .
-          loopy image ./sample.tif --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
+          micromamba env update -f environment-dev.yml
+          pytest
