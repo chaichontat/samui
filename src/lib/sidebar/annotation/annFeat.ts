@@ -30,12 +30,11 @@ export class DrawFeature extends Draww {
     const feature = e.features.getArray()[0] as Feature<Polygon>;
     const idx = feature.getId() as number;
     const prev = this.featuresBeforeMod[idx];
-    this.points.deleteFromPolygon(prev as Feature<Polygon | Circle>);
-    this.points.addFromPolygon(
-      feature,
-      feature.get('label') as string,
-      this.coordsSource!,
-      get(annoFeat).keys
+    this.points.modifyFromPolygon(
+      prev as Feature<Polygon | Circle>,
+      this.source.getFeatures().filter((f) => f.get('label') === feature.get('label')) as Feature<
+        Polygon | Circle
+      >[]
     );
     this.featuresBeforeMod[idx] = feature.clone();
   }
@@ -65,7 +64,7 @@ export class DrawFeature extends Draww {
           const idx = id_.idx;
           const existing = this.points.get(idx);
           if (existing == undefined || existing.get('value') !== anno.keys[anno.currKey]) {
-            this.points.add(idx, anno.keys[anno.currKey], sfd.coords, anno.keys);
+            this.points.add(idx, anno.keys[anno.currKey]);
           } else {
             this.points.remove(idx);
           }
@@ -77,7 +76,7 @@ export class DrawFeature extends Draww {
   startDraw(coords: CoordsData) {
     console.log('Start drawing at', coords.name);
     this.coordsSource = coords;
-    this.points.startDraw(coords);
+    this.points.startDraw(coords, get(annoFeat).reverseKeys);
   }
 
   getComposition() {
@@ -89,12 +88,7 @@ export class DrawFeature extends Draww {
     if (newDraw) {
       this.featuresBeforeMod[feature.getId() as number] = feature.clone();
     }
-    this.points.addFromPolygon(
-      feature,
-      feature.get('label') as string,
-      this.coordsSource!,
-      get(annoFeat).keys
-    );
+    this.points.addFromPolygon(feature);
   }
 
   removeFeature(f: Feature<Polygon | Circle>): void {

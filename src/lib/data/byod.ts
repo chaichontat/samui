@@ -55,7 +55,7 @@ async function processCSV(name: string, text: string) {
 
   if ('id' in res[0]) {
     const ann = get(sMapp).persistentLayers.annotations;
-    ann.points.loadFeatures(res as any);
+    ann.points.load(res as any);
     return;
   }
 

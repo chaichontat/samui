@@ -58,7 +58,13 @@ export const annoFeat = writable({
   keys: [] as string[],
   show: true,
   annotating: undefined as { coordName: string; overlay: string } | undefined,
-  selecting: undefined as Geometries | 'Select' | undefined
+  selecting: undefined as Geometries | 'Select' | undefined,
+  reverseKeys: {} as Record<string, number>
+});
+
+annoFeat.subscribe((ann) => {
+  // DO NOT reassign reverseKeys. It's a reference for mutspot.
+  ann.keys.forEach((k, i) => (ann.reverseKeys[k] = i));
 });
 
 const escHandler = (e: KeyboardEvent) => {
