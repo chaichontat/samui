@@ -10,11 +10,18 @@ import { Fill, RegularShape, Style } from 'ol/style.js';
 import { get } from 'svelte/store';
 
 export class MutableSpots extends CanvasSpots {
+  coordsSource?: CoordsData;
+  // points?: Feature<Point>[]; // To check if a point is already in the source.
   // Always Point
   mount() {
     super.mount();
     this.layer!.setZIndex(Infinity);
     return this;
+  }
+
+  startDraw(coords: CoordsData) {
+    this.coordsSource = coords;
+    // this.points = new Array(coords.pos!.length);
   }
 
   updateFeature(f: Feature<Geometry>, label: string, ant: string[]) {
