@@ -39,5 +39,5 @@ jobs:
 
       - name: Test
         run: |
-          micromamba install -c conda-forge pytest
+          micromamba install -c conda-forge pytest pytest-cov
           pytest test-python
