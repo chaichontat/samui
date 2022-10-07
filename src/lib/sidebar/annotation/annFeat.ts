@@ -33,7 +33,7 @@ export class DrawFeature extends Draww {
     this.points.deleteFromPolygon(prev as Feature<Polygon | Circle>);
     this.points.addFromPolygon(
       feature,
-      get(annoFeat).keys[keyIdx],
+      feature.get('label') as string,
       this.coordsSource!,
       get(annoFeat).keys
     );
@@ -90,7 +90,7 @@ export class DrawFeature extends Draww {
     }
     this.points.addFromPolygon(
       feature,
-      get(annoFeat).keys[get(this.store as typeof annoFeat).currKey!],
+      feature.get('label') as string,
       this.coordsSource!,
       get(annoFeat).keys
     );
@@ -108,12 +108,8 @@ export class DrawFeature extends Draww {
   }
 
   relabel(old: string, newlabel: string): void {
-    for (const f of this.source.getFeatures()) {
-      if (f.get('label') === old) {
-        f.set('label', newlabel);
-        this.points.relabel(old, newlabel);
-      }
-    }
+    super.relabel(old, newlabel);
+    this.points.relabel(old, newlabel);
     sEvent.set({ type: 'pointsAdded' });
   }
 

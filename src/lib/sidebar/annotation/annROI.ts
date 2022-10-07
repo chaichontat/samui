@@ -150,14 +150,13 @@ export class Draww {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     newDraw = true
   ) {
-    if (feature.getId() == undefined) {
-      feature.setId(rand());
-      feature.on(
-        'propertychange',
-        (e) => (e.key === 'label' || e.key === 'color') && this._updatePolygonStyle(feature)
-      );
-    }
+    if (feature.getId() != undefined) return;
 
+    feature.setId(rand());
+    feature.on(
+      'propertychange',
+      (e) => (e.key === 'label' || e.key === 'color') && this._updatePolygonStyle(feature)
+    );
     feature.set('color', color);
     feature.set('label', label);
     sEvent.set({ type: 'pointsAdded' });
