@@ -21,6 +21,13 @@ const config = {
   build: {
     target: 'esnext',
     chunkSizeWarningLimit: 1024
+  },
+
+  test: {
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: 'setupTest.js'
   }
 };
 export default config;

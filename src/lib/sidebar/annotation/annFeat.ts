@@ -77,6 +77,7 @@ export class DrawFeature extends Draww {
   startDraw(coords: CoordsData) {
     console.log('Start drawing at', coords.name);
     this.coordsSource = coords;
+    this.points.startDraw(coords);
   }
 
   getComposition() {
