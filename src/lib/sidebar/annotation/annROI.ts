@@ -2,9 +2,10 @@ import { annoFeat, flashing, sEvent, type annoROI } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
 import { Feature } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
-import { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
+import { Circle, Geometry, MultiPoint, Point, Polygon } from 'ol/geom.js';
 import { Draw, Modify, Select, Snap, Translate } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
+import type { ModifyEvent } from 'ol/interaction/Modify';
 import type { SelectEvent } from 'ol/interaction/Select';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
@@ -61,6 +62,7 @@ export class Draww {
   mount() {
     this.changeDrawType('Polygon', true);
     this.map.map!.addInteraction(this.modify);
+    this.modify.on('modifyend', (e: ModifyEvent) => this.onDrawEnd_(e));
     this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
     this.map.map!.addInteraction(this.select);
@@ -112,13 +114,22 @@ export class Draww {
     this.currDrawType = type;
   }
 
-  onDrawEnd_(event: DrawEvent) {
+  onDrawEnd_(event: DrawEvent | ModifyEvent) {
     event.preventDefault();
     const s = get(this.store);
+
+    let feature: Feature<Geometry>;
+    if (event.type === 'drawend') {
+      feature = (event as DrawEvent).feature;
+    } else {
+      feature = (event as ModifyEvent).features.item(0) as Feature<Polygon>;
+    }
+
     this.processFeature(
-      event.feature as Feature<Polygon>,
+      feature,
       schemeTableau10[s.currKey! % 10],
-      s.keys[s.currKey!]
+      s.keys[s.currKey!],
+      event.type === 'drawend'
     );
   }
 
@@ -131,8 +142,15 @@ export class Draww {
     // this.points.update(template);
   }
 
-  processFeature(feature: Feature<Polygon | Circle | Point>, color: string, label: string) {
-    // Not called after modify.
+  processFeature(
+    feature: Feature<Polygon | Circle | Point>,
+    color: string,
+    label: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    newDraw = true
+  ) {
+    if (feature.getId() != undefined) return;
+
     feature.setId(rand());
     feature.on(
       'propertychange',
@@ -173,14 +191,36 @@ export class Draww {
           fill: new Fill({ color: (feature.get('color') as string) + '88' })
         })
       });
-    } else {
-      st = drawnStyle.clone();
-      if (setStroke) {
-        st.setStroke(new Stroke({ color: feature.get('color') as string, width: 3 }));
-      }
-      st.getText().setText(feature.get('label') as string);
+      feature.setStyle(st);
+      return;
     }
-    feature.setStyle(st);
+
+    st = drawnStyle.clone();
+    if (setStroke) {
+      st.setStroke(new Stroke({ color: feature.get('color') as string, width: 3 }));
+    }
+    st.getText().setText(feature.get('label') as string);
+
+    if (type === 'Circle') {
+      feature.setStyle(st);
+      return;
+    }
+
+    // Polygon
+    const vt = new Style({
+      image: new CircleStyle({
+        radius: 5,
+        fill: new Fill({
+          color: feature.get('color') as string
+        })
+      }),
+      geometry: (feature) => {
+        // return the coordinates of the first ring of the polygon
+        const coordinates = feature.getGeometry().getCoordinates()[0];
+        return new MultiPoint(coordinates);
+      }
+    });
+    feature.setStyle([st, vt]);
   }
 
   static recurseCoords(coords: Coordinate[] | Coordinate[][]): string[] {

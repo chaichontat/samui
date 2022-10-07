@@ -97,7 +97,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       return false;
     }
 
-    // Set style cateogrical or quantitative.
+    // Set style categorical or quantitative.
     if (dataType === 'categorical') {
       ({ legend: this.currLegend, converted: data } = convertCategoricalToNumber({
         key: `${sample.name}-${fn.group}-${fn.feature}`,
@@ -135,6 +135,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   }
 
   async update(sample: Sample, fn: FeatureAndGroup) {
+    console.debug(`Update called: ${this.uid} to ${fn.feature}.`);
     if (!fn.feature) return false;
     const res = await sample.getFeature(fn);
     if (!res) return false;
@@ -301,7 +302,27 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     idx,
     mPerPx,
     size
-  }: Coord & { idx: number; mPerPx: number; size?: number }) {
+  }: Coord & { idx: number; mPerPx: number; size?: null }): Feature<Point>;
+
+  static _genCircle({
+    x,
+    y,
+    id,
+    idx,
+    mPerPx,
+    size
+  }: Coord & { idx: number; mPerPx: number; size: number }): Feature<Circle>;
+
+  static _genCircle({
+    x,
+    y,
+    id,
+    idx,
+    mPerPx,
+    size
+  }: Coord & { idx: number; mPerPx: number; size?: number | null }):
+    | Feature<Point>
+    | Feature<Circle> {
     const c = [x * mPerPx, -y * mPerPx];
     const f = new Feature({
       geometry: size != undefined && size != undefined ? new Circle(c, size / 4) : new Point(c),
@@ -309,7 +330,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
       id: id ?? idx
     });
     f.setId(idx);
-    return f;
+    return f as Feature<Point> | Feature<Circle>;
   }
 
   get visible() {

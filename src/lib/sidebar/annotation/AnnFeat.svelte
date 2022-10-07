@@ -1,6 +1,6 @@
 <script lang="ts">
   import { toCSV } from '$lib/io';
-  import { annoFeat, sFeatureData, sMapp, sSample } from '$lib/store';
+  import { annoFeat, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
   import { tooltip } from '$lib/ui/utils';
   import { classes } from '$lib/utils';
   import { ArrowUpOnSquare, CursorArrowRays } from '@steeze-ui/heroicons';
@@ -9,8 +9,8 @@
   import SharedAnnotate from './SharedAnnotate.svelte';
 
   // Fix starting coord.
-  $: if (!$annoFeat.annotatingCoordName && $annoFeat.keys.length) {
-    $annoFeat.annotatingCoordName = $sFeatureData.coords.name;
+  $: if (!$annoFeat.annotating?.coordName && $annoFeat.keys.length) {
+    $annoFeat.annotating = { coordName: $sFeatureData.coords.name, overlay: $sOverlay };
   }
 
   const labelClass = 'bg-violet-800 shadow-violet-800/20 hover:bg-violet-700';
@@ -18,15 +18,20 @@
 
   const out = () =>
     toCSV(
-      `annotations_${$sSample.name}_${$annoFeat.annotatingCoordName!}.csv`,
+      `annotations_${$sSample.name}_${$annoFeat.annotating!.coordName}.csv`,
       $sMapp.persistentLayers.annotations.dumpPoints()
     );
+
+  $: $sMapp.persistentLayers.annotations.points.visible = $annoFeat.show;
 </script>
 
 <SharedAnnotate
   store={annoFeat}
   draw={$sMapp.persistentLayers.annotations}
-  {labelClass}
+  onLabelClick={() =>
+    $annoFeat.keys.length === 0
+      ? $sMapp.persistentLayers.annotations.startDraw($sFeatureData.coords)
+      : null}
   {buttonClass}
 >
   <AnnoButton
@@ -59,19 +64,19 @@
 </SharedAnnotate>
 
 <div class="mt-2">
-  {!$annoFeat.annotatingCoordName
+  {!$annoFeat.annotating?.coordName
     ? 'Not annotating.'
     : $annoFeat.keys.length === 0
     ? 'Add labels to start annoFeat.'
     : $annoFeat.selecting
-    ? `Selecting ${$annoFeat.annotatingCoordName}.`
-    : `Click on points or add selections to annotate ${$annoFeat.annotatingCoordName}.`}
+    ? `Selecting ${$annoFeat.annotating.coordName}.`
+    : `Add points or selections to annotate ${$annoFeat.annotating.coordName}.`}
 </div>
 <div class="flex">
   <div class="flex-grow" />
   <div class="flex items-center gap-x-2">
-    <label>
-      <input class="translate-y-0.5" type="checkbox" bind:checked={$annoFeat.show} />
+    <label class="cursor-pointer">
+      <input class="" type="checkbox" bind:checked={$annoFeat.show} />
       Show overlay
     </label>
   </div>

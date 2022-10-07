@@ -1,3 +1,4 @@
+import type { CoordsData } from '$src/lib/data/objects/coords';
 import { annoFeat, annoROI, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { isEqual } from 'lodash-es';
 import type { Feature } from 'ol';
@@ -14,6 +15,7 @@ export class DrawFeature extends Draww {
 
   // Comparison point for points after modifying event.
   featuresBeforeMod: Record<number, Feature<Geometry>> = {};
+  coordsSource?: CoordsData;
 
   constructor(map: Mapp, store: typeof annoROI, mutspot: MutableSpots) {
     super(map, store);
@@ -31,11 +33,10 @@ export class DrawFeature extends Draww {
     this.points.deleteFromPolygon(prev as Feature<Polygon | Circle>);
     this.points.addFromPolygon(
       feature,
-      get(annoFeat).keys[keyIdx],
-      get(sFeatureData).coords,
+      feature.get('label') as string,
+      this.coordsSource!,
       get(annoFeat).keys
     );
-
     this.featuresBeforeMod[idx] = feature.clone();
   }
 
@@ -51,11 +52,9 @@ export class DrawFeature extends Draww {
         if (!get(sOverlay) || !(anno.selecting === 'Select')) return;
 
         const sfd = get(sFeatureData);
-        console.log(sfd);
-
-        if (!isEqual(sfd.coords.name, anno.annotatingCoordName)) {
+        if (!isEqual(sfd.coords.name, anno.annotating?.coordName)) {
           alert(
-            `Annotation: coords mismatch. Started with ${anno.annotatingCoordName!} but now ${
+            `Annotation: coords mismatch. Started with ${anno.annotating!.coordName} but now ${
               sfd.coords.name
             }`
           );
@@ -75,17 +74,25 @@ export class DrawFeature extends Draww {
     });
   }
 
+  startDraw(coords: CoordsData) {
+    console.log('Start drawing at', coords.name);
+    this.coordsSource = coords;
+    this.points.startDraw(coords);
+  }
+
   getComposition() {
     return this.points.getComposition();
   }
 
-  processFeature(feature: Feature<Polygon | Circle>, color: string, label: string) {
+  processFeature(feature: Feature<Polygon | Circle>, color: string, label: string, newDraw = true) {
     super.processFeature(feature, color, label);
-    this.featuresBeforeMod[feature.getId() as number] = feature.clone();
+    if (newDraw) {
+      this.featuresBeforeMod[feature.getId() as number] = feature.clone();
+    }
     this.points.addFromPolygon(
       feature,
-      get(annoFeat).keys[get(this.store as typeof annoFeat).currKey!],
-      get(sFeatureData).coords,
+      feature.get('label') as string,
+      this.coordsSource!,
       get(annoFeat).keys
     );
   }
@@ -102,12 +109,8 @@ export class DrawFeature extends Draww {
   }
 
   relabel(old: string, newlabel: string): void {
-    for (const f of this.source.getFeatures()) {
-      if (f.get('label') === old) {
-        f.set('label', newlabel);
-        this.points.relabel(old, newlabel);
-      }
-    }
+    super.relabel(old, newlabel);
+    this.points.relabel(old, newlabel);
     sEvent.set({ type: 'pointsAdded' });
   }
 

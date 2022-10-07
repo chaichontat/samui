@@ -106,14 +106,19 @@ export class Sample extends Deferrable {
       return;
     }
 
-    const key = `${fn.group}-${fn.feature}`;
+    let coordKey: string;
 
     // Coordinates stuffs.
     let g: CoordsData;
     if (res.coordName) {
+      coordKey = res.coordName;
       await this.coords[res.coordName].hydrate(this.handle);
       g = this.coords[res.coordName];
     } else {
+      // Impossible for PlainCSV to have different coords per feature.
+      // ChunkedCSV can because each feature retrieve can have its own coordName.
+      coordKey =
+        this.features[fn.group] instanceof PlainCSV ? fn.group : `${fn.group}-${fn.feature}`;
       // Gen coords.
       const mPerPx = res.mPerPx ?? this.image?.mPerPx;
       if (mPerPx == undefined) {
@@ -127,7 +132,7 @@ export class Sample extends Deferrable {
       }
 
       g = new CoordsData({
-        name: key,
+        name: coordKey,
         shape: 'circle',
         pos: res.data as unknown as Coord[],
         size: res.size,
@@ -155,7 +160,13 @@ export class Sample extends Deferrable {
       }
     }
 
-    const processed = { ...res, data, coords: g, minmax: stats({ key, args: [data] }), name: fn };
+    const processed = {
+      ...res,
+      data,
+      coords: g,
+      minmax: stats({ key: coordKey, args: [data] }),
+      name: fn
+    };
 
     return processed;
   });

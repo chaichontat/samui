@@ -55,11 +55,11 @@
     console.debug('Set colors', imgCtrl);
   }
 
-  function handleClick(name: string, color: BandInfo['color'] | undefined) {
+  function handleClick(name: string, color: BandInfo['color'] | undefined, alternate = false) {
     if (!imgCtrl) return;
     if (imgCtrl.type === 'composite' && color) {
       const v = imgCtrl.variables[name];
-      if (v.enabled && v.color === color) {
+      if (v.enabled && v.color === color && alternate) {
         imgCtrl.variables[name].enabled = false;
       } else {
         const dupe = Object.values(imgCtrl.variables).find((v) => v.color === color && v.enabled);
@@ -101,7 +101,7 @@
             <tr class="">
               <td
                 class=""
-                on:click={() => handleClick(name, imgCtrl.variables[name].color)}
+                on:click={() => handleClick(name, imgCtrl.variables[name].color, true)}
                 bind:this={cell}
               >
                 <button
@@ -120,11 +120,30 @@
                   <div class="whitespace-nowrap">{name}</div>
                 </button>
               </td>
-
+              <td class="tabular-nums">
+                <div class="flex">
+                  <input
+                    type="range"
+                    min="0"
+                    max="255"
+                    class="mx-2 min-w-[3rem] max-w-[6rem] cursor-pointer opacity-70 transition-opacity duration-500 group-hover:opacity-100"
+                    bind:value={imgCtrl.variables[name].max}
+                    on:mousedown={() => handleClick(name, imgCtrl.variables[name].color)}
+                  />
+                  <span
+                    class={classes(
+                      imgCtrl.variables[name].enabled ? '' : 'opacity-80 hover:opacity-100',
+                      'whitespace-nowrap'
+                    )}
+                  >
+                    Max: {255 - imgCtrl.variables[name].max}
+                  </span>
+                </div>
+              </td>
               <td class="flex items-center justify-center gap-x-1.5">
                 {#each zip(colors, bgColors) as [color, bg], i}
                   <button
-                    on:click={() => handleClick(name, color)}
+                    on:click={() => handleClick(name, color, true)}
                     class={classes(
                       bg,
                       color !== 'white' ? 'opacity-90' : '',
@@ -133,15 +152,6 @@
                     )}
                   />
                 {/each}
-              </td>
-              <td>
-                <input
-                  type="range"
-                  min="0"
-                  max="255"
-                  class="mx-4 min-w-[4rem] max-w-[8rem] cursor-pointer opacity-70 transition-opacity duration-500 group-hover:opacity-100"
-                  bind:value={imgCtrl.variables[name].max}
-                />
               </td>
             </tr>
           {/each}

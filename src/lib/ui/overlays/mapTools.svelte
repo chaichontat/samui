@@ -6,16 +6,12 @@
   import { saveAs } from 'file-saver';
   import { toBlob } from 'html-to-image';
   import { tooltip } from '../utils';
-  import OverlayTool from './overlayTool.svelte';
+  // import OverlayTool from './overlayTool.svelte'; // Dynamic import
 
-  export let width = 0;
+  export let haveFeatures: boolean;
   let map: Mapp;
   $: map = $sMapp;
   $: showImgControl = $userState.showImgControl;
-
-  $: haveFeatures =
-    Object.keys($sSample?.coords ?? {}).length > 0 ||
-    Object.keys($sSample?.features ?? {}).length > 0;
 
   function screenshot() {
     if (!map.map) return;
@@ -43,11 +39,13 @@
 <section class="donotsave absolute right-1 top-2 z-20 flex gap-x-4">
   <!-- Overlay selector -->
   {#if showImgControl && haveFeatures}
-    <div
-      class="inline-flex h-min flex-col gap-y-1 rounded-lg bg-neutral-800/80 p-2 px-3 text-sm font-medium backdrop-blur-lg dark:text-white/90"
-    >
-      <OverlayTool {map} />
-    </div>
+    {#await import('./overlayTool.svelte') then overlayTool}
+      <div
+        class="inline-flex h-min flex-col gap-y-1 rounded-lg bg-neutral-800/80 p-2 px-3 text-sm font-medium backdrop-blur-lg dark:text-white/90"
+      >
+        <svelte:component this={overlayTool.default} {map} />
+      </div>
+    {/await}
   {/if}
 
   <div class="-mt-1 mr-2 flex flex-col gap-y-4 md:mt-[47px]">

@@ -1,22 +1,26 @@
 <script lang="ts">
   import { mapTiles, sMapp, sSample } from '$lib/store';
-  import Colorbar from '$src/lib/components/colorbar.svelte';
+  // import Colorbar from '$src/lib/components/colorbar.svelte'; // Dynamic import
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
   import { resizable } from '$src/lib/ui/utils';
   import { classes } from '$src/lib/utils';
   import type { Hierarchy } from '$src/pages/mapTile';
   import MapTile from '$src/pages/mapTile.svelte';
-  import Sidebar from '$src/pages/sidebar.svelte';
+  // import Sidebar from '$src/pages/sidebar.svelte'; // Dynamic import
   import { Bars3 } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
 
   let hie: Hierarchy = { root: true, maps: $mapTiles };
 
-  $: showSidebar =
+  $: haveFeatures =
     Object.keys($sSample?.coords ?? {}).length > 0 ||
     Object.keys($sSample?.features ?? {}).length > 0;
 
+  $: showSidebar = haveFeatures;
+
   const updateSize = () => $sMapp.map?.updateSize();
+  let shownOnce = false;
+  $: if (showSidebar) shownOnce = true;
   $: if ($sMapp && (showSidebar || !showSidebar)) setTimeout(updateSize, 10);
 </script>
 
@@ -33,13 +37,17 @@
   <article class="h-full w-full" id="allMaps">
     <MapTile {hie} />
 
-    <div class="pointer-events-none absolute right-6 bottom-4 z-20">
-      <Colorbar />
+    <div class="absolute top-[60px] right-1 md:top-2">
+      <MapTools {haveFeatures} />
     </div>
 
-    <div class="absolute top-[60px] right-1 md:top-2">
-      <MapTools />
-    </div>
+    {#if haveFeatures}
+      {#await import('$src/lib/components/colorbar.svelte') then colorbar}
+        <div class="pointer-events-none absolute right-6 bottom-4 z-20">
+          <svelte:component this={colorbar.default} />
+        </div>
+      {/await}
+    {/if}
   </article>
 </div>
 
@@ -52,13 +60,15 @@
 />
 
 <!-- Sidebar -->
-<aside
-  class={classes(
-    'relative flex w-full flex-1 flex-col overflow-hidden overflow-y-scroll',
-    showSidebar ? 'md:h-full' : 'hidden'
-  )}
->
-  <!-- <div class=""> -->
-  <Sidebar bind:showSidebar />
-  <!-- </div> -->
-</aside>
+{#if showSidebar || shownOnce}
+  <aside
+    class={classes(
+      'relative flex w-full flex-1 flex-col overflow-hidden overflow-y-scroll',
+      showSidebar ? 'md:h-full' : 'hidden'
+    )}
+  >
+    {#await import('$src/pages/sidebar.svelte') then sidebar}
+      <svelte:component this={sidebar.default} />
+    {/await}
+  </aside>
+{/if}

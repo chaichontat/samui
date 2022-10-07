@@ -5,17 +5,20 @@
   import { processHandle } from '$src/lib/data/byod';
   import { samples } from '$src/lib/store';
   import Store from '$src/lib/store.svelte';
-  import MainMap from '$src/pages/mainMap.svelte';
+  // import MainMap from '$src/pages/mainMap.svelte';
   import Splash from '$src/pages/splash.svelte';
   import { ArrowDown } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { onMount } from 'svelte';
 
   export let loadExternal: boolean;
+
   onMount(() => {
     if (!navigator.userAgent.match(/chrome|chromium|crios/i)) {
       alert(
-        'Loopy Browser is optimized for Google Chrome. Please use Google Chrome for the best experience.'
+        `Loopy Browser is optimized for Google Chrome.
+        Dragging and dropping files may not work on other browsers.
+        If you face issues, please try Google Chrome.`
       );
     }
 
@@ -36,8 +39,6 @@
   // Drops
   function handleDrop(e: Event) {
     dragging = false;
-
-    e.preventDefault();
     e.stopPropagation();
 
     const file = (e as DragEvent).dataTransfer?.items[0];
@@ -83,26 +84,25 @@
 
 <main
   class="flex h-screen flex-col divide-neutral-800 overflow-x-hidden bg-neutral-900 md:flex-row"
-  on:drop={handleDrop}
-  on:dragenter={(e) => {
+  on:drop|preventDefault={handleDrop}
+  on:dragenter|preventDefault={() => {
     if (dragTimeout) clearTimeout(dragTimeout); // Prevents flicker when drop div appears.
-    e.preventDefault();
     dragging = true;
   }}
-  on:dragover={(e) => {
+  on:dragover|preventDefault={() => {
     if (dragTimeout) clearTimeout(dragTimeout);
-    e.preventDefault();
     dragging = true;
   }}
-  on:dragleave={(e) => {
-    e.preventDefault();
+  on:dragleave|preventDefault={() => {
     dragTimeout = setTimeout(() => (dragging = false), 100);
   }}
 >
   {#if Object.keys($samples).length > 0}
-    <MainMap />
+    {#await import('$src/pages/mainMap.svelte') then MainMap}
+      <svelte:component this={MainMap.default} />
+    {/await}
   {:else if loadExternal}
-    <Modal animateIn={false}>Loading data...</Modal>
+    <Modal>Loading data...</Modal>
   {:else}
     <Splash />
   {/if}

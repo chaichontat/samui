@@ -73,7 +73,7 @@ export class Mapp extends Deferrable {
     this.map.addOverlay(this.tippy.overlay);
 
     // Create first overlay. Prevents spontaneous overlay when splitting.
-    if (get(mapTiles).length === 1) {
+    if (get(mapTiles).length === 1 && Object.keys(get(overlays)).length === 0) {
       const ol = new WebGLSpots(this);
       overlays.set({ [ol.uid]: ol });
       sOverlay.set(ol.uid);

@@ -13,7 +13,8 @@ const config = {
       assets: 'build',
       fallback: null,
       compress: true
-    })
+    }),
+    inlineStyleThreshold: 1024
   }
 };
 

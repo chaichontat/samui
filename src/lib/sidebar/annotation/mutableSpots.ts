@@ -1,22 +1,27 @@
 import * as d3 from 'd3';
 import type Feature from 'ol/Feature.js';
-import type { Circle, Geometry, Polygon } from 'ol/geom.js';
+import type { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
 
-import type { Coord, CoordsData } from '$lib/data/objects/coords';
-import {} from '$src/lib/data/objects/feature';
-import type { Sample } from '$src/lib/data/objects/sample';
-import { annoFeat, flashing, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
+import type { CoordsData } from '$lib/data/objects/coords';
+import { annoFeat, flashing, sEvent, sFeatureData } from '$src/lib/store';
 import { CanvasSpots } from '$src/lib/ui/overlays/points';
-
-import { difference, intersection, subtract } from 'lodash-es';
-import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
+import { difference, intersection } from 'lodash-es';
+import { Fill, RegularShape, Style } from 'ol/style.js';
 import { get } from 'svelte/store';
 
 export class MutableSpots extends CanvasSpots {
+  coordsSource?: CoordsData;
+  // points?: Feature<Point>[]; // To check if a point is already in the source.
+  // Always Point
   mount() {
     super.mount();
     this.layer!.setZIndex(Infinity);
     return this;
+  }
+
+  startDraw(coords: CoordsData) {
+    this.coordsSource = coords;
+    // this.points = new Array(coords.pos!.length);
   }
 
   updateFeature(f: Feature<Geometry>, label: string, ant: string[]) {
@@ -49,12 +54,24 @@ export class MutableSpots extends CanvasSpots {
     if (!fromMultiple) sEvent.set({ type: 'pointsAdded' });
   }
 
-  addMultiple(idxs: number[], label: string, ov: CoordsData, ant: string[]) {
+  addMultiple(
+    idxs: number[],
+    label: string,
+    ov: CoordsData,
+    ant: string[],
+    id: string | undefined = undefined
+  ) {
     const toAdd = [];
     for (const idx of idxs) {
       let f = this.get(idx);
       if (f == undefined) {
-        f = CanvasSpots._genCircle({ ...ov.pos![idx], idx, mPerPx: ov.mPerPx, size: null });
+        f = CanvasSpots._genCircle({
+          ...ov.pos![idx],
+          idx,
+          mPerPx: ov.mPerPx,
+          size: null
+        });
+        if (id) f.set('polygon', id);
         toAdd.push(f);
       }
       this.updateFeature(f, label, ant);
@@ -92,22 +109,34 @@ export class MutableSpots extends CanvasSpots {
       return;
     }
     const polygon = polygonFeat.getGeometry()!;
-    const template = [];
-    for (let i = 0; i < ov.pos!.length; i++) {
-      template.push(CanvasSpots._genCircle({ ...ov.pos![i], mPerPx: ov.mPerPx!, size: null }));
-    }
+    const id = polygonFeat.getId();
+    // const template = [];
+    // for (let i = 0; i < ov.pos!.length; i++) {
+    //   const newCircle = CanvasSpots._genCircle({ ...ov.pos![i], mPerPx: ov.mPerPx!, size: null });
+    //   newCircle.set('polygon', id);
+    //   template.push(newCircle);
+    // }
 
-    const filtered = ov
-      .pos!.filter((f) => polygon.intersectsCoordinate([f.x * ov.mPerPx!, -f.y * ov.mPerPx!]))
-      .map((p) => p.idx);
+    const filtered: number[] = [];
+    ov.pos!.forEach((f) => {
+      if (polygon.intersectsCoordinate([f.x * ov.mPerPx, -f.y * ov.mPerPx])) {
+        if (f.idx == undefined) alert('f.idx undefined');
+        filtered.push(f.idx!);
+      }
+    });
 
-    this.addMultiple(filtered, label, ov, ant);
+    this.addMultiple(filtered, label, ov, ant, id);
   }
 
   deleteFromPolygon(polygonFeat: Feature<Polygon | Circle>) {
     const polygon = polygonFeat.getGeometry()!;
-    this.source.forEachFeatureIntersectingExtent(polygon.getExtent(), (f) => {
-      this.source.removeFeature(f);
+
+    this.source.getFeatures().forEach((f: Feature<Point>) => {
+      const coord = f.getGeometry()!.getCoordinates();
+      if (polygon.intersectsCoordinate(coord)) {
+        console.log(coord);
+        this.source.removeFeature(f);
+      }
     });
   }
 

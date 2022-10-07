@@ -4,12 +4,14 @@
   import FeatAnnotate from '$src/lib/sidebar/annotation/AnnFeat.svelte';
   import ROIAnnotate from '$src/lib/sidebar/annotation/AnnROI.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
-  import Markdown from '$src/lib/sidebar/markdown.svelte';
+  // import Markdown from '$src/lib/sidebar/markdown.svelte'; // Dynamic import
   import Nav from '$src/lib/sidebar/nav.svelte';
   import Recent from '$src/lib/sidebar/recent.svelte';
-  import Plot from './plot.svelte';
+  // import Plot from './plot.svelte'; // Dynamic import
 
-  export let showSidebar: boolean;
+  $: hasFeature =
+    $sSample &&
+    (Object.keys($sSample?.coords).length > 0 || Object.keys($sSample?.features).length > 0);
 </script>
 
 <div class="z-40 w-full">
@@ -19,29 +21,6 @@
 <div
   class="flex flex-col items-center divide-y divide-neutral-700 border-y border-y-neutral-700 overflow-x-visible"
 >
-  <Section title="Recent Features" defaultOpen>
-    <Recent />
-  </Section>
-
-  {#if $sSample?.overlayParams?.importantFeatures}
-    <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
-      {#if $sSample?.overlayParams?.importantFeatures}
-        {#each $sSample.overlayParams.importantFeatures as feature}
-          <HoverableFeature {feature} />
-        {/each}
-      {/if}
-    </Section>
-  {/if}
-
-  <!-- <Section title="Overlay Options" defaultOpen>
-      Min value: <input type="range" />
-      Max value: <input type="range" />
-    </Section> -->
-
-  <Section title="Histogram" defaultOpen class="flex justify-center overflow-visible">
-    <Plot />
-  </Section>
-
   <Section
     title="ROI Annotation"
     class="overflow-visible"
@@ -50,32 +29,62 @@
     <ROIAnnotate />
   </Section>
 
-  <Section
-    title="Feature Annotation"
-    class="overflow-visible"
-    tooltipMsg="Assign labels to existing points (overlay)."
-  >
-    <FeatAnnotate />
-  </Section>
+  {#if hasFeature}
+    <Section title="Recent Features" defaultOpen>
+      <Recent />
+    </Section>
+
+    {#if $sSample?.overlayParams?.importantFeatures}
+      <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
+        {#if $sSample?.overlayParams?.importantFeatures}
+          {#each $sSample.overlayParams.importantFeatures as feature}
+            <HoverableFeature {feature} />
+          {/each}
+        {/if}
+      </Section>
+    {/if}
+
+    <!-- <Section title="Overlay Options" defaultOpen>
+      Min value: <input type="range" />
+      Max value: <input type="range" />
+    </Section> -->
+
+    <Section title="Histogram" defaultOpen class="flex justify-center overflow-visible">
+      {#await import('./plot.svelte') then plot}
+        <svelte:component this={plot.default} />
+      {/await}
+    </Section>
+
+    <Section
+      title="Feature Annotation"
+      class="overflow-visible"
+      tooltipMsg="Assign labels to existing points (overlay)."
+    >
+      <FeatAnnotate />
+    </Section>
+  {/if}
 
   <Section title="Notes" defaultOpen>
     {#if $sSample?.notesMd}
-      <Markdown url={$sSample.notesMd.url} />
+      {#await import('$src/lib/sidebar/markdown.svelte') then markdown}
+        <svelte:component this={markdown.default} url={$sSample.notesMd.url} />
+      {/await}
     {:else}
       No notes.
     {/if}
   </Section>
 
-  <Section title="Metadata">
-    {#if $sSample?.metadataMd}
-      <Markdown
-        class="overflow-x-scroll pl-4 -indent-4 font-mono text-xs"
-        url={$sSample?.metadataMd.url}
-      />
-    {:else}
-      No metadata.
-    {/if}
-  </Section>
+  {#if $sSample?.metadataMd}
+    {#await import('$src/lib/sidebar/markdown.svelte') then markdown}
+      <Section title="Metadata">
+        <svelte:component
+          this={markdown.default}
+          class="overflow-x-scroll pl-4 -indent-4 font-mono text-xs"
+          url={$sSample?.metadataMd.url}
+        />
+      </Section>
+    {/await}
+  {/if}
 </div>
 
 <div class="mt-3 text-center font-mono text-sm">

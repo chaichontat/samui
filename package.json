@@ -15,6 +15,7 @@
     "test:watch": "vitest src"
   },
   "devDependencies": {
+    "@playwright/test": "^1.26.1",
     "@rgossiaux/svelte-headlessui": "1.0.2",
     "@steeze-ui/heroicons": "^2.1.0",
     "@steeze-ui/svelte-icon": "^1.3.2",
