@@ -37,31 +37,31 @@ describe('test updateFeature', () => {
   it('should add a label', () => {
     m.updatePoint(f, labels[0]);
     expect(f.get('label')).toBe(labels[0]);
-    expect(f.get('color')).toBe(schemeTableau10[0].concat('aa'));
+    expect(f.get('color')).toBe(schemeTableau10[0].concat('cc'));
   });
 
   it('should add a label to an existing one', () => {
     m.updatePoint(f, labels[1]);
     expect(f.get('label')).toBe(labels.slice(0, 2).join(','));
-    expect(f.get('color')).toBe(schemeTableau10[1].concat('aa'));
+    expect(f.get('color')).toBe(schemeTableau10[1].concat('cc'));
   });
 
   it('should not stack the same label on top of one another', () => {
     m.updatePoint(f, labels[1]);
     expect(f.get('label')).toBe(labels.slice(0, 2).join(','));
-    expect(f.get('color')).toBe(schemeTableau10[1].concat('aa'));
+    expect(f.get('color')).toBe(schemeTableau10[1].concat('cc'));
   });
 
   it('should make the latest label the rightmost one', () => {
     m.updatePoint(f, labels[0]);
     expect(f.get('label')).toBe([labels[1], labels[0]].join(','));
-    expect(f.get('color')).toBe(schemeTableau10[0].concat('aa'));
+    expect(f.get('color')).toBe(schemeTableau10[0].concat('cc'));
   });
 
   it('should remove the rightmost label', () => {
     m.updatePoint(f, labels[0], true);
     expect(f.get('label')).toBe(labels[1]);
-    expect(f.get('color')).toBe(schemeTableau10[1].concat('aa'));
+    expect(f.get('color')).toBe(schemeTableau10[1].concat('cc'));
   });
 
   it('should remove all labels', () => {
@@ -75,14 +75,14 @@ describe('test updateFeature', () => {
     m.updatePoint(f, labels[1]);
     m.updatePoint(f, labels[2]);
     expect(f.get('label')).toBe(labels.join(','));
-    expect(f.get('color')).toBe(schemeTableau10[2].concat('aa'));
+    expect(f.get('color')).toBe(schemeTableau10[2].concat('cc'));
 
     m.updatePoint(f, labels[1], true);
     expect(f.get('label')).toBe([labels[0], labels[2]].join(','));
 
     m.updatePoint(f, labels[2], true);
     expect(f.get('label')).toBe(labels[0]);
-    expect(f.get('color')).toBe(schemeTableau10[0].concat('aa'));
+    expect(f.get('color')).toBe(schemeTableau10[0].concat('cc'));
   });
 });
 

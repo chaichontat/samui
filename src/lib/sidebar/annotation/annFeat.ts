@@ -39,8 +39,8 @@ export class DrawFeature extends Draww {
   }
 
   mount() {
-    super.mount();
     this.points.mount();
+    super.mount(); // So that text is drawn on top of points.
     this.modify.on('modifyend', (e: ModifyEvent) =>
       this.afterModify(e.features.getArray()[0] as Feature<Geometry>)
     );

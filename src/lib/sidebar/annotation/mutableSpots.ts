@@ -8,13 +8,16 @@ import { annoFeat, flashing, sEvent, sFeatureData } from '$src/lib/store';
 import { CanvasSpots } from '$src/lib/ui/overlays/points';
 import { difference, intersection } from 'lodash-es';
 import type { Coordinate } from 'ol/coordinate';
-import { Fill, RegularShape, Style } from 'ol/style.js';
+import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
+import type { Options } from 'ol/style/Style';
 import { get } from 'svelte/store';
 
 export class MutableSpots extends CanvasSpots {
   coordsSource?: CoordsData;
   points?: Feature<Point>[]; // To check if a point is already in the source.
   keyMap?: Record<string, number>;
+  pointType?: 'Point' | 'Circle';
+  getPointCoords?: ((f: Feature<Point>) => Coordinate) | ((f: Feature<Circle>) => Coordinate);
 
   // Always Point
   mount() {
@@ -23,11 +26,17 @@ export class MutableSpots extends CanvasSpots {
     return this;
   }
 
+  static getPointCoords = (f: Feature<Point>) => f.getGeometry()!.getCoordinates() as Coordinate;
+  static getCircleCoords = (f: Feature<Circle>) => f.getGeometry()!.getCenter();
+
   startDraw(coords: CoordsData, keyMap: Record<string, number>) {
     this.clear();
     this.coordsSource = coords;
     this.points = new Array(coords.pos!.length);
     this.keyMap = keyMap;
+    this.pointType = this.coordsSource.size ? 'Circle' : 'Point';
+    this.getPointCoords =
+      this.pointType === 'Point' ? MutableSpots.getPointCoords : MutableSpots.getCircleCoords;
   }
 
   updatePoint(f: Feature<Point>, label: string, remove = false) {
@@ -56,19 +65,25 @@ export class MutableSpots extends CanvasSpots {
 
     if (toSet) {
       if (this.keyMap![toSet] == undefined) throw new Error('Key not found');
-      const color = schemeTableau10[this.keyMap![toSet] % 10].concat('aa');
+      const color = schemeTableau10[this.keyMap![toSet] % 10].concat('cc');
       f.set('color', color);
-      f.setStyle(MutableSpots.genPointStyle(color));
+      f.setStyle(MutableSpots.genPointStyle(color, this.coordsSource!.size ? 'outline' : 'star'));
     } else {
       f.set('color', undefined);
-      f.setStyle(undefined);
+      f.setStyle(this.pointType === 'Point' ? undefined : transparentOutline);
     }
     return f;
   }
 
-  static genPointStyle = genLRU(
-    (color: string) =>
-      new Style({
+  static genPointStyle = genLRU((color: string, type: 'outline' | 'star') => {
+    let options: Options;
+    if (type === 'outline') {
+      options = {
+        stroke: new Stroke({ color, width: 2 }),
+        fill: new Fill({ color: 'transparent' })
+      };
+    } else {
+      options = {
         image: new RegularShape({
           fill: new Fill({ color }),
           // star
@@ -77,8 +92,10 @@ export class MutableSpots extends CanvasSpots {
           radius2: 4,
           angle: 0
         })
-      })
-  );
+      };
+    }
+    return new Style(options);
+  });
 
   add(
     idxs: number | number[],
@@ -96,7 +113,7 @@ export class MutableSpots extends CanvasSpots {
           ...this.coordsSource!.pos![idx],
           idx,
           mPerPx: this.coordsSource!.mPerPx,
-          size: null
+          size: this.coordsSource.size ?? null
         });
         if (polygonId) f.set('polygonId', polygonId);
         this.points![idx] = f;
@@ -137,15 +154,14 @@ export class MutableSpots extends CanvasSpots {
     const polygon = polygonFeat.getGeometry()!;
 
     this.source.getFeatures().forEach((f: Feature<Point>) => {
-      const coord = f.getGeometry()!.getCoordinates() as Coordinate;
+      const coord = this.getPointCoords!(f);
       if (polygon.intersectsCoordinate(coord)) {
         this.updatePoint(f, polygonFeat.get('label') as string, true);
       }
     });
   }
 
-  static isinPolygons(f: Feature<Point>, polygons: Feature<Polygon | Circle>[]) {
-    const coord = f.getGeometry()!.getCoordinates() as Coordinate;
+  isinPolygons(coord: Coordinate, polygons: Feature<Polygon | Circle>[]) {
     return polygons.some((p) => p.getGeometry()!.intersectsCoordinate(coord));
   }
 
@@ -163,9 +179,9 @@ export class MutableSpots extends CanvasSpots {
 
     // Polygon add handled by processFeature.
     this.source.getFeatures().forEach((f: Feature<Point>) => {
-      const coord = f.getGeometry()!.getCoordinates() as Coordinate;
+      const coord = this.getPointCoords!(f as Feature<Circle>);
       if (oldPolygon.intersectsCoordinate(coord)) {
-        if (MutableSpots.isinPolygons(f, polygons)) {
+        if (this.isinPolygons(coord, polygons)) {
           this.updatePoint(f, label);
         } else {
           this.updatePoint(f, label, true);
@@ -314,4 +330,9 @@ Object.getOwnPropertyNames(MutableSpots.prototype).forEach((name) => {
     if (!this.coordsSource) throw new Error(`Coords not set at ${name}`);
     return this['_' + name](...arguments);
   };
+});
+
+const transparentOutline = new Style({
+  stroke: new Stroke({ color: 'transparent', width: 0 }),
+  fill: new Fill({ color: 'transparent' })
 });
