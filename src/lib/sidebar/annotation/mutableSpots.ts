@@ -182,15 +182,30 @@ export class MutableSpots extends CanvasSpots {
     return count;
   }
 
-  getComposition() {
-    const counts = {} as Record<string, number>;
-    counts.total_ = 0;
-    for (const f of this.source.getFeatures()) {
-      const label = MutableSpots.getLabel(f); // Can be undefined for deleted points.
-      if (!label) continue;
-      counts.total_ += 1;
-      counts[label] = (counts[label] ?? 0) + 1;
+  getAllPointsByLabel() {
+    const points = { unlabeled: [] } as Record<string, number[]>;
+    for (let i = 0; i < this.points!.length; i++) {
+      const f = this.points![i];
+      const label = f ? MutableSpots.getLabel(f) : undefined; // Can be undefined for deleted points.
+      if (!label) {
+        points.unlabeled.push(i);
+        continue;
+      }
+      if (points[label] == undefined) points[label] = [];
+      points[label].push(i);
     }
+    return points;
+  }
+
+  getComposition() {
+    let sum = 0;
+    const counts = {} as Record<string, number>;
+    Object.entries(this.getAllPointsByLabel()).forEach(([label, ps]) => {
+      if (label == 'unlabeled') return;
+      counts[label] = ps.length;
+      sum += ps.length;
+    });
+    counts.total_ = sum;
     return counts;
   }
 

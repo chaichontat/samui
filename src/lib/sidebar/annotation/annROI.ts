@@ -7,6 +7,7 @@ import { Draw, Modify, Select, Snap, Translate } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
 import type { SelectEvent } from 'ol/interaction/Select';
+import type { TranslateEvent } from 'ol/interaction/Translate';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style, Text } from 'ol/style.js';
@@ -63,6 +64,7 @@ export class Draww {
     this.changeDrawType('Polygon', true);
     this.map.map!.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => this.onDrawEnd_(e));
+    this.translate.on('translateend', (e: TranslateEvent) => this.onDrawEnd_(e));
     this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
     this.map.map!.addInteraction(this.select);
@@ -114,7 +116,7 @@ export class Draww {
     this.currDrawType = type;
   }
 
-  onDrawEnd_(event: DrawEvent | ModifyEvent) {
+  onDrawEnd_(event: DrawEvent | ModifyEvent | TranslateEvent) {
     event.preventDefault();
     const s = get(this.store);
 

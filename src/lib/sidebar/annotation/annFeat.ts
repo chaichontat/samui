@@ -22,12 +22,11 @@ export class DrawFeature extends Draww {
     this.points = mutspot;
   }
 
-  afterModify(e: ModifyEvent | TranslateEvent) {
-    console.debug('modifyend');
+  afterModify(feature: Feature<Geometry>) {
+    console.debug('modifyend', feature);
     const keyIdx = get(this.store as typeof annoFeat).currKey;
     if (keyIdx == undefined) throw new Error('keyIdx is null');
 
-    const feature = e.features.getArray()[0] as Feature<Polygon>;
     const idx = feature.getId() as number;
     const prev = this.featuresBeforeMod[idx];
     this.points.modifyFromPolygon(
@@ -42,8 +41,10 @@ export class DrawFeature extends Draww {
   mount() {
     super.mount();
     this.points.mount();
-    this.modify.on('modifyend', (e: ModifyEvent) => this.afterModify(e));
-    this.translate.on('translateend', (e: TranslateEvent) => this.afterModify(e));
+    this.modify.on('modifyend', (e: ModifyEvent) =>
+      this.afterModify(e.features.getArray()[0] as Feature<Geometry>)
+    );
+    this.translate.on('translateend', (e: TranslateEvent) => this.afterModify(e.features.item(0)));
 
     this.map.attachPointerListener({
       click: (id_: { idx: number; id: number | string } | null) => {
