@@ -1,6 +1,6 @@
 <script lang="ts">
   import Section from '$lib/sidebar/section.svelte';
-  import { sPixel, sSample } from '$lib/store';
+  import { setHoverSelect, sPixel, sSample } from '$lib/store';
   import FeatAnnotate from '$src/lib/sidebar/annotation/AnnFeat.svelte';
   import ROIAnnotate from '$src/lib/sidebar/annotation/AnnROI.svelte';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
@@ -38,7 +38,7 @@
       <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
         {#if $sSample?.overlayParams?.importantFeatures}
           {#each $sSample.overlayParams.importantFeatures as feature}
-            <HoverableFeature {feature} />
+            <HoverableFeature {feature} set={setHoverSelect} />
           {/each}
         {/if}
       </Section>
@@ -49,8 +49,8 @@
       Max value: <input type="range" />
     </Section> -->
 
-    <Section title="Histogram" defaultOpen class="flex justify-center overflow-visible">
-      {#await import('./plotMini.svelte') then plot}
+    <Section title="Density Plots" defaultOpen class="flex justify-center overflow-visible">
+      {#await import('$src/lib/sidebar/plot/plotMini.svelte') then plot}
         <svelte:component this={plot.default} />
       {/await}
     </Section>
@@ -59,6 +59,7 @@
       title="Feature Annotation"
       class="overflow-visible"
       tooltipMsg="Assign labels to existing points (overlay)."
+      defaultOpen
     >
       <FeatAnnotate />
     </Section>

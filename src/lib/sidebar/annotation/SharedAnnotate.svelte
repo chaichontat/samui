@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { annoFeat, annoROI, sEvent, sMapp } from '$lib/store';
+  import { annoFeat, annoHover, annoROI, sEvent, sMapp } from '$lib/store';
   import { classes } from '$lib/utils';
   import type { Draww } from '$src/lib/sidebar/annotation/annROI';
   import type { Mapp } from '$src/lib/ui/mapp';
@@ -87,8 +87,8 @@
         {#if key !== 'No one is going to name this.'}
           <label
             class="flex items-center gap-x-1 hover:underline cursor-pointer"
-            on:mouseenter={() => ($store.hoverKey = i)}
-            on:mouseleave={() => ($store.hoverKey = undefined)}
+            on:mouseenter={() => ($annoHover = i)}
+            on:mouseleave={() => ($annoHover = undefined)}
             on:click={() => ($store.currKey = i)}
             on:dblclick={() => {
               const oldName = key;

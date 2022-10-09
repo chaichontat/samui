@@ -7,7 +7,7 @@
   import Store from '$src/lib/store.svelte';
   // import MainMap from '$src/pages/mainMap.svelte';
   import Splash from '$src/pages/splash.svelte';
-  import { ArrowDown } from '@steeze-ui/heroicons';
+  import { ArrowDown, Cog } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { onMount } from 'svelte';
 
@@ -102,7 +102,9 @@
       <svelte:component this={MainMap.default} />
     {/await}
   {:else if loadExternal}
-    <Modal>Loading data...</Modal>
+    <Modal>
+      <Icon src={Cog} class="svg-icon h-12 w-12 stroke-1 animate-spin stroke-blue-200" /> Loading data...
+    </Modal>
   {:else}
     <Splash />
   {/if}

@@ -71,6 +71,7 @@
               <button
                 type="submit"
                 class="mb-1 rounded-lg w-fit text-mb bg-sky-500 hover:bg-sky-600 shadow shadow-sky-600/20 active:bg-sky-700 text-white py-1 px-3 transtion-colors font-medium"
+                aria-label="submit"
               >
                 Submit
               </button>

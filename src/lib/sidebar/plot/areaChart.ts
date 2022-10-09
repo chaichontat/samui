@@ -41,7 +41,7 @@ export default class AreaChart {
     this.xScale = d3.scaleLinear().domain(this.xDomain).range([0, width]);
     this.yScale = d3
       .scaleLinear()
-      .domain([0, 1])
+      .domain([0, 1.5])
       .range([0, this.height * 1.5])
       .clamp(true);
     this.area = d3
@@ -78,7 +78,7 @@ export default class AreaChart {
       this.height = height ?? this.height;
       this.yScale = d3
         .scaleLinear()
-        .domain([0, 1.5])
+        .domain([0, 1])
         .range([0, this.height * 1.25])
         .clamp(true);
 
