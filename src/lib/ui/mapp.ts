@@ -1,9 +1,3 @@
-import { Map, MapBrowserEvent, Overlay, View } from 'ol';
-import ScaleLine from 'ol/control/ScaleLine.js';
-import Zoom from 'ol/control/Zoom.js';
-
-import { get } from 'svelte/store';
-
 import type { CoordsData } from '$src/lib/data/objects/coords';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { Deferrable } from '$src/lib/definitions';
@@ -11,6 +5,12 @@ import { Draww } from '$src/lib/sidebar/annotation/annROI';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import { throttle } from 'lodash-es';
+import { Map, MapBrowserEvent, Overlay, View } from 'ol';
+import ScaleLine from 'ol/control/ScaleLine.js';
+import Zoom from 'ol/control/Zoom.js';
+import type { FeatureLike } from 'ol/Feature';
+import type { Layer } from 'ol/layer';
+import { get } from 'svelte/store';
 import { DrawFeature } from '../sidebar/annotation/annFeat';
 import { MutableSpots } from '../sidebar/annotation/mutableSpots';
 import {
@@ -37,6 +37,9 @@ export class Mapp extends Deferrable {
   mounted = false;
   _needNewView = true;
 
+  listeners: { pointermove: []; click: [] } = { pointermove: [], click: [] };
+  lastHover: FeatureLike | null = null;
+
   constructor() {
     super();
     // this.layers = {};
@@ -57,6 +60,9 @@ export class Mapp extends Deferrable {
     this.map.removeControl(this.map.getControls().getArray()[0]);
     this.map.addControl(new Zoom({ delta: 0.4 }));
     this.map.addControl(new ScaleLine({ text: true, minWidth: 140 }));
+
+    this.map.on('pointermove', (e) => this.runPointerListener(e));
+    this.map.on('click', (e) => this.runPointerListener(e));
 
     // this.map.on('movestart', () => (this.map!.getViewport().style.cursor = 'grabbing'));
     // this.map.on('moveend', () => (this.map!.getViewport().style.cursor = 'grab'));
@@ -133,7 +139,7 @@ export class Mapp extends Deferrable {
 
     // Defaults
     if (sample.overlayParams?.defaults && !get(overlays)[get(sOverlay)]?.currFeature) {
-      setHoverSelect({ selected: sample.overlayParams.defaults[0] });
+      setHoverSelect({ selected: sample.overlayParams.defaults[0] }).catch(console.error);
     }
     sEvent.set({ type: 'sampleUpdated' });
   }
@@ -160,53 +166,48 @@ export class Mapp extends Deferrable {
     }
   });
 
-  // Handle all clicks and hovers on the map.
-  attachPointerListener(funs: {
-    pointermove?: (
-      obj: { idx: number; id: number | string } | null,
-      ev?: MapBrowserEvent<UIEvent>
-    ) => void;
-    click?: (obj: { idx: number; id: number | string } | null) => void;
-  }) {
-    for (const [k, v] of Object.entries(funs)) {
-      this.map!.on(
-        k as 'pointermove' | 'click',
-        throttle((e) => {
-          // Outlines take precedence. Either visible is fine.
-          this.setCurrPixel(e.coordinate as [number, number]);
-          const ol = get(sOverlay);
-          if (!ol) return;
-          const comp = get(overlays)[ol];
-          const currLayer = comp.layer;
-          if (!currLayer) {
-            console.error('No layer');
-            return;
-          }
-          if (this.map!.hasFeatureAtPixel(e.pixel)) {
-            // feature is overlay in our parlance.
-            this.map!.forEachFeatureAtPixel(
-              e.pixel,
-              (f) => {
-                const idx = f.getId() as number | undefined;
-                const id = f.get('id') as number | string;
-                if (idx == undefined) {
-                  // 0 is falsy.
-                  console.error("Overlay doesn't have an id.");
-                  return true;
-                }
-                v({ idx, id }, e);
-                return true; // Terminates search.
-              },
-              {
-                layerFilter: (layer) => layer === currLayer, // Ignore active spot.
-                hitTolerance: 20
-              }
-            );
-          } else {
-            v(null, e);
-          }
-        }, 10)
-      );
+  runPointerListener = throttle((e: MapBrowserEvent<UIEvent>) => {
+    // Outlines take precedence. Either visible is fine.
+    this.setCurrPixel(e.coordinate as [number, number]);
+    // Don't run if dragging.
+    if ((e.originalEvent as PointerEvent).pressure) return;
+
+    let hasPixel = false;
+    const currLayer = get(overlays)[get(sOverlay)]?.layer;
+
+    // feature is overlay in our parlance.
+    this.map!.forEachFeatureAtPixel(e.pixel, (f, layer) => {
+      const idx = f.getId() as number | undefined;
+      const id = f.get('id') as number | string;
+      if (layer === currLayer) {
+        if (idx == undefined) {
+          console.error("Overlay doesn't have an id.");
+          return true;
+        }
+        hasPixel = true;
+        this.listeners[e.type as 'pointermove' | 'click'].forEach((g) => g({ idx, id, f }, e));
+        return true;
+      }
+    });
+
+    if (!hasPixel) {
+      this.listeners[e.type as 'pointermove' | 'click'].forEach((g) => g(null, e));
     }
+  }, 10);
+
+  // Handle all clicks and hovers on the map.
+  attachPointerListener(
+    funs: {
+      pointermove?: (
+        obj: { idx: number; id: number | string; f: FeatureLike } | null,
+        ev?: MapBrowserEvent<UIEvent>
+      ) => void;
+      click?: (obj: { idx: number; id: number | string; f: FeatureLike } | null) => void;
+    },
+    { layer }: { layer?: Layer } = {} // TODO: hover roi label
+  ) {
+    const { pointermove, click } = funs;
+    if (pointermove) this.listeners.pointermove.push(pointermove);
+    if (click) this.listeners.click.push(click);
   }
 }

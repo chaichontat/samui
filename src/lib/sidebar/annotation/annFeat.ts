@@ -1,11 +1,8 @@
 import type { CoordsData } from '$src/lib/data/objects/coords';
-import { annoFeat, annoROI, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
+import { annoFeat, annoROI, overlays, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { isEqual, throttle } from 'lodash-es';
 import type { Feature } from 'ol';
-import type BaseEvent from 'ol/events/Event';
 import type { Circle, Geometry, Polygon } from 'ol/geom.js';
-import type { ModifyEvent } from 'ol/interaction/Modify';
-import type { TranslateEvent } from 'ol/interaction/Translate';
 import { get } from 'svelte/store';
 import type { Mapp } from '../../ui/mapp';
 import { Draww } from './annROI';
@@ -73,14 +70,20 @@ export class DrawFeature extends Draww {
   startDraw(coords: CoordsData) {
     console.log('Start drawing at', coords.name);
     this.coordsSource = coords;
-    this.points.startDraw(coords, get(annoFeat).reverseKeys);
+    this.points.startDraw(coords, get(annoFeat).reverseKeys, get(overlays)[get(sOverlay)].source);
   }
 
   getComposition() {
     return this.points.getComposition();
   }
 
-  processFeature(feature: Feature<Polygon | Circle>, color: string, label: string, newDraw = true) {
+  processFeature(
+    feature: Feature<Polygon | Circle>,
+    color: string,
+    label: string,
+    keyIdx: number,
+    newDraw = true
+  ) {
     if (feature.getId() == undefined) {
       // Listener for any change in the geometry.
       feature.getGeometry()!.on(
@@ -88,10 +91,10 @@ export class DrawFeature extends Draww {
         throttle(() => {
           this.onDrawEnd_(feature);
           this.afterModify(feature);
-        }, 50)
+        }, 25)
       );
     }
-    super.processFeature(feature, color, label);
+    super.processFeature(feature, color, label, keyIdx, newDraw);
 
     if (newDraw) {
       this.featuresBeforeMod[feature.getId() as number] = feature.clone();

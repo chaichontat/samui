@@ -1,6 +1,5 @@
 import { annoFeat, flashing, sEvent, type annoROI } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
-import { throttle } from 'lodash-es';
 import { Feature } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
 import { Circle, Geometry, MultiPoint, Point, Polygon } from 'ol/geom.js';
@@ -43,7 +42,7 @@ export class Draww {
   currDrawType: Geometries = 'Polygon';
   readonly source: VectorSource<Geometry>;
   readonly selectionLayer: VectorLayer<typeof this.source>;
-
+  selectHandler?: (e: KeyboardEvent) => void;
   readonly map: Mapp;
 
   _currHighlight: number | null = null;
@@ -61,36 +60,65 @@ export class Draww {
     this.snap = new Snap({ source: this.source });
   }
 
+  selectHandler_ = (ev: SelectEvent, e: KeyboardEvent) => {
+    switch (e.key) {
+      case 'Escape':
+        this.select.getFeatures().clear();
+        this.map.map!.removeInteraction(this.translate);
+        this.addedTranslate = false;
+        break;
+      case 'Delete':
+        for (const s of ev.selected) {
+          this.removeFeature(s);
+        }
+        this.select.getFeatures().clear();
+        this.map.map!.removeInteraction(this.translate);
+        this.addedTranslate = false;
+        break;
+      case 'Backspace':
+        for (const s of ev.selected) {
+          this.removeFeature(s);
+        }
+        this.select.getFeatures().clear();
+        this.map.map!.removeInteraction(this.translate);
+        this.addedTranslate = false;
+        break;
+    }
+  };
+  addedTranslate = false;
+
   mount() {
     this.changeDrawType('Polygon', true);
     this.map.map!.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => this.onDrawEnd_(e));
-    this.translate.on('translateend', (e: TranslateEvent) => this.onDrawEnd_(e));
+    // this.translate.on('translateend', (e: TranslateEvent) => this.onDrawEnd_(e));
     this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
+
     this.map.map!.addInteraction(this.select);
+
+    // Deselect as well.
     this.select.on('select', (ev: SelectEvent) => {
-      document.addEventListener('keydown', (e) => {
-        switch (e.key) {
-          case 'Escape':
-            this.select.getFeatures().clear();
-            break;
-          case 'Delete':
-            for (const s of ev.selected) {
-              this.removeFeature(s);
-            }
-            this.select.getFeatures().clear();
-            break;
-          case 'Backspace':
-            for (const s of ev.selected) {
-              this.removeFeature(s);
-            }
-            this.select.getFeatures().clear();
-            break;
+      if (ev.selected.length) {
+        if (!this.addedTranslate) {
+          this.map.map!.addInteraction(this.translate);
+          this.addedTranslate = true;
         }
-      });
+        if (this.selectHandler) {
+          document.removeEventListener('keydown', this.selectHandler);
+        }
+        this.selectHandler = (e: KeyboardEvent) => this.selectHandler_(ev, e);
+        document.addEventListener('keydown', this.selectHandler);
+        return;
+      }
+
+      if (this.selectHandler) {
+        document.removeEventListener('keydown', this.selectHandler);
+        this.selectHandler = undefined;
+      }
+      this.map.map!.removeInteraction(this.translate);
+      this.addedTranslate = false;
     });
-    this.map.map!.addInteraction(this.translate);
   }
 
   changeDrawType(type: 'Polygon' | 'Circle' | 'Point', first = false) {
@@ -134,6 +162,7 @@ export class Draww {
       feature,
       schemeTableau10[s.currKey! % 10],
       s.keys[s.currKey!],
+      s.currKey!,
       event.type === 'drawend'
     );
   }
@@ -151,6 +180,7 @@ export class Draww {
     feature: Feature<Polygon | Circle | Point>,
     color: string,
     label: string,
+    keyIdx: number,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     newDraw = true
   ) {
@@ -163,6 +193,7 @@ export class Draww {
     );
     feature.set('color', color);
     feature.set('label', label);
+    feature.set('keyIdx', keyIdx);
     sEvent.set({ type: 'pointsAdded' });
   }
 
@@ -221,7 +252,7 @@ export class Draww {
       }),
       geometry: (feature) => {
         // return the coordinates of the first ring of the polygon
-        const coordinates = feature.getGeometry().getCoordinates()[0];
+        const coordinates = feature.getGeometry()!.getCoordinates()[0];
         return new MultiPoint(coordinates);
       }
     });
@@ -284,7 +315,7 @@ export class Draww {
         keys.push(label);
         idx = keys.length - 1;
       }
-      this.processFeature(feature, schemeTableau10[idx % 10], label);
+      this.processFeature(feature, schemeTableau10[idx % 10], label, idx, true);
       if (properties) feature.setProperties(properties);
       this.source.addFeature(feature);
     }
