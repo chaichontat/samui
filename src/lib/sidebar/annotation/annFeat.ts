@@ -1,5 +1,13 @@
 import type { CoordsData } from '$src/lib/data/objects/coords';
-import { annoFeat, annoROI, overlays, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
+import {
+  annoFeat,
+  annoHover,
+  annoROI,
+  overlays,
+  sEvent,
+  sFeatureData,
+  sOverlay
+} from '$src/lib/store';
 import { isEqual, throttle } from 'lodash-es';
 import type { Feature } from 'ol';
 import type { Circle, Geometry, Polygon } from 'ol/geom.js';
@@ -65,6 +73,20 @@ export class DrawFeature extends Draww {
         }
       }
     });
+    this.map.attachPointerListener(
+      {
+        pointermove(obj) {
+          if (!obj) {
+            annoHover.set(undefined);
+            return;
+          }
+          const label = obj.feature.get('keyIdx') as number;
+          if (label == undefined) console.error('No label for feature', obj.f);
+          annoHover.set(label);
+        }
+      },
+      { layer: this.selectionLayer }
+    );
   }
 
   startDraw(coords: CoordsData) {

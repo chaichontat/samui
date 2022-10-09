@@ -24,6 +24,11 @@ import {
   sPixel
 } from '../store';
 
+type Listener = (
+  obj: { idx: number; id: number | string; feature: FeatureLike } | null,
+  ev?: MapBrowserEvent<UIEvent>
+) => void;
+
 export class Mapp extends Deferrable {
   map?: Map;
   persistentLayers: {
@@ -37,7 +42,10 @@ export class Mapp extends Deferrable {
   mounted = false;
   _needNewView = true;
 
-  listeners: { pointermove: []; click: [] } = { pointermove: [], click: [] };
+  listeners = { pointermove: [], click: [] } as {
+    pointermove: { f: Listener; layer?: Layer }[];
+    click: { f: Listener; layer?: Layer }[];
+  };
   lastHover: FeatureLike | null = null;
 
   constructor() {
@@ -172,42 +180,45 @@ export class Mapp extends Deferrable {
     // Don't run if dragging.
     if ((e.originalEvent as PointerEvent).pressure) return;
 
-    let hasPixel = false;
     const currLayer = get(overlays)[get(sOverlay)]?.layer;
+    const eType = e.type as 'pointermove' | 'click';
+    const listeners = this.listeners[eType];
+    const alerted = new Array(listeners.length).fill(false);
 
     // feature is overlay in our parlance.
     this.map!.forEachFeatureAtPixel(e.pixel, (f, layer) => {
       const idx = f.getId() as number | undefined;
       const id = f.get('id') as number | string;
-      if (layer === currLayer) {
-        if (idx == undefined) {
-          console.error("Overlay doesn't have an id.");
-          return true;
+
+      listeners.forEach(({ f: g, layer: targetLayer }, i) => {
+        if (layer === targetLayer ?? currLayer) {
+          // Features in important layers always have a number id.
+          if (idx == undefined) {
+            console.error("Overlay doesn't have an id.");
+          } else {
+            g(idx == undefined ? null : { idx, id, feature: f }, e);
+            alerted[i] = true;
+          }
         }
-        hasPixel = true;
-        this.listeners[e.type as 'pointermove' | 'click'].forEach((g) => g({ idx, id, f }, e));
-        return true;
+
+        // Terminate search when all listeners have been alerted.
+        if (alerted.every((a) => a)) return true;
+      });
+
+      if (eType === 'pointermove') {
+        listeners.forEach(({ f: g }, i) => {
+          if (!alerted[i]) g(null, e);
+        });
       }
     });
-
-    if (!hasPixel) {
-      this.listeners[e.type as 'pointermove' | 'click'].forEach((g) => g(null, e));
-    }
   }, 10);
 
   // Handle all clicks and hovers on the map.
   attachPointerListener(
-    funs: {
-      pointermove?: (
-        obj: { idx: number; id: number | string; f: FeatureLike } | null,
-        ev?: MapBrowserEvent<UIEvent>
-      ) => void;
-      click?: (obj: { idx: number; id: number | string; f: FeatureLike } | null) => void;
-    },
-    { layer }: { layer?: Layer } = {} // TODO: hover roi label
+    { pointermove, click }: { pointermove?: Listener; click?: Listener },
+    { layer }: { layer?: Layer } = {}
   ) {
-    const { pointermove, click } = funs;
-    if (pointermove) this.listeners.pointermove.push(pointermove);
-    if (click) this.listeners.click.push(click);
+    if (pointermove) this.listeners.pointermove.push({ f: pointermove, layer });
+    if (click) this.listeners.click.push({ f: click, layer });
   }
 }

@@ -218,13 +218,14 @@ export class Draww {
   // Need to rerun on label change.
   _updatePolygonStyle(feature: Feature<Geometry>, setStroke = true) {
     const type = feature.getGeometry()!.getType();
+    const color = feature.get('color') as string;
     let st: Style;
     if (type === 'Point') {
       // https://openlayers.org/en/latest/examples/synthetic-points.html
       st = new Style({
         image: new CircleStyle({
           radius: 5,
-          fill: new Fill({ color: (feature.get('color') as string) + '88' })
+          fill: new Fill({ color: color.concat('88') })
         })
       });
       feature.setStyle(st);
@@ -233,7 +234,7 @@ export class Draww {
 
     st = drawnStyle.clone();
     if (setStroke) {
-      st.setStroke(new Stroke({ color: feature.get('color') as string, width: 3 }));
+      st.setStroke(new Stroke({ color, width: 3 }));
     }
     st.getText().setText(feature.get('label') as string);
 
@@ -246,9 +247,7 @@ export class Draww {
     const vt = new Style({
       image: new CircleStyle({
         radius: 5,
-        fill: new Fill({
-          color: feature.get('color') as string
-        })
+        fill: new Fill({ color })
       }),
       geometry: (feature) => {
         // return the coordinates of the first ring of the polygon
@@ -382,5 +381,6 @@ const initialStyle = new Style({
 // Style for finished polygon.
 const drawnStyle = new Style({
   stroke: new Stroke({ color: '#00ffe9', width: 3 }),
+  fill: new Fill({ color: 'transparent' }), // so that getFeatureAtPixel can see this.
   text: textStyle
 });
