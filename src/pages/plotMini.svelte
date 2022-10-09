@@ -1,11 +1,14 @@
 <script lang="ts">
   import { annoFeat, annoHover, mask, sEvent, sFeatureData, sId, sMapp, sSample } from '$lib/store';
   import type { FeatureAndGroup } from '$src/lib/data/objects/feature';
+  import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
   import * as d3 from 'd3';
   import { isEqual, throttle, zip } from 'lodash-es';
   import colors from 'tailwindcss/colors';
   import RidgelineChart from './ridgeline';
   let hs: RidgelineChart[] = [];
+  let width = 160;
+  let height = 60;
 
   async function updateData(amount?: Record<string, number[]>) {
     // Each section/gene.
@@ -30,14 +33,14 @@
       //   toSend.push(idxs.map((j) => data[j]));
       // });
 
-      if (!hs[i]) hs.push(new RidgelineChart(node, 160, 50, 10, [0, 10]));
+      if (!hs[i]) hs.push(new RidgelineChart(node, width, height, 5, 10, [0, 10]));
       const h = hs[i];
+      h.genXAxis(i !== items.length - 1);
       h.genArea(
+        fg?.feature,
         toSend,
-        [colors.neutral[400] as string].concat(d3.schemeTableau10.slice(0, $annoFeat.keys.length))
+        ['url(#grad)'].concat(d3.schemeTableau10.slice(0, $annoFeat.keys.length))
       );
-
-      if (i === items.length - 1) h.genXAxis(); // Bottommost section.
     }
   }
 
@@ -73,15 +76,18 @@
 > -->
 
 <table
-  class="table-auto border-separate border-spacing-x-3 border-spacing-y-1 relative max-w-[600px] overflow-visible py-2"
+  class="table-auto border-separate border-spacing-x-2 relative max-w-[600px] overflow-visible border-spacing-y-4"
 >
   {#each items as it, i}
-    <tr>
-      <td>{`${it.feature}`}</td>
-      <td>
+    <tr class="">
+      <td class="p-0 pr-3 text-yellow-300 text-right text-xs">
+        <HoverableFeature feature={it} />
+      </td>
+      <td class="p-0">
         <div class="">
-          <svg bind:this={divs[i]} class="overflow-visible" height="50px" width="160px" />
+          <svg bind:this={divs[i]} height={i === items.length - 1 ? height + 15 : height} {width} />
         </div>
+        <!-- class="overflow-visible" -->
       </td>
     </tr>
   {/each}

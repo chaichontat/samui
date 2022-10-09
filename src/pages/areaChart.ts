@@ -9,6 +9,22 @@ export default class AreaChart {
   area: d3.Area<{ x: number; y: number }>;
   color?: string;
 
+  genGradient() {
+    return this.node
+      .append('linearGradient')
+      .attr('id', 'grad')
+      .attr('gradientUnits', 'userSpaceOnUse')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr('x2', this.width)
+      .attr('y2', 0)
+      .selectAll('stop')
+      .data(d3.ticks(0, 1, 10))
+      .join('stop')
+      .attr('offset', (d) => d)
+      .attr('stop-color', d3.scaleSequential(this.yScale.domain(), d3.interpolateTurbo));
+  }
+
   constructor(
     node: HTMLElement,
 
@@ -17,7 +33,7 @@ export default class AreaChart {
     public marginBottom: number,
     public xDomain: [number, number]
   ) {
-    this.node = d3.select(node).attr('class', 'area');
+    this.node = d3.select(node).append('g').attr('class', 'area');
     this.width = width;
     this.height = height;
     this.marginBottom = marginBottom;
@@ -25,7 +41,7 @@ export default class AreaChart {
     this.xScale = d3.scaleLinear().domain(this.xDomain).range([0, width]);
     this.yScale = d3
       .scaleLinear()
-      .domain([0, 1.2])
+      .domain([0, 1])
       .range([0, this.height * 1.5])
       .clamp(true);
     this.area = d3
@@ -62,8 +78,8 @@ export default class AreaChart {
       this.height = height ?? this.height;
       this.yScale = d3
         .scaleLinear()
-        .domain([0, 1.2])
-        .range([0, this.height * 1.5])
+        .domain([0, 1.5])
+        .range([0, this.height * 1.25])
         .clamp(true);
 
       // @ts-ignore
@@ -73,7 +89,7 @@ export default class AreaChart {
         .y0(this.height - this.yScale(0))
         .y1((d) => this.height - this.yScale(d.y));
 
-      this.node.select('line').attr('y1', this.height).attr('y2', this.height);
+      this.node.select('.areaAxis').select('line').attr('y1', this.height).attr('y2', this.height);
     }
     // For dynamic yScale.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
@@ -82,6 +98,7 @@ export default class AreaChart {
 
     let node = this.node.select('.area').select('path');
     if (node.empty()) {
+      this.genGradient();
       node = this.node
         .append('g')
         .attr('class', 'area')
@@ -111,10 +128,15 @@ export default class AreaChart {
   }
 
   unhighlight() {
-    this.node.select('#area').select('path').transition().attr('opacity', 0.15);
+    this.node.select('.area').select('path').transition().attr('fill', '#fff').attr('opacity', 0.1);
   }
 
   highlight() {
-    this.node.select('#area').select('path').transition().attr('opacity', 1);
+    this.node
+      .select('.area')
+      .select('path')
+      .transition()
+      .attr('fill', this.color)
+      .attr('opacity', 1);
   }
 }
