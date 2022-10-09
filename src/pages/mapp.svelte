@@ -190,7 +190,7 @@
   } */
 
   .map :global(.ol-scale-line) {
-    @apply absolute left-4 bottom-8 float-right w-3 bg-transparent text-right font-sans;
+    @apply absolute left-4 bottom-8 float-right w-3 bg-transparent text-right font-sans mix-blend-difference;
   }
 
   .map :global(.ol-scale-line-inner) {

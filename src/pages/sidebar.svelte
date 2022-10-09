@@ -50,7 +50,7 @@
     </Section> -->
 
     <Section title="Histogram" defaultOpen class="flex justify-center overflow-visible">
-      {#await import('./plot.svelte') then plot}
+      {#await import('./plotMini.svelte') then plot}
         <svelte:component this={plot.default} />
       {/await}
     </Section>

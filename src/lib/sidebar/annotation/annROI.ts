@@ -1,5 +1,6 @@
 import { annoFeat, flashing, sEvent, type annoROI } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
+import { throttle } from 'lodash-es';
 import { Feature } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
 import { Circle, Geometry, MultiPoint, Point, Polygon } from 'ol/geom.js';
@@ -116,17 +117,19 @@ export class Draww {
     this.currDrawType = type;
   }
 
-  onDrawEnd_(event: DrawEvent | ModifyEvent | TranslateEvent) {
-    event.preventDefault();
-    const s = get(this.store);
-
+  onDrawEnd_(event: DrawEvent | ModifyEvent | TranslateEvent | Feature) {
     let feature: Feature<Geometry>;
-    if (event.type === 'drawend') {
+    if (event instanceof Feature) {
+      feature = event;
+    } else if (event.type === 'drawend') {
       feature = (event as DrawEvent).feature;
+      event.preventDefault();
     } else {
       feature = (event as ModifyEvent).features.item(0) as Feature<Polygon>;
+      event.preventDefault();
     }
 
+    const s = get(this.store);
     this.processFeature(
       feature,
       schemeTableau10[s.currKey! % 10],

@@ -85,19 +85,22 @@
     <div class="ml-4 flex items-center gap-x-3 flex-wrap">
       {#each $store.keys as key, i}
         {#if key !== 'No one is going to name this.'}
-          <label class="flex items-center gap-x-1 hover:underline">
+          <label
+            class="flex items-center gap-x-1 hover:underline cursor-pointer"
+            on:mouseenter={() => ($store.hoverKey = i)}
+            on:mouseleave={() => ($store.hoverKey = undefined)}
+            on:click={() => ($store.currKey = i)}
+            on:dblclick={() => {
+              const oldName = key;
+              const newName = getPrompt('Enter new label.');
+              if (!newName) return;
+              $store.keys[i] = newName;
+              draw.relabel(oldName, newName);
+            }}
+          >
             <div class="h-3 w-3" style={`background-color: ${schemeTableau10[i % 10]}`} />
-
             <button
               class={classes($store.currKey === i ? 'font-bold' : 'font-normal text-neutral-300')}
-              on:click={() => ($store.currKey = i)}
-              on:dblclick={() => {
-                const oldName = key;
-                const newName = getPrompt('Enter new label.');
-                if (!newName) return;
-                $store.keys[i] = newName;
-                draw.relabel(oldName, newName);
-              }}
             >
               {key}
             </button>

@@ -30,6 +30,7 @@ export const sPixel = writable(undefined as [number, number] | undefined);
 
 export const annoROI = writable({
   currKey: undefined as number | undefined,
+  hoverKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
   selecting: undefined as Geometries | undefined
@@ -55,6 +56,7 @@ annoROI.subscribe((ann) => {
 
 export const annoFeat = writable({
   currKey: undefined as number | undefined,
+  hoverKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
   annotating: undefined as { coordName: string; overlay: string } | undefined,

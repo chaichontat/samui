@@ -34,25 +34,26 @@ export default class RidgelineChart {
   genArea(data: number[][], colors: string[]) {
     const n = data.length;
     const h = this.height / (n + 1);
-
-    if (this.areas.length !== n) {
+    const oldLength = this.areas.length;
+    if (oldLength !== n) {
       this.areas.push(
         ...Array(n - this.areas.length)
           .fill(null)
-          .map(
-            (_, i) =>
-              new AreaChart(
-                this.node
-                  .append('g')
-                  .attr('id', `ridge-${i}`)
-                  .attr('transform', `translate(0, ${this.height})`)
-                  .node()!,
-                this.width,
-                h,
-                0,
-                this.xDomain
-              )
-          )
+          .map((_, i) => {
+            const a = new AreaChart(
+              this.node
+                .append('g')
+                .attr('id', `ridge-${oldLength + i}`)
+                .attr('transform', `translate(0, ${this.height})`)
+                .node()!,
+              this.width,
+              h,
+              0,
+              this.xDomain
+            );
+
+            return a;
+          })
       );
 
       this.areas.forEach((area, i) => {

@@ -1,7 +1,8 @@
 import type { CoordsData } from '$src/lib/data/objects/coords';
 import { annoFeat, annoROI, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
-import { isEqual } from 'lodash-es';
+import { isEqual, throttle } from 'lodash-es';
 import type { Feature } from 'ol';
+import type BaseEvent from 'ol/events/Event';
 import type { Circle, Geometry, Polygon } from 'ol/geom.js';
 import type { ModifyEvent } from 'ol/interaction/Modify';
 import type { TranslateEvent } from 'ol/interaction/Translate';
@@ -23,7 +24,7 @@ export class DrawFeature extends Draww {
   }
 
   afterModify(feature: Feature<Geometry>) {
-    console.debug('modifyend', feature);
+    // console.debug('modifyend', feature);
     const keyIdx = get(this.store as typeof annoFeat).currKey;
     if (keyIdx == undefined) throw new Error('keyIdx is null');
 
@@ -41,11 +42,6 @@ export class DrawFeature extends Draww {
   mount() {
     this.points.mount();
     super.mount(); // So that text is drawn on top of points.
-    this.modify.on('modifyend', (e: ModifyEvent) =>
-      this.afterModify(e.features.getArray()[0] as Feature<Geometry>)
-    );
-    this.translate.on('translateend', (e: TranslateEvent) => this.afterModify(e.features.item(0)));
-
     this.map.attachPointerListener({
       click: (id_: { idx: number; id: number | string } | null) => {
         const anno = get(this.store as typeof annoFeat);
@@ -85,7 +81,18 @@ export class DrawFeature extends Draww {
   }
 
   processFeature(feature: Feature<Polygon | Circle>, color: string, label: string, newDraw = true) {
+    if (feature.getId() == undefined) {
+      // Listener for any change in the geometry.
+      feature.getGeometry()!.on(
+        'change',
+        throttle(() => {
+          this.onDrawEnd_(feature);
+          this.afterModify(feature);
+        }, 50)
+      );
+    }
     super.processFeature(feature, color, label);
+
     if (newDraw) {
       this.featuresBeforeMod[feature.getId() as number] = feature.clone();
     }
