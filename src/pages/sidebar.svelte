@@ -59,7 +59,6 @@
       title="Feature Annotation"
       class="overflow-visible"
       tooltipMsg="Assign labels to existing points (overlay)."
-      defaultOpen
     >
       <FeatAnnotate />
     </Section>
