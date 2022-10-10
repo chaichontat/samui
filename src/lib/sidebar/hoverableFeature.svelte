@@ -1,27 +1,34 @@
 <script lang="ts">
   import type { FeatureAndGroup } from '../data/objects/feature';
-  import { hoverSelect, setHoverSelect } from '../store';
+  import { hoverSelect, type setHoverSelect } from '../store';
   import { clickOutside } from '../ui/utils';
+  import { classes } from '../utils';
 
   export let feature: FeatureAndGroup;
+  export let set: typeof setHoverSelect;
+  export let selectEnabled = true;
   export { cl as class };
-  let cl = 'cursor-pointer underline-offset-2 text-yellow-300 hover:text-yellow-200';
+  export let textClass = '';
+  let cl = 'text-yellow-300 hover:text-yellow-200';
 </script>
 
 <button
-  class={cl}
+  class={'text-ellipsis cursor-pointer underline-offset-2 ' + cl}
   use:clickOutside
-  on:mouseover={() => setHoverSelect({ hover: feature })}
-  on:focus={() => setHoverSelect({ hover: feature })}
-  on:mouseout={() => setHoverSelect({ hover: undefined })}
-  on:blur={() => setHoverSelect({ hover: undefined })}
-  on:click={() => setHoverSelect({ selected: feature })}
+  on:mouseover={() => set({ hover: feature })}
+  on:focus={() => set({ hover: feature })}
+  on:mouseout={() => set({ hover: undefined })}
+  on:blur={() => set({ hover: undefined })}
+  on:click={() => selectEnabled && set({ selected: feature })}
 >
   <slot>
     <div
-      class={$hoverSelect.selected?.feature === feature.feature
-        ? 'drop-shadow-3xl font-semibold underline opacity-100 shadow-white'
-        : 'opacity-80'}
+      class={classes(
+        textClass,
+        $hoverSelect.selected?.feature === feature.feature
+          ? 'drop-shadow-3xl font-semibold underline opacity-100 shadow-white'
+          : 'opacity-80'
+      )}
     >
       {feature.feature}
     </div>

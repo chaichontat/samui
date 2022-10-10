@@ -49,3 +49,5 @@ vi.mock('$app/environment', async () => {
     browser: true
   };
 });
+
+window.alert = console.error;

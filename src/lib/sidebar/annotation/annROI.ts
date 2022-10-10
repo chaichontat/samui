@@ -7,6 +7,7 @@ import { Draw, Modify, Select, Snap, Translate } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
 import type { ModifyEvent } from 'ol/interaction/Modify';
 import type { SelectEvent } from 'ol/interaction/Select';
+import type { TranslateEvent } from 'ol/interaction/Translate';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style, Text } from 'ol/style.js';
@@ -41,7 +42,7 @@ export class Draww {
   currDrawType: Geometries = 'Polygon';
   readonly source: VectorSource<Geometry>;
   readonly selectionLayer: VectorLayer<typeof this.source>;
-
+  selectHandler?: (e: KeyboardEvent) => void;
   readonly map: Mapp;
 
   _currHighlight: number | null = null;
@@ -59,35 +60,65 @@ export class Draww {
     this.snap = new Snap({ source: this.source });
   }
 
+  selectHandler_ = (ev: SelectEvent, e: KeyboardEvent) => {
+    switch (e.key) {
+      case 'Escape':
+        this.select.getFeatures().clear();
+        this.map.map!.removeInteraction(this.translate);
+        this.addedTranslate = false;
+        break;
+      case 'Delete':
+        for (const s of ev.selected) {
+          this.removeFeature(s);
+        }
+        this.select.getFeatures().clear();
+        this.map.map!.removeInteraction(this.translate);
+        this.addedTranslate = false;
+        break;
+      case 'Backspace':
+        for (const s of ev.selected) {
+          this.removeFeature(s);
+        }
+        this.select.getFeatures().clear();
+        this.map.map!.removeInteraction(this.translate);
+        this.addedTranslate = false;
+        break;
+    }
+  };
+  addedTranslate = false;
+
   mount() {
     this.changeDrawType('Polygon', true);
     this.map.map!.addInteraction(this.modify);
     this.modify.on('modifyend', (e: ModifyEvent) => this.onDrawEnd_(e));
+    // this.translate.on('translateend', (e: TranslateEvent) => this.onDrawEnd_(e));
     this.map.map!.addLayer(this.selectionLayer);
     this.selectionLayer.setZIndex(Infinity);
+
     this.map.map!.addInteraction(this.select);
+
+    // Deselect as well.
     this.select.on('select', (ev: SelectEvent) => {
-      document.addEventListener('keydown', (e) => {
-        switch (e.key) {
-          case 'Escape':
-            this.select.getFeatures().clear();
-            break;
-          case 'Delete':
-            for (const s of ev.selected) {
-              this.removeFeature(s);
-            }
-            this.select.getFeatures().clear();
-            break;
-          case 'Backspace':
-            for (const s of ev.selected) {
-              this.removeFeature(s);
-            }
-            this.select.getFeatures().clear();
-            break;
+      if (ev.selected.length) {
+        if (!this.addedTranslate) {
+          this.map.map!.addInteraction(this.translate);
+          this.addedTranslate = true;
         }
-      });
+        if (this.selectHandler) {
+          document.removeEventListener('keydown', this.selectHandler);
+        }
+        this.selectHandler = (e: KeyboardEvent) => this.selectHandler_(ev, e);
+        document.addEventListener('keydown', this.selectHandler);
+        return;
+      }
+
+      if (this.selectHandler) {
+        document.removeEventListener('keydown', this.selectHandler);
+        this.selectHandler = undefined;
+      }
+      this.map.map!.removeInteraction(this.translate);
+      this.addedTranslate = false;
     });
-    this.map.map!.addInteraction(this.translate);
   }
 
   changeDrawType(type: 'Polygon' | 'Circle' | 'Point', first = false) {
@@ -114,21 +145,24 @@ export class Draww {
     this.currDrawType = type;
   }
 
-  onDrawEnd_(event: DrawEvent | ModifyEvent) {
-    event.preventDefault();
-    const s = get(this.store);
-
+  onDrawEnd_(event: DrawEvent | ModifyEvent | TranslateEvent | Feature) {
     let feature: Feature<Geometry>;
-    if (event.type === 'drawend') {
+    if (event instanceof Feature) {
+      feature = event;
+    } else if (event.type === 'drawend') {
       feature = (event as DrawEvent).feature;
+      event.preventDefault();
     } else {
       feature = (event as ModifyEvent).features.item(0) as Feature<Polygon>;
+      event.preventDefault();
     }
 
+    const s = get(this.store);
     this.processFeature(
       feature,
       schemeTableau10[s.currKey! % 10],
       s.keys[s.currKey!],
+      s.currKey!,
       event.type === 'drawend'
     );
   }
@@ -146,6 +180,7 @@ export class Draww {
     feature: Feature<Polygon | Circle | Point>,
     color: string,
     label: string,
+    keyIdx: number,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     newDraw = true
   ) {
@@ -158,6 +193,7 @@ export class Draww {
     );
     feature.set('color', color);
     feature.set('label', label);
+    feature.set('keyIdx', keyIdx);
     sEvent.set({ type: 'pointsAdded' });
   }
 
@@ -182,13 +218,14 @@ export class Draww {
   // Need to rerun on label change.
   _updatePolygonStyle(feature: Feature<Geometry>, setStroke = true) {
     const type = feature.getGeometry()!.getType();
+    const color = feature.get('color') as string;
     let st: Style;
     if (type === 'Point') {
       // https://openlayers.org/en/latest/examples/synthetic-points.html
       st = new Style({
         image: new CircleStyle({
           radius: 5,
-          fill: new Fill({ color: (feature.get('color') as string) + '88' })
+          fill: new Fill({ color: color.concat('88') })
         })
       });
       feature.setStyle(st);
@@ -197,7 +234,7 @@ export class Draww {
 
     st = drawnStyle.clone();
     if (setStroke) {
-      st.setStroke(new Stroke({ color: feature.get('color') as string, width: 3 }));
+      st.setStroke(new Stroke({ color, width: 3 }));
     }
     st.getText().setText(feature.get('label') as string);
 
@@ -210,13 +247,11 @@ export class Draww {
     const vt = new Style({
       image: new CircleStyle({
         radius: 5,
-        fill: new Fill({
-          color: feature.get('color') as string
-        })
+        fill: new Fill({ color })
       }),
       geometry: (feature) => {
         // return the coordinates of the first ring of the polygon
-        const coordinates = feature.getGeometry().getCoordinates()[0];
+        const coordinates = feature.getGeometry()!.getCoordinates()[0];
         return new MultiPoint(coordinates);
       }
     });
@@ -279,7 +314,7 @@ export class Draww {
         keys.push(label);
         idx = keys.length - 1;
       }
-      this.processFeature(feature, schemeTableau10[idx % 10], label);
+      this.processFeature(feature, schemeTableau10[idx % 10], label, idx, true);
       if (properties) feature.setProperties(properties);
       this.source.addFeature(feature);
     }
@@ -346,5 +381,6 @@ const initialStyle = new Style({
 // Style for finished polygon.
 const drawnStyle = new Style({
   stroke: new Stroke({ color: '#00ffe9', width: 3 }),
+  fill: new Fill({ color: 'transparent' }), // so that getFeatureAtPixel can see this.
   text: textStyle
 });

@@ -46,7 +46,7 @@
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium-IF Data</span>
   </button>
 
-  <p class="mt-2">Feedbacks welcomed! See the top right corner.</p>
+  <p class="mt-2 text-center">Feedbacks welcomed! See the top right corner.</p>
 </div>
 
 <div class="absolute bottom-5 left-1/2 translate-x-[-50%] text-center text-neutral-300">

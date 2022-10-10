@@ -1,10 +1,16 @@
 import type { CoordsData } from '$src/lib/data/objects/coords';
-import { annoFeat, annoROI, sEvent, sFeatureData, sOverlay } from '$src/lib/store';
-import { isEqual } from 'lodash-es';
+import {
+  annoFeat,
+  annoHover,
+  annoROI,
+  overlays,
+  sEvent,
+  sFeatureData,
+  sOverlay
+} from '$src/lib/store';
+import { isEqual, throttle } from 'lodash-es';
 import type { Feature } from 'ol';
 import type { Circle, Geometry, Polygon } from 'ol/geom.js';
-import type { ModifyEvent } from 'ol/interaction/Modify';
-import type { TranslateEvent } from 'ol/interaction/Translate';
 import { get } from 'svelte/store';
 import type { Mapp } from '../../ui/mapp';
 import { Draww } from './annROI';
@@ -22,30 +28,25 @@ export class DrawFeature extends Draww {
     this.points = mutspot;
   }
 
-  afterModify(e: ModifyEvent | TranslateEvent) {
-    console.debug('modifyend');
+  afterModify(feature: Feature<Geometry>) {
+    // console.debug('modifyend', feature);
     const keyIdx = get(this.store as typeof annoFeat).currKey;
     if (keyIdx == undefined) throw new Error('keyIdx is null');
 
-    const feature = e.features.getArray()[0] as Feature<Polygon>;
     const idx = feature.getId() as number;
     const prev = this.featuresBeforeMod[idx];
-    this.points.deleteFromPolygon(prev as Feature<Polygon | Circle>);
-    this.points.addFromPolygon(
-      feature,
-      feature.get('label') as string,
-      this.coordsSource!,
-      get(annoFeat).keys
+    this.points.modifyFromPolygon(
+      prev as Feature<Polygon | Circle>,
+      this.source.getFeatures().filter((f) => f.get('label') === feature.get('label')) as Feature<
+        Polygon | Circle
+      >[]
     );
     this.featuresBeforeMod[idx] = feature.clone();
   }
 
   mount() {
-    super.mount();
     this.points.mount();
-    this.modify.on('modifyend', (e: ModifyEvent) => this.afterModify(e));
-    this.translate.on('translateend', (e: TranslateEvent) => this.afterModify(e));
-
+    super.mount(); // So that text is drawn on top of points.
     this.map.attachPointerListener({
       click: (id_: { idx: number; id: number | string } | null) => {
         const anno = get(this.store as typeof annoFeat);
@@ -65,36 +66,62 @@ export class DrawFeature extends Draww {
           const idx = id_.idx;
           const existing = this.points.get(idx);
           if (existing == undefined || existing.get('value') !== anno.keys[anno.currKey]) {
-            this.points.add(idx, anno.keys[anno.currKey], sfd.coords, anno.keys);
+            this.points.add(idx, anno.keys[anno.currKey]);
           } else {
             this.points.remove(idx);
           }
         }
       }
     });
+    this.map.attachPointerListener(
+      {
+        pointermove(obj) {
+          if (!obj) {
+            annoHover.set(undefined);
+            return;
+          }
+          const label = obj.feature.get('keyIdx') as number;
+          if (label == undefined) console.error('No label for feature', obj.f);
+          annoHover.set(label);
+        }
+      },
+      { layer: this.selectionLayer }
+    );
   }
 
   startDraw(coords: CoordsData) {
     console.log('Start drawing at', coords.name);
     this.coordsSource = coords;
-    this.points.startDraw(coords);
+    this.points.startDraw(coords, get(annoFeat).reverseKeys, get(overlays)[get(sOverlay)].source);
   }
 
   getComposition() {
     return this.points.getComposition();
   }
 
-  processFeature(feature: Feature<Polygon | Circle>, color: string, label: string, newDraw = true) {
-    super.processFeature(feature, color, label);
+  processFeature(
+    feature: Feature<Polygon | Circle>,
+    color: string,
+    label: string,
+    keyIdx: number,
+    newDraw = true
+  ) {
+    if (feature.getId() == undefined) {
+      // Listener for any change in the geometry.
+      feature.getGeometry()!.on(
+        'change',
+        throttle(() => {
+          this.onDrawEnd_(feature);
+          this.afterModify(feature);
+        }, 25)
+      );
+    }
+    super.processFeature(feature, color, label, keyIdx, newDraw);
+
     if (newDraw) {
       this.featuresBeforeMod[feature.getId() as number] = feature.clone();
     }
-    this.points.addFromPolygon(
-      feature,
-      feature.get('label') as string,
-      this.coordsSource!,
-      get(annoFeat).keys
-    );
+    this.points.addFromPolygon(feature);
   }
 
   removeFeature(f: Feature<Polygon | Circle>): void {

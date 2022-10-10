@@ -51,16 +51,16 @@
   </article>
 </div>
 
-<div
-  class={classes(
-    'hidden w-0.5 cursor-ew-resize bg-neutral-800 md:h-full',
-    showSidebar ? ' md:block' : ''
-  )}
-  use:resizable
-/>
-
-<!-- Sidebar -->
 {#if showSidebar || shownOnce}
+  <div
+    class={classes(
+      'hidden w-0.5 cursor-ew-resize bg-neutral-800 md:h-full',
+      showSidebar ? ' md:block' : ''
+    )}
+    use:resizable
+  />
+
+  <!-- Sidebar -->
   <aside
     class={classes(
       'relative flex w-full flex-1 flex-col overflow-hidden overflow-y-scroll',
