@@ -52,7 +52,6 @@
     } else {
       throw new Error('Invalid channels');
     }
-    console.debug('Set colors', imgCtrl);
   }
 
   function handleClick(name: string, color: BandInfo['color'] | undefined, alternate = false) {
@@ -79,7 +78,7 @@
   onMount(() => {
     table.addEventListener('mouseenter', () => {
       clearTimeout(timeout);
-      table.style.maxWidth = '2000px';
+      table.style.maxWidth = '100%';
     });
     table.addEventListener('mouseleave', shrink);
     timeout = setTimeout(shrink, 1500);
@@ -88,9 +87,10 @@
 
 <div
   bind:this={table}
-  class="group flex max-w-[1000px] flex-col overflow-x-hidden rounded-lg bg-neutral-800/80 px-1 py-1 font-medium ring-4 ring-neutral-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out"
+  class="group flex max-w-full flex-col overflow-x-hidden rounded-lg bg-neutral-800/80 px-1 py-1 font-medium ring-4 ring-neutral-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out"
   class:hidden={!(image && imgCtrl)}
   draggable
+  aria-label="Image controls"
 >
   {#if image && imgCtrl}
     {#if imgCtrl?.type === 'composite'}
@@ -98,12 +98,8 @@
         <tbody>
           <!-- Each channel -->
           {#each image.channels as name}
-            <tr class="">
-              <td
-                class=""
-                on:click={() => handleClick(name, imgCtrl.variables[name].color, true)}
-                bind:this={cell}
-              >
+            <tr aria-label={`${name} controls`} class="">
+              <td class="" bind:this={cell}>
                 <button
                   class={classes(
                     imgCtrl.variables[name].enabled
@@ -116,6 +112,8 @@
                       : '',
                     `transition-width mx-auto flex items-center rounded-lg px-2 py-[1px]`
                   )}
+                  on:click={() => handleClick(name, imgCtrl.variables[name].color, true)}
+                  aria-label="Select channel button"
                 >
                   <div class="whitespace-nowrap">{name}</div>
                 </button>
@@ -129,12 +127,14 @@
                     class="mx-2 min-w-[3rem] max-w-[6rem] cursor-pointer opacity-70 transition-opacity duration-500 group-hover:opacity-100"
                     bind:value={imgCtrl.variables[name].max}
                     on:mousedown={() => handleClick(name, imgCtrl.variables[name].color)}
+                    aria-label="Max channel intensity slider"
                   />
                   <span
                     class={classes(
                       imgCtrl.variables[name].enabled ? '' : 'opacity-80 hover:opacity-100',
                       'whitespace-nowrap'
                     )}
+                    aria-label="Max channel intensity"
                   >
                     Max: {255 - imgCtrl.variables[name].max}
                   </span>
@@ -150,6 +150,8 @@
                       i === 0 ? 'ml-1.5' : '',
                       `mx-[1px] my-1 flex h-[16px] w-[16px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`
                     )}
+                    aria-label={`${color} color button`}
+                    data-testid="imgctrl-color-button"
                   />
                 {/each}
               </td>
@@ -168,6 +170,7 @@
             max="0.5"
             bind:value={imgCtrl[name]}
             class="col-span-2 min-w-[4rem] max-w-[12rem] cursor-pointer"
+            aria-label={`${name} slider`}
           />
         {/each}
       </div>

@@ -96,7 +96,7 @@ describe('test updateFeature', () => {
   });
 });
 
-describe('fresh start', () => {
+describe.concurrent('fresh start', () => {
   beforeEach(runInit);
 
   it('should add a point', () => {
@@ -114,7 +114,7 @@ describe('fresh start', () => {
   });
 });
 
-describe('circle test', () => {
+describe.concurrent('circle test', () => {
   beforeEach(runInit);
   const oldCircle = new Feature(new Circle([0, 0], 0.501)); // Floating point
   oldCircle.set('label', 'a');
