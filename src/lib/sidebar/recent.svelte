@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { hoverSelect, sFeatureData } from '$lib/store';
+  import { hoverSelect, setHoverSelect } from '$lib/store';
   import { isEqual } from 'lodash-es';
   import type { FeatureAndGroup } from '../data/objects/feature';
   import HoverableFeature from './hoverableFeature.svelte';
@@ -18,7 +18,7 @@
 <div class="flex flex-wrap gap-x-4">
   {#if queue.length > 0}
     {#each queue as feature}
-      <HoverableFeature {feature} />
+      <HoverableFeature {feature} set={setHoverSelect} />
     {/each}
   {:else}
     <span class="mx-auto text-neutral-400">No recent features (yet).</span>

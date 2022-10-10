@@ -1,19 +1,21 @@
 import { schemeTableau10 } from 'd3';
 import type Feature from 'ol/Feature.js';
-import type { Circle, Geometry as Point, Point, Polygon } from 'ol/geom.js';
+import type { Circle, Point, Polygon } from 'ol/geom.js';
 
 import type { CoordsData } from '$lib/data/objects/coords';
 import { genLRU } from '$src/lib/lru';
-import { annoFeat, flashing, sEvent, sFeatureData } from '$src/lib/store';
+import { annoFeat, flashing, sEvent } from '$src/lib/store';
 import { CanvasSpots } from '$src/lib/ui/overlays/points';
 import { difference, intersection } from 'lodash-es';
 import type { Coordinate } from 'ol/coordinate';
+import type VectorSource from 'ol/source/Vector';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { Options } from 'ol/style/Style';
 import { get } from 'svelte/store';
 
 export class MutableSpots extends CanvasSpots {
   coordsSource?: CoordsData;
+  overlaySource?: VectorSource;
   points?: Feature<Point>[]; // To check if a point is already in the source.
   keyMap?: Record<string, number>;
   pointType?: 'Point' | 'Circle';
@@ -29,9 +31,10 @@ export class MutableSpots extends CanvasSpots {
   static getPointCoords = (f: Feature<Point>) => f.getGeometry()!.getCoordinates() as Coordinate;
   static getCircleCoords = (f: Feature<Circle>) => f.getGeometry()!.getCenter();
 
-  startDraw(coords: CoordsData, keyMap: Record<string, number>) {
+  startDraw(coords: CoordsData, keyMap: Record<string, number>, overlaySource: VectorSource) {
     this.clear();
     this.coordsSource = coords;
+    this.overlaySource = overlaySource;
     this.points = new Array(coords.pos!.length);
     this.keyMap = keyMap;
     this.pointType = this.coordsSource.size ? 'Circle' : 'Point';
@@ -135,15 +138,10 @@ export class MutableSpots extends CanvasSpots {
     const id = polygonFeat.getId() as string;
 
     const filtered: number[] = [];
-    this.coordsSource!.pos!.forEach((f) => {
-      if (
-        polygon.intersectsCoordinate([
-          f.x * this.coordsSource!.mPerPx,
-          -f.y * this.coordsSource!.mPerPx
-        ])
-      ) {
-        if (f.idx == undefined) alert('f.idx undefined');
-        filtered.push(f.idx!);
+    this.overlaySource!.getFeaturesInExtent(polygon.getExtent()).forEach((f) => {
+      if (polygon.intersectsCoordinate(f.getGeometry()!.getCoordinates())) {
+        if (f.getId() == undefined) alert('f.idx undefined');
+        filtered.push(f.getId() as number);
       }
     });
     this.add(filtered, label, { polygonId: id });
@@ -153,7 +151,8 @@ export class MutableSpots extends CanvasSpots {
     if (!this.coordsSource) throw new Error('Coords not set');
     const polygon = polygonFeat.getGeometry()!;
 
-    this.source.getFeatures().forEach((f: Feature<Point>) => {
+    this.source.getFeaturesInExtent(polygon.getExtent()).forEach((f: Feature<Point>) => {
+      if (!f.getStyle()) return; // Feature not active.
       const coord = this.getPointCoords!(f);
       if (polygon.intersectsCoordinate(coord)) {
         this.updatePoint(f, polygonFeat.get('label') as string, true);
@@ -178,7 +177,8 @@ export class MutableSpots extends CanvasSpots {
     const label = oldPol.get('label') as string;
 
     // Polygon add handled by processFeature.
-    this.source.getFeatures().forEach((f: Feature<Point>) => {
+    this.source.getFeaturesInExtent(oldPolygon.getExtent()).forEach((f: Feature<Point>) => {
+      if (!f.getStyle()) return; // Feature not active.
       const coord = this.getPointCoords!(f as Feature<Circle>);
       if (oldPolygon.intersectsCoordinate(coord)) {
         if (this.isinPolygons(coord, polygons)) {
@@ -273,7 +273,7 @@ export class MutableSpots extends CanvasSpots {
     return 'id,label\n' + points.join('\n');
   }
 
-  load(cs: { id: number; label?: string }[], coords: CoordsData) {
+  load(cs: { id: number; label?: string }[], coords: CoordsData, overlaySource: VectorSource) {
     const pos = coords.pos;
 
     // if (!pos) {
@@ -300,7 +300,7 @@ export class MutableSpots extends CanvasSpots {
     anno.currKey = newKeys.length - 1;
     annoFeat.set(anno);
 
-    this.startDraw(coords, get(annoFeat).reverseKeys);
+    this.startDraw(coords, get(annoFeat).reverseKeys, overlaySource);
 
     for (const { id, label } of cs) {
       const match = pos!.find((p) => p.id === id)!;

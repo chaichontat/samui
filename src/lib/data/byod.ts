@@ -1,7 +1,7 @@
 // Bring your own data.
 
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
-import { samples, sMapp, sSample } from '$lib/store';
+import { overlays, samples, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
 import { get } from 'svelte/store';
 import { fromCSV } from '../io';
 import type { ROIData } from '../sidebar/annotation/annROI';
@@ -55,7 +55,7 @@ async function processCSV(name: string, text: string) {
 
   if ('id' in res[0]) {
     const ann = get(sMapp).persistentLayers.annotations;
-    ann.points.load(res as any);
+    ann.points.load(res as any, get(sFeatureData).coords, get(overlays)[get(sOverlay)].source);
     return;
   }
 

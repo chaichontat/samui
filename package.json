@@ -63,6 +63,7 @@
   "dependencies": {
     "@observablehq/plot": "^0.6.0",
     "ajv": "^8.11.0",
+    "fast-kde": "^0.2.1",
     "file-saver": "^2.0.5",
     "fzf": "^0.5.1",
     "html-to-image": "^1.10.8",

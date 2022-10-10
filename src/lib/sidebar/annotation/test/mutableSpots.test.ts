@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { fromCSV } from '$src/lib/io';
 import { schemeTableau10 } from 'd3';
+import VectorSource from 'ol/source/Vector';
 import { MutableSpots } from '../mutableSpots';
 
 const map = new Mapp();
@@ -20,13 +21,22 @@ const coordsData = new CoordsData({
   pos: Array.from({ length: 10 }, (_, i) => ({ x: i, y: 0, id: i }))
 });
 const keyMap = { a: 0, b: 1, c: 2 };
-const runInit = () => m.startDraw(cloneDeep(coordsData), keyMap);
+const source = new VectorSource();
+const features = coordsData.pos!.map(
+  (p) => new Feature(new Point([p.x * coordsData.mPerPx, -p.y * coordsData.mPerPx]))
+);
+features.forEach((f, i) => f.setId(i));
+source.addFeatures(features);
+
+const runInit = () => {
+  m.startDraw(cloneDeep(coordsData), keyMap, source);
+};
 
 describe('it should fail before startDraw', () => {
   it('should not run before startDraw', () => {
     expect(m.coordsSource).toBeUndefined();
     expect(() => m.add(0, labels[0])).toThrow();
-    expect(() => m.addFromPolygon(new Feature(new Circle([0, 0], 1)), labels[0])).toThrow();
+    expect(() => m.addFromPolygon(new Feature(new Circle([0, 0], 1)))).toThrow();
   });
 });
 
@@ -158,8 +168,9 @@ describe('circle test', () => {
     m.clear();
     expect(m.length).toBe(0);
     const csved = (await fromCSV(dump))!.data as { id: number; label: string }[];
+    console.log(csved);
 
-    m.load(csved, coordsData);
+    m.load(csved, coordsData, source);
     expect(m.getComposition()).toEqual({ a: 6, b: 1, total_: 7 });
   });
 

@@ -6,7 +6,7 @@ import type { FeatureAndGroup } from './data/objects/feature';
 import type { Sample } from './data/objects/sample';
 import { oneLRU } from './lru';
 import type { Geometries } from './sidebar/annotation/annROI';
-import { HoverSelect } from './sidebar/searchBox';
+import { HoverSelect, type FeatureGroupList } from './sidebar/searchBox';
 import type { WebGLSpots } from './ui/overlays/points';
 
 export const samples: Writable<Record<string, Sample>> = writable({});
@@ -23,6 +23,8 @@ export const overlays: Writable<Record<string, WebGLSpots>> = writable({});
 /// Overlay -> Group/feature
 export const sOverlay = writable(undefined as string | undefined);
 export const overlaysFeature = writable({} as Record<string, FeatureAndGroup | undefined>);
+export const allFeatures = writable(undefined as FeatureGroupList[] | undefined);
+
 export const sFeatureData = writable(
   undefined as Awaited<ReturnType<Sample['getFeature']>> | undefined
 );
@@ -53,6 +55,7 @@ annoROI.subscribe((ann) => {
   }
 });
 
+export const annoHover = writable(undefined as number | undefined);
 export const annoFeat = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
@@ -85,7 +88,7 @@ annoFeat.subscribe((ann) => {
   }
 });
 
-type SimpleHS<T> = { hover?: T; selected?: T };
+export type SimpleHS<T> = { hover?: T; selected?: T };
 export const hoverSelect = writable(new HoverSelect<FeatureAndGroup>());
 const _setHoverNow = (v: SimpleHS<FeatureAndGroup>) => hoverSelect.set(get(hoverSelect).update(v));
 const _setHover = debounce(_setHoverNow, 50);
