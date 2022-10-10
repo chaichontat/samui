@@ -1,4 +1,5 @@
 import Ajv, { type JSONSchemaType } from 'ajv';
+import type { AnnFeatData } from '../sidebar/annotation/annFeat';
 import type { ROIData, ROIInstance } from '../sidebar/annotation/annROI';
 
 const roiInstance: JSONSchemaType<ROIInstance> = {
@@ -43,5 +44,22 @@ const roidata: JSONSchemaType<ROIData> = {
   //   additionalProperties: false
 };
 
+const annFeatData: JSONSchemaType<AnnFeatData> = {
+  type: 'object',
+  properties: {
+    sample: { type: 'string' },
+    time: { type: 'string' },
+    mPerPx: { type: 'number' },
+    rois: {
+      type: 'array',
+      items: roiInstance
+    },
+    coordName: { type: 'string' }
+  },
+  required: ['sample', 'rois']
+  //   additionalProperties: false
+};
+
 const ajv = new Ajv();
 export const valROIData = ajv.compile(roidata);
+export const valAnnFeatData = ajv.compile(annFeatData);

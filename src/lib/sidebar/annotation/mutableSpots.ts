@@ -287,7 +287,12 @@ export class MutableSpots extends CanvasSpots {
     );
 
     if (ins.length !== cs.length) {
-      alert('Some points are not in the current coordinates.');
+      alert(
+        'Some points are not in the current coordinates. \
+Most likely cause: mismatched samples. \
+The imported points must be a subset of current points. \
+That is, the current points must contain the ID of all imported points.'
+      );
       return;
     }
 

@@ -13,8 +13,12 @@ import type { Feature } from 'ol';
 import type { Circle, Geometry, Polygon } from 'ol/geom.js';
 import { get } from 'svelte/store';
 import type { Mapp } from '../../ui/mapp';
-import { Draww } from './annROI';
+import { Draww, type ROIData } from './annROI';
 import type { MutableSpots } from './mutableSpots';
+
+export interface AnnFeatData extends ROIData {
+  coordName: string;
+}
 
 export class DrawFeature extends Draww {
   readonly points: MutableSpots;
@@ -87,6 +91,20 @@ export class DrawFeature extends Draww {
       },
       { layer: this.selectionLayer }
     );
+  }
+
+  loadFeatures(obj: AnnFeatData): void {
+    const { coordName } = obj;
+    const coords = get(sFeatureData).coords;
+    if (coordName !== coords.name) {
+      alert(
+        `Annotation: coords mismatch. \
+Got ${coordName} but current feature has ${coords.name}.`
+      );
+      return;
+    }
+    this.startDraw(coords);
+    super.loadFeatures(obj);
   }
 
   startDraw(coords: CoordsData) {
