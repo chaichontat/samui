@@ -57,7 +57,7 @@ export default class RidgelineChart {
   }
 
   // cs is colors.
-  genArea(name: string, data: number[][], cs: string[]) {
+  genArea(name: string, data: number[][], cs: string[], transition = false) {
     const n = data.length;
     const h = this.height / (n + 1);
     const oldLength = this.areas.length;
@@ -124,7 +124,7 @@ export default class RidgelineChart {
 
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < n; i++) {
-      this.areas[i].genArea(data[n - 1 - i], cs[n - 1 - i], h * 2);
+      this.areas[i].genArea(data[n - 1 - i], cs[n - 1 - i], h * 2, transition);
     }
 
     this.node.selectAll('path').attr('clip-path', 'url(#clipper)');

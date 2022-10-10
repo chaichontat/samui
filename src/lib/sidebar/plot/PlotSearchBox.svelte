@@ -25,6 +25,7 @@
 
   export let amount: Record<string, number[]> | undefined;
   let svg: SVGSVGElement | undefined;
+  let oldfg: FeatureAndGroup | undefined = undefined;
 
   async function updateData(fg?: FeatureAndGroup, amount?: Record<string, number[]>) {
     if (!fg) return;
@@ -49,8 +50,10 @@
     h.genArea(
       fg?.feature,
       toSend,
-      ['url(#grad)'].concat(d3.schemeTableau10.slice(0, $annoFeat.keys.length))
+      ['url(#grad)'].concat(d3.schemeTableau10.slice(0, $annoFeat.keys.length)),
+      fg !== oldfg
     );
+    oldfg = fg;
   }
 
   $: h?.highlight($annoHover == undefined ? undefined : $annoHover + 1);

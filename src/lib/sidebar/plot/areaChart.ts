@@ -64,7 +64,7 @@ export default class AreaChart {
     g.selectAll('.tick').remove();
   }
 
-  genArea(data: number[], color?: string, height?: number) {
+  genArea(data: number[], color?: string, height?: number, transition = false) {
     if (!data?.length) {
       this.node.select('#area').select('path').attr('d', '');
       return;
@@ -119,12 +119,13 @@ export default class AreaChart {
         .attr('y2', this.height);
     }
 
-    node
-      .datum(kde)
-      .attr('fill', this.color ?? node.attr('fill') ?? 'black')
-      // .transition()
-      // .duration(50)
-      .attr('d', this.area);
+    node = node.datum(kde).attr('fill', this.color ?? node.attr('fill') ?? 'black');
+    if (transition) {
+      node = node.transition().duration(400);
+    }
+    // .transition()
+    // .duration(50)
+    node.attr('d', this.area);
   }
 
   unhighlight() {
