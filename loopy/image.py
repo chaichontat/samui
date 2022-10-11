@@ -75,7 +75,7 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
             transform=rasterio.Affine(
                 scale, 0, 0, 0, -scale, 0
             ),  # https://gdal.org/tutorials/geotransforms_tut.html # Flip y-axis.
-            dtype=img.dtype,
+            dtype=np.uint8,
             crs="EPSG:32648",  # meters
             tiled=True,
         ) as dst:  # type: ignore
