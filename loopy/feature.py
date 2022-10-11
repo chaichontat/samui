@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import Callable, Literal, cast
 
+import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from anndata import AnnData
 from pydantic import validator
 from scipy.sparse import csc_matrix, csr_matrix
 from typing_extensions import Self
@@ -79,6 +80,7 @@ class ChunkedCSVHeader(ReadonlyModel):
     length: int
     activeDefault: str | None = None
     sparseMode: Literal["record", "array"] | None = None
+    weights: list[float] | None = None
     coordName: str | None = None
 
 
@@ -91,16 +93,14 @@ FeatureParams = ChunkedCSVParams | PlainCSVParams
 
 
 def get_compressed_genes(
-    vis: AnnData, coordName: str, mode: Literal["csr", "csc"] = "csc"  # type: ignore
+    arr: npt.ArrayLike | csc_matrix | csr_matrix, names: list[str], *, coordName: str, mode: Literal["csr", "csc"] = "csc"  # type: ignore
 ) -> tuple[ChunkedCSVHeader, bytearray]:
     if mode == "csr":
-        cs = csr_matrix(vis.X)  # csR
+        cs = csr_matrix(arr)  # csR
     elif mode == "csc":
-        cs = csc_matrix(vis.X)  # csC
+        cs = csc_matrix(arr)  # csC
     else:
         raise ValueError("Invalid mode")
-
-    names = vis.var_names
 
     indices = cs.indices.astype(int)
     indptr = cs.indptr.astype(int)
@@ -132,7 +132,12 @@ def get_compressed_genes(
 
     return (
         ChunkedCSVHeader(
-            names=names.to_list(),
+            names=names,
+            weights=list(
+                np.array(cs.sum(axis=0)).flatten().round(2)
+                if mode == "csc"
+                else np.array(cs.sum(axis=1)).flatten().round(2)
+            ),
             ptr=ptr.tolist(),
             length=length,
             sparseMode="array" if mode == "csc" else "record",

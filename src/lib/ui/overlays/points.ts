@@ -59,6 +59,9 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       case 'categorical':
         this.style = genSpotStyle('categorical', this.coords.sizePx);
         break;
+      case 'singular':
+        this.style = genSpotStyle('singular', this.coords.sizePx);
+        break;
       default:
         throw new Error(`Unknown style: ${style}`);
     }

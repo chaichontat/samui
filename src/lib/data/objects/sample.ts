@@ -153,10 +153,7 @@ export class Sample extends Deferrable {
       const k = Object.keys(res.data[0]).length === 1 ? Object.keys(res.data[0])[0] : 'value';
 
       if (res.dataType === 'singular') {
-        console.assert(
-          Object.keys(res.data[0]).length === 2 && 'x' in res.data[0] && 'y' in res.data[0],
-          'x and y not found in data.'
-        );
+        console.assert('x' in res.data[0] && 'y' in res.data[0], 'x and y not found in data.');
         data = res.data.map(() => 1);
       } else {
         if (!(k in res.data[0])) throw new Error(`Feature ${fn.feature} doesn't have ${k}.`);
@@ -181,9 +178,14 @@ export class Sample extends Deferrable {
     const featureList = [];
     for (const f of Object.values(this.features)) {
       if (f instanceof ChunkedCSV) {
-        featureList.push({ group: f.name, features: Object.keys(f.names!) });
+        featureList.push({
+          group: f.name,
+          features: Object.keys(f.names!),
+          weights: f.weights,
+          names: f.names
+        });
       } else if (f instanceof PlainCSV) {
-        featureList.push({ group: f.name, features: f.features! });
+        featureList.push({ group: f.name, features: f.features!, weights: f.weights });
       } else {
         throw new Error('Unsupported feature type at Sample.genFeatureList');
       }
