@@ -82,7 +82,7 @@ export class MutableSpots extends CanvasSpots {
     let options: Options;
     if (type === 'outline') {
       options = {
-        stroke: new Stroke({ color, width: 2 }),
+        stroke: new Stroke({ color, width: 3 }),
         fill: new Fill({ color: 'transparent' })
       };
     } else {
