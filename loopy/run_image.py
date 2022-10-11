@@ -22,6 +22,8 @@ def run_image(
 
     img = tifffile.imread(tiff)
 
+    n_img_chan = 1 if len(img.shape) == 2 else min(img.shape[0], img.shape[2])
+
     print(f"Processing {s} with shape {img.shape}.")
     match channels:
         case None:
@@ -46,12 +48,12 @@ def run_image(
                 if len(d) > 255:
                     raise ValueError("Channel names must be less than 256 characters.")
 
-            if len(c) != img.shape[0]:
+            if len(c) != n_img_chan:
                 raise ValueError(
-                    f"Number of channels does not match that of the image. Given {len(c)}, expected {img.shape[0]}."
+                    f"Number of channels does not match that of the image. Given {len(c)}, expected {n_img_chan}."
                 )
 
-    output = [Url(f"{s}.tif")] if img.shape[0] < 4 else [Url(f"{s}_1.tif"), Url(f"{s}_2.tif")]
+    output = [Url(f"{s}.tif")] if n_img_chan < 4 else [Url(f"{s}_1.tif"), Url(f"{s}_2.tif")]
 
     sample = Sample(
         name=s,

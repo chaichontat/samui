@@ -34,18 +34,30 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
         assert z == 3
         height = img.shape[0]
         width = img.shape[1]
-    else:
+        zlast = True
+    elif len(img.shape) == 2:  # 2D
+        z = 1
+        height = img.shape[0]
+        width = img.shape[1]
+        zlast = False
+    elif img.shape[0] < img.shape[2]:
         z = img.shape[0]
         height = img.shape[1]
         width = img.shape[2]
+        zlast = False
+    else:
+        z = img.shape[2]
+        height = img.shape[0]
+        width = img.shape[1]
+        zlast = True
 
     # JPEG compression can only handle up to 4 channels at a time.
     if z < 4:
-        names = ("",)
+        names = [""]
     elif z > 8:
         raise ValueError("Too many channels")
     else:
-        names = ("_1", "_2")
+        names = ["_1", "_2"]
 
     ps = [path / (name + x + ".tif") for x in names]
 
@@ -53,7 +65,7 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
         dst: DatasetWriter
         # Not compressing here since we cannot control the compression level.
         with rasterio.open(
-            ps[i].as_posix() + "_",
+            ps[i].with_suffix(".tif_").as_posix(),
             "w",
             driver="GTiff",
             height=height,
@@ -67,15 +79,26 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
             crs="EPSG:32648",  # meters
             tiled=True,
         ) as dst:  # type: ignore
+            print("Writing", ps[i])
             for j in range(4):
                 idx = j + 4 * i
                 if idx >= z:
                     break
-                dst.write(img[idx] if not rgb else img[:, :, idx], j + 1)
+                if len(img.shape) == 2:
+                    towrite = img
+                else:
+                    towrite = img[idx] if not zlast else img[:, :, idx]
+
+                if towrite.dtype == np.uint16:
+                    print("Warning: converting uint16 to uint8")
+                    towrite = np.divide(towrite, 256, casting="unsafe")
+                    towrite = towrite.astype(np.uint8)
+
+                dst.write(towrite, j + 1)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
 
     with ThreadPoolExecutor() as executor:
-        executor.map(run, range(len(names)))
+        executor.map(run, range(len(ps)))
     print("Generated COG", ps)
 
     return ps
@@ -86,7 +109,7 @@ def compress(ps: list[Path], quality: int = 90) -> None:
         with ThreadPoolExecutor() as executor:
             executor.map(
                 lambda p: subprocess.run(
-                    f"gdal_translate {p.as_posix() + '_'} {p.as_posix()} -co TILED=YES -co COMPRESS=JPEG -co COPY_SRC_OVERVIEWS=YES -co JPEG_QUALITY={quality}",
+                    f"gdal_translate {p.with_suffix('.tif_').as_posix()} {p.as_posix()} -co TILED=YES -co COMPRESS=JPEG -co COPY_SRC_OVERVIEWS=YES -co JPEG_QUALITY={quality}",
                     shell=True,
                     capture_output=True,
                     text=True,
@@ -99,4 +122,7 @@ def compress(ps: list[Path], quality: int = 90) -> None:
         raise e
     finally:
         for p in ps:
-            p.with_suffix(".tif_").unlink()
+            if p.exists():
+                p.with_suffix(".tif_").unlink()
+            else:
+                print("File not found:", p)
