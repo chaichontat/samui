@@ -6,9 +6,10 @@
     bgColors,
     colors,
     type BandInfo,
+    type CompCtrl,
     type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
-  import { zip } from 'lodash-es';
+  import { isEqual, zip } from 'lodash-es';
   import { onMount } from 'svelte';
   import type { Background } from './imgBackground';
 
@@ -23,13 +24,22 @@
 
   const bandinfo: Record<string, BandInfo> = {};
 
-  function setColors(): ImgCtrl | undefined {
+  // imgCtrl is a global variable.
+  function initialSet(): ImgCtrl | undefined {
     image = background.image;
     if (!image) return undefined;
 
     if (image.channels === 'rgb') {
       imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
     } else if (Array.isArray(image.channels)) {
+      const ls = localStorage.getItem('imgCtrl');
+      if (ls) {
+        const toVerify = JSON.parse(ls) as CompCtrl;
+        if (toVerify.variables && isEqual(Object.keys(toVerify.variables), image.channels)) {
+          imgCtrl = toVerify;
+        }
+      }
+
       for (const c of image.channels) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         bandinfo[c] = { enabled: false, color: 'blue', max: 128 };
@@ -69,7 +79,7 @@
     }
   }
 
-  $: if ($sEvent?.type === 'sampleUpdated') setColors();
+  $: if ($sEvent?.type === 'sampleUpdated') initialSet();
   $: if (imgCtrl) s();
   const s = () => background?.updateStyle(imgCtrl!);
 
