@@ -8,7 +8,12 @@ from loopy.utils import Url
 
 
 def run_image(
-    tiff: Path, out: Path | None = None, channels: str | None = None, quality: int = 90, scale: float = 1
+    tiff: Path,
+    out: Path | None = None,
+    channels: str | None = None,
+    quality: int = 90,
+    scale: float = 1,
+    rotation: tuple[float, float] = (0, 0),
 ) -> None:
     s = tiff.stem
     if not tiff.exists():
@@ -68,7 +73,7 @@ def run_image(
     sample.write(o / "sample.json")
 
     img = tifffile.imread(tiff)
-    ps = gen_geotiff(img, s, out / s, scale)
+    ps = gen_geotiff(img, s, out / s, scale, rotation, channels == "rgb")
     print("Compressing image...")
     compress(ps, quality)
     print(f"Saved to {o.absolute()}.")

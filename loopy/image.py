@@ -28,7 +28,14 @@ class ImageParams(ReadonlyModel):
         return self
 
 
-def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool = False) -> list[Path]:
+def gen_geotiff(
+    img: np.ndarray,
+    name: str,
+    path: Path,
+    scale: float,
+    rotation: tuple[float, float] = (0, 0),
+    rgb: bool = False,
+) -> list[Path]:
     if rgb:
         z = img.shape[2]
         assert z == 3
@@ -73,7 +80,7 @@ def gen_geotiff(img: np.ndarray, name: str, path: Path, scale: float, rgb: bool 
             count=min(4, z) if i == 0 else z - 4,
             photometric="RGB" if rgb else "MINISBLACK",
             transform=rasterio.Affine(
-                scale, 0, 0, 0, -scale, 0
+                scale, 0, rotation[0], 0, -scale, rotation[1]
             ),  # https://gdal.org/tutorials/geotransforms_tut.html # Flip y-axis.
             dtype=np.uint8,
             crs="EPSG:32648",  # meters
