@@ -176,9 +176,11 @@ export class Mapp extends Deferrable {
 
   runPointerListener = throttle((e: MapBrowserEvent<UIEvent>) => {
     // Outlines take precedence. Either visible is fine.
-    this.setCurrPixel(e.coordinate as [number, number]);
-    // Don't run if dragging.
-    if ((e.originalEvent as PointerEvent).pressure) return;
+    if (e.type === 'pointermove') {
+      this.setCurrPixel(e.coordinate as [number, number]);
+      // Don't run if dragging.
+      if ((e.originalEvent as PointerEvent).pressure) return;
+    }
 
     const currLayer = get(overlays)[get(sOverlay)]?.layer;
     const eType = e.type as 'pointermove' | 'click';
@@ -186,12 +188,12 @@ export class Mapp extends Deferrable {
     const alerted = new Array(listeners.length).fill(false);
 
     // feature is overlay in our parlance.
-    this.map!.forEachFeatureAtPixel(e.pixel, (f, layer) => {
+    this.map!.forEachFeatureAtPixel(e.pixel, (f, evLayer) => {
       const idx = f.getId() as number | undefined;
       const id = f.get('id') as number | string;
 
       listeners.forEach(({ f: g, layer: targetLayer }, i) => {
-        if (layer === targetLayer ?? currLayer) {
+        if (evLayer === (targetLayer ?? currLayer)) {
           // Features in important layers always have a number id.
           if (idx == undefined) {
             console.error("Overlay doesn't have an id.");
