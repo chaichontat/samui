@@ -3,7 +3,6 @@ from pathlib import Path
 
 from loopy.feature import FeatureAndGroup
 
-
 #%%
 directory = Path("C:/Users/Chaichontat/Documents/VIF")
 out = Path("C:/Users/Chaichontat/GitHub/loopynew/static")
