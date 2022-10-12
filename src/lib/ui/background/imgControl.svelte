@@ -83,7 +83,7 @@
   $: if (imgCtrl) s();
   const s = () => background?.updateStyle(imgCtrl!);
 
-  const shrink = () => table && cell && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
+  const shrink = () => table && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
   let timeout: ReturnType<typeof setTimeout> | undefined;
   onMount(() => {
     table.addEventListener('mouseenter', () => {

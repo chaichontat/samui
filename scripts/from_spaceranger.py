@@ -59,9 +59,7 @@ def gen_coords(vis: AnnData, path: Path | str) -> None:
 
 def write_compressed(vis: AnnData, p: Path):
     orient = "csc"
-    header, bytedict = get_compressed_genes(
-        vis.X, vis.var_names.to_list(), coordName="spots", mode=cast(Literal["csc", "csr"], orient)
-    )
+    header, bytedict = get_compressed_genes(vis, "spots", cast(Literal["csc", "csr"], orient))
     print(p.absolute())
 
     p.with_suffix(".json").write_text(header.json().replace(" ", ""))
