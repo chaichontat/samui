@@ -36,10 +36,18 @@
   }
 
   $: if (featureGroup) {
-    fzf = featureGroup.map((f) => [
-      f.group,
-      new Fzf(f.features, { limit: 6, casing: 'case-insensitive' })
-    ]);
+    fzf = featureGroup.map((f) => {
+      return [
+        f.group,
+        new Fzf(f.features, {
+          limit: 6,
+          casing: 'case-insensitive',
+          tiebreakers: f.weights
+            ? [(a, b) => f.weights[f.names[a.item] - f.weights[f.names[b.item]]]]
+            : undefined
+        })
+      ];
+    });
   }
 
   $: if (fzf) {

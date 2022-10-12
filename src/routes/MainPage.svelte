@@ -31,6 +31,8 @@
           .then((sample) => ($samples[sample.name] = sample))
           .catch(console.error);
       }
+    } else if (window.location.href.search('visiumif') > 0) {
+      loadExternal = true;
     } else {
       loadExternal = false;
     }

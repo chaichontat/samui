@@ -66,6 +66,7 @@ export class Background extends Deferrable {
       console.error('No image loaded');
       return;
     }
+    localStorage.setItem('imgCtrl', JSON.stringify(imgCtrl));
     if (imgCtrl.type === 'rgb') {
       this._updateStyle(imgCtrl as Omit<RGBCtrl, 'type'>);
     } else if (imgCtrl.type === 'composite') {

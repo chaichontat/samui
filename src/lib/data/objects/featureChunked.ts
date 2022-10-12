@@ -26,6 +26,7 @@ export type ChunkedCSVHeader = {
   mPerPx?: number;
   size?: number;
   activeDefault?: string;
+  weights?: number[];
   sparseMode?: SparseMode;
 };
 
@@ -45,6 +46,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
   featNames: string[] = [];
   length?: number;
   unit?: string;
+  weights?: number[];
 
   url: Url;
   readonly dataType: FeatureType;
@@ -182,7 +184,8 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
         ptr: this.ptr,
         length: this.length,
         activeDefault: this.activeDefault,
-        sparseMode: this.sparseMode
+        sparseMode: this.sparseMode,
+        weights: this.weights
       } = this.header!);
 
       if (!this.activeDefault && this.names) {

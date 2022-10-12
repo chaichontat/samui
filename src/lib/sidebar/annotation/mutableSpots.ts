@@ -82,7 +82,7 @@ export class MutableSpots extends CanvasSpots {
     let options: Options;
     if (type === 'outline') {
       options = {
-        stroke: new Stroke({ color, width: 2 }),
+        stroke: new Stroke({ color, width: 3 }),
         fill: new Fill({ color: 'transparent' })
       };
     } else {
@@ -287,7 +287,12 @@ export class MutableSpots extends CanvasSpots {
     );
 
     if (ins.length !== cs.length) {
-      alert('Some points are not in the current coordinates.');
+      alert(
+        'Some points are not in the current coordinates. \
+Most likely cause: mismatched samples. \
+The imported points must be a subset of current points. \
+That is, the current points must contain the ID of all imported points.'
+      );
       return;
     }
 

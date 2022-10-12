@@ -2,6 +2,8 @@
 export type FeatureGroupList = {
   group: string | null;
   features: string[];
+  names: Record<string, number>;
+  weights?: number[];
 };
 
 export class HoverSelect<T> {

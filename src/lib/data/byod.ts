@@ -4,9 +4,10 @@ import { Sample, type SampleParams } from '$lib/data/objects/sample';
 import { overlays, samples, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
 import { get } from 'svelte/store';
 import { fromCSV } from '../io';
+import type { AnnFeatData } from '../sidebar/annotation/annFeat';
 import type { ROIData } from '../sidebar/annotation/annROI';
 import { CoordsData, type Coord } from './objects/coords';
-import { valROIData } from './schemas';
+import { valAnnFeatData, valROIData } from './schemas';
 
 async function readFile<T extends object>(
   dirHandle: FileSystemDirectoryHandle,
@@ -24,7 +25,7 @@ async function readFile<T extends object>(
 
 export async function byod() {
   if (!('showDirectoryPicker' in window)) {
-    alert('This browser does not support the File System API. Use Chrome/Safari.');
+    alert('This browser does not support the File System API. Please use Chrome instead.');
     return;
   }
 
@@ -38,6 +39,11 @@ async function processCSV(name: string, text: string) {
   const res = (await fromCSV(text))?.data;
   if (!res) {
     alert('Invalid CSV file');
+    return;
+  }
+
+  if (!get(sSample)) {
+    alert('Please select a sample first to open a CSV file.');
     return;
   }
 
@@ -79,12 +85,27 @@ export async function processHandle(
       return;
     }
 
-    if (!proc) return;
+    if (!proc) {
+      alert('Invalid JSON file');
+      return;
+    }
+
+    const map = get(sMapp);
+    if (!map?.persistentLayers) {
+      alert('Got ROI but no map is loaded.');
+      return;
+    }
 
     if ('rois' in proc) {
+      if (valAnnFeatData(proc)) {
+        const annfeatdata = proc as AnnFeatData;
+        map.persistentLayers.annotations.loadFeatures(annfeatdata);
+        return;
+      }
+
       if (valROIData(proc)) {
         const roidata = proc as ROIData;
-        get(sMapp).persistentLayers.rois.loadFeatures(roidata.rois);
+        map.persistentLayers.rois.loadFeatures(roidata);
         return;
       }
       alert('Validation error: ' + JSON.stringify(valROIData.errors));
@@ -103,7 +124,7 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = fals
   try {
     sp = (await readFile<SampleParams>(handle, 'sample.json', 'plain')) as SampleParams;
   } catch (e) {
-    alert('Cannot find sample.json in the specified directory');
+    alert('Got folder but cannot find sample.json in the specified directory');
     return;
   }
 

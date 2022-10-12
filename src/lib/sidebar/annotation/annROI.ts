@@ -1,4 +1,4 @@
-import { annoFeat, flashing, sEvent, type annoROI } from '$src/lib/store';
+import { annoFeat, flashing, sEvent, sSample, type annoROI } from '$src/lib/store';
 import { schemeTableau10 } from 'd3';
 import { Feature } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
@@ -25,12 +25,12 @@ export type ROIInstance = {
   properties?: Record<string, any>;
 };
 
-export type ROIData = {
+export interface ROIData {
   sample: string;
   time: string;
   mPerPx: number;
   rois: ROIInstance[];
-};
+}
 
 export class Draww {
   draw: Draw;
@@ -163,7 +163,7 @@ export class Draww {
       schemeTableau10[s.currKey! % 10],
       s.keys[s.currKey!],
       s.currKey!,
-      event.type === 'drawend'
+      event.type === 'drawend' // Ignore error as feature.type is undefined anyway.
     );
   }
 
@@ -236,7 +236,7 @@ export class Draww {
     if (setStroke) {
       st.setStroke(new Stroke({ color, width: 3 }));
     }
-    st.getText().setText(feature.get('label') as string);
+    st.getText().setText(this.getLabel(feature));
 
     if (type === 'Circle') {
       feature.setStyle(st);
@@ -299,8 +299,21 @@ export class Draww {
     return out;
   }
 
-  loadFeatures(cs: ROIInstance[]) {
-    const keys = get(this.store).keys;
+  loadFeatures({ rois: cs, sample, mPerPx }: ROIData) {
+    if (get(sSample).name !== sample) {
+      alert(`Sample does not match. Got ${sample} but currently viewing ${get(sSample).name}.`);
+      return;
+    }
+
+    if (get(sSample).mPerPx !== mPerPx) {
+      alert(
+        `Scale does not match. \
+Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
+      );
+      return;
+    }
+
+    const store = get(this.store);
     for (const { label, type, coords, radius, properties } of cs) {
       const geometry =
         type === 'Circle'
@@ -309,18 +322,23 @@ export class Draww {
           ? new Polygon(coords)
           : new Point(coords as Coordinate);
       const feature = new Feature({ geometry });
-      let idx = keys.findIndex((k) => k === label);
+      let idx = store.keys.findIndex((k) => k === label);
       if (idx === -1) {
-        keys.push(label);
-        idx = keys.length - 1;
+        store.keys.push(label);
+        this.store.set(store); // Necessary to trigger set to update reverseKeys.
+        idx = store.keys.length - 1;
       }
       this.processFeature(feature, schemeTableau10[idx % 10], label, idx, true);
       if (properties) feature.setProperties(properties);
       this.source.addFeature(feature);
     }
-    if (get(this.store).currKey == undefined) get(this.store).currKey = keys.length - 1;
-    this.store.set(get(this.store));
-    flashing.set('ROI Annotation');
+    if (store.currKey == undefined) store.currKey = store.keys.length - 1;
+    this.store.set(store);
+    // flashing.set('ROI Annotation');
+  }
+
+  getLabel(f: Feature<Geometry>) {
+    return f.get('label') as string;
   }
 
   removeFeature(f: Feature) {
@@ -330,7 +348,7 @@ export class Draww {
 
   removeFeaturesByLabel(label: string) {
     for (const f of this.source.getFeatures()) {
-      if (f.get('label') === label) {
+      if (this.getLabel(f) === label) {
         this.source.removeFeature(f);
       }
     }
@@ -343,14 +361,14 @@ export class Draww {
     for (const f of this.source.getFeatures()) {
       counts['total_'] += 1;
       // Prevent NaNs.
-      counts[f.get('label') as string] = (counts[f.get('label') as string] ?? 0) + 1;
+      counts[this.getLabel(f)] = (counts[this.getLabel(f)] ?? 0) + 1;
     }
     return counts;
   }
 
   relabel(old: string, newlabel: string) {
     for (const f of this.source.getFeatures()) {
-      if (f.get('label') === old) f.set('label', newlabel);
+      if (this.getLabel(f) === old) f.set('label', newlabel);
     }
     sEvent.set({ type: 'pointsAdded' });
   }

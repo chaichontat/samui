@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { toCSV } from '$lib/io';
+  import { toCSV, toJSON } from '$lib/io';
   import { annoFeat, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
   import { tooltip } from '$lib/ui/utils';
   import { classes } from '$lib/utils';
@@ -16,11 +16,19 @@
   const labelClass = 'bg-violet-800 shadow-violet-800/20 hover:bg-violet-700';
   const buttonClass = 'bg-fuchsia-800 shadow-fuchsia-800/20 hover:bg-fuchsia-700';
 
-  const out = () =>
+  const out = () => {
     toCSV(
       `annotations_${$sSample.name}_${$annoFeat.annotating!.coordName}.csv`,
       $sMapp.persistentLayers.annotations.dumpPoints()
     );
+    toJSON(`rois_${$sSample.name}_feature.json`, {
+      rois: $sMapp.persistentLayers.annotations.dump(),
+      mPerPx: $sSample.imgParams?.mPerPx,
+      sample: $sSample.name,
+      time: new Date().toISOString(),
+      coordName: $annoFeat.annotating!.coordName
+    });
+  };
 
   $: $sMapp.persistentLayers.annotations.points.visible = $annoFeat.show;
 </script>

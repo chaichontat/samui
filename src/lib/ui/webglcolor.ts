@@ -12,6 +12,7 @@ export class WebGLColorFunc {
   }
 
   static add(...x: unknown[]): unknown[] {
+    if (x.length === 1) return x[0];
     if (x.length === 2) return ['+', x[0], x[1]];
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return ['+', this.add(...x.slice(0, x.length - 1)), x[x.length - 1]];
