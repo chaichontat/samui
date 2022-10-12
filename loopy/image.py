@@ -33,7 +33,7 @@ def gen_geotiff(
     name: str,
     path: Path,
     scale: float,
-    rotation: tuple[float, float] = (0, 0),
+    translate: tuple[float, float] = (0, 0),
     rgb: bool = False,
 ) -> list[Path]:
     if rgb:
@@ -80,7 +80,7 @@ def gen_geotiff(
             count=min(4, z) if i == 0 else z - 4,
             photometric="RGB" if rgb else "MINISBLACK",
             transform=rasterio.Affine(
-                scale, 0, rotation[0], 0, -scale, rotation[1]
+                scale, 0, translate[0], 0, -scale, translate[1]
             ),  # https://gdal.org/tutorials/geotransforms_tut.html # Flip y-axis.
             dtype=np.uint8,
             crs="EPSG:32648",  # meters

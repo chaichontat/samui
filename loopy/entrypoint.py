@@ -17,11 +17,11 @@ def cli():
 @click.option("--scale", "-s", default=1, type=float, help="Scale in meters per pixel.")
 @click.option("--quality", default=90, type=int, help="JPEG compression quality")
 @click.option(
-    "--rotation",
+    "--translate",
     default=(0, 0),
     nargs=2,
     type=click.Tuple([float, float]),
-    help="Rotation in row and column.",
+    help="Translation in row and column.",
 )
 def image(
     tiff: Path,
@@ -29,9 +29,9 @@ def image(
     channels: str | None = None,
     quality: int = 90,
     scale: float = 1,
-    rotation: tuple[float, float] = (0, 0),
+    translate: tuple[float, float] = (0, 0),
 ) -> None:
-    run_image(tiff, out, channels, quality, scale, rotation)
+    run_image(tiff, out, channels, quality, scale, translate)
 
 
 @cli.command()
