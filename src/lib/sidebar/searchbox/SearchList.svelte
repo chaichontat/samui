@@ -1,7 +1,7 @@
 <script lang="ts">
   import { allFeatures, type SimpleHS } from '$lib/store';
   import type { FeatureAndGroup } from '$src/lib/data/objects/feature';
-  import { Fzf } from 'fzf';
+  import { Fzf, type FzfResultItem } from 'fzf';
   import { createEventDispatcher } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
@@ -9,7 +9,7 @@
   import HoverableFeature from '../hoverableFeature.svelte';
   import type { FeatureGroupList } from '../searchBox';
 
-  let fzf: [string | undefined, Fzf<readonly string[]>][];
+  let fzf: [string | null, Fzf<readonly string[]>][];
 
   export let featureGroup: FeatureGroupList[] | undefined = $allFeatures;
   export let showSearch = false;
@@ -37,16 +37,17 @@
 
   $: if (featureGroup) {
     fzf = featureGroup.map((f) => {
-      return [
-        f.group,
-        new Fzf(f.features, {
-          limit: 6,
-          casing: 'case-insensitive',
-          tiebreakers: f.weights
-            ? [(a, b) => f.weights[f.names[a.item] - f.weights[f.names[b.item]]]]
-            : undefined
-        })
-      ];
+      const config: ConstructorParameters<typeof Fzf>[1] = {
+        limit: 6,
+        casing: 'case-insensitive'
+      };
+      if (f.weights) {
+        config.tiebreakers = [
+          (a: FzfResultItem<string>, b: FzfResultItem<string>) =>
+            f.weights![f.names[a.item] - f.weights![f.names[b.item]]]
+        ];
+      }
+      return [f.group, new Fzf(f.features, config)];
     });
   }
 
@@ -71,6 +72,7 @@
 <!-- Search results -->
 <!-- {#if showSearch} -->
 <!-- See clickOutside for on:outclick. -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   out:fade={{ duration: 100, easing: cubicOut }}
   class={cl}

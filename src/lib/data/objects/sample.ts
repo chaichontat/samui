@@ -185,7 +185,7 @@ export class Sample extends Deferrable {
           names: f.names
         });
       } else if (f instanceof PlainCSV) {
-        featureList.push({ group: f.name, features: f.features!, weights: f.weights });
+        featureList.push({ group: f.name, features: f.features!, weights: f?.weights });
       } else {
         throw new Error('Unsupported feature type at Sample.genFeatureList');
       }
