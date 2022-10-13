@@ -3,6 +3,7 @@ from pathlib import Path
 import tifffile
 
 from loopy.image import ImageParams, compress, gen_geotiff
+from loopy.logger import log
 from loopy.sample import Sample
 from loopy.utils import Url
 
@@ -29,7 +30,7 @@ def run_image(
 
     n_img_chan = 1 if len(img.shape) == 2 else min(img.shape[0], img.shape[2])
 
-    print(f"Processing {s} with shape {img.shape}.")
+    log(f"Processing {s} with shape {img.shape}.")
     match channels:
         case None:
             c = [f"C{i}" for i in range(img.shape[0])]
@@ -74,6 +75,6 @@ def run_image(
 
     img = tifffile.imread(tiff)
     ps = gen_geotiff(img, s, out / s, scale, translate, channels == "rgb")
-    print("Compressing image...")
+    log("Compressing image(s)...")
     compress(ps, quality)
-    print(f"Saved to {o.absolute()}.")
+    log(f"Saved to {o.absolute()}.")

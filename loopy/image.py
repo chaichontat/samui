@@ -11,6 +11,7 @@ from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
 from typing_extensions import Self
 
+from loopy.logger import log
 from loopy.utils import ReadonlyModel, Url
 
 Meter = Annotated[float, "meter"]
@@ -86,7 +87,7 @@ def gen_geotiff(
             crs="EPSG:32648",  # meters
             tiled=True,
         ) as dst:  # type: ignore
-            print("Writing", ps[i])
+            log(f"Writing {ps[i]}")
             for j in range(4):
                 idx = j + 4 * i
                 if idx >= z:
@@ -97,7 +98,7 @@ def gen_geotiff(
                     towrite = img[idx] if not zlast else img[:, :, idx]
 
                 if towrite.dtype == np.uint16:
-                    print("Warning: converting uint16 to uint8")
+                    log("Converting uint16 to uint8", "WARNING")
                     towrite = np.divide(towrite, 256, casting="unsafe")
                     towrite = towrite.astype(np.uint8)
 
@@ -106,30 +107,44 @@ def gen_geotiff(
 
     with ThreadPoolExecutor() as executor:
         executor.map(run, range(len(ps)))
-    print("Generated COG", ps)
+    log(f"Generated COG(s) {ps}")
 
     return ps
 
 
 def compress(ps: list[Path], quality: int = 90) -> None:
+    def run(p: Path):
+        out = []
+        with subprocess.Popen(
+            [
+                "gdal_translate",
+                p.with_suffix(".tif_").as_posix(),
+                p.as_posix(),
+                "-co",
+                "TILED=YES",
+                "-co",
+                "COMPRESS=JPEG",
+                "-co",
+                "COPY_SRC_OVERVIEWS=YES",
+                "-co",
+                f"JPEG_QUALITY={int(quality)}",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        ) as process:
+            for line in process.stdout:  # type: ignore
+                log(p.name + ": " + (s := line.decode("utf-8")).strip())
+                out.append(s)
+        return out
+
     try:
         with ThreadPoolExecutor() as executor:
-            executor.map(
-                lambda p: subprocess.run(
-                    f"gdal_translate {p.with_suffix('.tif_').as_posix()} {p.as_posix()} -co TILED=YES -co COMPRESS=JPEG -co COPY_SRC_OVERVIEWS=YES -co JPEG_QUALITY={quality}",
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                ),
-                ps,
-            )
+            executor.map(run, ps)
     except subprocess.CalledProcessError as e:
-        print(e.output)
         raise e
     finally:
         for p in ps:
             if p.exists():
                 p.with_suffix(".tif_").unlink()
             else:
-                print("File not found:", p)
+                log(f"File not found: {p}", "ERROR")
