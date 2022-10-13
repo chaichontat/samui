@@ -12,6 +12,11 @@ version = "0.0.1"
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0"]
 
+[tool.bandit]
+exclude = "tests"
+skips = ["B101", "B404", "B603", "B607"]
+targets = "loopy"
+
 [tool.black]
 line-length = 110
 target-version = ['py310']
