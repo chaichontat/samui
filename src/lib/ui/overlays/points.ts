@@ -167,16 +167,16 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         mx /= res.data.length;
         my /= res.data.length;
 
-        // From the 64x division of the highest tile level.
+        // From the 128x division of the highest tile level.
         // The same number of resolutions is needed to maintain correct ratios for WebGLPointsLayer.
-        // 9 layers of tiling.
-        const start = coords.mPerPx * 64;
-        const ress = [...Array(9).keys()].map((i) => start * 2 ** -i);
+        // 10 layers of tiling.
+        const start = coords.mPerPx * 128;
+        const ress = [...Array(10).keys()].map((i) => start * 2 ** -i);
 
         // Such that the entire sample is covered in 2**9 = 512 px.
-        // 7 due to the 4x native res max zoom.
+        // 8 due to the 4x native res max zoom.
         // Using nearest power of 2.
-        const range = 7 - Math.min(10, Math.max(0, 31 - Math.clz32(Math.max(...max)) - 9));
+        const range = 8 - Math.min(10, Math.max(0, 31 - Math.clz32(Math.max(...max)) - 9));
 
         this.map.map!.setView(
           new View({

@@ -123,7 +123,7 @@ export class Mapp extends Deferrable {
             const native = b.at(-1)! / 4;
             return new View({
               ...v,
-              resolutions: [...b, native * 2, native, native / 2, native / 4]
+              resolutions: [native * 128, ...b, native * 2, native, native / 2, native / 4]
             });
           })
           .then((v) => {
