@@ -3,9 +3,7 @@ authors = ["Chaichontat Sriworarat <34997334+chaichontat@users.noreply.github.co
 description = ""
 license = "GPL v3.0"
 name = "loopy-browser"
-packages = [
-  {include = "loopy"},
-]
+packages = [{include = "loopy"}]
 version = "0.0.1"
 
 [build-system]
