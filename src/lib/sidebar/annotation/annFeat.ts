@@ -70,9 +70,8 @@ export class DrawFeature extends Draww {
           const idx = id_.idx;
           const existing = this.points.get(idx);
           if (existing == undefined || existing.get('value') !== anno.keys[anno.currKey]) {
+            console.debug('Adding point', idx, anno.currKey);
             this.points.add(idx, anno.keys[anno.currKey]);
-          } else {
-            this.points.remove(idx);
           }
         }
       }
