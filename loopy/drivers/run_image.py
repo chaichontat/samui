@@ -2,38 +2,39 @@ from pathlib import Path
 
 import tifffile
 
-from loopy.image import ImageParams, compress, gen_geotiff
+from loopy.image import ImageParams, compress, gen_geotiff, get_img_type
 from loopy.logger import log
 from loopy.sample import Sample
-from loopy.utils import Url
+from loopy.utils.utils import Url
 
 
 def run_image(
     tiff: Path,
-    out: Path | None = None,
+    out: Path,
+    *,
+    name: str | None = None,
     channels: str | None = None,
     quality: int = 90,
     scale: float = 1,
     translate: tuple[float, float] = (0, 0),
-) -> None:
-    s = tiff.stem
+) -> tuple[Sample, str]:
+
+    if not name:
+        name = tiff.stem
+
     if not tiff.exists():
         raise FileNotFoundError(tiff)
-
-    if out is None:
-        out = tiff.parent
 
     if tiff.suffix != ".tif" and tiff.suffix != ".tiff":
         raise ValueError("Input file must be a tiff.")
 
     img = tifffile.imread(tiff)
+    chans, *_ = get_img_type(img, rgb=channels == "rgb")
 
-    n_img_chan = 1 if len(img.shape) == 2 else min(img.shape[0], img.shape[2])
-
-    log(f"Processing {s} with shape {img.shape}.")
+    log(f"Processing {name} with {chans} channels and {img.shape}.")
     match channels:
         case None:
-            c = [f"C{i}" for i in range(img.shape[0])]
+            c = [f"C{i}" for i in range(chans)]
         case "rgb":
             c = "rgb"
         case _:
@@ -54,27 +55,24 @@ def run_image(
                 if len(d) > 255:
                     raise ValueError("Channel names must be less than 256 characters.")
 
-            if len(c) != n_img_chan:
+            if len(c) != chans:
                 raise ValueError(
-                    f"Number of channels does not match that of the image. Given {len(c)}, expected {n_img_chan}."
+                    f"Number of channels does not match that of the image. Given {len(c)}, expected {chans}."
                 )
 
-    output = [Url(f"{s}.tif")] if n_img_chan < 4 else [Url(f"{s}_1.tif"), Url(f"{s}_2.tif")]
+    o = Path(out / name)
+    ps, _ = gen_geotiff(img, name, out / name, scale, translate, channels == "rgb")
+    log("Compressing image(s)...")
+    compress(ps, quality)
+    log(f"Saved processed TIFF(s) to {o.absolute()}.")
 
     sample = Sample(
-        name=s,
+        name=name,
         imgParams=ImageParams(
-            urls=output,
+            urls=[Url(p.name) for p in ps],
             channels=c,
             mPerPx=scale,
         ),
     )
 
-    o = Path(out / s)
-    sample.write(o / "sample.json")
-
-    img = tifffile.imread(tiff)
-    ps = gen_geotiff(img, s, out / s, scale, translate, channels == "rgb")
-    log("Compressing image(s)...")
-    compress(ps, quality)
-    log(f"Saved to {o.absolute()}.")
+    return sample, name

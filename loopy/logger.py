@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Any, Literal
 
 from rich.logging import RichHandler
 
@@ -17,9 +17,9 @@ def setup_logging() -> None:
         )
 
 
-def log(msg: str, type_: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO") -> None:
+def log(*args: Any, type_: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO") -> None:
     """Log a message."""
     l = logging.getLogger("rich")
     if not l.hasHandlers():
         setup_logging()
-    logging.log(getattr(logging, type_), msg)
+    logging.log(getattr(logging, type_), " ".join(str(a) for a in args))

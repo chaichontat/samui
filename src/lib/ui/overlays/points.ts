@@ -275,7 +275,7 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     }
 
     const { x, y, id } = pos;
-    const size = coords.size ? coords.size / 4 : coords.mPerPx * 10;
+    const size = coords.size ? coords.size / 2 : coords.mPerPx * 10;
     this.feature.getGeometry()?.setCenterAndRadius([x * coords.mPerPx, -y * coords.mPerPx], size);
     this.feature.set('id', id);
     this.feature.setId(idx);
