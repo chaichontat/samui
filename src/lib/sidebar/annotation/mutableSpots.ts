@@ -5,9 +5,12 @@ import type { Circle, Point, Polygon } from 'ol/geom.js';
 import type { CoordsData } from '$lib/data/objects/coords';
 import { genLRU } from '$src/lib/lru';
 import { annoFeat, flashing, sEvent } from '$src/lib/store';
+import type { Mapp } from '$src/lib/ui/mapp';
 import { CanvasSpots } from '$src/lib/ui/overlays/points';
 import { difference, intersection } from 'lodash-es';
 import type { Coordinate } from 'ol/coordinate';
+import { Select } from 'ol/interaction';
+import type { SelectEvent } from 'ol/interaction/Select';
 import type VectorSource from 'ol/source/Vector';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { Options } from 'ol/style/Style';
@@ -16,15 +19,59 @@ import { get } from 'svelte/store';
 export class MutableSpots extends CanvasSpots {
   coordsSource?: CoordsData;
   overlaySource?: VectorSource;
+  selectHandler?: ((e: KeyboardEvent) => void) | undefined;
   points?: Feature<Point>[]; // To check if a point is already in the source.
   keyMap?: Record<string, number>;
   pointType?: 'Point' | 'Circle';
   getPointCoords?: ((f: Feature<Point>) => Coordinate) | ((f: Feature<Circle>) => Coordinate);
+  select: Select;
 
-  // Always Point
+  constructor(map: Mapp, style?: Style) {
+    super(map, style);
+    this.select = new Select({
+      layers: [this.layer],
+      filter: (f) => this.getLabel(f) != undefined
+    });
+  }
+
+  selectHandler_ = (ev: SelectEvent, e: KeyboardEvent) => {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Needs to be before our updatePoint.
+      // Otherwise, the stroke color from select will be set after removel.
+      this.select.getFeatures().clear();
+      for (const s of ev.selected) {
+        this.removeFeature(s);
+      }
+      sEvent.set({ type: 'pointsAdded' });
+    }
+
+    if (e.key === 'Escape') {
+      this.select.getFeatures().clear();
+    }
+  };
+
+  removeFeature(f: Feature<Point | Circle>) {
+    this.updatePoint(f, this.getLabel(f), true);
+  }
+
   mount() {
     super.mount();
-    this.layer!.setZIndex(Infinity);
+    this.map.map!.addInteraction(this.select);
+    this.select.on('select', (ev: SelectEvent) => {
+      if (ev.selected.length) {
+        if (this.selectHandler) {
+          document.removeEventListener('keydown', this.selectHandler);
+        }
+        this.selectHandler = (e: KeyboardEvent) => this.selectHandler_(ev, e);
+        document.addEventListener('keydown', this.selectHandler);
+        return;
+      }
+
+      if (this.selectHandler) {
+        document.removeEventListener('keydown', this.selectHandler);
+        this.selectHandler = undefined;
+      }
+    });
     return this;
   }
 
@@ -45,7 +92,7 @@ export class MutableSpots extends CanvasSpots {
   updatePoint(f: Feature<Point>, label: string, remove = false) {
     // Low-level set allowed only here.
     let toSet: string | undefined;
-    const labels = MutableSpots.getLabel(f, true)?.split(',') ?? [];
+    const labels = this.getLabel(f, true)?.split(',') ?? [];
     const idx = labels.findIndex((x) => x === label);
 
     if (!remove) {
@@ -72,7 +119,12 @@ export class MutableSpots extends CanvasSpots {
       f.set('color', color);
       f.setStyle(MutableSpots.genPointStyle(color, this.coordsSource!.size ? 'outline' : 'star'));
     } else {
+      console.log('Removing point');
+      console.log(f);
+
       f.set('color', undefined);
+      console.log(transparentOutline);
+
       f.setStyle(this.pointType === 'Point' ? undefined : transparentOutline);
     }
     return f;
@@ -193,7 +245,7 @@ export class MutableSpots extends CanvasSpots {
   get length() {
     let count = 0;
     this.source.getFeatures().forEach((f) => {
-      if (MutableSpots.getLabel(f)) count++;
+      if (this.getLabel(f)) count++;
     });
     return count;
   }
@@ -202,7 +254,7 @@ export class MutableSpots extends CanvasSpots {
     const points = { unlabeled: [] } as Record<string, number[]>;
     for (let i = 0; i < this.points!.length; i++) {
       const f = this.points![i];
-      const label = f ? MutableSpots.getLabel(f) : undefined; // Can be undefined for deleted points.
+      const label = f ? this.getLabel(f) : undefined; // Can be undefined for deleted points.
       if (!label) {
         points.unlabeled.push(i);
         continue;
@@ -238,23 +290,15 @@ export class MutableSpots extends CanvasSpots {
     this.keyMap = undefined;
   }
 
-  remove(idx: number) {
-    const f = this.source.getFeatureById(idx);
-
-    if (f) {
-      this.source.removeFeature(f);
-    }
-  }
-
   relabel(old: string, newlabel: string) {
     this.source.forEachFeature((f) => {
-      if (MutableSpots.getLabel(f) === old) {
+      if (this.getLabel(f) === old) {
         this.updatePoint(f, newlabel);
       }
     });
   }
 
-  static getLabel(f: Feature<Point>, returnAll = false) {
+  getLabel(f: Feature<Point>, returnAll = false) {
     const labels = f.get('label') as string | undefined;
     if (returnAll) return labels;
     return labels?.split(',').at(-1);
@@ -266,7 +310,7 @@ export class MutableSpots extends CanvasSpots {
 
   removeByLabel(label: string) {
     this.source.forEachFeature((f) => {
-      if (MutableSpots.getLabel(f) === label) {
+      if (this.getLabel(f) === label) {
         this.updatePoint(f, label, true);
       }
     });
@@ -275,7 +319,7 @@ export class MutableSpots extends CanvasSpots {
   dump() {
     const points = this.source
       .getFeatures()
-      .map((f) => [MutableSpots.getId(f), MutableSpots.getLabel(f)].join(','));
+      .map((f) => [MutableSpots.getId(f), this.getLabel(f)].join(','));
     return 'id,label\n' + points.join('\n');
   }
 
