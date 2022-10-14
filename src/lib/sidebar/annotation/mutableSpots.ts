@@ -226,6 +226,12 @@ export class MutableSpots extends CanvasSpots {
   }
 
   clear() {
+    if (
+      this.source.getFeatures().length &&
+      !prompt('This will clear previous points. Are you sure?')
+    ) {
+      return;
+    }
     this.source.clear();
     this.points = undefined;
     this.coordsSource = undefined;
@@ -274,16 +280,11 @@ export class MutableSpots extends CanvasSpots {
   }
 
   load(cs: { id: number; label?: string }[], coords: CoordsData, overlaySource: VectorSource) {
+    this.startDraw(coords, get(annoFeat).reverseKeys, overlaySource);
     const pos = coords.pos;
-
-    // if (!pos) {
-    //   alert('Load existing coordinates first.');
-    //   return;
-    // }
-
     const ins = intersection(
       cs.map((c) => c.id),
-      pos!.map((p) => p.id)
+      pos!.map((p) => p.id ?? p.idx)
     );
 
     if (ins.length !== cs.length) {
@@ -305,10 +306,8 @@ That is, the current points must contain the ID of all imported points.'
     anno.currKey = newKeys.length - 1;
     annoFeat.set(anno);
 
-    this.startDraw(coords, get(annoFeat).reverseKeys, overlaySource);
-
     for (const { id, label } of cs) {
-      const match = pos!.find((p) => p.id === id)!;
+      const match = pos!.find((p) => (p.id ?? p.idx) === id)!;
       this.add(match.idx!, label ?? 'Unlabeled');
     }
 

@@ -60,8 +60,10 @@ async function processCSV(name: string, text: string) {
   }
 
   if ('id' in res[0]) {
+    console.debug('Got points data with ID');
     const ann = get(sMapp).persistentLayers.annotations;
-    ann.points.load(res as any, get(sFeatureData).coords, get(overlays)[get(sOverlay)].source);
+    const coords = get(sFeatureData).coords;
+    ann.points.load(res as any, coords, get(overlays)[get(sOverlay)].source);
     return;
   }
 
@@ -99,12 +101,14 @@ export async function processHandle(
     if ('rois' in proc) {
       if (valAnnFeatData(proc)) {
         const annfeatdata = proc as AnnFeatData;
+        console.log('Got annotation feature data');
         map.persistentLayers.annotations.loadFeatures(annfeatdata);
         return;
       }
 
       if (valROIData(proc)) {
         const roidata = proc as ROIData;
+        console.log('Got roi feature data');
         map.persistentLayers.rois.loadFeatures(roidata);
         return;
       }
