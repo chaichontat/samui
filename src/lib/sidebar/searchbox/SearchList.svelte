@@ -85,6 +85,7 @@
   }}
   on:mouseout={() => set({ hover: undefined })}
   on:blur={() => set({ hover: undefined })}
+  aria-label="Search result box"
 >
   {#each candidates as { group, values }, i}
     {#if values.length > 0 && (limit < 0 || i < limit)}
