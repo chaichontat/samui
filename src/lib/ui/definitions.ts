@@ -19,8 +19,6 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   style: T extends MyWebGLPointsLayer ? LiteralStyle : Style;
   coords?: CoordsData;
 
-  // outline?: CanvasSpots;
-
   constructor(
     map: Mapp,
     style: T extends WebGLPointsLayer<VectorSource<Point>> ? LiteralStyle : Style
@@ -39,16 +37,6 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   get visible(): boolean {
     if (!this.layer) throw new Error('No layer');
     return this.layer.getVisible();
-  }
-
-  set z(z: number) {
-    if (!this.layer) throw new Error('No layer');
-    this.layer.setZIndex(z);
-  }
-
-  get z(): number {
-    if (!this.layer) throw new Error('No layer');
-    return this.layer.getZIndex();
   }
 
   mount() {

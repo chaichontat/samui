@@ -1,5 +1,5 @@
 import Feature from 'ol/Feature.js';
-import { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
+import { Circle, Geometry, Point } from 'ol/geom.js';
 
 import type { Coord, CoordsData } from '$lib/data/objects/coords';
 import {
@@ -9,6 +9,7 @@ import {
 } from '$src/lib/data/objects/feature';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { keyLRU } from '$src/lib/lru';
+import { FeatureLabel } from '$src/lib/sidebar/annotation/annoUtils';
 import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { rand } from '$src/lib/utils';
 import { isEqual } from 'lodash-es';
@@ -282,9 +283,7 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
   }
 }
 
-export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
-  currCoordName?: string;
-
+export class BaseSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
   constructor(map: Mapp, style?: Style) {
     super(
       map,
@@ -294,7 +293,6 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
           fill: new Fill({ color: 'transparent' })
         })
     );
-
     this.layer = new VectorLayer({
       source: this.source,
       style: this.style
@@ -314,7 +312,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     idx,
     mPerPx,
     size
-  }: Coord & { idx: number; mPerPx: number; size?: null }): Feature<Point>;
+  }: Coord & { idx: number; mPerPx: number; size?: null }): FeatureLabel<Point>;
 
   static _genCircle({
     x,
@@ -323,7 +321,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     idx,
     mPerPx,
     size
-  }: Coord & { idx: number; mPerPx: number; size: number }): Feature<Circle>;
+  }: Coord & { idx: number; mPerPx: number; size: number }): FeatureLabel<Circle>;
 
   static _genCircle({
     x,
@@ -333,17 +331,25 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     mPerPx,
     size
   }: Coord & { idx: number; mPerPx: number; size?: number | null }):
-    | Feature<Point>
-    | Feature<Circle> {
+    | FeatureLabel<Point>
+    | FeatureLabel<Circle> {
     const c = [x * mPerPx, -y * mPerPx];
-    const f = new Feature({
+    const f = new FeatureLabel({
       geometry: size != undefined && size != undefined ? new Circle(c, size / 4) : new Point(c),
       value: 0,
       id: id ?? idx
     });
     f.setId(idx);
-    return f as Feature<Point> | Feature<Circle>;
+    return f as FeatureLabel<Point> | FeatureLabel<Circle>;
   }
+
+  get(idx: number) {
+    return this.source.getFeatureById(idx);
+  }
+}
+
+export class CanvasSpots extends BaseSpots {
+  currCoordName?: string;
 
   get visible() {
     return this.layer!.getVisible();
@@ -393,9 +399,5 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
       )
     );
     this.currCoordName = this.coords.name;
-  }
-
-  get(idx: number) {
-    return this.source.getFeatureById(idx);
   }
 }

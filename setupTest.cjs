@@ -51,3 +51,4 @@ vi.mock('$app/environment', async () => {
 });
 
 window.alert = console.error;
+prompt = () => true;

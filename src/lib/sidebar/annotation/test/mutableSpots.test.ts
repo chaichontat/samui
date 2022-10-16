@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { fromCSV } from '$src/lib/io';
 import { schemeTableau10 } from 'd3';
 import VectorSource from 'ol/source/Vector';
-import { MutableSpots } from '../mutableSpots';
+import { FeatureLabel } from '../annoUtils';
 
 const map = new Mapp();
 const m = map.persistentLayers.annotations.points;
@@ -23,7 +23,7 @@ const coordsData = new CoordsData({
 const keyMap = { a: 0, b: 1, c: 2 };
 const source = new VectorSource();
 const features = coordsData.pos!.map(
-  (p) => new Feature(new Point([p.x * coordsData.mPerPx, -p.y * coordsData.mPerPx]))
+  (p) => new FeatureLabel(new Point([p.x * coordsData.mPerPx, -p.y * coordsData.mPerPx]))
 );
 features.forEach((f, i) => f.setId(i));
 source.addFeatures(features);
@@ -42,7 +42,7 @@ describe('it should fail before startDraw', () => {
 
 describe('test updateFeature', () => {
   beforeAll(runInit);
-  const f = new Feature(new Point([0, 0]));
+  const f = new FeatureLabel(new Point([0, 0]));
 
   it('should add a label', () => {
     m.updatePoint(f, labels[0]);
@@ -102,33 +102,33 @@ describe.concurrent('fresh start', () => {
   it('should add a point', () => {
     const idx = 0;
     m.add(idx, labels[0]);
-    expect(MutableSpots.getLabel(m.source.getFeatureById(idx)!)).toBe(labels[0]);
+    expect(m.source.getFeatureById(idx)!.getLabel()).toBe(labels[0]);
   });
 
   it('should add multiple points', () => {
     const idxs = [1, 2, 3, 4];
     m.add(idxs, labels[0]);
     for (const idx of idxs) {
-      expect(MutableSpots.getLabel(m.source.getFeatureById(idx)!)).toBe(labels[0]);
+      expect(m.source.getFeatureById(idx)!.getLabel()).toBe(labels[0]);
     }
   });
 });
 
 describe.concurrent('circle test', () => {
   beforeEach(runInit);
-  const oldCircle = new Feature(new Circle([0, 0], 0.501)); // Floating point
+  const oldCircle = new FeatureLabel(new Circle([0, 0], 0.501)); // Floating point
   oldCircle.set('label', 'a');
-  const newCircle = new Feature(new Circle([0, 0], 0.601));
+  const newCircle = new FeatureLabel(new Circle([0, 0], 0.601));
   newCircle.set('label', 'b');
 
   it('should add and delete from polygon', () => {
     m.addFromPolygon(oldCircle);
     expect(m.length).toBe(6);
-    expect(m.source.getFeatures().every((f) => MutableSpots.getLabel(f))).toBe(true);
+    expect(m.source.getFeatures().every((f) => f.getLabel())).toBe(true);
 
     m.addFromPolygon(newCircle);
     expect(m.length).toBe(7);
-    expect(m.source.getFeatures().every((f) => MutableSpots.getLabel(f) === 'b')).toBe(true);
+    expect(m.source.getFeatures().every((f) => f.getLabel() === 'b')).toBe(true);
 
     m.deleteFromPolygon(newCircle);
     expect(m.length).toBe(6);
