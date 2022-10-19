@@ -116,13 +116,14 @@ export class Mapp extends Deferrable {
         bg
           .source!.getView()
           .then((v) => {
+            console.log('View', v);
+            // Need this because the first tile is 1/4th the resolution of native,
+            // whereas others are 1/2 the resolution of the next tile.
+            const b = v.resolutions!.slice(0, -1);
+            const native = b.at(-1)! / 4;
             return new View({
               ...v,
-              resolutions: [
-                ...v.resolutions!,
-                v.resolutions!.at(-1)! / 2,
-                v.resolutions!.at(-1)! / 4
-              ]
+              resolutions: [native * 128, ...b, native * 2, native, native / 2, native / 4]
             });
           })
           .then((v) => {

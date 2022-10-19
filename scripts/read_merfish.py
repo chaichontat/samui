@@ -4,8 +4,7 @@ from pathlib import Path
 
 import polars as pl
 
-from loopy.feature import ChunkedCSVHeader, ChunkedCSVParams
-from loopy.image import ImageParams
+from loopy.feature import ChunkedCSVParams
 from loopy.sample import Sample
 from loopy.utils import Url, concat
 

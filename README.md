@@ -17,6 +17,7 @@ The preprocessing system can be installed as described [below](#Installation).
 Call the preprocessing GUI with the following command in the terminal.
 
 #### GUI
+
 ```sh
 conda activate loopy
 loopy gui
@@ -25,10 +26,12 @@ loopy gui
 <img width="712" alt="Loopy preprocessing" src="https://user-images.githubusercontent.com/34997334/193870809-5338cbfa-9d7d-4e12-aca7-8a2c149eb2a2.png">
 
 #### In the command line
+
 ```sh
 conda activate loopy
 loopy image [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
 ```
+
 In this case, the output folder has the same name as the input file.
 
 You can drag this folder directly to https://loopybrowser.com/.
@@ -48,6 +51,7 @@ Before annotation, you must set a label first.
 The labels can be changed by double-clicking on the label names.
 
 #### ROI Annotation
+
 This is the typical kind of annotation you'd expect from other image viewers.
 We simply draw figures that indicate regions of interest of the image.
 The exported result is a JSON file that contains the coordinates of the drawn figures.
@@ -55,6 +59,7 @@ That is, the outputs are _coordinates and their labels_.
 The exported results can be dragged back into the browser.
 
 #### Feature Annotation
+
 Here, we annotate the features or overlays that are either with the dataset to begin with or imported.
 The ability to draw ROIs is simply there to facilitate annotation.
 Each point can be annotated individually as well.

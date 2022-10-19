@@ -2,6 +2,7 @@ import { annoFeat, flashing, sEvent, sSample, type annoROI } from '$src/lib/stor
 import { schemeTableau10 } from 'd3';
 import { Feature } from 'ol';
 import type { Coordinate } from 'ol/coordinate.js';
+import { click } from 'ol/events/condition';
 import { Circle, Geometry, MultiPoint, Point, Polygon } from 'ol/geom.js';
 import { Draw, Modify, Select, Snap, Translate } from 'ol/interaction.js';
 import type { DrawEvent } from 'ol/interaction/Draw';
@@ -54,7 +55,11 @@ export class Draww {
     this.store = store;
     this.selectionLayer = new VectorLayer({ source: this.source });
     this.draw = new Draw({ type: 'Polygon', source: this.source });
-    this.select = new Select({ layers: [this.selectionLayer], style: initialStyle });
+    this.select = new Select({
+      layers: [this.selectionLayer],
+      style: initialStyle,
+      condition: click
+    });
     this.modify = new Modify({ source: this.source });
     this.translate = new Translate({ features: this.select.getFeatures() });
     this.snap = new Snap({ source: this.source });
@@ -300,6 +305,11 @@ export class Draww {
   }
 
   loadFeatures({ rois: cs, sample, mPerPx }: ROIData) {
+    if (!cs.length) {
+      alert('No ROIs found in this file.');
+      return;
+    }
+
     if (get(sSample).name !== sample) {
       alert(`Sample does not match. Got ${sample} but currently viewing ${get(sSample).name}.`);
       return;

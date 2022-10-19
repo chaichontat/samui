@@ -1,36 +1,42 @@
 import { schemeTableau10 } from 'd3';
 import type Feature from 'ol/Feature.js';
-import type { Circle, Point, Polygon } from 'ol/geom.js';
+import type { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
 
 import type { CoordsData } from '$lib/data/objects/coords';
 import { genLRU } from '$src/lib/lru';
 import { annoFeat, flashing, sEvent } from '$src/lib/store';
 import type { Mapp } from '$src/lib/ui/mapp';
-import { CanvasSpots } from '$src/lib/ui/overlays/points';
+import { BaseSpots } from '$src/lib/ui/overlays/points';
 import { difference, intersection } from 'lodash-es';
 import type { Coordinate } from 'ol/coordinate';
+import { click } from 'ol/events/condition';
 import { Select } from 'ol/interaction';
 import type { SelectEvent } from 'ol/interaction/Select';
 import type VectorSource from 'ol/source/Vector';
 import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
 import type { Options } from 'ol/style/Style';
 import { get } from 'svelte/store';
+import type { FeatureLabel } from './annoUtils';
 
-export class MutableSpots extends CanvasSpots {
+export class MutableSpots extends BaseSpots {
   coordsSource?: CoordsData;
   overlaySource?: VectorSource;
   selectHandler?: ((e: KeyboardEvent) => void) | undefined;
-  points?: Feature<Point>[]; // To check if a point is already in the source.
+  points?: FeatureLabel<Circle | Point>[]; // To check if a point is already in the source.
   keyMap?: Record<string, number>;
   pointType?: 'Point' | 'Circle';
-  getPointCoords?: ((f: Feature<Point>) => Coordinate) | ((f: Feature<Circle>) => Coordinate);
+  getPointCoords?: (f: Feature<Point> | Feature<Circle>) => Coordinate;
   select: Select;
+  coords: undefined;
 
   constructor(map: Mapp, style?: Style) {
     super(map, style);
     this.select = new Select({
-      layers: [this.layer],
-      filter: (f) => this.getLabel(f) != undefined
+      condition: click, // Otherwise defaults to singleclick which is slow.
+      layers: [this.layer!],
+
+      // @ts-ignore
+      filter: (f: FeatureLabel<Geometry>) => f.getLabel() != undefined
     });
   }
 
@@ -40,7 +46,8 @@ export class MutableSpots extends CanvasSpots {
       // Otherwise, the stroke color from select will be set after removel.
       this.select.getFeatures().clear();
       for (const s of ev.selected) {
-        this.removeFeature(s);
+        const f = s as FeatureLabel<Geometry>;
+        this.updatePoint(f, f.getLabel()!, true);
       }
       sEvent.set({ type: 'pointsAdded' });
     }
@@ -49,10 +56,6 @@ export class MutableSpots extends CanvasSpots {
       this.select.getFeatures().clear();
     }
   };
-
-  removeFeature(f: Feature<Point | Circle>) {
-    this.updatePoint(f, this.getLabel(f), true);
-  }
 
   mount() {
     super.mount();
@@ -75,7 +78,7 @@ export class MutableSpots extends CanvasSpots {
     return this;
   }
 
-  static getPointCoords = (f: Feature<Point>) => f.getGeometry()!.getCoordinates() as Coordinate;
+  static getPointCoords = (f: Feature<Point>) => f.getGeometry()!.getCoordinates();
   static getCircleCoords = (f: Feature<Circle>) => f.getGeometry()!.getCenter();
 
   startDraw(coords: CoordsData, keyMap: Record<string, number>, overlaySource: VectorSource) {
@@ -89,29 +92,9 @@ export class MutableSpots extends CanvasSpots {
       this.pointType === 'Point' ? MutableSpots.getPointCoords : MutableSpots.getCircleCoords;
   }
 
-  updatePoint(f: Feature<Point>, label: string, remove = false) {
+  updatePoint(f: FeatureLabel<Point>, label: string, remove = false) {
     // Low-level set allowed only here.
-    let toSet: string | undefined;
-    const labels = this.getLabel(f, true)?.split(',') ?? [];
-    const idx = labels.findIndex((x) => x === label);
-
-    if (!remove) {
-      // Add
-      if (labels.length && idx === labels.length - 1) return; // Don't add the same label twice.
-      if (idx > -1) {
-        labels.splice(idx, 1);
-      }
-      labels.push(label); // A stack.
-      f.set('label', labels.join(','));
-      toSet = label;
-    } else {
-      // Remove
-      if (idx > -1) {
-        labels.splice(idx, 1);
-      }
-      f.set('label', labels.length ? labels.join(',') : undefined);
-      toSet = labels.at(-1);
-    }
+    const toSet = remove ? f.removeLabel(label) : f.addLabel(label);
 
     if (toSet) {
       if (this.keyMap![toSet] == undefined) throw new Error('Key not found');
@@ -164,11 +147,11 @@ export class MutableSpots extends CanvasSpots {
     for (const idx of idxs) {
       let f = this.points![idx];
       if (f == undefined) {
-        f = CanvasSpots._genCircle({
+        f = BaseSpots._genCircle({
           ...this.coordsSource!.pos![idx],
           idx,
           mPerPx: this.coordsSource!.mPerPx,
-          size: this.coordsSource.size ?? null
+          size: this.coordsSource!.size ?? null
         });
         if (polygonId) f.set('polygonId', polygonId);
         this.points![idx] = f;
@@ -203,7 +186,7 @@ export class MutableSpots extends CanvasSpots {
     if (!this.coordsSource) throw new Error('Coords not set');
     const polygon = polygonFeat.getGeometry()!;
 
-    this.source.getFeaturesInExtent(polygon.getExtent()).forEach((f: Feature<Point>) => {
+    this.source.getFeaturesInExtent(polygon.getExtent()).forEach((f: FeatureLabel<T>) => {
       if (!f.getStyle()) return; // Feature not active.
       const coord = this.getPointCoords!(f);
       if (polygon.intersectsCoordinate(coord)) {
@@ -244,8 +227,9 @@ export class MutableSpots extends CanvasSpots {
 
   get length() {
     let count = 0;
-    this.source.getFeatures().forEach((f) => {
-      if (this.getLabel(f)) count++;
+    // @ts-ignore
+    this.source.getFeatures().forEach((f: FeatureLabel<Geometry>) => {
+      if (f.getLabel()) count++;
     });
     return count;
   }
@@ -254,7 +238,7 @@ export class MutableSpots extends CanvasSpots {
     const points = { unlabeled: [] } as Record<string, number[]>;
     for (let i = 0; i < this.points!.length; i++) {
       const f = this.points![i];
-      const label = f ? this.getLabel(f) : undefined; // Can be undefined for deleted points.
+      const label = f ? f.getLabel() : undefined; // Can be undefined for deleted points.
       if (!label) {
         points.unlabeled.push(i);
         continue;
@@ -291,8 +275,9 @@ export class MutableSpots extends CanvasSpots {
   }
 
   relabel(old: string, newlabel: string) {
-    this.source.forEachFeature((f) => {
-      if (this.getLabel(f) === old) {
+    // @ts-ignore
+    this.source.forEachFeature((f: FeatureLabel<Geometry>) => {
+      if (f.getLabel() === old) {
         this.updatePoint(f, newlabel);
       }
     });
@@ -304,22 +289,17 @@ export class MutableSpots extends CanvasSpots {
     return labels?.split(',').at(-1);
   }
 
-  static getId(f: Feature<Point>) {
-    return f.getId() as number | string;
-  }
-
   removeByLabel(label: string) {
-    this.source.forEachFeature((f) => {
-      if (this.getLabel(f) === label) {
+    // @ts-ignore
+    this.source.forEachFeature((f: FeatureLabel<Geometry>) => {
+      if (f.getLabel() === label) {
         this.updatePoint(f, label, true);
       }
     });
   }
 
   dump() {
-    const points = this.source
-      .getFeatures()
-      .map((f) => [MutableSpots.getId(f), this.getLabel(f)].join(','));
+    const points = this.source.getFeatures().map((f) => [f.getId(), f.getLabel()].join(','));
     return 'id,label\n' + points.join('\n');
   }
 

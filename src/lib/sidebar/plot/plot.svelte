@@ -169,7 +169,7 @@
       if (x0 === null || x1 === null) return;
 
       bars.attr('fill', (d) =>
-        d.x0! < x0 || d.x1! > x1 ? '#262626' : d3.interpolateViridis((d.x0! + d.x1!) / 20)
+        d.x0! < x0 || d.x1! > x1 ? '#262626' : d3.interpolateViridis((d.x0! + d.x1!) / 10)
       );
 
       update(x0, x1);

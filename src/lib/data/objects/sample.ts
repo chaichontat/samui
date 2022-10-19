@@ -181,9 +181,9 @@ export class Sample extends Deferrable {
     const featureList = [];
     for (const f of Object.values(this.features)) {
       if (f instanceof ChunkedCSV) {
-        featureList.push({ group: f.name, features: Object.keys(f.names!) });
+        featureList.push({ group: f.name, features: Object.keys(f.names!), weights: f.weights });
       } else if (f instanceof PlainCSV) {
-        featureList.push({ group: f.name, features: f.features! });
+        featureList.push({ group: f.name, features: f.features!, weights: f.weights });
       } else {
         throw new Error('Unsupported feature type at Sample.genFeatureList');
       }

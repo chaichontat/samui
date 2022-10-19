@@ -102,8 +102,8 @@
         class="svg-icon stroke-2 stroke-indigo-300/90 h-3 w-3 group-hover:stroke-violet-400"
       />
       <HoverableFeature
-        class="group:hover:text-sky-200"
-        textClass="grad"
+        class=""
+        textClass="grad group:hover:font-semibold"
         selectEnabled={false}
         set={setHoverSelect}
         feature={$store}

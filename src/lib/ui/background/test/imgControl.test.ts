@@ -10,6 +10,7 @@ import {
   screen
 } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import type { UserEvent } from '@testing-library/user-event/dist/types/setup/setup';
 import { cloneDeep, zip } from 'lodash-es';
 import { describe, expect, it, vi, type MockedFunction } from 'vitest';
 import { Background } from '../imgBackground';
@@ -58,20 +59,27 @@ describe('RGB control', () => {
 describe('Composite control', () => {
   // Didn't use beforeEach because of concurrent.
   // But svelte-testing-library doesn't support concurrent.
-  const setup = () => {
-    const user = userEvent.setup();
-    const channels = ['ax', 'bx', 'cx', 'dx'];
-    const background = new Background();
+  let user: UserEvent;
+  let channels: string[];
+  let background: Background;
+  let getCalls: () => Parameters<typeof background.updateStyle>[];
+
+  beforeEach(() => {
+    user = userEvent.setup();
+    channels = ['ax', 'bx', 'cx', 'dx'];
+    background = new Background();
     background.image = new ImgData({ channels, mPerPx: 1, urls: [] });
     // @ts-expect-error
     background.updateStyle = vi.fn().mockName('updateStyle');
     render(ImgControl, { background });
     sEvent.set({ type: 'sampleUpdated' });
-    const getCalls = () =>
+    getCalls = () =>
       (background.updateStyle as MockedFunction<typeof background.updateStyle>).mock.calls;
+  });
 
-    return { channels, background, user, getCalls };
-  };
+  afterEach(() => {
+    // vi.restoreAllMocks();
+  });
 
   const checkDupe = ({ variables }: CompCtrl) => {
     const counts = {} as Record<string, number>;
@@ -85,7 +93,6 @@ describe('Composite control', () => {
   };
 
   it('should render composite', async () => {
-    const { channels } = setup();
     // wait for store to update.
     expect(await screen.findAllByRole('row')).toHaveLength(4);
     for (const channel of channels) {
@@ -94,19 +101,21 @@ describe('Composite control', () => {
   });
 
   it('should expand on hover', async () => {
-    setup();
+    vi.useFakeTimers();
     const el = await screen.findByLabelText('Image controls');
     el.dispatchEvent(new Event('mouseenter'));
     expect(getComputedStyle(el).maxWidth).toBe('100%');
     el.dispatchEvent(new Event('mouseleave'));
-    await new Promise((r) => setTimeout(r, 1510));
+    const promise = new Promise((r) => setTimeout(r, 1510));
+    vi.runAllTimers();
+    await promise;
     expect(getComputedStyle(el).maxWidth.endsWith('px')).toBeTruthy();
     el.dispatchEvent(new Event('mouseenter'));
     expect(getComputedStyle(el).maxWidth).toBe('100%');
+    vi.useRealTimers();
   });
 
   it('should toggle channels on/off correctly', async () => {
-    const { channels, getCalls, user } = setup();
     const els_ = channels.map((c) => screen.findByLabelText(`${c} controls`));
     const els = await Promise.all(els_);
     const chanButtons = zip(channels, els).map(([channel, el]) => getByText(el!, channel!));
@@ -146,7 +155,6 @@ describe('Composite control', () => {
   });
 
   it('should not bind multiple channels to the same color', async () => {
-    const { user, getCalls } = setup();
     const colorButtons = screen.getAllByTestId('imgctrl-color-button');
     for (let i = 0; i < 100; i++) {
       await user.click(colorButtons[Math.floor(Math.random() * colorButtons.length)]);
@@ -155,7 +163,6 @@ describe('Composite control', () => {
   });
 
   it('should adjust slider', async () => {
-    const { getCalls, channels } = setup();
     const els_ = channels.map((c) => screen.findByLabelText(`${c} controls`));
     const els = await Promise.all(els_);
     for (const [i, channel] of els.entries()) {

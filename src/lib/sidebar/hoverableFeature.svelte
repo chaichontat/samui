@@ -1,11 +1,13 @@
 <script lang="ts">
   import type { FeatureAndGroup } from '../data/objects/feature';
-  import { hoverSelect, type setHoverSelect } from '../store';
+  import { hoverSelect, type SimpleHS } from '../store';
   import { clickOutside } from '../ui/utils';
   import { classes } from '../utils';
 
   export let feature: FeatureAndGroup;
-  export let set: typeof setHoverSelect;
+  export let set:
+    | ((v: SimpleHS<FeatureAndGroup>) => void)
+    | ((v: SimpleHS<FeatureAndGroup>) => Promise<void>);
   export let selectEnabled = true;
   export { cl as class };
   export let textClass = '';

@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from loopy.run_image import run_image
+from loopy.drivers.run_image import run_image
 
 
 class FileEdit(QLineEdit):
@@ -173,7 +173,7 @@ class MainWindow(QWidget):
             # Gray out the run button
             self.runButton.setEnabled(False)
             self.statusBar.updateStatus("Running...")
-            run_image(Path(tiff), Path(out), channels, int(quality), float(scale))
+            run_image(Path(tiff), Path(out), channels=channels, quality=int(quality), scale=float(scale))
             self.statusBar.updateStatus("Ready.")
             self.runButton.setEnabled(True)
 

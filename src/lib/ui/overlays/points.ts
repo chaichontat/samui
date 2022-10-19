@@ -1,5 +1,5 @@
 import Feature from 'ol/Feature.js';
-import { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
+import { Circle, Geometry, Point } from 'ol/geom.js';
 
 import type { Coord, CoordsData } from '$lib/data/objects/coords';
 import {
@@ -9,6 +9,7 @@ import {
 } from '$src/lib/data/objects/feature';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { keyLRU } from '$src/lib/lru';
+import { FeatureLabel } from '$src/lib/sidebar/annotation/annoUtils';
 import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { rand } from '$src/lib/utils';
 import { isEqual } from 'lodash-es';
@@ -158,20 +159,29 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         for (const { x, y } of coords.pos!) {
           mx += Number(x);
           my += Number(y);
-          max[0] = Math.max(max[0], Number(x));
-          max[1] = Math.max(max[1], Number(y));
+          max[0] = Math.max(max[0], Math.abs(Number(x)));
+          max[1] = Math.max(max[1], Math.abs(Number(y)));
         }
         mx /= res.data.length;
         my /= res.data.length;
 
-        // TODO: Deal with hard-coded zoom.
+        // From the 128x division of the highest tile level.
+        // The same number of resolutions is needed to maintain correct ratios for WebGLPointsLayer.
+        // 10 layers of tiling.
+        const start = coords.mPerPx * 128;
+        const ress = [...Array(10).keys()].map((i) => start * 2 ** -i);
+
+        // Such that the entire sample is covered in 2**9 = 512 px.
+        // 8 due to the 4x native res max zoom.
+        // Using nearest power of 2.
+        const range = 8 - Math.min(10, Math.max(0, 31 - Math.clz32(Math.max(...max)) - 9));
+
         this.map.map!.setView(
           new View({
             center: [mx * coords.mPerPx, -my * coords.mPerPx],
             projection: 'EPSG:3857',
-            resolution: 1e-4,
-            minResolution: 1e-7,
-            maxResolution: Math.max(max[0], max[1]) * coords.mPerPx
+            resolutions: ress,
+            zoom: range
           })
         );
         this.map._needNewView = false;
@@ -263,16 +273,14 @@ export class ActiveSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     }
 
     const { x, y, id } = pos;
-    const size = coords.size ? coords.size / 4 : coords.mPerPx * 10;
+    const size = coords.size ? coords.size / 2 : coords.mPerPx * 10;
     this.feature.getGeometry()?.setCenterAndRadius([x * coords.mPerPx, -y * coords.mPerPx], size);
     this.feature.set('id', id);
     this.feature.setId(idx);
   }
 }
 
-export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
-  currCoordName?: string;
-
+export class BaseSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>> {
   constructor(map: Mapp, style?: Style) {
     super(
       map,
@@ -282,7 +290,6 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
           fill: new Fill({ color: 'transparent' })
         })
     );
-
     this.layer = new VectorLayer({
       source: this.source,
       style: this.style
@@ -302,7 +309,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     idx,
     mPerPx,
     size
-  }: Coord & { idx: number; mPerPx: number; size?: null }): Feature<Point>;
+  }: Coord & { idx: number; mPerPx: number; size?: null }): FeatureLabel<Point>;
 
   static _genCircle({
     x,
@@ -311,7 +318,7 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     idx,
     mPerPx,
     size
-  }: Coord & { idx: number; mPerPx: number; size: number }): Feature<Circle>;
+  }: Coord & { idx: number; mPerPx: number; size: number }): FeatureLabel<Circle>;
 
   static _genCircle({
     x,
@@ -321,17 +328,25 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
     mPerPx,
     size
   }: Coord & { idx: number; mPerPx: number; size?: number | null }):
-    | Feature<Point>
-    | Feature<Circle> {
+    | FeatureLabel<Point>
+    | FeatureLabel<Circle> {
     const c = [x * mPerPx, -y * mPerPx];
-    const f = new Feature({
+    const f = new FeatureLabel({
       geometry: size != undefined && size != undefined ? new Circle(c, size / 4) : new Point(c),
       value: 0,
       id: id ?? idx
     });
     f.setId(idx);
-    return f as Feature<Point> | Feature<Circle>;
+    return f as FeatureLabel<Point> | FeatureLabel<Circle>;
   }
+
+  get(idx: number) {
+    return this.source.getFeatureById(idx);
+  }
+}
+
+export class CanvasSpots extends BaseSpots {
+  currCoordName?: string;
 
   get visible() {
     return this.layer!.getVisible();
@@ -381,9 +396,5 @@ export class CanvasSpots extends MapComponent<VectorLayer<VectorSource<Geometry>
       )
     );
     this.currCoordName = this.coords.name;
-  }
-
-  get(idx: number) {
-    return this.source.getFeatureById(idx);
   }
 }

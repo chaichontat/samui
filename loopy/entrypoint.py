@@ -1,8 +1,8 @@
 from pathlib import Path
 
-import click
+import rich_click as click
 
-from loopy.run_image import run_image
+from loopy.utils.cli import modify_sample
 
 
 @click.group()
@@ -12,30 +12,115 @@ def cli():
 
 @cli.command()
 @click.argument("tiff", nargs=1, type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.option("--out", "-o", nargs=1, type=click.Path(exists=True, file_okay=False, path_type=Path))
-@click.option("--channels", "-c", type=str, help="Channel names, split by comma.")
-@click.option("--scale", "-s", default=1, type=float, help="Scale in meters per pixel.")
-@click.option("--quality", default=90, type=int, help="JPEG compression quality")
 @click.option(
-    "--rotation",
+    "out",
+    "--out",
+    "-o",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Output directory containing the Loopy files. Defaults to the same directory as the input file.",
+)
+@click.option(
+    "name",
+    "-n",
+    "--name",
+    type=str,
+    default=None,
+    help="Name of the experiment. Defaults to file name. \
+If you're combining this image with the spaceranger output, the name here must match the name given in that processing command.",
+)
+@click.option(
+    "channels",
+    "--channels",
+    "-c",
+    type=str,
+    help="Channel names, split by comma. The number of channels must match those in the image.",
+)
+@click.option(
+    "scale", "--scale", "-s", default=1, type=float, help="Scale in meters per pixel.", show_default=True
+)
+@click.option(
+    "quality", "--quality", default=90, type=int, help="JPEG compression quality.", show_default=True
+)
+@click.option(
+    "translate",
+    "--translate",
     default=(0, 0),
     nargs=2,
     type=click.Tuple([float, float]),
-    help="Rotation in row and column.",
+    help="Translation to be applied in y and x.",
 )
 def image(
     tiff: Path,
     out: Path | None = None,
+    name: str | None = None,
     channels: str | None = None,
     quality: int = 90,
     scale: float = 1,
-    rotation: tuple[float, float] = (0, 0),
+    translate: tuple[float, float] = (0, 0),
 ) -> None:
-    run_image(tiff, out, channels, quality, scale, rotation)
+    """Convert a TIFF file to a Loopy (COG) file."""
+    from loopy.drivers.run_image import run_image
+
+    if out is None:
+        out = tiff.parent
+
+    s, name = run_image(
+        tiff, out, name=name, channels=channels, quality=quality, scale=scale, translate=translate
+    )
+    modify_sample(s, out, name)
+
+
+@cli.command()
+@click.argument("spaceranger_output", nargs=1, type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option(
+    "out",
+    "--out",
+    "-o",
+    nargs=1,
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Output directory containing the Loopy files. \
+Defaults to the spaceranger output's parent directory / loopy.",
+)
+@click.option(
+    "name",
+    "--name",
+    "-n",
+    type=str,
+    help="Name of the experiment. Defaults to the one in the spaceranger's `--id` argument.",
+)
+@click.option(
+    "spotDiam",
+    "--spotDiam",
+    default=55e-6,
+    type=float,
+    help="Diameter of the spots in meters.",
+    show_default=True,
+)
+@click.option(
+    "logTransform",
+    "--logTransform",
+    default=True,
+    type=bool,
+    help="Whether to log2-transform the data.",
+    show_default=True,
+)
+def spaceranger(
+    spaceranger_output: Path, out: Path | None, name: str, spotDiam: float, logTransform: bool
+) -> None:
+    """Get gene expression data from a spaceranger experiment. \
+Assumes that Visium alignment has been done."""
+    from loopy.drivers.run_spaceranger import run_spaceranger
+
+    if out is None:
+        out = spaceranger_output.parent / "loopy"
+
+    s, name = run_spaceranger(spaceranger_output, out, spotDiam=spotDiam, logTransform=logTransform)
+    modify_sample(s, out, name)
 
 
 @cli.command()
 def gui():
+    """Start the Loopy Preprocessing GUI."""
     from loopy.gui.app import main
 
     main()
