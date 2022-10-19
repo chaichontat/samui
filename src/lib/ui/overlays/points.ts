@@ -332,7 +332,7 @@ export class BaseSpots extends MapComponent<VectorLayer<VectorSource<Geometry>>>
     | FeatureLabel<Circle> {
     const c = [x * mPerPx, -y * mPerPx];
     const f = new FeatureLabel({
-      geometry: size != undefined && size != undefined ? new Circle(c, size / 4) : new Point(c),
+      geometry: size != undefined && size != undefined ? new Circle(c, size / 2) : new Point(c),
       value: 0,
       id: id ?? idx
     });

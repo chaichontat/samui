@@ -117,7 +117,7 @@ export class MutableSpots extends BaseSpots {
     let options: Options;
     if (type === 'outline') {
       options = {
-        stroke: new Stroke({ color, width: 3 }),
+        stroke: new Stroke({ color, width: 4 }),
         fill: new Fill({ color: 'transparent' })
       };
     } else {
