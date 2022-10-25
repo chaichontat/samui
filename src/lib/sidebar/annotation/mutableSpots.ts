@@ -343,6 +343,7 @@ That is, the current points must contain the ID of all imported points.'
 const dontCheck = [
   'constructor',
   'updateFeature',
+  'getComposition',
   'load',
   'clear',
   'length',
