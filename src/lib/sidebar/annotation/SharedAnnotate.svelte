@@ -65,7 +65,7 @@
   }
 
   $: if (['pointsAdded', 'sampleUpdated'].includes($sEvent?.type)) {
-    nPoints = draw.getComposition();
+    nPoints = draw.getCounts();
   }
 </script>
 
@@ -104,6 +104,7 @@
             >
               {key}
             </button>
+            <!-- Number -->
             {nPoints[key] ?? 0}
             <button
               on:click={() => {
@@ -120,6 +121,14 @@
           </label>
         {/if}
       {/each}
+      {#if nPoints.unlabeled_}
+        <label class="flex items-center gap-x-1 hover:underline cursor-pointer">
+          <div class="h-3 w-3" style="background-color: #ccc" />
+          <button class="font-normal text-neutral-300">Unlabeled</button>
+          <!-- Number -->
+          {nPoints.unlabeled_}
+        </label>
+      {/if}
     </div>
   </div>
 

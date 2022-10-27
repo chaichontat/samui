@@ -112,8 +112,8 @@ Got ${coordName} but current feature has ${coords.name}.`
     this.points.startDraw(coords, get(annoFeat).reverseKeys, get(overlays)[get(sOverlay)].source);
   }
 
-  getComposition() {
-    return this.points.getComposition();
+  getCounts() {
+    return this.points.getCounts();
   }
 
   processFeature(

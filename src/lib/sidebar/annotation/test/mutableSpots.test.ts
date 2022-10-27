@@ -144,21 +144,21 @@ describe.concurrent('circle test', () => {
   it('should return correct composition', () => {
     m.addFromPolygon(newCircle);
     m.addFromPolygon(oldCircle);
-    expect(m.getComposition()).toEqual({ a: 6, b: 1, total_: 7 });
+    expect(m.getCounts()).toEqual({ a: 6, b: 1, total_: 7 });
   });
 
   it('should handle relabel', () => {
     m.addFromPolygon(oldCircle);
     m.addFromPolygon(newCircle);
     m.relabel('b', 'a');
-    expect(m.getComposition()).toEqual({ a: 7, total_: 7 });
+    expect(m.getCounts()).toEqual({ a: 7, total_: 7 });
   });
 
   it('should handle relabel with no change', () => {
     m.addFromPolygon(newCircle);
     m.addFromPolygon(oldCircle);
     m.relabel('b', 'b');
-    expect(m.getComposition()).toEqual({ a: 6, b: 1, total_: 7 });
+    expect(m.getCounts()).toEqual({ a: 6, b: 1, total_: 7 });
   });
 
   it('should dump and load', async () => {
@@ -171,7 +171,7 @@ describe.concurrent('circle test', () => {
     console.log(csved);
 
     m.load(csved, coordsData, source);
-    expect(m.getComposition()).toEqual({ a: 6, b: 1, total_: 7 });
+    expect(m.getCounts()).toEqual({ a: 6, b: 1, total_: 7 });
   });
 
   it('should clear', () => {

@@ -365,7 +365,7 @@ Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
     sEvent.set({ type: 'pointsAdded' });
   }
 
-  getComposition() {
+  getCounts() {
     const counts = {} as Record<string, number>;
     counts['total_'] = 0;
     for (const f of this.source.getFeatures()) {

@@ -249,15 +249,16 @@ export class MutableSpots extends BaseSpots {
     return points;
   }
 
-  getComposition() {
+  getCounts() {
     let sum = 0;
     const counts = {} as Record<string, number>;
     Object.entries(this.getAllPointsByLabel()).forEach(([label, ps]) => {
-      if (label == 'unlabeled') return;
+      if (label === 'unlabeled') return;
       counts[label] = ps.length;
       sum += ps.length;
     });
     counts.total_ = sum;
+    counts.unlabeled_ = this.points!.length - sum;
     return counts;
   }
 
