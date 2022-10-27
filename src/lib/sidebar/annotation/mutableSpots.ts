@@ -4,7 +4,7 @@ import type { Circle, Geometry, Point, Polygon } from 'ol/geom.js';
 
 import type { CoordsData } from '$lib/data/objects/coords';
 import { genLRU } from '$src/lib/lru';
-import { annoFeat, flashing, sEvent } from '$src/lib/store';
+import { annoFeat, annoHover, flashing, sEvent } from '$src/lib/store';
 import type { Mapp } from '$src/lib/ui/mapp';
 import { BaseSpots } from '$src/lib/ui/overlays/points';
 import { difference, intersection } from 'lodash-es';
@@ -28,6 +28,7 @@ export class MutableSpots extends BaseSpots {
   getPointCoords?: (f: Feature<Point> | Feature<Circle>) => Coordinate;
   select: Select;
   coords: undefined;
+  lastPreviewed = undefined as string | undefined;
 
   constructor(map: Mapp, style?: Style) {
     super(map, style);
@@ -75,6 +76,7 @@ export class MutableSpots extends BaseSpots {
         this.selectHandler = undefined;
       }
     });
+    annoHover.subscribe((i) => this.previewPoints(i === -1 ? 'unlabeled_' : get(annoFeat).keys[i]));
     return this;
   }
 
@@ -90,6 +92,23 @@ export class MutableSpots extends BaseSpots {
     this.pointType = this.coordsSource.size ? 'Circle' : 'Point';
     this.getPointCoords =
       this.pointType === 'Point' ? MutableSpots.getPointCoords : MutableSpots.getCircleCoords;
+  }
+
+  previewPoints(label: string | undefined) {
+    const toSearch = label ?? this.lastPreviewed;
+    const preview = Boolean(label);
+    let color: string | undefined;
+
+    this.source.forEachFeature((f: FeatureLabel<Geometry>) => {
+      // TODO: Unlabeled points are not in the source.
+      if (f.getLabel() === toSearch) {
+        if (!color) color = f.get('color');
+        f.setStyle(
+          MutableSpots.genPointStyle(color, this.coordsSource!.size ? 'outline' : 'star', preview)
+        );
+      }
+    });
+    this.lastPreviewed = label;
   }
 
   updatePoint(f: FeatureLabel<Point>, label: string, remove = false) {
@@ -113,19 +132,19 @@ export class MutableSpots extends BaseSpots {
     return f;
   }
 
-  static genPointStyle = genLRU((color: string, type: 'outline' | 'star') => {
+  static genPointStyle = genLRU((color: string, type: 'outline' | 'star', preview = false) => {
     let options: Options;
     if (type === 'outline') {
       options = {
-        stroke: new Stroke({ color, width: 4 }),
-        fill: new Fill({ color: 'transparent' })
+        stroke: new Stroke({ color, width: preview ? 8 : 4 }),
+        fill: new Fill({ color: preview ? color : 'transparent' })
       };
     } else {
       options = {
         image: new RegularShape({
           fill: new Fill({ color }),
           // star
-          points: 5,
+          points: preview ? 10 : 5,
           radius: 10,
           radius2: 4,
           angle: 0
@@ -344,7 +363,7 @@ That is, the current points must contain the ID of all imported points.'
 const dontCheck = [
   'constructor',
   'updateFeature',
-  'getComposition',
+  'previewPoints',
   'load',
   'clear',
   'length',

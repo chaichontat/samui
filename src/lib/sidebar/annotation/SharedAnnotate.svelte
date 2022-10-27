@@ -121,11 +121,15 @@
           </label>
         {/if}
       {/each}
+      <!-- Unlabeled -->
       {#if nPoints.unlabeled_}
-        <label class="flex items-center gap-x-1 hover:underline cursor-pointer">
+        <label
+          class="flex items-center gap-x-1"
+          on:mouseenter={() => ($annoHover = -1)}
+          on:mouseleave={() => ($annoHover = undefined)}
+        >
           <div class="h-3 w-3" style="background-color: #ccc" />
           <button class="font-normal text-neutral-300">Unlabeled</button>
-          <!-- Number -->
           {nPoints.unlabeled_}
         </label>
       {/if}
