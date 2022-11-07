@@ -44,7 +44,7 @@
       elem = Plot.legend({
         color: {
           interpolate: d3.interpolateTurbo,
-          domain: [0, 40]
+          domain: [0, 10]
         },
         width: 250,
         ticks: 5,
