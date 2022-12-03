@@ -5,7 +5,7 @@ import tifffile
 
 from loopy.image import ImageParams, compress, gen_geotiff
 from loopy.sample import Sample
-from loopy.utils import Url
+from loopy.utils.utils import Url
 
 
 @click.command()
@@ -45,7 +45,7 @@ def run(tiff: Path, outdir: Path, channels: str | None = None, quality: int = 90
     (o / "sample.json").write_text(sample.json())
 
     img = tifffile.imread(tiff)
-    ps = gen_geotiff(img, s, outdir / s, scale)
+    ps, _ = gen_geotiff(img, s, outdir / s, scale)
     print("Compressing image...")
     compress(ps, quality)
 
