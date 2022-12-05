@@ -54,7 +54,7 @@ def get_img_type(img: npt.NDArray, rgb: bool = False):
         zlast = True
 
     if chans > 50:
-        log(f"Found {chans} channels. This is most likely incorrect.", "WARNING")
+        log(f"Found {chans} channels. This is most likely incorrect.", type_="WARNING")
 
     def get_slide(img: npt.NDArray, i: int):
         if len(img.shape) == 2:
@@ -91,7 +91,7 @@ def gen_geotiff(
     else:
         raise ValueError(f"Unsupported dtype for TIFF file. Found {img.dtype}. Expected uint8 or uint16.")
 
-    def run(i: int):
+    for i, p in enumerate(ps):
         dst: DatasetWriter
         # Not compressing here since we cannot control the compression level.
         with rasterio.open(
@@ -103,7 +103,7 @@ def gen_geotiff(
             count=ncounts[i],
             photometric="RGB" if rgb else "MINISBLACK",
             transform=rasterio.Affine(
-                scale, 0, translate[0], 0, -scale, translate[1]
+                scale, 0, translate[0], 0, -scale, -translate[1]
             ),  # https://gdal.org/tutorials/geotransforms_tut.html # Flip y-axis.
             dtype=np.uint8,
             crs="EPSG:32648",  # meters
@@ -115,9 +115,12 @@ def gen_geotiff(
                 dst.write(get_slide(img, idx), j + 1)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
 
-    with ThreadPoolExecutor() as executor:
-        executor.map(run, range(len(ps)))
+    # with ThreadPoolExecutor() as executor:
+    #     executor.map(run, range(len(ps)))
     log(f"Generated COG(s) {[p.as_posix() for p in ps]}")
+
+    for p in ps:
+        assert p.exists()
 
     return ps, chans
 
@@ -125,8 +128,8 @@ def gen_geotiff(
 def compress(ps: list[Path], quality: int = 90) -> None:
     def run(p: Path):
         out = []
-
-        with subprocess.Popen(
+        log(p.with_suffix(".tif_").as_posix())
+        result = subprocess.run(
             [
                 "gdal_translate",
                 p.with_suffix(".tif_").as_posix(),
@@ -142,11 +145,15 @@ def compress(ps: list[Path], quality: int = 90) -> None:
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-        ) as process:
-            for line in process.stdout:  # type: ignore
-                log(p.name + ": " + (s := line.decode("utf-8")).strip())
-                out.append(s)
-        return out
+        )
+        if result.stderr:
+            raise subprocess.CalledProcessError(
+                    returncode = result.returncode,
+                    cmd = result.args,
+                    stderr = result.stderr
+                    )
+        out.append(result.stdout.decode("utf-8"))
+        return result
 
     try:
         with ThreadPoolExecutor() as executor:
@@ -155,10 +162,10 @@ def compress(ps: list[Path], quality: int = 90) -> None:
         raise e
     finally:
         for p in ps:
-            if p.exists():
+            if p.with_suffix(".tif").exists():
                 p.with_suffix(".tif_").unlink()
             else:
-                log(f"File not found: {p}", "ERROR")
+                log(f"Conversion not successful. Output not found: {p}", type_="ERROR")
 
 
 def gen_zcounts(nc: int):
