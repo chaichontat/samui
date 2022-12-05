@@ -148,10 +148,8 @@ def compress(ps: list[Path], quality: int = 90) -> None:
         )
         if result.stderr:
             raise subprocess.CalledProcessError(
-                    returncode = result.returncode,
-                    cmd = result.args,
-                    stderr = result.stderr
-                    )
+                returncode=result.returncode, cmd=result.args, stderr=result.stderr
+            )
         out.append(result.stdout.decode("utf-8"))
         return result
 

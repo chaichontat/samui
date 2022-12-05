@@ -17,7 +17,14 @@ from loopy.utils.utils import Url
 @click.option("--quality", default=90, type=int, help="JPEG compression quality")
 @click.option("--scale", default=1, type=float, help="Scale in meters per pixel.")
 @click.option("--translate", default=(0, 0), type=(float, float), help="Translation in meters.")
-def run(tiff: Path, outdir: Path, channels: str | None = None, quality: int = 90, scale: float = 1, translate: tuple[float,float]=(0,0)) -> None:
+def run(
+    tiff: Path,
+    outdir: Path,
+    channels: str | None = None,
+    quality: int = 90,
+    scale: float = 1,
+    translate: tuple[float, float] = (0, 0),
+) -> None:
     s = tiff.stem
     img = tifffile.imread(tiff)
 
@@ -48,7 +55,7 @@ def run(tiff: Path, outdir: Path, channels: str | None = None, quality: int = 90
     (o / "sample.json").write_text(sample.json())
 
     img = tifffile.imread(tiff)
-    chans, _, _,_ = get_img_type(img, channels == 'rgb')
+    chans, _, _, _ = get_img_type(img, channels == "rgb")
     # JPEG compression can only handle up to 4 channels at a time.
     names, _ = gen_zcounts(chans)
     ps = [o / f"{s}{x}.tif" for x in names]
