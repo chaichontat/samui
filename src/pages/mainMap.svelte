@@ -1,10 +1,10 @@
 <script lang="ts">
   import { mapTiles, sMapp, sSample } from '$lib/store';
   // import Colorbar from '$src/lib/components/colorbar.svelte'; // Dynamic import
+  import type { Hierarchy } from '$lib/mapTile';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
   import { resizable } from '$src/lib/ui/utils';
   import { classes } from '$src/lib/utils';
-  import type { Hierarchy } from '$src/pages/mapTile';
   import MapTile from '$src/pages/mapTile.svelte';
   // import Sidebar from '$src/pages/sidebar.svelte'; // Dynamic import
   import { Bars3 } from '@steeze-ui/heroicons';

@@ -12,7 +12,7 @@ from tifffile import imread
 from loopy.feature import ChunkedCSVParams, CoordParams, FeatureAndGroup, PlainCSVParams, get_compressed_genes
 from loopy.image import Colors, ImageParams, compress, gen_geotiff
 from loopy.sample import OverlayParams, Sample
-from loopy.utils import Url, setwd
+from loopy.utils.utils import Url, setwd
 
 #%% [markdown]
 

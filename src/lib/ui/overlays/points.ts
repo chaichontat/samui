@@ -174,14 +174,20 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         // Such that the entire sample is covered in 2**9 = 512 px.
         // 8 due to the 4x native res max zoom.
         // Using nearest power of 2.
-        const range = 8 - Math.min(10, Math.max(0, 31 - Math.clz32(Math.max(...max)) - 9));
+        let minZoom: number;
+        {
+          // Round up to nearest power of 2.
+          const orderof2 = 32 - Math.clz32(Math.max(...max));
+          minZoom = Math.max(0, 8 - Math.max(0, orderof2 - 9));
+        }
 
         this.map.map!.setView(
           new View({
             center: [mx * coords.mPerPx, -my * coords.mPerPx],
             projection: 'EPSG:3857',
             resolutions: ress,
-            zoom: range
+            zoom: minZoom + 1,
+            minZoom: 0
           })
         );
         this.map._needNewView = false;

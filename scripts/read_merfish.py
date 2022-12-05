@@ -6,7 +6,7 @@ import polars as pl
 
 from loopy.feature import ChunkedCSVParams
 from loopy.sample import Sample
-from loopy.utils import Url, concat
+from loopy.utils.utils import Url, concat
 
 #%%
 df = pl.read_csv(
