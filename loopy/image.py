@@ -1,7 +1,7 @@
 # pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Annotated, Callable, Literal
 
@@ -120,7 +120,7 @@ def gen_geotiff(
     log(f"Generated COG(s) {[p.as_posix() for p in ps]}")
 
     for p in ps:
-        assert p.exists()
+        assert p.with_suffix(".tif_").exists()
 
     return ps, chans
 
@@ -145,25 +145,22 @@ def compress(ps: list[Path], quality: int = 90) -> None:
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            check=True
         )
         if result.stderr:
             raise subprocess.CalledProcessError(
                 returncode=result.returncode, cmd=result.args, stderr=result.stderr
             )
         out.append(result.stdout.decode("utf-8"))
+        log(p.with_suffix(".tif_").absolute())
+        p.with_suffix(".tif_").unlink()
         return result
 
-    try:
-        with ThreadPoolExecutor() as executor:
-            executor.map(run, ps)
-    except subprocess.CalledProcessError as e:
-        raise e
-    finally:
-        for p in ps:
-            if p.with_suffix(".tif").exists():
-                p.with_suffix(".tif_").unlink()
-            else:
-                log(f"Conversion not successful. Output not found: {p}", type_="ERROR")
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(lambda: run(p)) for p in ps]
+        for fut in as_completed(futures):
+            fut.result()  # Raise any exceptions
+
 
 
 def gen_zcounts(nc: int):

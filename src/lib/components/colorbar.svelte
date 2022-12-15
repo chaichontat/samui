@@ -32,7 +32,7 @@
     if (ks) {
       elem = Plot.legend({
         color: {
-          domain: ks.map((x) => x.toString())
+          domain: ks.map((x) => `${x}`.toString()) // Convert null to string
         },
         legend: 'swatches',
         className: 'alphabet',
