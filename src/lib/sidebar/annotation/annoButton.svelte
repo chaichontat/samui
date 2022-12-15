@@ -1,4 +1,4 @@
-<script type="ts">
+<script lang="ts">
   import { classes } from '$src/lib/utils';
 
   let cl = '';

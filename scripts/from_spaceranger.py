@@ -1,4 +1,6 @@
 #%%
+import json
+import threading
 from pathlib import Path
 from shutil import copy
 from typing import Literal, cast
@@ -40,6 +42,8 @@ def better_visium(d: Path, features: dict[str, str]) -> AnnData:
     to make sure that the indices match."""
     vis = read_visium(d / "outs")
     for k, v in features.items():
+        if not (d / v).exists():
+            continue
         df = pd.read_csv(d / v, index_col=0)
         if len(df.columns) == 1:
             df.rename(columns={df.columns[0]: k}, inplace=True)
@@ -74,8 +78,7 @@ def run_spaceranger(
     *,
     channels: list[str],
     defaultChannels: dict[Colors, str] | None = None,
-    mPerPx: float = 1,
-    spotDiam: float = 130e-6,
+    spotDiam: float = 55e-6,
     overlayParams: OverlayParams | None = None,
 ) -> Sample:
 
@@ -96,9 +99,12 @@ def run_spaceranger(
     Path(o / "metadata.md").write_text("```\n" + metadata + "\n```")
     copy(Path(path / name / "outs" / "web_summary.html"), o / "web_summary.html")
 
+    scales = json.loads((path / name / "outs" / "spatial" / "scalefactors_json.json").read_text())
+    mPerPx = 65e-6 / float(scales["spot_diameter_fullres"])
+
     # Image
     img = imread(tif)
-    tifs = gen_geotiff(img, name, o, scale=mPerPx)
+    tifs, _ = gen_geotiff(img, name, o, scale=mPerPx)
     compress(tifs)
     imgParams = ImageParams(
         urls=[Url(s.name) for s in tifs],
@@ -108,20 +114,21 @@ def run_spaceranger(
     )
 
     # Features
-    with setwd(o):
-        coordParams = [
-            CoordParams(
-                name="spots", shape="circle", mPerPx=mPerPx, size=spotDiam, url=Url("spotCoords.csv")
-            ).write(lambda p: gen_coords(vis, p)),
-        ]
-        featParams = [
-            ChunkedCSVParams(name="genes", url=Url("gene_csc.bin"), unit="Log counts").write(
-                lambda p: write_compressed(vis, p)
-            ),
-            PlainCSVParams(
-                name="kmeans", url=Url("kmeans.csv"), dataType="categorical", coordName="spots"
-            ).write(lambda p: vis.obs.filter(regex="^kmeans", axis=1).to_csv(p, index=False)),
-        ]
+    with threading.Lock():
+        with setwd(o):
+            coordParams = [
+                CoordParams(
+                    name="spots", shape="circle", mPerPx=mPerPx, size=spotDiam, url=Url("spotCoords.csv")
+                ).write(lambda p: gen_coords(vis, p)),
+            ]
+            featParams = [
+                ChunkedCSVParams(name="genes", url=Url("gene_csc.bin"), unit="Log counts").write(
+                    lambda p: write_compressed(vis, p)
+                ),
+                # PlainCSVParams(
+                #     name="kmeans", url=Url("kmeans.csv"), dataType="categorical", coordName="spots"
+                # ).write(lambda p: vis.obs.filter(regex="^kmeans", axis=1).to_csv(p, index=False)),
+            ]
 
     sample = Sample(
         name=name,
@@ -138,16 +145,14 @@ def run_spaceranger(
 
 #%%
 if __name__ == "__main__":
-    path = Path("C:/Users/Chaichontat/Documents/VIF")
+    path = Path("C:\\Users\\Chaichontat\\GitHub\\loopynew\\scripts\\out")
     run_spaceranger(
-        "Br2720_Ant_IF",
+        "151673",
         path,
-        path / "Br2720_Ant_IF.tif",
+        path / "151673" / "outs" / "151673_full_image.tif",
         path / "outs",
-        channels=["Lipofuscin", "DAPI", "GFAP", "NeuN", "OLIG2", "TMEM119"],
-        defaultChannels=dict(blue="DAPI", green="GFAP", red="NeuN"),
+        channels="rgb",
         overlayParams=OverlayParams(defaults=[FeatureAndGroup(feature="GFAP", group="genes")]),
-        mPerPx=0.497e-6,
     )
 
 # %%
