@@ -45,7 +45,7 @@ export class CoordsData extends Deferrable {
     this.size = size;
     this.mPerPx = mPerPx;
     this.addedOnline = addedOnline ?? false;
-    this.sample = sample ?? 100000;
+    this.sample = sample ?? 0;
 
     if (!this.url && !this.pos) throw new Error('Must provide url or value');
     if (this.pos) {
@@ -83,6 +83,7 @@ export class CoordsData extends Deferrable {
   }
 
   subsample(n: number) {
+    if (n === 0) return this.pos;
     if (this.pos!.length > n) {
       const step = Math.ceil(this.pos!.length / n);
       return this.pos!.filter((_, i) => i % step === 0);
