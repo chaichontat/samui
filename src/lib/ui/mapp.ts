@@ -133,8 +133,8 @@ export class Mapp extends Deferrable {
           .catch(console.error)
       );
     } else {
+      console.debug('No image. View must come from overlay.');
       this.persistentLayers.background.dispose(this.map);
-      // No image. View must come from overlay.
       this._needNewView = true;
     }
 
@@ -146,10 +146,15 @@ export class Mapp extends Deferrable {
       ...Object.values(get(overlays)).map((ol) => ol.updateSample(sample))
     ]);
 
-    // Defaults
-    if (sample.overlayParams?.defaults && !get(overlays)[get(sOverlay)]?.currFeature) {
-      setHoverSelect({ selected: sample.overlayParams.defaults[0] }).catch(console.error);
-    }
+    // Must have an active feature, otherwise renderComplete will not fire.
+    const selected = get(overlays)[get(sOverlay)]?.currFeature
+      ? sample.overlayParams?.defaults?.[0]
+      : {
+          group: sample.features[Object.keys(sample.features)[0]].name,
+          feature: sample.features[Object.keys(sample.features)[0]].featNames[0]
+        };
+
+    setHoverSelect({ selected }).catch(console.error);
     sEvent.set({ type: 'sampleUpdated' });
   }
 

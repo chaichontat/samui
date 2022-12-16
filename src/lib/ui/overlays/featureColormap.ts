@@ -65,7 +65,10 @@ export function genSpotStyle(type: FeatureType, spotDiamPx: number, scale = true
       };
 
   if (type === 'quantitative') {
-    const colors = [...Array(10).keys()].flatMap((i) => [i, d3.interpolateTurbo(i / 10)]);
+    const colors = [...Array(10).keys()].flatMap((i) => [
+      i,
+      d3.interpolateTurbo(0.05 + (i / 10) * 0.95)
+    ]);
     // colors[1] += 'ff';
     return {
       variables: { opacity: 0.8 },

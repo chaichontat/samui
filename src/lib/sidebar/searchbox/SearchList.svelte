@@ -38,7 +38,7 @@
   $: if (featureGroup) {
     fzf = featureGroup.map((f) => {
       const config: ConstructorParameters<typeof Fzf>[1] = {
-        limit: 6,
+        // limit: 10,
         casing: 'case-insensitive'
       };
       if (f.weights) {
@@ -75,7 +75,7 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   out:fade={{ duration: 100, easing: cubicOut }}
-  class={cl}
+  class={cl + ' max-h-96 overflow-y-auto'}
   class:hidden={!showSearch}
   use:clickOutside
   on:click={() => (showSearch = false)}
@@ -89,7 +89,7 @@
 >
   {#each candidates as { group, values }, i}
     {#if values.length > 0 && (limit < 0 || i < limit)}
-      <div class="flex flex-col">
+      <div class="flex flex-col sticky">
         <span class="px-2 pt-1.5 pb-0.5 font-medium capitalize text-yellow-300">
           {group ?? 'Misc.'}
         </span>

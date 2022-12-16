@@ -22,7 +22,10 @@ export default class AreaChart {
       .data(d3.ticks(0, 1, 10))
       .join('stop')
       .attr('offset', (d) => d)
-      .attr('stop-color', d3.scaleSequential(this.yScale.domain(), d3.interpolateTurbo));
+      .attr(
+        'stop-color',
+        d3.scaleSequential(this.yScale.domain(), (t) => d3.interpolateTurbo(0.05 + t * 0.95))
+      );
   }
 
   constructor(
