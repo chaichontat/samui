@@ -11,17 +11,30 @@ from loopy.sample import OverlayParams, Sample
 from loopy.utils.utils import Url
 
 #%%
+
 feat = pd.read_csv(
-    "../static/datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-cell_by_gene_S1R1.csv",
+    "/Users/chaichontat/Downloads/cell_by_gene.csv",
     index_col=0,
     dtype=np.float32,
 )
 coords = pd.read_csv(
-    "../static/datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-cell_metadata_S1R1.csv",
+    "/Users/chaichontat/Downloads/cell_metadata.csv",
     index_col=0,
     dtype=np.float32,
 )
 
+
+def remove_dupes(df: pd.DataFrame):
+    return df[~df.index.duplicated(keep="first")]
+
+
+feat = remove_dupes(feat)
+coords = remove_dupes(coords)
+idxs = feat.index.intersection(coords.index)
+feat = feat.loc[idxs]
+coords = coords.loc[idxs]
+
+assert feat.index.equals(coords.index)
 
 #%% Process coords
 # rename column 0 to id
@@ -34,6 +47,7 @@ names = []
 to_concat = []
 sp = csc_matrix(feat.to_numpy())
 
+
 orient = "csc"
 header, bytedict = get_compressed_genes(ad.AnnData(np.log2(feat + 1)), coordName="cells", mode="csc")
 p = Path("cells")
@@ -42,11 +56,9 @@ p.with_suffix(".bin").write_bytes(bytedict)
 
 
 #%%
-out = Path("../static/merfish2")
+out = Path("../static/merfish3")
 out.mkdir(exist_ok=True, parents=True)
-# (out / "merfish_header.json").write_text(
-#     ChunkedCSVHeader(names=names, ptr=ptr.tolist(), length=len(names)).json()
-# )
+
 
 sample = Sample(
     name="merfish",

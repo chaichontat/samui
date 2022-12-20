@@ -38,7 +38,7 @@
   $: if (featureGroup) {
     fzf = featureGroup.map((f) => {
       const config: ConstructorParameters<typeof Fzf>[1] = {
-        // limit: 10,
+        limit: 100,
         casing: 'case-insensitive'
       };
       if (f.weights) {
