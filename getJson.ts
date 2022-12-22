@@ -5,7 +5,7 @@ import * as path from 'path';
 const dir = 'static';
 const samples = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_IF'];
 
-const s3_url = 'https://data2.loopybrowser.com/VisiumIF';
+const s3_url = 'https://libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF';
 
 async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
   await fs.mkdir(p, { recursive: true });
