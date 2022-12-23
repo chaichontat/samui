@@ -9,7 +9,7 @@ import { promisify } from 'util';
 const pexec = promisify(exec);
 let [version, lastmod] = (
   await Promise.allSettled([
-    pexec('git describe --tags || git rev-parse --short HEAD'),
+    pexec('git fetch --tags && git describe --tags || git rev-parse --short HEAD'),
     pexec('git log -1 --format=%cd --date=format:"%Y-%m-%d %H:%M"')
   ])
 ).map((v) => JSON.stringify(v.value?.stdout.trim()));
