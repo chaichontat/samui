@@ -2,7 +2,6 @@
   import preload from '$lib/data/preload';
   import Github from '$src/lib/components/github.svelte';
   import { byod } from '$src/lib/data/byod';
-  import Feedback from '$src/lib/sidebar/Feedback.svelte';
   import { Plus } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
 </script>
@@ -11,7 +10,6 @@
 <nav class="flex w-full justify-between py-[18px] pl-4 pr-4 gap-x-4">
   <div class="text-2xl font-medium text-yellow-300">Loopy Browser</div>
   <div class="flex-grow" />
-  <Feedback />
   <Github />
 </nav>
 
@@ -52,8 +50,6 @@
   >
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show MERFISH Data</span>
   </a>
-
-  <p class="mt-2 text-center">Feedbacks welcomed! See the top right corner.</p>
 </div>
 
 <div class="absolute bottom-5 left-1/2 translate-x-[-50%] text-center text-neutral-300">

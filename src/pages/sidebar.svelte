@@ -96,7 +96,7 @@
 <div class="flex-grow min-h-[24px]" />
 
 <div class="mx-auto justify-end text-xs text-center">
-  Loopy Browser {__VERSION__.startsWith('v') ? __VERSION__ : `dev-${__VERSION__}`}.
+  Loopy Browser {__VERSION__}
 </div>
 
 <a
