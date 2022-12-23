@@ -93,10 +93,15 @@
   {/if}
 </div>
 
-<div class="mt-6 text-sm">
-  <!-- <Status /> -->
+<div class="flex-grow min-h-[24px]" />
+
+<div class="justify-end text-sm text-right m-3">
+  Loopy Browser {__VERSION__.startsWith('v') ? __VERSION__ : `dev-${__VERSION__}`}.
 </div>
 
+<!-- <div class="mt-6 text-sm">
+  <Status />
+</div> -->
 <style lang="postcss">
   section {
     @apply relative hidden w-[90%] pt-4 md:block;
