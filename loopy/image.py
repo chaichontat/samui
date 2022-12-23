@@ -145,7 +145,7 @@ def compress(ps: list[Path], quality: int = 90) -> None:
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            check=True
+            check=True,
         )
         if result.stderr:
             raise subprocess.CalledProcessError(
@@ -160,7 +160,6 @@ def compress(ps: list[Path], quality: int = 90) -> None:
         futures = [executor.submit(lambda: run(p)) for p in ps]
         for fut in as_completed(futures):
             fut.result()  # Raise any exceptions
-
 
 
 def gen_zcounts(nc: int):
