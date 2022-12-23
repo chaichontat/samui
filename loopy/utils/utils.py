@@ -1,10 +1,8 @@
 # pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 import gzip
 import json
-import os
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Generator, Literal
+from typing import Any, Callable, Literal
 
 import numpy as np
 from pydantic import BaseModel
@@ -31,19 +29,9 @@ class Url(ReadonlyModel):
 class Writable(ReadonlyModel):
     url: Url
 
-    def write(self, f: Callable[[Path], None]) -> Self:
-        f(Path(self.url.url))
+    def write(self, path: Path, f: Callable[[Path], None]) -> Self:
+        f(path / Path(self.url.url))
         return self
-
-
-@contextmanager
-def setwd(path: Path) -> Generator[None, None, None]:
-    ori = Path().absolute()
-    try:
-        os.chdir(path)
-        yield
-    finally:
-        os.chdir(ori)
 
 
 def concat_json(objs: list[Any]) -> tuple[np.ndarray, bytearray]:

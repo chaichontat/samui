@@ -14,7 +14,7 @@ from tifffile import imread
 from loopy.feature import ChunkedCSVParams, CoordParams, FeatureAndGroup, get_compressed_genes
 from loopy.image import Colors, ImageParams, compress, gen_geotiff
 from loopy.sample import OverlayParams, Sample
-from loopy.utils.utils import Url, setwd
+from loopy.utils.utils import Url
 
 #%% [markdown]
 
@@ -76,7 +76,7 @@ def run_spaceranger(
     tif: Path,
     out: Path,
     *,
-    channels: list[str],
+    channels: list[str] | Literal["rgb"],
     defaultChannels: dict[Colors, str] | None = None,
     spotDiam: float = 55e-6,
     overlayParams: OverlayParams | None = None,
@@ -114,21 +114,19 @@ def run_spaceranger(
     )
 
     # Features
-    with threading.Lock():
-        with setwd(o):
-            coordParams = [
-                CoordParams(
-                    name="spots", shape="circle", mPerPx=mPerPx, size=spotDiam, url=Url("spotCoords.csv")
-                ).write(lambda p: gen_coords(vis, p)),
-            ]
-            featParams = [
-                ChunkedCSVParams(name="genes", url=Url("gene_csc.bin"), unit="Log counts").write(
-                    lambda p: write_compressed(vis, p)
-                ),
-                # PlainCSVParams(
-                #     name="kmeans", url=Url("kmeans.csv"), dataType="categorical", coordName="spots"
-                # ).write(lambda p: vis.obs.filter(regex="^kmeans", axis=1).to_csv(p, index=False)),
-            ]
+    coordParams = [
+        CoordParams(
+            name="spots", shape="circle", mPerPx=mPerPx, size=spotDiam, url=Url("spotCoords.csv")
+        ).write(o, lambda p: gen_coords(vis, p)),
+    ]
+    featParams = [
+        ChunkedCSVParams(name="genes", url=Url("gene_csc.bin"), unit="Log counts").write(
+            o, lambda p: write_compressed(vis, p)
+        ),
+        # PlainCSVParams(
+        #     name="kmeans", url=Url("kmeans.csv"), dataType="categorical", coordName="spots"
+        # ).write(lambda p: vis.obs.filter(regex="^kmeans", axis=1).to_csv(p, index=False)),
+    ]
 
     sample = Sample(
         name=name,

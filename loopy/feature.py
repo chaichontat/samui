@@ -51,7 +51,7 @@ class PlainCSVParams(Writable):
     size: float | None = None
 
 
-class ChunkedCSVParams(ReadonlyModel):
+class ChunkedCSVParams(Writable):
     type: Literal["chunkedCSV"] = "chunkedCSV"
     name: str
     url: Url
@@ -66,10 +66,12 @@ class ChunkedCSVParams(ReadonlyModel):
             return Url(url=path.with_suffix(".json").as_posix())
         return v
 
-    def write(self, f: Callable[[Path], None], header: Callable[[Path], None] | None = None) -> Self:
-        f(Path(self.url.url))
+    def write(
+        self, path: Path, f: Callable[[Path], None], header: Callable[[Path], None] | None = None
+    ) -> Self:
+        f(path / Path(self.url.url))
         if header and self.headerUrl:
-            header(Path(self.headerUrl.url))
+            header(path / Path(self.headerUrl.url))
         return self
 
 
