@@ -1,6 +1,5 @@
 #%%
 import hashlib
-import json
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -11,6 +10,7 @@ import pandas as pd
 import requests
 
 from loopy.logger import log, setup_logging
+from loopy.sample import Sample
 
 setup_logging()
 
@@ -111,6 +111,8 @@ for folder in (humanpilot / "10X").iterdir():
 
 #%%
 log("Converting spaceranger data and images to GeoTIFF.")
+sample_objs: dict[str, Sample] = dict()
+# Using ThreadPoolExecutor instead of ProcessPoolExecutor to avoid problems with different forking strategies.
 with ThreadPoolExecutor(max_workers=4) as pool:
     futures = [
         pool.submit(
@@ -121,71 +123,50 @@ with ThreadPoolExecutor(max_workers=4) as pool:
             out=outdir,
             channels="rgb",
         )
-        for sample in samples
+        for sample in samples[:1]
     ]
     for future in as_completed(futures):
-        future.result()
+        res = future.result()
+        sample_objs[res.name] = res
 
 #%%
 # Add features
-for clustering in (humanpilot / "outputs" / "SpatialDE_clustering").iterdir():
-    sample = clustering.stem.split("_")[-1]
-    pd.read_csv(clustering).drop(columns=["key"]).to_csv(outdir / sample / "clustering.csv", index=False)
+# - Clusters
+# - Layer guesses
 
-# Layer guesses
-def join_guesses(template: Path, guess: Path):
-    df = pd.read_csv(guess)
-    df.set_index("spot_name", inplace=True)
-    pd.read_csv(template).join(df, on="id")["layer"].fillna("Unlabeled").to_csv(
-        template.parent / "layers.csv", index=False
-    )
+# Head of the clusters file
+# "key","ground_truth","SpatialDE_PCA","SpatialDE_pool_PCA","HVG_PCA","pseudobulk_PCA","markers_PCA","SpatialDE_UMAP","SpatialDE_pool_UMAP","HVG_UMAP","pseudobulk_UMAP","markers_UMAP","SpatialDE_PCA_spatial","SpatialDE_pool_PCA_spatial","HVG_PCA_spatial","pseudobulk_PCA_spatial","markers_PCA_spatial","SpatialDE_UMAP_spatial","SpatialDE_pool_UMAP_spatial","HVG_UMAP_spatial","pseudobulk_UMAP_spatial","markers_UMAP_spatial"
+# "151507_AAACAACGAATAGTTC-1","Layer_1",4,5,3,5,4,1,2,1,3,1,3,5,5,4,3,1,1,1,1,1
+# "151507_AAACAAGTATCTCCCA-1","Layer_3",2,3,1,2,2,1,3,1,2,1,4,1,2,3,1,2,2,1,2,1
+# "151507_AAACAATCTACTAGCA-1","Layer_1",4,4,4,4,8,2,4,5,3,6,3,4,3,5,7,2,1,4,1,6
+# ...
 
+# Head of layer guesses file
+# "sample_name","spot_name","layer"
+# 151507,"AAACAACGAATAGTTC-1","Layer 1"
+# 151507,"AAACAAGTATCTCCCA-1","Layer 3"
+# 151507,"AAACAATCTACTAGCA-1","Layer 1"
 
 guesses = list((humanpilot / "Analysis" / "Layer_Guesses" / "First_Round").iterdir()) + list(
     (humanpilot / "Analysis" / "Layer_Guesses" / "Second_Round").iterdir()
 )
-for sample in samples:
+
+for name, s in sample_objs.items():
+    df = pd.read_csv(humanpilot / "outputs" / "SpatialDE_clustering" / f"cluster_labels_{name}.csv")
+    df["key"] = df["key"].map(lambda x: x.split("_")[1])
+    df.set_index("key", inplace=True)
+    s.add_csv(df, path=outdir / name, name="clustering", coord_name="spots", data_type="categorical")
+
     for guess in guesses:
-        if sample in guess.name:
-            join_guesses(outdir / sample / "spotCoords.csv", guess)
+        if name in guess.name:
+            df = pd.read_csv(guess).drop(columns=["sample_name"])
+            df.set_index("spot_name", inplace=True)
+            s.add_csv(df, path=outdir / name, name="guesses", coord_name="spots", data_type="categorical")
             break
     else:
-        print(f"Could not find layer guesses for {sample}")
+        print(f"Could not find layer guesses for {name}")
 
-#%%
-# Edit sample.json
-for sample in samples:
-    s = json.loads((outdir / sample / "sample.json").read_text())
-    if len(s["featParams"]) == 1:  # Idempotent
-        s["featParams"].append(
-            dict(
-                type="plainCSV",
-                name="clustering",
-                url={"url": "clustering.csv", "type": "local"},
-                dataType="categorical",
-                coordName="spots",
-            )
-        )
-        s["featParams"].append(
-            dict(
-                type="plainCSV",
-                name="layers",
-                url={"url": "layers.csv", "type": "local"},
-                dataType="categorical",
-                coordName="spots",
-            )
-        )
-
-    s["overlayParams"] = {
-        "defaults": [{"feature": "ground_truth", "group": "clustering"}],
-        "importantFeatures": [
-            {"feature": "GFAP", "group": "genes"},
-            {"feature": "OLIG2", "group": "genes"},
-            {"feature": "TMEM119", "group": "genes"},
-            {"feature": "RBFOX3", "group": "genes"},
-        ],
-    }
-
-    (outdir / sample / "sample.json").write_text(json.dumps(s))
+    s.set_default_feature(group="clustering", feature="ground_truth")
+    s.write(outdir / s.name)
 
 # %%

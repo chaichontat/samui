@@ -1,6 +1,5 @@
 #%%
 import json
-import threading
 from pathlib import Path
 from shutil import copy
 from typing import Literal, cast
