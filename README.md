@@ -37,7 +37,7 @@ In this case, the output folder has the same name as the input file.
 You can drag this folder directly to https://loopybrowser.com/.
 Despite the Browser being a webpage, all data are processed locally on your computer.
 
-**This link opens the expected result: https://loopybrowser.com/from?url=data2.loopybrowser.com/VisiumIF/&s=sample.**
+**This link opens the expected result: https://loopybrowser.com/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/&s=sample.**
 
 Here, the browser retrieves the processed folder hosted on an external server.
 You could share your files with your collaborators using your own file server or AWS S3.

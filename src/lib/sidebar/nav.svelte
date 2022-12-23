@@ -20,6 +20,6 @@
     <FeatureSearchBox featureGroup={$allFeatures} />
   </div>
   <!-- <Darkswitch /> Will be back! -->
-  <Feedback />
+  <!-- <Feedback /> -->
   <Github />
 </nav>
