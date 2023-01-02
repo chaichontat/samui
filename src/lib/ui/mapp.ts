@@ -146,16 +146,17 @@ export class Mapp extends Deferrable {
       ...Object.values(get(overlays)).map((ol) => ol.updateSample(sample))
     ]);
 
-    // Must have an active feature, otherwise renderComplete will not fire.
-    const selected = get(overlays)[get(sOverlay)]?.currFeature ??
-      sample.overlayParams?.defaults?.[0] ?? {
-        group: sample.features[Object.keys(sample.features)[0]].name,
-        feature: sample.features[Object.keys(sample.features)[0]].featNames[0]
-      };
+    if (sample.featureParams) {
+      // Must have an active feature, otherwise renderComplete will not fire.
+      const selected = get(overlays)[get(sOverlay)]?.currFeature ??
+        sample.overlayParams?.defaults?.[0] ?? {
+          group: sample.features[Object.keys(sample.features)[0]].name,
+          feature: sample.features[Object.keys(sample.features)[0]].featNames[0]
+        };
 
-    console.log('Selected', selected);
-
-    setHoverSelect({ selected }).catch(console.error);
+      console.log('Selected', selected);
+      setHoverSelect({ selected }).catch(console.error);
+    }
     sEvent.set({ type: 'sampleUpdated' });
   }
 
