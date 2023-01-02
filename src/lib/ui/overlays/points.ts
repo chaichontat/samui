@@ -156,11 +156,16 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         let mx = 0;
         let my = 0;
         const max = [0, 0];
+        const min = [0, 0];
         for (const { x, y } of coords.pos!) {
-          mx += Number(x);
-          my += Number(y);
-          max[0] = Math.max(max[0], Math.abs(Number(x)));
-          max[1] = Math.max(max[1], Math.abs(Number(y)));
+          const xx = Number(x);
+          const yy = -Number(y);
+          mx += xx;
+          my += yy;
+          min[0] = Math.min(min[0], xx);
+          min[1] = Math.min(min[1], yy);
+          max[0] = Math.max(max[0], xx);
+          max[1] = Math.max(max[1], yy);
         }
         mx /= res.data.length;
         my /= res.data.length;
@@ -177,17 +182,25 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         let minZoom: number;
         {
           // Round up to nearest power of 2.
-          const orderof2 = 32 - Math.clz32(Math.max(...max));
+          const orderof2 = 32 - Math.clz32(Math.max(max[0] - min[0], max[1] - min[1]));
           minZoom = Math.max(0, 8 - Math.max(0, orderof2 - 9));
         }
 
+        // Limit extent to 1.5x size of the sample.
+        const range = [(max[1] - min[1]) * coords.mPerPx, (max[0] - min[0]) * coords.mPerPx];
         this.map.map!.setView(
           new View({
-            center: [mx * coords.mPerPx, -my * coords.mPerPx],
+            center: [mx * coords.mPerPx, my * coords.mPerPx],
+            extent: [
+              min[0] * coords.mPerPx - range[0] / 2,
+              min[1] * coords.mPerPx - range[1] / 2,
+              max[0] * coords.mPerPx + range[0] / 2,
+              max[1] * coords.mPerPx + range[1] / 2
+            ],
             projection: 'EPSG:3857',
             resolutions: ress,
             zoom: minZoom + 1,
-            minZoom: 0
+            minZoom
           })
         );
         this.map._needNewView = false;
