@@ -1,13 +1,20 @@
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Callable, Concatenate, Generic, Literal, ParamSpec, Protocol, TypeVar
 
 import pandas as pd
+from anndata import AnnData
 from pydantic import BaseModel
 from tifffile import imread
 from typing_extensions import Self
 
-from loopy.feature import CoordParams, FeatureAndGroup, FeatureParams, PlainCSVParams
-from loopy.image import GeoTiff, ImageParams
+from loopy.feature import (
+    CoordParams,
+    FeatureAndGroup,
+    FeatureParams,
+    PlainCSVParams,
+    compress_anndata_features,
+)
+from loopy.image import Colors, GeoTiff, ImageParams
 from loopy.utils.utils import Url, remove_dupes
 
 
@@ -16,15 +23,36 @@ class OverlayParams(BaseModel):
     importantFeatures: list[FeatureAndGroup] | None = None
 
 
+P, R = ParamSpec("P"), TypeVar("R", covariant=True)
+
+
+# https://github.com/python/typing/discussions/1040
+class Method(Protocol, Generic[P, R]):
+    def __get__(self, instance: Any, owner: type | None = None) -> Callable[P, R]:
+        ...
+
+    def __call__(self_, self: Any, *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore
+        ...
+
+
 class Sample(BaseModel):
     name: str
-    path: Path | None = None
+    path: Path = None  # type: ignore  check_path removes the unhappy path.
     imgParams: ImageParams | None = None
     coordParams: list[CoordParams] | None = None
     featParams: list[FeatureParams] | None = None
     overlayParams: OverlayParams | None = None
     notesMd: Url | None = None
     metadataMd: Url | None = None
+
+    @staticmethod
+    def check_path(func: Callable[Concatenate[Any, P], R]) -> Method[P, R]:
+        def wrapper(self: "Sample", *args: P.args, **kwargs: P.kwargs) -> R:
+            if self.path is None:
+                raise ValueError("Path not set. Use Sample.set_path() first")
+            return func(self, *args, **kwargs)
+
+        return wrapper
 
     def __init__(self, **data: Any):
         if data["path"] is not None:
@@ -37,10 +65,8 @@ class Sample(BaseModel):
     def json(self, **kwargs: Any) -> str:
         return super().json(exclude={"path"}, **kwargs)
 
+    @check_path
     def write(self) -> Self:
-        if not self.path:
-            raise ValueError("Path not set. Use Sample.set_path() first")
-
         (self.path / "sample.json").write_text(self.json())
         return self
 
@@ -74,6 +100,7 @@ class Sample(BaseModel):
         if self.featParams and name in [f.name for f in self.featParams]:
             raise ValueError(f"Duplicate feature name {name}")
 
+    @check_path
     def add_coords(self, df: pd.DataFrame, *, name: str, mPerPx: float = 1, size: float = 1e-2) -> Self:
         """Expects a dataframe with the index as the sample id or idx, x, y as columns
 
@@ -82,10 +109,6 @@ class Sample(BaseModel):
             path (Path): Path to the sample directory
             name (str): Name of the coordinates
         """
-
-        if not self.path:
-            raise ValueError("Path not set. Use Sample.set_path() first")
-
         df = remove_dupes(df)
         if not {"x", "y"}.issubset(df.columns):
             raise ValueError("x and y must be in columns")
@@ -102,6 +125,7 @@ class Sample(BaseModel):
         )
         return self
 
+    @check_path
     def add_csv(
         self,
         df: pd.DataFrame,
@@ -121,10 +145,6 @@ class Sample(BaseModel):
         Raises:
             ValueError: Coordinate name not found
         """
-
-        if not self.path:
-            raise ValueError("Path not set. Use Sample.set_path() first")
-
         if not self.coordParams or not coord_name in [c.name for c in self.coordParams]:
             raise ValueError(f"Coord {coord_name} not found. Use Sample.add_coords() first")
 
@@ -149,6 +169,7 @@ class Sample(BaseModel):
         )
         return self
 
+    @check_path
     def add_image(
         self,
         tiff: Path,
@@ -156,6 +177,7 @@ class Sample(BaseModel):
         scale: float = 1,
         quality: int = 90,
         translate: tuple[float, float] = (0, 0),
+        defaultChannels: dict[Colors, str] | None = None,
     ):
         """Add an image to the sample
 
@@ -166,9 +188,6 @@ class Sample(BaseModel):
             quality (int, optional): Quality of the image. Defaults to 90.
             translate (tuple[float,float], optional): Translation of the image. Defaults to (0,0).
         """
-        if not self.path:
-            raise ValueError("Path not set. Use Sample.set_path() first")
-
         if not tiff.exists():
             raise ValueError("Tiff file not found")
 
@@ -180,6 +199,7 @@ class Sample(BaseModel):
             names,
             channels=channels,
             mPerPx=geotiff.scale,
+            defaultChannels=defaultChannels,
         )
         return self
 
