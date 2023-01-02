@@ -53,11 +53,11 @@ function genCategoricalColors() {
 
 export function genSpotStyle(type: FeatureType, spotDiamPx: number, scale = true): LiteralStyle {
   const start = spotDiamPx / 64;
-  const ress = [...Array(11).keys()].map((i) => [i + 1, start * 2 ** i]).flat();
+  const ress = [...Array(11).keys()].map((i) => [i, start * 2 ** (i - 1)]).flat();
   const common = scale
     ? {
         symbolType: 'circle',
-        size: ['interpolate', ['exponential', 1.2], ['zoom'], ...ress]
+        size: ['clamp', ['interpolate', ['exponential', 1.2], ['zoom'], ...ress], 2, 65535]
       }
     : {
         symbolType: 'circle',
@@ -71,7 +71,7 @@ export function genSpotStyle(type: FeatureType, spotDiamPx: number, scale = true
     ]);
     // colors[1] += 'ff';
     return {
-      variables: { opacity: 0.8 },
+      variables: { opacity: 0.9 },
       symbol: {
         ...common,
         color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
