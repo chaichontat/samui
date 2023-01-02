@@ -1,13 +1,14 @@
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import pandas as pd
 from pydantic import BaseModel
+from tifffile import imread
 from typing_extensions import Self
 
 from loopy.feature import CoordParams, FeatureAndGroup, FeatureParams, PlainCSVParams
-from loopy.image import ImageParams
-from loopy.utils.utils import Url
+from loopy.image import GeoTiff, ImageParams
+from loopy.utils.utils import Url, remove_dupes
 
 
 class OverlayParams(BaseModel):
@@ -17,6 +18,7 @@ class OverlayParams(BaseModel):
 
 class Sample(BaseModel):
     name: str
+    path: Path | None = None
     imgParams: ImageParams | None = None
     coordParams: list[CoordParams] | None = None
     featParams: list[FeatureParams] | None = None
@@ -24,9 +26,22 @@ class Sample(BaseModel):
     notesMd: Url | None = None
     metadataMd: Url | None = None
 
-    def write(self, path: Path) -> Self:
-        path.mkdir(parents=True, exist_ok=True)
-        (path / "sample.json").write_text(self.json())
+    def __init__(self, **data: Any):
+        if data["path"] is not None:
+            data["path"] = Path(data["path"])
+            data["path"].mkdir(exist_ok=True, parents=True)
+            if not data["path"].is_dir():
+                raise ValueError(f"Path {data['path']} is not a directory")
+        super().__init__(**data)
+
+    def json(self, **kwargs: Any) -> str:
+        return super().json(exclude={"path"}, **kwargs)
+
+    def write(self) -> Self:
+        if not self.path:
+            raise ValueError("Path not set. Use Sample.set_path() first")
+
+        (self.path / "sample.json").write_text(self.json())
         return self
 
     def append(self, other: Self) -> Self:
@@ -48,11 +63,49 @@ class Sample(BaseModel):
     def __add__(self, other: Self) -> Self:
         return self.append(other)
 
+    def set_path(self, path: Path) -> Self:
+        self.path = path
+        path.mkdir(exist_ok=True, parents=True)
+        return self
+
+    def _check_duplicates(self, name: str) -> None:
+        if self.coordParams and name in [c.name for c in self.coordParams]:
+            raise ValueError(f"Duplicate coord name {name}")
+        if self.featParams and name in [f.name for f in self.featParams]:
+            raise ValueError(f"Duplicate feature name {name}")
+
+    def add_coords(self, df: pd.DataFrame, *, name: str, mPerPx: float = 1, size: float = 1e-2) -> Self:
+        """Expects a dataframe with the index as the sample id or idx, x, y as columns
+
+        Args:
+            df (pd.DataFrame): DataFrame to be saved as csv
+            path (Path): Path to the sample directory
+            name (str): Name of the coordinates
+        """
+
+        if not self.path:
+            raise ValueError("Path not set. Use Sample.set_path() first")
+
+        df = remove_dupes(df)
+        if not {"x", "y"}.issubset(df.columns):
+            raise ValueError("x and y must be in columns")
+        if (df.x.isnull() | df.y.isnull()).any():
+            raise ValueError("x and y must not be null")
+        df.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
+
+        self.coordParams = self.coordParams or []
+        if name in [c.name for c in self.coordParams]:
+            self.coordParams = [c for c in self.coordParams if c.name != name]
+
+        self.coordParams.append(
+            CoordParams(url=Url(f"{name}.csv"), name=name, shape="circle", mPerPx=mPerPx, size=size)
+        )
+        return self
+
     def add_csv(
         self,
         df: pd.DataFrame,
         *,
-        path: Path,
         name: str,
         coord_name: str,
         data_type: Literal["categorical", "quantitative"] = "quantitative",
@@ -69,11 +122,14 @@ class Sample(BaseModel):
             ValueError: Coordinate name not found
         """
 
+        if not self.path:
+            raise ValueError("Path not set. Use Sample.set_path() first")
+
         if not self.coordParams or not coord_name in [c.name for c in self.coordParams]:
-            raise ValueError(f"Coord {coord_name} not found")
+            raise ValueError(f"Coord {coord_name} not found. Use Sample.add_coords() first")
 
         coord_params = [c for c in self.coordParams if c.name == coord_name][0]
-        template = pd.read_csv(path / coord_params.url.url, index_col=0)
+        template = pd.read_csv(self.path / coord_params.url.url, index_col=0)
 
         joined = template.join(df).drop(columns=["x", "y"])
         for col in joined.columns:
@@ -82,7 +138,7 @@ class Sample(BaseModel):
             else:
                 joined[col] = joined[col].fillna(-1)
 
-        joined.to_csv(path / f"{name}.csv", index_label="id")
+        joined.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
         self.featParams = self.featParams or []
         # Idempotent
         if name in [f.name for f in self.featParams]:
@@ -90,6 +146,40 @@ class Sample(BaseModel):
 
         self.featParams.append(
             PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=data_type, coordName=coord_name)
+        )
+        return self
+
+    def add_image(
+        self,
+        tiff: Path,
+        channels: list[str] | Literal["rgb"],
+        scale: float = 1,
+        quality: int = 90,
+        translate: tuple[float, float] = (0, 0),
+    ):
+        """Add an image to the sample
+
+        Args:
+            tiff (Path): Path to the tiff file
+            channels (list[str] | Literal['rgb']): List of channels to use or 'rgb'
+            scale (float, optional): Scale of the image. Defaults to 1.
+            quality (int, optional): Quality of the image. Defaults to 90.
+            translate (tuple[float,float], optional): Translation of the image. Defaults to (0,0).
+        """
+        if not self.path:
+            raise ValueError("Path not set. Use Sample.set_path() first")
+
+        if not tiff.exists():
+            raise ValueError("Tiff file not found")
+
+        geotiff = GeoTiff.from_img(imread(tiff), scale=scale, translate=translate, rgb=channels == "rgb")
+        print(geotiff)
+        names = geotiff.transform_tiff(self.path / f"{tiff.stem}.tif", quality=quality)
+
+        self.imgParams = ImageParams.from_names(
+            names,
+            channels=channels,
+            mPerPx=geotiff.scale,
         )
         return self
 

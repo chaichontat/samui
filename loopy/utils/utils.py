@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 
 import numpy as np
+import pandas as pd
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -12,6 +13,10 @@ from typing_extensions import Self
 class ReadonlyModel(BaseModel):
     class Config:
         allow_mutation = False
+
+
+def remove_dupes(df: pd.DataFrame):
+    return df[~df.index.duplicated(keep="first")]
 
 
 class Url(ReadonlyModel):
