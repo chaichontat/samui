@@ -18,6 +18,13 @@ export class ImgData extends Deferrable {
   constructor({ urls, channels, defaultChannels, mPerPx }: ImageParams, autoHydrate = false) {
     super();
     this.urls = urls;
+
+    // WebGL limitation
+    if (Array.isArray(channels) && !channels.every((c) => /^[a-z0-9_]+$/i.test(c))) {
+      console.error('Channel name must be alphanumeric.', channels);
+      alert(`Channel name must be alphanumeric. Current ones are ${channels.join(', ')}`);
+    }
+
     this.channels = channels;
     this.defaultChannels = defaultChannels ?? {};
     this.mPerPx = mPerPx;
