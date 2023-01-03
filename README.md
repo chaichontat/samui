@@ -51,23 +51,23 @@ Loopy also allows for viewing multiple fluorescent image channels that can be to
 Each channel can be adjusted individually for color and maximum intensity.
 Users can zoom in/out using a mouse wheel and can navigate around the sample by clicking and dragging.
 Menus can be hidden using the show/hide button to view more of the sample.
-A screenshot can also be acquired using the camera button. 
+A screenshot can also be acquired using the camera button.
 
 ### Layers
 
 Layers can be added using "+ Add Layer" button.
 For example, in Visium data, each queried gene can be added as a layer.
-The check boxes next to a feature display the border and fill of the spot (Visium) or segmented cell (MERFISH). 
+The check boxes next to a feature display the border and fill of the spot (Visium) or segmented cell (MERFISH).
 
 
 ### Annotation
 
-There are two separate types of annotations in Loopy Browser: 
+There are two separate types of annotations in Loopy Browser:
 
 - ROI annotation
 - feature annotation
 
-Generally, ROI annotation is used for images and feature annotation is used for Visium spots, segmented cells, etc. 
+Generally, ROI annotation is used for images and feature annotation is used for Visium spots, segmented cells, etc.
 You can only work with one type of annotation at a time (i.e. you cannot annotate both ROIs and features at the same time).
 The feature you are trying to annotate must be consistent with the overlay loaded (i.e. if you would like to annotate Visium spots you must be viewing an overlay of gene expression and not an overlay of individual cells segmented from the image).
 Before annotation, you must set a label first using "+ Label".
@@ -79,7 +79,7 @@ Annotated features are outlined in the assigned color when they have been given 
 Colors cannot be changed.
 The overlay can be toggled on and off using "show overlay."
 Annotations can be deleted using the DELETE key on the keyboard.
-The ESC key can be used to exit out of an active annotation. 
+The ESC key can be used to exit out of an active annotation.
 
 #### ROI Annotation
 
@@ -92,13 +92,13 @@ The exported results can be dragged back into the browser.
 #### Feature Annotation
 
 Here, we annotate the features or overlays that are either with the dataset to begin with or imported.
-Examples of features include gene expression, cell segmentation, spot deconvolution results (Visium). 
+Examples of features include gene expression, cell segmentation, spot deconvolution results (Visium).
 The ability to draw ROIs is simply there to facilitate annotation, but each point can be annotated individually as well.
 Following annotation, the outputs are _feature ID and their labels_.
 The exported results can be dragged back into the browser.
 
 
-### Example data 
+### Example data
 
 #### Visium data
 
@@ -107,7 +107,7 @@ The morphology of the tissue section is visualized with hemotoxylin and eosin st
 Using the search bar, you can search for individual genes (e.g. SNAP25, GFAP, MOBP) to display their gene expression (logcounts) in Visium spots across the tissue.
 Density plots are also depicted on the search window and are interactive with polygon annotation (see below).
 Note, genes are one type of feature category.
-If cell segmentation or spot deconvolution data are imported, these represent separate feature categories. 
+If cell segmentation or spot deconvolution data are imported, these represent separate feature categories.
 
 #### MERFISH data
 

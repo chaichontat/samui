@@ -2,12 +2,11 @@ from pathlib import Path
 from typing import Callable, Literal, cast
 
 import pandas as pd
-from anndata import AnnData
 from pydantic import validator
 from scipy.sparse import csc_matrix, csr_matrix
 from typing_extensions import Self
 
-from .utils.utils import ReadonlyModel, Url, Writable, concat, remove_dupes
+from .utils.utils import ReadonlyModel, Url, Writable, concat
 
 FeatureType = Literal["categorical", "quantitative", "singular"]
 
