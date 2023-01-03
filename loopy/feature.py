@@ -7,7 +7,7 @@ from pydantic import validator
 from scipy.sparse import csc_matrix, csr_matrix
 from typing_extensions import Self
 
-from .utils.utils import ReadonlyModel, Url, Writable, concat
+from .utils.utils import ReadonlyModel, Url, Writable, concat, remove_dupes
 
 FeatureType = Literal["categorical", "quantitative", "singular"]
 
@@ -55,6 +55,7 @@ class ChunkedCSVParams(Writable):
     type: Literal["chunkedCSV"] = "chunkedCSV"
     name: str
     url: Url
+    coordName: str
     headerUrl: Url | None = None
     dataType: FeatureType = "quantitative"
     unit: str | None = None
@@ -83,6 +84,9 @@ class ChunkedCSVHeader(ReadonlyModel):
     sparseMode: Literal["record", "array"] | None = None
     coordName: str | None = None
 
+    def write(self, path: Path) -> None:
+        path.write_text(self.json())
+
 
 class FeatureAndGroup(ReadonlyModel):
     feature: str
@@ -92,17 +96,42 @@ class FeatureAndGroup(ReadonlyModel):
 FeatureParams = ChunkedCSVParams | PlainCSVParams
 
 
-def get_compressed_genes(
-    vis: AnnData, coordName: str, mode: Literal["csr", "csc"] = "csc"  # type: ignore
+def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
+    """Add index to feature dataframe and join with template
+
+    Args:
+        template (pd.DataFrame): Coords dataframe
+        feat (pd.DataFrame): Feature dataframe
+
+    Returns:
+        pd.DataFrame: Joined dataframe
+    """
+    if not template.index.is_unique:
+        raise ValueError("Template (coords) index is not unique")
+    if not feat.index.is_unique:
+        raise ValueError("Feature index is not unique")
+
+    joined = template.join(feat, validate="one_to_one").drop(columns=["x", "y"])
+    for col in joined.columns:
+        if joined[col].dtype == "object":
+            joined[col] = joined[col].fillna("")
+        else:
+            joined[col] = joined[col].fillna(-1)
+    assert len(joined) == len(template)
+    return joined
+
+
+def compress_chunked_features(
+    df: pd.DataFrame, coordName: str, mode: Literal["csr", "csc"] = "csc"  # type: ignore
 ) -> tuple[ChunkedCSVHeader, bytearray]:
     if mode == "csr":
-        cs = csr_matrix(vis.X)  # csR
+        cs = csr_matrix(df)  # csR
     elif mode == "csc":
-        cs = csc_matrix(vis.X)  # csC
+        cs = csc_matrix(df)  # csC
     else:
         raise ValueError("Invalid mode")
 
-    names = vis.var_names
+    names = df.columns
 
     indices = cs.indices.astype(int)
     indptr = cs.indptr.astype(int)

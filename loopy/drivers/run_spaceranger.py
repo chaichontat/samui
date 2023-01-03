@@ -10,7 +10,7 @@ import pandas as pd
 from anndata import AnnData
 from scanpy import read_visium
 
-from loopy.feature import ChunkedCSVParams, CoordParams, PlainCSVParams, get_compressed_genes
+from loopy.feature import ChunkedCSVParams, CoordParams, PlainCSVParams, compress_chunked_features
 from loopy.logger import log
 from loopy.sample import OverlayParams, Sample
 from loopy.utils.utils import Url, setwd
@@ -54,7 +54,7 @@ def gen_coords(vis: AnnData, path: Path | str) -> None:  # pyright: ignore [repo
 
 def write_compressed(vis: AnnData, p: Path) -> None:  # pyright: ignore [reportUnknownParameterType]
     orient = "csc"
-    header, bytedict = get_compressed_genes(
+    header, bytedict = compress_chunked_features(
         cast(npt.ArrayLike, vis.X),
         vis.var_names.to_list(),
         coordName="spots",

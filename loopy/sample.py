@@ -2,20 +2,22 @@ from pathlib import Path
 from typing import Any, Callable, Concatenate, Generic, Literal, ParamSpec, Protocol, TypeVar
 
 import pandas as pd
-from anndata import AnnData
 from pydantic import BaseModel
 from tifffile import imread
 from typing_extensions import Self
 
 from loopy.feature import (
+    ChunkedCSVParams,
     CoordParams,
     FeatureAndGroup,
     FeatureParams,
     PlainCSVParams,
-    compress_anndata_features,
+    compress_chunked_features,
+    join_idx,
 )
 from loopy.image import Colors, GeoTiff, ImageParams
-from loopy.utils.utils import Url, remove_dupes
+from loopy.logger import log
+from loopy.utils.utils import Url
 
 
 class OverlayParams(BaseModel):
@@ -101,75 +103,6 @@ class Sample(BaseModel):
             raise ValueError(f"Duplicate feature name {name}")
 
     @check_path
-    def add_coords(self, df: pd.DataFrame, *, name: str, mPerPx: float = 1, size: float = 1e-2) -> Self:
-        """Expects a dataframe with the index as the sample id or idx, x, y as columns
-
-        Args:
-            df (pd.DataFrame): DataFrame to be saved as csv
-            path (Path): Path to the sample directory
-            name (str): Name of the coordinates
-        """
-        df = remove_dupes(df)
-        if not {"x", "y"}.issubset(df.columns):
-            raise ValueError("x and y must be in columns")
-        if (df.x.isnull() | df.y.isnull()).any():
-            raise ValueError("x and y must not be null")
-        df.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
-
-        self.coordParams = self.coordParams or []
-        if name in [c.name for c in self.coordParams]:
-            self.coordParams = [c for c in self.coordParams if c.name != name]
-
-        self.coordParams.append(
-            CoordParams(url=Url(f"{name}.csv"), name=name, shape="circle", mPerPx=mPerPx, size=size)
-        )
-        return self
-
-    @check_path
-    def add_csv(
-        self,
-        df: pd.DataFrame,
-        *,
-        name: str,
-        coord_name: str,
-        data_type: Literal["categorical", "quantitative"] = "quantitative",
-    ) -> Self:
-        """Expects a dataframe with the index as the sample id or idx.
-
-        Args:
-            df (pd.DataFrame): DataFrame to be saved as csv
-            path (Path): Path to the sample directory
-            name (str): Name of the feature
-            coord_name (str): Name of the coordinates to link to
-
-        Raises:
-            ValueError: Coordinate name not found
-        """
-        if not self.coordParams or not coord_name in [c.name for c in self.coordParams]:
-            raise ValueError(f"Coord {coord_name} not found. Use Sample.add_coords() first")
-
-        coord_params = [c for c in self.coordParams if c.name == coord_name][0]
-        template = pd.read_csv(self.path / coord_params.url.url, index_col=0)
-
-        joined = template.join(df).drop(columns=["x", "y"])
-        for col in joined.columns:
-            if joined[col].dtype == "object":
-                joined[col] = joined[col].fillna("")
-            else:
-                joined[col] = joined[col].fillna(-1)
-
-        joined.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
-        self.featParams = self.featParams or []
-        # Idempotent
-        if name in [f.name for f in self.featParams]:
-            self.featParams = [f for f in self.featParams if f.name != name]
-
-        self.featParams.append(
-            PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=data_type, coordName=coord_name)
-        )
-        return self
-
-    @check_path
     def add_image(
         self,
         tiff: Path,
@@ -178,7 +111,7 @@ class Sample(BaseModel):
         quality: int = 90,
         translate: tuple[float, float] = (0, 0),
         defaultChannels: dict[Colors, str] | None = None,
-    ):
+    ) -> Self:
         """Add an image to the sample
 
         Args:
@@ -200,6 +133,111 @@ class Sample(BaseModel):
             channels=channels,
             mPerPx=geotiff.scale,
             defaultChannels=defaultChannels,
+        )
+        return self
+
+    @check_path
+    def add_coords(self, df: pd.DataFrame, *, name: str, mPerPx: float = 1, size: float = 1e-2) -> Self:
+        """Expects a dataframe with the index as the sample id or idx, x, y as columns
+
+        Args:
+            df (pd.DataFrame): DataFrame to be saved as csv
+            path (Path): Path to the sample directory
+            name (str): Name of the coordinates
+        """
+        if not df.index.is_unique:
+            raise ValueError("Coord index not unique")
+        if not {"x", "y"}.issubset(df.columns):
+            raise ValueError("x and y must be in columns")
+        if (df.x.isnull() | df.y.isnull()).any():
+            raise ValueError("x and y must not be null")
+        if df.index.dtype != "object":
+            raise ValueError("Index must be string. This is to prevent subtle bugs.")
+
+        df.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
+
+        self.coordParams = self.coordParams or []
+        if name in [c.name for c in self.coordParams]:
+            self.coordParams = [c for c in self.coordParams if c.name != name]
+
+        self.coordParams.append(
+            CoordParams(url=Url(f"{name}.csv"), name=name, shape="circle", mPerPx=mPerPx, size=size)
+        )
+        return self
+
+    def _join_with_coords(self, df: pd.DataFrame, *, coordName: str) -> pd.DataFrame:
+        # Todo: Check name uniqueness
+        if not df.index.dtype == "object":
+            raise ValueError("Index must be string. This is to prevent subtle bugs.")
+
+        if not self.coordParams or not coordName in [c.name for c in self.coordParams]:
+            raise ValueError(
+                f"Coord name {coordName}. Check coordName or add coords using Sample.add_coords() first"
+            )
+
+        coord_params = [c for c in self.coordParams if c.name == coordName][0]
+        template = pd.read_csv(self.path / coord_params.url.url, index_col=0)
+        return join_idx(template, df)
+
+    def _add_feature(self, fp: FeatureParams):
+        if not self.coordParams or not fp.coordName in [c.name for c in self.coordParams]:
+            raise ValueError(f"Coord {fp.coordName} not found. Use Sample.add_coords() first")
+
+        self.featParams = self.featParams or []
+        # Idempotent
+        if fp.name in [f.name for f in self.featParams]:
+            self.featParams = [f for f in self.featParams if f.name != fp.name]
+        self.featParams.append(fp)
+
+    @check_path
+    def add_csv_feature(
+        self,
+        df: pd.DataFrame,
+        *,
+        name: str,
+        coordName: str,
+        dataType: Literal["categorical", "quantitative"] = "quantitative",
+    ) -> Self:
+        """Expects a dataframe with the index as the sample id or idx.
+
+        Args:
+            df (pd.DataFrame): DataFrame to be saved as csv
+            path (Path): Path to the sample directory
+            name (str): Name of the feature
+            coord_name (str): Name of the coordinates to link to
+
+        Raises:
+            ValueError: Coordinate name not found
+        """
+        self._join_with_coords(df, coordName=coordName).to_csv(
+            self.path / f"{name}.csv", index_label="id", float_format="%.6e"
+        )
+        self._add_feature(
+            PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=dataType, coordName=coordName)
+        )
+        return self
+
+    @check_path
+    def add_chunked_feature(
+        self,
+        df: pd.DataFrame,
+        *,
+        name: str,
+        coordName: str,
+        sparse: bool = True,
+        unit: str | None = None,
+        dataType: Literal["quantitative", "categorical"] = "quantitative",
+    ) -> Self:
+        joined = self._join_with_coords(df, coordName=coordName)
+        joined.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
+
+        header, bytedict = compress_chunked_features(joined, "spots", "csc")
+        header.write(self.path / f"{name}.json")
+        (self.path / name).with_suffix(".bin").write_bytes(bytedict)
+        self._add_feature(
+            ChunkedCSVParams(
+                name=name, url=Url(f"{name}.bin"), unit=unit, dataType=dataType, coordName=coordName
+            )
         )
         return self
 
