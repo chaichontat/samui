@@ -13,6 +13,7 @@ export interface ChunkedCSVParams extends FeatureParams {
   type: 'chunkedCSV';
   url: Url;
   headerUrl?: Url;
+  coordName: string;
   header?: ChunkedCSVHeader;
   dataType: 'categorical' | 'quantitative';
   unit?: string;
@@ -22,7 +23,6 @@ export type ChunkedCSVHeader = {
   length: number;
   names: string[] | null;
   ptr: number[];
-  coordName?: string;
   mPerPx?: number;
   size?: number;
   activeDefault?: string;
@@ -34,12 +34,12 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
     | {
         dataType: 'quantitative' | 'categorical';
         data: CSVRetrievedData;
-        coordName?: string;
         mPerPx?: number;
         size?: number;
       }
     | undefined
   >;
+  coordName: string;
   ptr?: number[];
   names?: Record<string, number>;
   featNames: string[] = [];
@@ -57,11 +57,12 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
   allData?: ArrayBuffer;
 
   constructor(
-    { name, url, headerUrl, header, dataType, unit }: ChunkedCSVParams,
+    { name, url, headerUrl, header, dataType, unit, coordName }: ChunkedCSVParams,
     autoHydrate = false
   ) {
     super();
     this.name = name;
+    this.coordName = coordName;
     this.url = url;
     this.header = header;
     this.headerUrl = headerUrl;
@@ -113,7 +114,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
 
       if (this.ptr![idx] === this.ptr![idx + 1]) {
         return densify
-          ? { dataType: this.dataType, data: densify(null), coordName: this.header?.coordName }
+          ? { dataType: this.dataType, data: densify(null), coordName: this.coordName }
           : undefined;
       }
 
@@ -136,7 +137,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
       return {
         dataType: this.dataType,
         data,
-        coordName: this.header?.coordName,
+        coordName: this.coordName,
         mPerPx: this.header?.mPerPx,
         size: this.header?.size,
         unit: this.unit
