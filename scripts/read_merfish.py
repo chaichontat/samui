@@ -18,12 +18,17 @@ from loopy.utils.utils import remove_dupes
 #   images/
 #   |- micron_to_mosaic_pixel_transform.csv
 #   |- mosaic_DAPI_z{n}.tif
-#   |- mosaic_polyT_z{n}.tif
 #
 # where {n} is a number.
-# This script expects these files in a single directory (use one DAPI and one polyT image file).
+# This script expects these files in a single directory (use one DAPI file).
+# Note that we need to convert the uint16 format in of the DAPI image to uint8
+# for the compression.
 
 sample_dir = Path("temp")
+dapi = (
+    sample_dir / "datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-images-mosaic_DAPI_z0.tif"
+)
+
 #%% Coords
 coords = remove_dupes(
     pd.read_csv(sample_dir / "cell_metadata.csv", index_col=0, dtype=np.float32).rename(
@@ -51,6 +56,7 @@ s = (
     Sample(name="BrainReceptorShowcase1", path=Path("./BrainReceptorShowcase1"))
     .add_coords(coords, name="cellCoords", mPerPx=affine.a, size=2e-6)
     .add_chunked_feature(feat, name="cells", coordName="cellCoords", unit="Log counts", sparse=True)
+    .add_image(dapi, channels=["DAPI"], scale=affine.a, translate=(affine.c, affine.f))
     .set_default_feature(group="cells", feature="Oxgr1")
     .write()
 )
