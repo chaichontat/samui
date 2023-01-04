@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scanpy import read_visium
-from tifffile import imread
 
-from loopy.feature import ChunkedCSVParams, CoordParams, FeatureAndGroup, get_compressed_genes
-from loopy.image import Colors, ImageParams, compress, gen_geotiff
+from loopy.feature import FeatureAndGroup
+from loopy.image import Colors
+from loopy.logger import log
 from loopy.sample import OverlayParams, Sample
 from loopy.utils.utils import Url
 
@@ -60,15 +60,6 @@ def gen_coords(vis: AnnData, path: Path | str) -> None:
     return coords.to_csv(path)
 
 
-def write_compressed(vis: AnnData, p: Path):
-    orient = "csc"
-    header, bytedict = get_compressed_genes(vis, "spots", cast(Literal["csc", "csr"], orient))
-    print(p.absolute())
-
-    p.with_suffix(".json").write_text(header.json().replace(" ", ""))
-    p.with_suffix(".bin").write_bytes(bytedict)
-
-
 def run_spaceranger(
     name: str,
     path: Path,
@@ -101,42 +92,29 @@ def run_spaceranger(
     scales = json.loads((path / name / "outs" / "spatial" / "scalefactors_json.json").read_text())
     mPerPx = 65e-6 / float(scales["spot_diameter_fullres"])
 
-    # Image
-    img = imread(tif)
-    tifs, _ = gen_geotiff(img, name, o, scale=mPerPx)
-    compress(tifs)
-    imgParams = ImageParams(
-        urls=[Url(s.name) for s in tifs],
-        channels=channels,
-        mPerPx=mPerPx,
-        defaultChannels=defaultChannels,
+    sample = (
+        Sample(
+            name=name,
+            path=o,
+            metadataMd=Url("metadata.md"),
+        )
+        .add_image(tif, channels, mPerPx, defaultChannels=defaultChannels)
+        .add_coords(
+            pd.DataFrame(
+                cast(pd.DataFrame, vis.obsm["spatial"]),
+                columns=["x", "y"],
+                index=pd.Series(vis.obs_names, name="id"),
+                dtype="uint32",
+            ),
+            name="spots",
+            mPerPx=mPerPx,
+            size=spotDiam,
+        )
+        .add_anndata_feature(vis, name="genes", coordName="spots", unit="Log counts")
+        .write()
     )
 
-    # Features
-    coordParams = [
-        CoordParams(
-            name="spots", shape="circle", mPerPx=mPerPx, size=spotDiam, url=Url("spotCoords.csv")
-        ).write(o, lambda p: gen_coords(vis, p)),
-    ]
-    featParams = [
-        ChunkedCSVParams(name="genes", url=Url("gene_csc.bin"), unit="Log counts").write(
-            o, lambda p: write_compressed(vis, p)
-        ),
-        # PlainCSVParams(
-        #     name="kmeans", url=Url("kmeans.csv"), dataType="categorical", coordName="spots"
-        # ).write(lambda p: vis.obs.filter(regex="^kmeans", axis=1).to_csv(p, index=False)),
-    ]
-
-    sample = Sample(
-        name=name,
-        metadataMd=Url("metadata.md"),
-        overlayParams=overlayParams,
-        imgParams=imgParams,
-        coordParams=coordParams,
-        featParams=featParams,
-    )
-    (o / "sample.json").write_text(sample.json())
-    print("Done", name)
+    log("Done", name)
     return sample
 
 
