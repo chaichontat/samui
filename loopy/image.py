@@ -205,7 +205,9 @@ class GeoTiff(BaseModel):
 
             return result
 
-        with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(lambda: run(p)) for p in ps]
-            for fut in as_completed(futures):
-                fut.result()  # Raise any exceptions
+        [run(p) for p in ps]
+
+        # with ThreadPoolExecutor() as executor:
+        # futures = [executor.submit(lambda: run(p)) for p in ps]
+        # for fut in as_completed(futures):
+        #     fut.result()  # Raise any exceptions

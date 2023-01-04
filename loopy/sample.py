@@ -16,7 +16,6 @@ from loopy.feature import (
     join_idx,
 )
 from loopy.image import Colors, GeoTiff, ImageParams
-from loopy.logger import log
 from loopy.utils.utils import Url
 
 
@@ -125,7 +124,6 @@ class Sample(BaseModel):
             raise ValueError("Tiff file not found")
 
         geotiff = GeoTiff.from_img(imread(tiff), scale=scale, translate=translate, rgb=channels == "rgb")
-        print(geotiff)
         names = geotiff.transform_tiff(self.path / f"{tiff.stem}.tif", quality=quality)
 
         self.imgParams = ImageParams.from_names(
