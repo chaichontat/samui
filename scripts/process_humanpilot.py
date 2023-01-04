@@ -25,6 +25,7 @@ def download(url: str, path: Path, md5: str) -> None:
         log(f"Skipping {path}...")
         return
 
+    log(f"Downloading {url}...")
     r = requests.get(url, stream=True)
     with open(path, "wb") as f:
         for chunk in r.iter_content(chunk_size=1024):
@@ -36,15 +37,15 @@ def download(url: str, path: Path, md5: str) -> None:
 # Cloned repo from https://github.com/LieberInstitute/HumanPilot/
 tempdir = Path("./temp")
 tempdir.mkdir(exist_ok=True, parents=True)
-log(f"Downloading HumanPilot to {tempdir}...")
+log(f"Downloading the HumanPilot repo to {tempdir.absolute()}...")
 download(
     "https://github.com/LieberInstitute/HumanPilot/archive/89e9002790a8b78c8c7ce06f5331809626386fd5.zip",
     tempdir / "HumanPilot.zip",
-    "f051f97b567444311769c67913261e1f",
+    "1ace2c10447343e23cba35ac9709a7c3",
 )
 with zipfile.ZipFile(tempdir / "HumanPilot.zip", "r") as zip_ref:
     zip_ref.extractall(tempdir)
-humanpilot = tempdir / "HumanPilot-master"
+humanpilot = tempdir / "HumanPilot-89e9002790a8b78c8c7ce06f5331809626386fd5"
 
 # Download sample h5_filtered and images.
 samples = [
@@ -64,19 +65,24 @@ samples = [
 
 # Downloaded `h5_filtered` and `image_full` from https://github.com/LieberInstitute/HumanPilot#raw-data
 datadir = tempdir
-for sample in samples:
-    name = sample["name"]
-    log(f"Downloading {name}...")
+
+
+def download_sample(s: dict[str, str]):
+    name = s["name"]
     download(
         f"https://spatial-dlpfc.s3.us-east-2.amazonaws.com/h5/{name}_filtered_feature_bc_matrix.h5",
         datadir / f"{name}_filtered_feature_bc_matrix.h5",
-        sample["h5md5"],
+        s["h5md5"],
     )
     download(
         f"https://spatial-dlpfc.s3.us-east-2.amazonaws.com/images/{name}_full_image.tif",
         datadir / f"{name}_full_image.tif",
-        sample["imgmd5"],
+        s["imgmd5"],
     )
+
+
+with ThreadPoolExecutor(max_workers=6) as executor:
+    executor.map(download_sample, samples)
 
 #%%
 # Output directory
@@ -155,18 +161,18 @@ for name, s in sample_objs.items():
     df = pd.read_csv(humanpilot / "outputs" / "SpatialDE_clustering" / f"cluster_labels_{name}.csv")
     df["key"] = df["key"].map(lambda x: x.split("_")[1])
     df.set_index("key", inplace=True)
-    s.add_csv(df, path=outdir / name, name="clustering", coord_name="spots", data_type="categorical")
+    s.add_csv_feature(df, name="clustering", coordName="spots", dataType="categorical")
 
     for guess in guesses:
         if name in guess.name:
             df = pd.read_csv(guess).drop(columns=["sample_name"])
             df.set_index("spot_name", inplace=True)
-            s.add_csv(df, path=outdir / name, name="guesses", coord_name="spots", data_type="categorical")
+            s.add_csv_feature(df, name="guesses", coordName="spots", dataType="categorical")
             break
     else:
         print(f"Could not find layer guesses for {name}")
 
     s.set_default_feature(group="clustering", feature="ground_truth")
-    s.write(outdir / s.name)
+    s.write()
 
 # %%
