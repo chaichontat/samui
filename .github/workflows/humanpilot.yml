@@ -1,4 +1,4 @@
-name: Run Data Prep Workflow
+name: Run HumanPilot Workflow
 
 on:
   push:

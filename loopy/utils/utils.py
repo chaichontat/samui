@@ -20,7 +20,9 @@ def remove_dupes(df: pd.DataFrame):
 
 
 class Callback(Protocol):
-    def __call__(self, *args: str) -> None:
+    def __call__(
+        self, *args: str, type_: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    ) -> None:
         ...
 
 

@@ -23,6 +23,8 @@ from loopy.utils.utils import remove_dupes
 # This script expects these files in a single directory (use one DAPI file).
 # Note that we need to convert the uint16 format in of the DAPI image to uint8
 # for the compression.
+# This requires a huge amount of memory since each image is 10.2 GB.
+# To download data from Google Cloud in the command line, use [gsutil](https://cloud.google.com/storage/docs/downloading-objects).
 
 sample_dir = Path("temp")
 dapi = (

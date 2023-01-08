@@ -99,6 +99,7 @@ class GeoTiff(BaseModel):
         )
 
     def transform_tiff(self, path_in: Path, quality: int = 90, logger: Callback = log) -> list[str]:
+        logger(f"Transforming {path_in} to COG.")
         if path_in.suffix != ".tif":
             raise ValueError(f"Expected path to end with .tif, but found {path_in.suffix}")
 
@@ -172,7 +173,7 @@ class GeoTiff(BaseModel):
 
     def _compress(self, ps: list[Path], quality: int = 90, logger: Callback = log) -> None:
         def run(p: Path):
-            log("Writing COG", p.with_suffix(".tif").absolute())
+            logger("Writing COG", p.with_suffix(".tif").as_posix())
             # https://stackoverflow.com/questions/4417546/constantly-print-subprocess-output-while-process-is-running/4417735
             with subprocess.Popen(
                 [
@@ -195,7 +196,7 @@ class GeoTiff(BaseModel):
             ) as popen:
                 assert popen.stdout is not None
                 for stdout_line in iter(popen.stdout.readline, ""):
-                    logger("gdal_translate:", stdout_line.strip())
+                    logger("gdal_translate:", stdout_line.strip(), type_="DEBUG")
 
             if return_code := popen.wait():
                 raise subprocess.CalledProcessError(returncode=return_code, cmd=popen.args)
