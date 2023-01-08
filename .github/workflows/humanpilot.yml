@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
   release:
 
@@ -28,16 +29,18 @@ jobs:
           environment-file: environment.yml
           environment-name: loopy
 
-      - name: Get Test Data
-        run: |
-          curl -o sample.tif https://data.loopybrowser.com/VisiumIF/sample.tif
-
       - name: Install ncurses if Windows
         if: matrix.os == 'windows-latest'
         run: |
           pip install windows-curses
 
+      - name: Cache data
+        uses: actions/cache@v3
+        with:
+          path: scripts/temp
+          key: ${{ hashFiles('scripts/process_humanpilot.py') }}
+
       - name: Test
         run: |
           micromamba install -c conda-forge pytest pytest-cov
-          pytest -s tests
+          cd scripts; python process_humanpilot.py
