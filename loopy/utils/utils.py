@@ -2,7 +2,7 @@
 import gzip
 import json
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, Protocol
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,11 @@ class ReadonlyModel(BaseModel):
 
 def remove_dupes(df: pd.DataFrame):
     return df[~df.index.duplicated(keep="first")]
+
+
+class Callback(Protocol):
+    def __call__(self, *args: str) -> None:
+        ...
 
 
 class Url(ReadonlyModel):

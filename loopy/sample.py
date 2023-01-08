@@ -16,6 +16,7 @@ from loopy.feature import (
     join_idx,
 )
 from loopy.image import Colors, GeoTiff, ImageParams
+from loopy.logger import log
 from loopy.utils.utils import Url
 
 
@@ -121,11 +122,10 @@ class Sample(BaseModel):
             translate (tuple[float,float], optional): Translation of the image. Defaults to (0,0).
         """
         if not tiff.exists():
-            raise ValueError("Tiff file not found")
+            raise ValueError(f"Tiff file {tiff} not found")
 
         geotiff = GeoTiff.from_img(imread(tiff), scale=scale, translate=translate, rgb=channels == "rgb")
         names = geotiff.transform_tiff(self.path / f"{tiff.stem}.tif", quality=quality)
-
         self.imgParams = ImageParams.from_names(
             names,
             channels=channels,
@@ -143,6 +143,8 @@ class Sample(BaseModel):
             path (Path): Path to the sample directory
             name (str): Name of the coordinates
         """
+        log(self.name, "Adding coords", f"'{name}'")
+
         if not df.index.is_unique:
             raise ValueError("Coord index not unique")
         if not {"x", "y"}.issubset(df.columns):
@@ -175,7 +177,10 @@ class Sample(BaseModel):
 
         coord_params = [c for c in self.coordParams if c.name == coordName][0]
         template = pd.read_csv(self.path / coord_params.url.url, index_col=0)
-        return join_idx(template, df)
+        try:
+            return join_idx(template, df)
+        except ValueError as exc:
+            raise ValueError(f"Sample {self.name} join error.") from exc
 
     def _add_feature(self, fp: FeatureParams):
         if not self.coordParams or not fp.coordName in [c.name for c in self.coordParams]:
@@ -207,6 +212,7 @@ class Sample(BaseModel):
         Raises:
             ValueError: Coordinate name not found
         """
+        log(self.name, "Adding csv feature", f"'{name}'")
         self._join_with_coords(df, coordName=coordName).to_csv(
             self.path / f"{name}.csv", index_label="id", float_format="%.6e"
         )
@@ -226,10 +232,12 @@ class Sample(BaseModel):
         unit: str | None = None,
         dataType: Literal["quantitative", "categorical"] = "quantitative",
     ) -> Self:
+        log(self.name, "Adding chunked feature", f"'{name}'")
         joined = self._join_with_coords(df, coordName=coordName)
-        joined.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
-
-        header, bytedict = compress_chunked_features(joined, "spots", "csc")
+        header, bytedict = compress_chunked_features(
+            joined, "spots", "csc", logger=lambda *args: log(self.name, *args)
+        )
+        log(f"Writing compressed chunks for {name}:", f"{len(bytedict)} bytes")
         header.write(self.path / f"{name}.json")
         (self.path / name).with_suffix(".bin").write_bytes(bytedict)
         self._add_feature(

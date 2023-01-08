@@ -8,6 +8,7 @@ dependencies:
   - pydantic
   - pyqt
   - rasterio
+  - requests
   - rich
   - rich-click
   - scanpy

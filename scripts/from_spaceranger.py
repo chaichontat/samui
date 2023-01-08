@@ -1,4 +1,3 @@
-#%%
 import json
 from pathlib import Path
 from shutil import copy
@@ -9,10 +8,8 @@ import pandas as pd
 from anndata import AnnData
 from scanpy import read_visium
 
-from loopy.feature import FeatureAndGroup
 from loopy.image import Colors
-from loopy.logger import log
-from loopy.sample import OverlayParams, Sample
+from loopy.sample import Sample
 from loopy.utils.utils import Url
 
 #%% [markdown]
@@ -21,7 +18,6 @@ from loopy.utils.utils import Url
 # The out directory contains folders of processed images and features.
 # These can be fed directly to "Add samples" in the Loopy Browser.
 
-#%%
 analyses = {
     "cluster_graph": "outs/analysis/clustering/graphclust/clusters.csv",
     "kmeans2": "outs/analysis/clustering/kmeans_2_clusters/clusters.csv",
@@ -69,7 +65,6 @@ def run_spaceranger(
     channels: list[str] | Literal["rgb"],
     defaultChannels: dict[Colors, str] | None = None,
     spotDiam: float = 55e-6,
-    overlayParams: OverlayParams | None = None,
 ) -> Sample:
 
     o = Path(out / name)
@@ -113,21 +108,4 @@ def run_spaceranger(
         .add_chunked_feature(vis.to_df(), name="genes", coordName="spots", unit="Log counts")
         .write()
     )
-
-    log("Done", name)
     return sample
-
-
-#%%
-if __name__ == "__main__":
-    path = Path("C:\\Users\\Chaichontat\\GitHub\\loopynew\\scripts\\out")
-    run_spaceranger(
-        "151673",
-        path,
-        path / "151673" / "outs" / "151673_full_image.tif",
-        path / "outs",
-        channels="rgb",
-        overlayParams=OverlayParams(defaults=[FeatureAndGroup(feature="GFAP", group="genes")]),
-    )
-
-# %%
