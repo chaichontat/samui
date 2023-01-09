@@ -44,6 +44,31 @@ You could share your files with your collaborators using your own file server or
 More reasonably priced alternatives include [Cloudflare R2](https://www.cloudflare.com/products/r2/) and [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html).
 The images are available instantly and without any installation on their end!
 
+#### Python API
+
+The main object is `Sample` from `loopy.sample`.
+This is a Pydantic [model](https://docs.pydantic.dev/usage/models/) which provides nice boilerplates.
+
+The object is chainable, which means that all methods return the object.
+The methods are also lazy, which means that the actual data processing only happens when
+the `write` method is called.
+
+For example, [scripts/process_merfish.py](scripts/process_merfish.py)
+
+```
+(
+    Sample(name="BrainReceptorShowcase1", path=out)
+    .add_coords(coords, name="cellCoords", mPerPx=1e-6, size=2e-5)
+    .add_chunked_feature(feat, name="cells", coordName="cellCoords", unit="Log counts", sparse=True)
+    .add_image(dapi, channels=["DAPI"], scale=affine.a, translate=(affine.c, affine.f))
+    .set_default_feature(group="cells", feature="Oxgr1")
+    .write()
+)
+```
+
+This creates a sample folder that has an image along with a list of chunked features at `out/BrainReceptorShowcase1`.
+This folder can be dragged directly into Loopy Browser for visualization.
+
 ### Annotation
 
 There are two separate types of annotations in Loopy Browser.
