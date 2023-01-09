@@ -15,6 +15,7 @@ from loopy.feature import (
     join_idx,
 )
 from loopy.image import Colors, GeoTiff, ImageParams
+from loopy.logger import log
 from loopy.utils.utils import Url
 
 
