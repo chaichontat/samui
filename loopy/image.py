@@ -11,10 +11,11 @@ import rasterio
 from pydantic import BaseModel
 from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
+from tifffile import imread
 from typing_extensions import Self
 
 from loopy.logger import log
-from loopy.utils.utils import ReadonlyModel, Url
+from loopy.utils.utils import Callback, ReadonlyModel, Url
 
 Meter = Annotated[float, "meter"]
 Colors = Literal["blue", "green", "red", "magenta", "yellow", "cyan", "white"]
@@ -50,6 +51,12 @@ class GeoTiff(BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
+    def from_tiff(
+        cls, tif: Path, *, scale: float, translate: tuple[float, float] = (0, 0), rgb: bool = False
+    ) -> Self:
+        return cls.from_img(imread(tif), scale=scale, translate=translate, rgb=rgb)
+
+    @classmethod
     def from_img(
         cls,
         img: npt.NDArray,
@@ -80,7 +87,7 @@ class GeoTiff(BaseModel):
             ...
         elif img.dtype == np.uint16:
             log("Converting uint16 to uint8.", type_="WARNING")
-            dived = np.divide(img, 256, casting="unsafe")
+            dived = np.divide(img, 256, casting="unsafe")  # So that this remains an uint16.
             del img
             img = dived.astype(np.uint8)
             del dived
@@ -98,23 +105,29 @@ class GeoTiff(BaseModel):
             rgb=rgb,
         )
 
-    def transform_tiff(self, path_in: Path, quality: int = 90) -> list[str]:
+    def transform_tiff(
+        self, path_in: Path, quality: int = 90, logger: Callback = log, save_uncompressed: bool = False
+    ) -> tuple[list[str], Callable[[], None]]:
+        logger(f"Transforming {path_in} to COG.")
         if path_in.suffix != ".tif":
             raise ValueError(f"Expected path to end with .tif, but found {path_in.suffix}")
 
         names, _, chanlist = self._gen_zcounts(self.chans)
         names = [path_in.stem + name + ".tif" for name in names]
 
-        for name, c in zip(names, chanlist):
-            self._write_uncompressed_geotiff(
-                path=path_in.with_name(name),
-                channels=c,
-                transform=rasterio.Affine(
-                    self.scale, 0, self.translate[0], 0, -self.scale, -self.translate[1]
-                ),
-            )
-        self._compress([path_in.with_name(name) for name in names], quality=quality)
-        return names
+        def run():
+            for name, c in zip(names, chanlist):
+                self._write_uncompressed_geotiff(
+                    path=path_in.with_name(name),
+                    channels=c,
+                    transform=rasterio.Affine(
+                        self.scale, 0, self.translate[0], 0, -self.scale, -self.translate[1]
+                    ),
+                )
+
+            self._compress([path_in.with_name(name) for name in names], quality=quality, logger=logger)
+
+        return names, run
 
     @staticmethod
     def _gen_zcounts(nc: int):
@@ -135,7 +148,6 @@ class GeoTiff(BaseModel):
             chanlist = [list(range(4 * i, 4 * (i + 1))) for i in range(nc // 4)] + (
                 [list(range(4 * (nc // 4), nc))] if nc % 4 else []
             )
-        print(chanlist)
 
         return names, ncounts, chanlist
 
@@ -146,7 +158,9 @@ class GeoTiff(BaseModel):
             return self.img
         return self.img[i] if not self.zlast else self.img[:, :, i]
 
-    def _write_uncompressed_geotiff(self, path: Path, channels: list[int], transform: rasterio.Affine):
+    def _write_uncompressed_geotiff(
+        self, path: Path, channels: list[int], transform: rasterio.Affine, logger: Callback = log
+    ):
         dst: DatasetWriter
         # Not compressing here since we cannot control the compression level.
         assert 0 < len(channels) <= 4
@@ -163,17 +177,19 @@ class GeoTiff(BaseModel):
             crs="EPSG:32648",  # meters
             tiled=True,
         ) as dst:  # type: ignore
-            log("Writing uncompressed GeoTIFF", path)
+            logger("Writing uncompressed GeoTIFF", path.as_posix())
             for idx_out, idx_in in enumerate(channels, 1):
                 dst.write(self._get_slide(idx_in), idx_out)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
         assert path.with_suffix(".tif_").exists()
 
-    def _compress(self, ps: list[Path], quality: int = 90) -> None:
+    def _compress(
+        self, ps: list[Path], quality: int = 90, logger: Callback = log, save_uncompressed: bool = False
+    ) -> None:
         def run(p: Path):
-            out = []
-            log(p.with_suffix(".tif_").as_posix())
-            result = subprocess.run(
+            logger("Writing COG", p.with_suffix(".tif").as_posix())
+            # https://stackoverflow.com/questions/4417546/constantly-print-subprocess-output-while-process-is-running/4417735
+            with subprocess.Popen(
                 [
                     "gdal_translate",
                     p.with_suffix(".tif_").as_posix(),
@@ -188,22 +204,22 @@ class GeoTiff(BaseModel):
                     f"JPEG_QUALITY={int(quality)}",
                 ],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                check=True,
-            )
-            if result.stderr:
-                raise subprocess.CalledProcessError(
-                    returncode=result.returncode, cmd=result.args, stderr=result.stderr
-                )
-            out.append(result.stdout.decode("utf-8"))
-            log("Writing COG", p.with_suffix(".tif").absolute())
+                stderr=subprocess.PIPE,
+                bufsize=1,
+                universal_newlines=True,
+            ) as popen:
+                assert popen.stdout is not None
+                for stdout_line in iter(popen.stdout.readline, ""):
+                    logger("gdal_translate:", stdout_line.strip(), type_="DEBUG")
+
+            if return_code := popen.wait():
+                raise subprocess.CalledProcessError(returncode=return_code, cmd=popen.args)
 
             if p.with_suffix(".tif").exists():
-                p.with_suffix(".tif_").unlink()
+                if not save_uncompressed:
+                    p.with_suffix(".tif_").unlink()
             else:
                 raise FileNotFoundError(f"Could not generate COG {p.with_suffix('.tif').absolute()}")
-
-            return result
 
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(lambda: run(p)) for p in ps]

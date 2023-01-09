@@ -20,7 +20,11 @@
 
   export let sample: Sample | undefined;
   // let currSample: string;
-  $: sample?.hydrate().then(updateSample).catch(console.error);
+  $: sample
+    ?.hydrate()
+    .then(updateSample)
+    .catch((e) => alert(e));
+
   $: showImgControl = $userState.showImgControl;
   $: console.log(sample);
 

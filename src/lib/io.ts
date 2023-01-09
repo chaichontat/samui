@@ -14,7 +14,10 @@ export async function convertLocalToNetwork(
 }
 
 export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
-  return await handle.getFileHandle(name).then((fh) => fh.getFile());
+  return await handle
+    .getFileHandle(name)
+    .then((fh) => fh.getFile())
+    .catch(() => alert(`Cannot get file ${name}`));
 }
 
 export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { download: boolean }) {

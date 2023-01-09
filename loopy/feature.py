@@ -6,7 +6,9 @@ from pydantic import validator
 from scipy.sparse import csc_matrix, csr_matrix
 from typing_extensions import Self
 
-from .utils.utils import ReadonlyModel, Url, Writable, concat
+from loopy.logger import log
+
+from .utils.utils import Callback, ReadonlyModel, Url, Writable, concat
 
 FeatureType = Literal["categorical", "quantitative", "singular"]
 
@@ -36,8 +38,8 @@ class CoordParams(Writable):
     name: str
     shape: Literal["circle"]
     url: Url
-    mPerPx: float | None = None
-    size: float | None = None
+    mPerPx: float
+    size: float
 
 
 class PlainCSVParams(Writable):
@@ -47,7 +49,6 @@ class PlainCSVParams(Writable):
     dataType: FeatureType = "quantitative"
     coordName: str | None = None
     unit: str | None = None
-    size: float | None = None
 
 
 class ChunkedCSVParams(Writable):
@@ -106,22 +107,23 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Joined dataframe
     """
     if not template.index.is_unique:
-        raise ValueError("Template (coords) index is not unique")
+        raise ValueError(
+            f"Template (coords) index is not unique. {template.index[template.index.duplicated()]} duplicated"
+        )
     if not feat.index.is_unique:
-        raise ValueError("Feature index is not unique")
+        raise ValueError(f"Feature index is not unique. {feat.index[feat.index.duplicated()]} duplicated")
 
     joined = template.join(feat, validate="one_to_one").drop(columns=["x", "y"])
-    for col in joined.columns:
-        if joined[col].dtype == "object":
-            joined[col] = joined[col].fillna("")
-        else:
-            joined[col] = joined[col].fillna(-1)
+    joined.fillna(-1, inplace=True)
     assert len(joined) == len(template)
     return joined
 
 
 def compress_chunked_features(
-    df: pd.DataFrame, coordName: str, mode: Literal["csr", "csc"] = "csc"  # type: ignore
+    df: pd.DataFrame,
+    coordName: str,
+    mode: Literal["csr", "csc"] = "csc",
+    logger: Callback = log,
 ) -> tuple[ChunkedCSVHeader, bytearray]:
     if mode == "csr":
         cs = csr_matrix(df)  # csR
@@ -139,6 +141,9 @@ def compress_chunked_features(
     objs = []
 
     for i in range(len(indptr) - 1):
+        if i % 1000 == 0:
+            logger(f"Processing {i} of {len(indptr) - 1} chunks")
+
         if (indices[indptr[i] : indptr[i + 1]]).size == 0:
             objs.append(None)
         else:
@@ -149,9 +154,12 @@ def compress_chunked_features(
                         "value": [round(x, 3) for x in data[indptr[i] : indptr[i + 1]].tolist()],
                     }
                 )
+                .to_csv(index=False)
+                .encode()
             )
 
-    ptr, outbytes = concat(objs, lambda x: x.to_csv(index=False).encode())
+    logger("Concatenating and compressing chunks")
+    ptr, outbytes = concat(objs)
     match mode:
         case "csr":
             length = cs.shape[1]

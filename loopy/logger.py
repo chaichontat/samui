@@ -2,12 +2,14 @@ import logging
 from typing import Any, Literal
 
 from rich.logging import RichHandler
+from rich.traceback import install
 
 FORMAT = "%(message)s"
 
 
 def setup_logging() -> None:
     """Setup logging."""
+    install()
     if not logging.root.handlers:
         logging.basicConfig(
             level="INFO",

@@ -37,7 +37,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
   // WebGLSpots only gets created after mount.
   constructor(map: Mapp) {
-    super(map, genSpotStyle('categorical', 2));
+    super(map, genSpotStyle('categorical', 2e-6, map.mPerPx ?? 2e-6));
     this.uid = rand();
     this._currStyle = 'categorical';
     this.outline = new CanvasSpots(this.map);
@@ -53,12 +53,16 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     if (!this.coords) throw new Error('Must run update first.');
     if (style === this._currStyle && this.currPx === this.coords.sizePx) return;
 
+    // If image is loaded, view is based on that of image, which means zoom level
+    // is tied to the mPerPx of the image.
+    const mPerPx = this.map.mPerPx ?? this.coords.mPerPx;
+
     switch (style) {
       case 'quantitative':
-        this.style = genSpotStyle('quantitative', this.coords.sizePx);
+        this.style = genSpotStyle('quantitative', this.coords.size, mPerPx);
         break;
       case 'categorical':
-        this.style = genSpotStyle('categorical', this.coords.sizePx);
+        this.style = genSpotStyle('categorical', this.coords.size, mPerPx);
         break;
       default:
         throw new Error(`Unknown style: ${style}`);
@@ -173,6 +177,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         // From the 128x division of the highest tile level.
         // The same number of resolutions is needed to maintain correct ratios for WebGLPointsLayer.
         // 10 layers of tiling.
+        // From genSpotStyle. Nasty logic duplication.
         const start = coords.mPerPx * 128;
         const ress = [...Array(10).keys()].map((i) => start * 2 ** -i);
 
