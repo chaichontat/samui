@@ -51,9 +51,27 @@ function genCategoricalColors() {
   return colors;
 }
 
-export function genSpotStyle(type: FeatureType, spotDiamPx: number, scale = true): LiteralStyle {
-  const start = spotDiamPx / 64;
-  const ress = [...Array(11).keys()].map((i) => [i, start * 2 ** (i - 1)]).flat();
+/**
+ * Generate a style for a feature layer.
+ * @param type Feature type
+ * @param spotDiamPx Diameter of a spot in pixels
+ * @param imgmPerPx Resolution of the image in meters per pixel.
+ *        Necessary to know the base resolution as openlayers operate in "zoom levels"
+ *        Can be undefined if no image is loaded.
+ * @param scale Whether to scale the features with zoom
+ */
+export function genSpotStyle(
+  type: FeatureType,
+  spotSizeMeter: number,
+  mPerPx: number,
+  scale = true
+): LiteralStyle {
+  // From mapp.ts
+  // Lowest zoom level is 128x the native res of img.
+  // Highest zoom level is 1/4x the native res of img.
+  // The factor of 64 is 128 and the conversion of diameter to radius.
+  const sizePx = spotSizeMeter / (mPerPx * 64);
+  const ress = [...Array(10).keys()].map((i) => [i, sizePx * 2 ** (i - 1)]).flat();
   const common = scale
     ? {
         symbolType: 'circle',
@@ -61,7 +79,7 @@ export function genSpotStyle(type: FeatureType, spotDiamPx: number, scale = true
       }
     : {
         symbolType: 'circle',
-        size: spotDiamPx
+        size: 2
       };
 
   if (type === 'quantitative') {

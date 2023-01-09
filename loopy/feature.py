@@ -38,8 +38,8 @@ class CoordParams(Writable):
     name: str
     shape: Literal["circle"]
     url: Url
-    mPerPx: float | None = None
-    size: float | None = None
+    mPerPx: float
+    size: float
 
 
 class PlainCSVParams(Writable):
@@ -49,7 +49,6 @@ class PlainCSVParams(Writable):
     dataType: FeatureType = "quantitative"
     coordName: str | None = None
     unit: str | None = None
-    size: float | None = None
 
 
 class ChunkedCSVParams(Writable):

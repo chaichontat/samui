@@ -15,7 +15,7 @@ export interface CoordsParams {
   shape: Shape;
   mPerPx: number;
   url?: Url;
-  size?: number;
+  size: number;
   pos?: Coord[];
   addedOnline?: boolean;
   sample?: number;
@@ -27,7 +27,7 @@ export class CoordsData extends Deferrable {
   shape: Shape;
   pos?: Coord[];
   _posOri?: Coord[];
-  size?: number;
+  size: number;
   mPerPx: number;
   addedOnline: boolean;
   // Subsample if more than 100k points.
