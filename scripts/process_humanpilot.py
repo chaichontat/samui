@@ -5,10 +5,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from shutil import copy
 
-import from_spaceranger as fs
 import pandas as pd
 import requests
 
+from loopy.drivers.spaceranger import run_spaceranger
 from loopy.logger import log, setup_logging
 from loopy.sample import Sample
 
@@ -119,7 +119,7 @@ sample_objs: dict[str, Sample] = dict()
 with ThreadPoolExecutor(max_workers=4) as pool:
     futures = [
         pool.submit(
-            fs.run_spaceranger,
+            run_spaceranger,
             name=sample["name"],
             path=tempdir,
             tif=datadir / f"{sample['name']}_full_image.tif",
