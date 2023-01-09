@@ -1,12 +1,11 @@
 # pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 import gzip
 import json
-import os
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Generator, Literal
+from typing import Any, Callable, Literal, Protocol
 
 import numpy as np
+import pandas as pd
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -14,6 +13,17 @@ from typing_extensions import Self
 class ReadonlyModel(BaseModel):
     class Config:
         allow_mutation = False
+
+
+def remove_dupes(df: pd.DataFrame):
+    return df[~df.index.duplicated(keep="first")]
+
+
+class Callback(Protocol):
+    def __call__(
+        self, *args: str, type_: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    ) -> None:
+        ...
 
 
 class Url(ReadonlyModel):
@@ -31,19 +41,9 @@ class Url(ReadonlyModel):
 class Writable(ReadonlyModel):
     url: Url
 
-    def write(self, f: Callable[[Path], None]) -> Self:
-        f(Path(self.url.url))
+    def write(self, path: Path, f: Callable[[Path], None]) -> Self:
+        f(path / Path(self.url.url))
         return self
-
-
-@contextmanager
-def setwd(path: Path) -> Generator[None, None, None]:
-    ori = Path().absolute()
-    try:
-        os.chdir(path)
-        yield
-    finally:
-        os.chdir(ori)
 
 
 def concat_json(objs: list[Any]) -> tuple[np.ndarray, bytearray]:

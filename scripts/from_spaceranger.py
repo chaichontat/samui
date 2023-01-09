@@ -1,6 +1,4 @@
-#%%
 import json
-import threading
 from pathlib import Path
 from shutil import copy
 from typing import Literal, cast
@@ -9,12 +7,10 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scanpy import read_visium
-from tifffile import imread
 
-from loopy.feature import ChunkedCSVParams, CoordParams, FeatureAndGroup, get_compressed_genes
-from loopy.image import Colors, ImageParams, compress, gen_geotiff
-from loopy.sample import OverlayParams, Sample
-from loopy.utils.utils import Url, setwd
+from loopy.image import Colors
+from loopy.sample import Sample
+from loopy.utils.utils import Url
 
 #%% [markdown]
 
@@ -22,7 +18,6 @@ from loopy.utils.utils import Url, setwd
 # The out directory contains folders of processed images and features.
 # These can be fed directly to "Add samples" in the Loopy Browser.
 
-#%%
 analyses = {
     "cluster_graph": "outs/analysis/clustering/graphclust/clusters.csv",
     "kmeans2": "outs/analysis/clustering/kmeans_2_clusters/clusters.csv",
@@ -61,25 +56,15 @@ def gen_coords(vis: AnnData, path: Path | str) -> None:
     return coords.to_csv(path)
 
 
-def write_compressed(vis: AnnData, p: Path):
-    orient = "csc"
-    header, bytedict = get_compressed_genes(vis, "spots", cast(Literal["csc", "csr"], orient))
-    print(p.absolute())
-
-    p.with_suffix(".json").write_text(header.json().replace(" ", ""))
-    p.with_suffix(".bin").write_bytes(bytedict)
-
-
 def run_spaceranger(
     name: str,
     path: Path,
     tif: Path,
     out: Path,
     *,
-    channels: list[str],
+    channels: list[str] | Literal["rgb"],
     defaultChannels: dict[Colors, str] | None = None,
     spotDiam: float = 55e-6,
-    overlayParams: OverlayParams | None = None,
 ) -> Sample:
 
     o = Path(out / name)
@@ -102,57 +87,25 @@ def run_spaceranger(
     scales = json.loads((path / name / "outs" / "spatial" / "scalefactors_json.json").read_text())
     mPerPx = 65e-6 / float(scales["spot_diameter_fullres"])
 
-    # Image
-    img = imread(tif)
-    tifs, _ = gen_geotiff(img, name, o, scale=mPerPx)
-    compress(tifs)
-    imgParams = ImageParams(
-        urls=[Url(s.name) for s in tifs],
-        channels=channels,
-        mPerPx=mPerPx,
-        defaultChannels=defaultChannels,
+    sample = (
+        Sample(
+            name=name,
+            path=o,
+            metadataMd=Url("metadata.md"),
+        )
+        .add_image(tif, channels, mPerPx, defaultChannels=defaultChannels)
+        .add_coords(
+            pd.DataFrame(
+                cast(pd.DataFrame, vis.obsm["spatial"]),
+                columns=["x", "y"],
+                index=pd.Series(vis.obs_names, name="id"),
+                dtype="uint32",
+            ),
+            name="spots",
+            mPerPx=mPerPx,
+            size=spotDiam,
+        )
+        .add_chunked_feature(vis.to_df(), name="genes", coordName="spots", unit="Log counts")
+        .write()
     )
-
-    # Features
-    with threading.Lock():
-        with setwd(o):
-            coordParams = [
-                CoordParams(
-                    name="spots", shape="circle", mPerPx=mPerPx, size=spotDiam, url=Url("spotCoords.csv")
-                ).write(lambda p: gen_coords(vis, p)),
-            ]
-            featParams = [
-                ChunkedCSVParams(name="genes", url=Url("gene_csc.bin"), unit="Log counts").write(
-                    lambda p: write_compressed(vis, p)
-                ),
-                # PlainCSVParams(
-                #     name="kmeans", url=Url("kmeans.csv"), dataType="categorical", coordName="spots"
-                # ).write(lambda p: vis.obs.filter(regex="^kmeans", axis=1).to_csv(p, index=False)),
-            ]
-
-    sample = Sample(
-        name=name,
-        metadataMd=Url("metadata.md"),
-        overlayParams=overlayParams,
-        imgParams=imgParams,
-        coordParams=coordParams,
-        featParams=featParams,
-    )
-    (o / "sample.json").write_text(sample.json())
-    print("Done", name)
     return sample
-
-
-#%%
-if __name__ == "__main__":
-    path = Path("C:\\Users\\Chaichontat\\GitHub\\loopynew\\scripts\\out")
-    run_spaceranger(
-        "151673",
-        path,
-        path / "151673" / "outs" / "151673_full_image.tif",
-        path / "outs",
-        channels="rgb",
-        overlayParams=OverlayParams(defaults=[FeatureAndGroup(feature="GFAP", group="genes")]),
-    )
-
-# %%
