@@ -26,42 +26,28 @@ from loopy.utils.utils import remove_dupes
 # This requires a huge amount of memory since each image is 10.2 GB.
 # To download data from Google Cloud in the command line, use [gsutil](https://cloud.google.com/storage/docs/downloading-objects).
 
-sample_dir = Path(r"C:\Users\Chaichontat\GitHub\loopynew\static")
-out = Path("./BrainReceptorShowcase_Slice1_Replicate1")
-dapi = sample_dir / "dapi_uint8.tif"
-
-cell_by_gene = (
-    sample_dir / "datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-cell_by_gene_S1R1.csv"
-)
-
-cell_metadata = (
-    sample_dir / "datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-cell_metadata_S1R1.csv"
-)
-
-# Affine matrix
-scale = np.loadtxt(
-    sample_dir
-    / "datasets_mouse_brain_map_BrainReceptorShowcase_Slice1_Replicate1_images_micron_to_mosaic_pixel_transform.csv"
+sample_dir = Path("temp")
+dapi = (
+    sample_dir / "datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-images-mosaic_DAPI_z0.tif"
 )
 
 #%% Coords
 coords = remove_dupes(
-    pd.read_csv(cell_metadata, index_col=0, dtype=np.float32).rename(
+    pd.read_csv(sample_dir / "cell_metadata.csv", index_col=0, dtype=np.float32).rename(
         columns={"center_x": "x", "center_y": "y"}
     )[["x", "y"]]
 )
 
 coords.index = coords.index.map("{:.0f}".format)
 
-
+# Affine matrix
+scale = np.loadtxt(sample_dir / "micron_to_mosaic_pixel_transform.csv")
 # Inverse transform
-scalenew = scale.copy()
-scalenew[:2, :2] *= 1e6
-affine = ~Affine(*scalenew[:2].flatten())
+affine = ~Affine(*scale[:2].flatten() * 1e6)
 
 feat = remove_dupes(
     pd.read_csv(
-        cell_by_gene,
+        sample_dir / "cell_by_gene.csv",
         index_col=0,
         dtype=np.float32,
     )
@@ -69,14 +55,10 @@ feat = remove_dupes(
 feat.index = feat.index.map("{:.0f}".format)
 
 s = (
-    Sample(name="BrainReceptorShowcase1", path=out)
-    .add_coords(coords, name="cellCoords", mPerPx=1e-6, size=2e-5)
+    Sample(name="BrainReceptorShowcase1", path=Path("./BrainReceptorShowcase1"))
+    .add_coords(coords, name="cellCoords", mPerPx=affine.a, size=2e-6)
     .add_chunked_feature(feat, name="cells", coordName="cellCoords", unit="Log counts", sparse=True)
-    # .do_not_execute_previous()
-    .add_image(
-        dapi, channels=["DAPI"], scale=affine.a, translate=(affine.c, affine.f), save_uncompressed=True
-    )
-    # .do_not_execute_previous()
+    .add_image(dapi, channels=["DAPI"], scale=affine.a, translate=(affine.c, affine.f))
     .set_default_feature(group="cells", feature="Oxgr1")
     .write()
 )
