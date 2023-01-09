@@ -55,7 +55,7 @@ the `write` method is called.
 
 For example, [scripts/process_merfish.py](scripts/process_merfish.py)
 
-```
+```python
 (
     Sample(name="BrainReceptorShowcase1", path=out)
     .add_coords(coords, name="cellCoords", mPerPx=1e-6, size=2e-5)
