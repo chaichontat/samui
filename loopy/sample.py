@@ -3,7 +3,6 @@ from typing import Any, Callable, Concatenate, Generic, Literal, ParamSpec, Prot
 
 import pandas as pd
 from pydantic import BaseModel
-from tifffile import imread
 from typing_extensions import Self
 
 from loopy.feature import (
@@ -39,22 +38,27 @@ class Method(Protocol, Generic[P, R]):
 
 class Sample(BaseModel):
     name: str
-    path: Path = None  # type: ignore  check_path removes the unhappy path.
     imgParams: ImageParams | None = None
     coordParams: list[CoordParams] | None = None
     featParams: list[FeatureParams] | None = None
     overlayParams: OverlayParams | None = None
     notesMd: Url | None = None
     metadataMd: Url | None = None
+    path: Path = None  # type: ignore  check_path removes the unhappy path.
+    queue_: list[Callable[[], None]] = []
 
     @staticmethod
-    def check_path(func: Callable[Concatenate[Any, P], R]) -> Method[P, R]:
+    def check_path(func: Callable[Concatenate["Sample", P], R]) -> Method[P, R]:
         def wrapper(self: "Sample", *args: P.args, **kwargs: P.kwargs) -> R:
             if self.path is None:
                 raise ValueError("Path not set. Use Sample.set_path() first")
             return func(self, *args, **kwargs)
 
         return wrapper
+
+    def do_not_execute_previous(self) -> Self:
+        self.queue_.pop()
+        return self
 
     def __init__(self, **data: Any):
         if data["path"] is not None:
@@ -65,11 +69,18 @@ class Sample(BaseModel):
         super().__init__(**data)
 
     def json(self, **kwargs: Any) -> str:
-        return super().json(exclude={"path"}, **kwargs)
+        return super().json(exclude={"path", "queue_"}, **kwargs)
 
     @check_path
-    def write(self) -> Self:
+    def write(self, execute: bool = True) -> Self:
+        """Write sample.json to disk"""
+        if execute:
+            log(f"'{self.name}' Executing queued functions")
+            for f in self.queue_:
+                f()
+            self.queue_ = []
         (self.path / "sample.json").write_text(self.json())
+        log(f"'{self.name}' written to {self.path}")
         return self
 
     def append(self, other: Self) -> Self:
@@ -111,6 +122,7 @@ class Sample(BaseModel):
         quality: int = 90,
         translate: tuple[float, float] = (0, 0),
         defaultChannels: dict[Colors, str] | None = None,
+        save_uncompressed: bool = False,
     ) -> Self:
         """Add an image to the sample
 
@@ -121,17 +133,23 @@ class Sample(BaseModel):
             quality (int, optional): Quality of the image. Defaults to 90.
             translate (tuple[float,float], optional): Translation of the image. Defaults to (0,0).
         """
+
         if not tiff.exists():
             raise ValueError(f"Tiff file {tiff} not found")
 
-        geotiff = GeoTiff.from_img(imread(tiff), scale=scale, translate=translate, rgb=channels == "rgb")
-        names = geotiff.transform_tiff(self.path / f"{tiff.stem}.tif", quality=quality)
+        geotiff = GeoTiff.from_tiff(tiff, scale=scale, translate=translate, rgb=channels == "rgb")
+        names, transform_func = geotiff.transform_tiff(
+            self.path / f"{tiff.stem}.tif", quality=quality, save_uncompressed=save_uncompressed
+        )
+
         self.imgParams = ImageParams.from_names(
             names,
             channels=channels,
             mPerPx=geotiff.scale,
             defaultChannels=defaultChannels,
         )
+
+        self.queue_.append(transform_func)
         return self
 
     @check_path
@@ -143,26 +161,27 @@ class Sample(BaseModel):
             path (Path): Path to the sample directory
             name (str): Name of the coordinates
         """
-        log(self.name, "Adding coords", f"'{name}'")
 
-        if not df.index.is_unique:
-            raise ValueError("Coord index not unique")
-        if not {"x", "y"}.issubset(df.columns):
-            raise ValueError("x and y must be in columns")
-        if (df.x.isnull() | df.y.isnull()).any():
-            raise ValueError("x and y must not be null")
-        if df.index.dtype != "object":
-            raise ValueError("Index must be string. This is to prevent subtle bugs.")
+        def run():
+            log(self.name, "Adding coords", f"'{name}'")
+            if not df.index.is_unique:
+                raise ValueError("Coord index not unique")
+            if not {"x", "y"}.issubset(df.columns):
+                raise ValueError("x and y must be in columns")
+            if (df.x.isnull() | df.y.isnull()).any():
+                raise ValueError("x and y must not be null")
+            if df.index.dtype != "object":
+                raise ValueError("Index must be string. This is to prevent subtle bugs.")
 
-        df.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
+            df.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
 
         self.coordParams = self.coordParams or []
         if name in [c.name for c in self.coordParams]:
             self.coordParams = [c for c in self.coordParams if c.name != name]
-
         self.coordParams.append(
             CoordParams(url=Url(f"{name}.csv"), name=name, shape="circle", mPerPx=mPerPx, size=size)
         )
+        self.queue_.append(run)
         return self
 
     def _join_with_coords(self, df: pd.DataFrame, *, coordName: str) -> pd.DataFrame:
@@ -212,10 +231,14 @@ class Sample(BaseModel):
         Raises:
             ValueError: Coordinate name not found
         """
-        log(self.name, "Adding csv feature", f"'{name}'")
-        self._join_with_coords(df, coordName=coordName).to_csv(
-            self.path / f"{name}.csv", index_label="id", float_format="%.6e"
-        )
+
+        def run():
+            log(self.name, "Adding csv feature", f"'{name}'")
+            self._join_with_coords(df, coordName=coordName).to_csv(
+                self.path / f"{name}.csv", index_label="id", float_format="%.6e"
+            )
+
+        self.queue_.append(run)
         self._add_feature(
             PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=dataType, coordName=coordName)
         )
@@ -232,14 +255,18 @@ class Sample(BaseModel):
         unit: str | None = None,
         dataType: Literal["quantitative", "categorical"] = "quantitative",
     ) -> Self:
-        log(self.name, "Adding chunked feature", f"'{name}'")
-        joined = self._join_with_coords(df, coordName=coordName)
-        header, bytedict = compress_chunked_features(
-            joined, "spots", "csc", logger=lambda *args: log(self.name, *args)
-        )
-        log(f"Writing compressed chunks for {name}:", f"{len(bytedict)} bytes")
-        header.write(self.path / f"{name}.json")
-        (self.path / name).with_suffix(".bin").write_bytes(bytedict)
+        def run():
+            log(self.name, "Adding chunked feature", f"'{name}'")
+            joined = self._join_with_coords(df, coordName=coordName)
+            header, bytedict = compress_chunked_features(
+                joined, "spots", "csc", logger=lambda *args: log(self.name, *args)
+            )
+            log(f"Writing compressed chunks for {name}:", f"{len(bytedict)} bytes")
+            header.write(self.path / f"{name}.json")
+            (self.path / name).with_suffix(".bin").write_bytes(bytedict)
+
+        self.queue_.append(run)
+
         self._add_feature(
             ChunkedCSVParams(
                 name=name, url=Url(f"{name}.bin"), unit=unit, dataType=dataType, coordName=coordName

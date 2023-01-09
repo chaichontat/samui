@@ -11,6 +11,7 @@ import rasterio
 from pydantic import BaseModel
 from rasterio.enums import Resampling
 from rasterio.io import DatasetWriter
+from tifffile import imread
 from typing_extensions import Self
 
 from loopy.logger import log
@@ -50,6 +51,12 @@ class GeoTiff(BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
+    def from_tiff(
+        cls, tif: Path, *, scale: float, translate: tuple[float, float] = (0, 0), rgb: bool = False
+    ) -> Self:
+        return cls.from_img(imread(tif), scale=scale, translate=translate, rgb=rgb)
+
+    @classmethod
     def from_img(
         cls,
         img: npt.NDArray,
@@ -80,7 +87,7 @@ class GeoTiff(BaseModel):
             ...
         elif img.dtype == np.uint16:
             log("Converting uint16 to uint8.", type_="WARNING")
-            dived = np.divide(img, 256, casting="unsafe")
+            dived = np.divide(img, 256, casting="unsafe")  # So that this remains an uint16.
             del img
             img = dived.astype(np.uint8)
             del dived
@@ -98,7 +105,9 @@ class GeoTiff(BaseModel):
             rgb=rgb,
         )
 
-    def transform_tiff(self, path_in: Path, quality: int = 90, logger: Callback = log) -> list[str]:
+    def transform_tiff(
+        self, path_in: Path, quality: int = 90, logger: Callback = log, save_uncompressed: bool = False
+    ) -> tuple[list[str], Callable[[], None]]:
         logger(f"Transforming {path_in} to COG.")
         if path_in.suffix != ".tif":
             raise ValueError(f"Expected path to end with .tif, but found {path_in.suffix}")
@@ -106,16 +115,19 @@ class GeoTiff(BaseModel):
         names, _, chanlist = self._gen_zcounts(self.chans)
         names = [path_in.stem + name + ".tif" for name in names]
 
-        for name, c in zip(names, chanlist):
-            self._write_uncompressed_geotiff(
-                path=path_in.with_name(name),
-                channels=c,
-                transform=rasterio.Affine(
-                    self.scale, 0, self.translate[0], 0, -self.scale, -self.translate[1]
-                ),
-            )
-        self._compress([path_in.with_name(name) for name in names], quality=quality, logger=logger)
-        return names
+        def run():
+            for name, c in zip(names, chanlist):
+                self._write_uncompressed_geotiff(
+                    path=path_in.with_name(name),
+                    channels=c,
+                    transform=rasterio.Affine(
+                        self.scale, 0, self.translate[0], 0, -self.scale, -self.translate[1]
+                    ),
+                )
+
+            self._compress([path_in.with_name(name) for name in names], quality=quality, logger=logger)
+
+        return names, run
 
     @staticmethod
     def _gen_zcounts(nc: int):
@@ -171,7 +183,9 @@ class GeoTiff(BaseModel):
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
         assert path.with_suffix(".tif_").exists()
 
-    def _compress(self, ps: list[Path], quality: int = 90, logger: Callback = log) -> None:
+    def _compress(
+        self, ps: list[Path], quality: int = 90, logger: Callback = log, save_uncompressed: bool = False
+    ) -> None:
         def run(p: Path):
             logger("Writing COG", p.with_suffix(".tif").as_posix())
             # https://stackoverflow.com/questions/4417546/constantly-print-subprocess-output-while-process-is-running/4417735
@@ -202,7 +216,8 @@ class GeoTiff(BaseModel):
                 raise subprocess.CalledProcessError(returncode=return_code, cmd=popen.args)
 
             if p.with_suffix(".tif").exists():
-                p.with_suffix(".tif_").unlink()
+                if not save_uncompressed:
+                    p.with_suffix(".tif_").unlink()
             else:
                 raise FileNotFoundError(f"Could not generate COG {p.with_suffix('.tif').absolute()}")
 
