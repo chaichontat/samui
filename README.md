@@ -44,15 +44,46 @@ You could share your files with your collaborators using your own file server or
 More reasonably priced alternatives include [Cloudflare R2](https://www.cloudflare.com/products/r2/) and [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html).
 The images are available instantly and without any installation on their end!
 
+### Sample viewing
+
+Loopy allows for viewing multiple samples simultaneously using the "split vertical" or "split horizontal" buttons located next to the sample ID pane.
+Loopy also allows for viewing multiple fluorescent image channels that can be toggled on and off in the window below the sample ID pane.
+Each channel can be adjusted individually for color and maximum intensity.
+Users can zoom in/out using a mouse wheel and can navigate around the sample by clicking and dragging.
+Menus can be hidden using the show/hide button to view more of the sample.
+A screenshot can also be acquired using the camera button.
+
+### Layers
+
+Layers can be added using "+ Add Layer" button.
+For example, in Visium data, each queried gene can be added as a layer.
+The check boxes next to a feature display the border and fill of the spot (Visium) or segmented cell (MERFISH).
+
+
 ### Annotation
 
-There are two separate types of annotations in Loopy Browser.
-Before annotation, you must set a label first.
-The labels can be changed by double-clicking on the label names.
+There are two separate types of annotations in Loopy Browser:
+
+- ROI annotation
+- feature annotation
+
+Generally, ROI annotation is used for images and feature annotation is used for Visium spots, segmented cells, etc.
+You can only work with one type of annotation at a time (i.e. you cannot annotate both ROIs and features at the same time).
+The feature you are trying to annotate must be consistent with the overlay loaded (i.e. if you would like to annotate Visium spots you must be viewing an overlay of gene expression and not an overlay of individual cells segmented from the image).
+Before annotation, you must set a label first using "+ Label".
+After creation, the labels can be changed by double-clicking on the label names.
+You are actively annotating with a given label when it is bold.
+You must select the STOP button to end annotation with the active label before creating a new label or attempting to annotate with a different label.
+There are 3 tool options for annotating: _polygon_, _circle_, and _select_ tools.
+Annotated features are outlined in the assigned color when they have been given a label.
+Colors cannot be changed.
+The overlay can be toggled on and off using "show overlay."
+Annotations can be deleted using the DELETE key on the keyboard.
+The ESC key can be used to exit out of an active annotation.
 
 #### ROI Annotation
 
-This is the typical kind of annotation you'd expect from other image viewers.
+This is the typical kind of annotation you would expect from other image viewers.
 We simply draw figures that indicate regions of interest of the image.
 The exported result is a JSON file that contains the coordinates of the drawn figures.
 That is, the outputs are _coordinates and their labels_.
@@ -61,9 +92,27 @@ The exported results can be dragged back into the browser.
 #### Feature Annotation
 
 Here, we annotate the features or overlays that are either with the dataset to begin with or imported.
-The ability to draw ROIs is simply there to facilitate annotation.
-Each point can be annotated individually as well.
-The outputs are _feature ID and their labels_.
+Examples of features include gene expression, cell segmentation, spot deconvolution results (Visium).
+The ability to draw ROIs is simply there to facilitate annotation, but each point can be annotated individually as well.
+Following annotation, the outputs are _feature ID and their labels_.
+The exported results can be dragged back into the browser.
+
+
+### Example data
+
+#### Visium data
+
+For Visium a tissue section is placed on a patterned array of spots, and gene expression is measured in each spot.
+The morphology of the tissue section is visualized with hemotoxylin and eosin staining, which is imaged and aligned with gene expression data mapping to individual spots.
+Using the search bar, you can search for individual genes (e.g. SNAP25, GFAP, MOBP) to display their gene expression (logcounts) in Visium spots across the tissue.
+Density plots are also depicted on the search window and are interactive with polygon annotation (see below).
+Note, genes are one type of feature category.
+If cell segmentation or spot deconvolution data are imported, these represent separate feature categories.
+
+#### MERFISH data
+
+Need to add here.
+
 
 ## Installation
 
