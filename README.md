@@ -12,7 +12,7 @@ You need to preprocess your image to form a tiled structure prior to being used 
 
 ### Preprocessing
 
-Download a sample TIFF image from https://data.loopybrowser.com/VisiumIF/sample.tif.
+Download a sample TIFF image from https://libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/sample.tif.
 The preprocessing system can be installed as described [below](#Installation).
 Call the preprocessing GUI with the following command in the terminal.
 
