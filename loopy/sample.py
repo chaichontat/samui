@@ -61,11 +61,14 @@ class Sample(BaseModel):
         return self
 
     def __init__(self, **data: Any):
-        if data["path"] is not None:
+        try:
             data["path"] = Path(data["path"])
             data["path"].mkdir(exist_ok=True, parents=True)
             if not data["path"].is_dir():
                 raise ValueError(f"Path {data['path']} is not a directory")
+        except KeyError:
+            pass
+
         super().__init__(**data)
 
     def json(self, **kwargs: Any) -> str:

@@ -67,7 +67,7 @@ def image(
     if name is None:
         name = tiff.stem
     if out is None:
-        out = tiff.parent / name
+        out = tiff.parent
 
     log(f"Processing {name} from file {tiff} with shape {img.shape}.")
     match channels:
@@ -81,7 +81,7 @@ def image(
                 raise ValueError("Number of channels does not match image shape")
 
     (
-        Sample(name=name, path=out)
+        Sample(name=name, path=out / name)
         .add_image(tiff, channels=c, scale=scale, translate=translate, quality=quality)
         .write()
     )

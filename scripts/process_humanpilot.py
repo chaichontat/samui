@@ -1,36 +1,17 @@
 #%%
-import hashlib
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from shutil import copy
 
 import pandas as pd
-import requests
 
 from loopy.drivers.spaceranger import run_spaceranger
 from loopy.logger import log, setup_logging
 from loopy.sample import Sample
+from loopy.utils.utils import download
 
 setup_logging()
-
-
-def check_md5(path: Path, md5: str) -> bool:
-    with open(path, "rb") as f:
-        return hashlib.md5(f.read()).hexdigest() == md5
-
-
-def download(url: str, path: Path, md5: str) -> None:
-    if path.exists() and check_md5(path, md5):
-        log(f"Hash matches. Skipping {path}...")
-        return
-
-    log(f"Downloading {url}...")
-    r = requests.get(url, stream=True)
-    with open(path, "wb") as f:
-        for chunk in r.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
 
 
 #%%
