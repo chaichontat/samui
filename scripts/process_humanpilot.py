@@ -63,6 +63,9 @@ samples = [
     dict(name="151676", h5md5="9419abdf5f81bbcade16946e9fb8ca0f", imgmd5="b0ee92977b31638701f625c69f1da0fa"),
 ]
 
+# Remove this line to process all samples.
+samples = samples[:1]
+
 # Downloaded `h5_filtered` and `image_full` from https://github.com/LieberInstitute/HumanPilot#raw-data
 datadir = tempdir
 
