@@ -2,6 +2,8 @@ from pathlib import Path
 
 import rich_click as click
 
+from loopy.logger import log
+from loopy.sample import Sample
 from loopy.utils.cli import modify_sample
 
 
@@ -59,12 +61,30 @@ def image(
     translate: tuple[float, float] = (0, 0),
 ) -> None:
     """Convert a TIFF file to a Loopy (COG) file."""
-    from loopy.drivers.image import run_image
+    import tifffile
 
+    img = tifffile.imread(tiff)
+    if name is None:
+        name = tiff.stem
     if out is None:
-        out = tiff.parent
+        out = tiff.parent / name
 
-    run_image(tiff, out, name=name, channels=channels, quality=quality, scale=scale, translate=translate)
+    log(f"Processing {name} from file {tiff} with shape {img.shape}.")
+    match channels:
+        case None:
+            c = [f"Channel{i}" for i in range(img.shape[0])]
+        case "rgb":
+            c = "rgb"
+        case _:
+            c = channels.split(",")
+            if len(c) != img.shape[0]:
+                raise ValueError("Number of channels does not match image shape")
+
+    (
+        Sample(name=name, path=out)
+        .add_image(tiff, channels=c, scale=scale, translate=translate, quality=quality)
+        .write()
+    )
 
 
 @cli.command()
