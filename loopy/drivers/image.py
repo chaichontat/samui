@@ -14,7 +14,7 @@ from loopy.sample import Sample
 @click.option("--quality", default=90, type=int, help="JPEG compression quality")
 @click.option("--scale", default=1, type=float, help="Scale in meters per pixel.")
 @click.option("--translate", default=(0, 0), type=(float, float), help="Translation in meters.")
-def run(
+def run_image(
     tiff: Path,
     outdir: Path,
     channels: str | None = None,
@@ -44,4 +44,4 @@ def run(
 
 
 if __name__ == "__main__":
-    run()
+    run_image()

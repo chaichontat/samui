@@ -59,15 +59,12 @@ def image(
     translate: tuple[float, float] = (0, 0),
 ) -> None:
     """Convert a TIFF file to a Loopy (COG) file."""
-    from loopy.drivers.run_image import run_image
+    from loopy.drivers.image import run_image
 
     if out is None:
         out = tiff.parent
 
-    s, name = run_image(
-        tiff, out, name=name, channels=channels, quality=quality, scale=scale, translate=translate
-    )
-    modify_sample(s, out, name)
+    run_image(tiff, out, name=name, channels=channels, quality=quality, scale=scale, translate=translate)
 
 
 @cli.command()
@@ -109,13 +106,13 @@ def spaceranger(
 ) -> None:
     """Get gene expression data from a spaceranger experiment. \
 Assumes that Visium alignment has been done."""
-    from loopy.drivers.run_spaceranger import run_spaceranger
+    from loopy.drivers.spaceranger import run_spaceranger
 
     if out is None:
         out = spaceranger_output.parent / "loopy"
 
-    s, name = run_spaceranger(spaceranger_output, out, spotDiam=spotDiam, logTransform=logTransform)
-    modify_sample(s, out, name)
+    run_spaceranger(name, spaceranger_output, out, spotDiam=spotDiam)
+    # modify_sample(s, out, name)
 
 
 @cli.command()

@@ -117,7 +117,7 @@ class Sample(BaseModel):
     def add_image(
         self,
         tiff: Path,
-        channels: list[str] | Literal["rgb"],
+        channels: list[str] | Literal["rgb"] | None = None,
         scale: float = 1,
         quality: int = 90,
         translate: tuple[float, float] = (0, 0),
@@ -138,6 +138,10 @@ class Sample(BaseModel):
             raise ValueError(f"Tiff file {tiff} not found")
 
         geotiff = GeoTiff.from_tiff(tiff, scale=scale, translate=translate, rgb=channels == "rgb")
+
+        if channels is None:
+            channels = [f"C{i}" for i in range(1, geotiff.chans + 1)]
+
         names, transform_func = geotiff.transform_tiff(
             self.path / f"{tiff.stem}.tif", quality=quality, save_uncompressed=save_uncompressed
         )
