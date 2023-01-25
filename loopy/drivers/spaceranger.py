@@ -59,10 +59,10 @@ def gen_coords(vis: AnnData, path: Path | str) -> None:
 def run_spaceranger(
     name: str,
     path: Path,
-    tif: Path,
     out: Path,
     *,
-    channels: list[str] | Literal["rgb"],
+    tif: Path | None = None,
+    channels: list[str] | Literal["rgb"] | None = None,
     defaultChannels: dict[Colors, str] | None = None,
     spotDiam: float = 55e-6,
 ) -> Sample:
@@ -87,14 +87,16 @@ def run_spaceranger(
     scales = json.loads((path / name / "outs" / "spatial" / "scalefactors_json.json").read_text())
     mPerPx = 65e-6 / float(scales["spot_diameter_fullres"])
 
-    sample = (
-        Sample(
-            name=name,
-            path=o,
-            metadataMd=Url("metadata.md"),
-        )
-        .add_image(tif, channels, mPerPx, defaultChannels=defaultChannels)
-        .add_coords(
+    sample = Sample(
+        name=name,
+        path=o,
+        metadataMd=Url("metadata.md"),
+    )
+    if tif is not None:
+        sample = sample.add_image(tif, channels, mPerPx, defaultChannels=defaultChannels)
+
+    (
+        sample.add_coords(
             pd.DataFrame(
                 cast(pd.DataFrame, vis.obsm["spatial"]),
                 columns=["x", "y"],

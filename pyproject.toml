@@ -33,6 +33,9 @@ reportUnusedImport = false
 reportUnusedVariable = "warning"
 typeCheckingMode = "strict"
 
+[tool.ruff]
+line-length = 120
+
 [tool.isort]
 line_length = 110
 profile = "black"

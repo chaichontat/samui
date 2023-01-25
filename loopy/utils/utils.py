@@ -1,13 +1,17 @@
 # pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 import gzip
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Callable, Literal, Protocol
 
 import numpy as np
 import pandas as pd
+import requests
 from pydantic import BaseModel
 from typing_extensions import Self
+
+from loopy.logger import log
 
 
 class ReadonlyModel(BaseModel):
@@ -83,3 +87,21 @@ def concat(objs: list[Any], f: Callable[[Any], bytes] = lambda x: x) -> tuple[np
             curr += len(comped)
         ptr[i + 1] = curr
     return ptr, outbytes
+
+
+def check_md5(path: Path, md5: str) -> bool:
+    with open(path, "rb") as f:
+        return hashlib.md5(f.read()).hexdigest() == md5
+
+
+def download(url: str, path: Path, md5: str | None = None) -> None:
+    if path.exists() and md5 is not None and check_md5(path, md5):
+        log(f"Hash matches. Skipping {path}...")
+        return
+
+    log(f"Downloading {url}...")
+    r = requests.get(url, stream=True)
+    with open(path, "wb") as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)

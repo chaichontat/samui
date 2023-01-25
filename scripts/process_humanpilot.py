@@ -1,36 +1,17 @@
 #%%
-import hashlib
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from shutil import copy
 
 import pandas as pd
-import requests
 
 from loopy.drivers.spaceranger import run_spaceranger
 from loopy.logger import log, setup_logging
 from loopy.sample import Sample
+from loopy.utils.utils import download
 
 setup_logging()
-
-
-def check_md5(path: Path, md5: str) -> bool:
-    with open(path, "rb") as f:
-        return hashlib.md5(f.read()).hexdigest() == md5
-
-
-def download(url: str, path: Path, md5: str) -> None:
-    if path.exists() and check_md5(path, md5):
-        log(f"Hash matches. Skipping {path}...")
-        return
-
-    log(f"Downloading {url}...")
-    r = requests.get(url, stream=True)
-    with open(path, "wb") as f:
-        for chunk in r.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
 
 
 #%%
@@ -62,6 +43,9 @@ samples = [
     dict(name="151675", h5md5="2e08d7777b104538a8ecbbe939a858af", imgmd5="ae08c11eb2cf2ae63e5992eb6b0dbc86"),
     dict(name="151676", h5md5="9419abdf5f81bbcade16946e9fb8ca0f", imgmd5="b0ee92977b31638701f625c69f1da0fa"),
 ]
+
+# Remove this line to process all samples.
+samples = samples[:1]
 
 # Downloaded `h5_filtered` and `image_full` from https://github.com/LieberInstitute/HumanPilot#raw-data
 datadir = tempdir

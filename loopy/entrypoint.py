@@ -2,7 +2,8 @@ from pathlib import Path
 
 import rich_click as click
 
-from loopy.utils.cli import modify_sample
+from loopy.logger import log
+from loopy.sample import Sample
 
 
 @click.group()
@@ -59,15 +60,30 @@ def image(
     translate: tuple[float, float] = (0, 0),
 ) -> None:
     """Convert a TIFF file to a Loopy (COG) file."""
-    from loopy.drivers.run_image import run_image
+    import tifffile
 
+    img = tifffile.imread(tiff)
+    if name is None:
+        name = tiff.stem
     if out is None:
         out = tiff.parent
 
-    s, name = run_image(
-        tiff, out, name=name, channels=channels, quality=quality, scale=scale, translate=translate
+    log(f"Processing {name} from file {tiff} with shape {img.shape}.")
+    match channels:
+        case None:
+            c = [f"Channel{i}" for i in range(img.shape[0])]
+        case "rgb":
+            c = "rgb"
+        case _:
+            c = channels.split(",")
+            if len(c) != img.shape[0]:
+                raise ValueError("Number of channels does not match image shape")
+
+    (
+        Sample(name=name, path=out / name)
+        .add_image(tiff, channels=c, scale=scale, translate=translate, quality=quality)
+        .write()
     )
-    modify_sample(s, out, name)
 
 
 @cli.command()
@@ -109,13 +125,13 @@ def spaceranger(
 ) -> None:
     """Get gene expression data from a spaceranger experiment. \
 Assumes that Visium alignment has been done."""
-    from loopy.drivers.run_spaceranger import run_spaceranger
+    from loopy.drivers.spaceranger import run_spaceranger
 
     if out is None:
         out = spaceranger_output.parent / "loopy"
 
-    s, name = run_spaceranger(spaceranger_output, out, spotDiam=spotDiam, logTransform=logTransform)
-    modify_sample(s, out, name)
+    run_spaceranger(name, spaceranger_output, out, spotDiam=spotDiam)
+    # modify_sample(s, out, name)
 
 
 @cli.command()

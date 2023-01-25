@@ -10,9 +10,9 @@ dependencies:
   - rasterio
   - requests
   - rich
-  - rich-click
   - scanpy
   - scipy
   - tifffile
   - pip:
       - -e .
+      - rich-click

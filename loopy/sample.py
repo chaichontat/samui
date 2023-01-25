@@ -15,6 +15,7 @@ from loopy.feature import (
     join_idx,
 )
 from loopy.image import Colors, GeoTiff, ImageParams
+from loopy.logger import log
 from loopy.utils.utils import Url
 
 
@@ -60,11 +61,14 @@ class Sample(BaseModel):
         return self
 
     def __init__(self, **data: Any):
-        if data["path"] is not None:
+        try:
             data["path"] = Path(data["path"])
             data["path"].mkdir(exist_ok=True, parents=True)
             if not data["path"].is_dir():
                 raise ValueError(f"Path {data['path']} is not a directory")
+        except KeyError:
+            pass
+
         super().__init__(**data)
 
     def json(self, **kwargs: Any) -> str:
@@ -116,7 +120,7 @@ class Sample(BaseModel):
     def add_image(
         self,
         tiff: Path,
-        channels: list[str] | Literal["rgb"],
+        channels: list[str] | Literal["rgb"] | None = None,
         scale: float = 1,
         quality: int = 90,
         translate: tuple[float, float] = (0, 0),
@@ -137,6 +141,10 @@ class Sample(BaseModel):
             raise ValueError(f"Tiff file {tiff} not found")
 
         geotiff = GeoTiff.from_tiff(tiff, scale=scale, translate=translate, rgb=channels == "rgb")
+
+        if channels is None:
+            channels = [f"C{i}" for i in range(1, geotiff.chans + 1)]
+
         names, transform_func = geotiff.transform_tiff(
             self.path / f"{tiff.stem}.tif", quality=quality, save_uncompressed=save_uncompressed
         )
