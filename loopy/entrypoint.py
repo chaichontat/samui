@@ -4,7 +4,6 @@ import rich_click as click
 
 from loopy.logger import log
 from loopy.sample import Sample
-from loopy.utils.cli import modify_sample
 
 
 @click.group()
