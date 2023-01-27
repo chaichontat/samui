@@ -63,7 +63,7 @@ export class PlainCSV extends Deferrable {
     }
 
     // To maintain consistency with ChunkedCSV.
-    this.featNames = Object.keys(this.features).map((s) => s.toString());
+    this.featNames = this.features!.map((s) => s.toString());
     this.hydrated = true;
     return this;
   }

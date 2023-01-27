@@ -28,18 +28,6 @@ const _colors = {
   cividis: d3.interpolateCividis
 };
 
-const genColormap = genLRU((c: keyof typeof _colors) => {
-  const range = [...Array(10).keys()];
-  const cs = range
-    .map((i) => 0.1 * i)
-    .map((x) => {
-      const z = d3.color(_colors[c](x))!.rgb();
-      return [z.r, z.g, z.b, 1];
-    });
-
-  return zip(range, cs).flatMap((a) => a);
-});
-
 function genCategoricalColors() {
   const colors = [];
   for (let i = 0; i < d3.schemeTableau10.length; i++) {
@@ -59,12 +47,16 @@ function genCategoricalColors() {
  *        Necessary to know the base resolution as openlayers operate in "zoom levels"
  *        Can be undefined if no image is loaded.
  * @param scale Whether to scale the features with zoom
+ * @param min Minimum value of the feature for colormap
+ * @param max Maximum value of the feature for colormap
  */
 export function genSpotStyle(
   type: FeatureType,
   spotSizeMeter: number,
   mPerPx: number,
-  scale = true
+  scale = true,
+  min = 0,
+  max = 1
 ): LiteralStyle {
   // From mapp.ts
   // Lowest zoom level is 128x the native res of img.
@@ -83,8 +75,9 @@ export function genSpotStyle(
       };
 
   if (type === 'quantitative') {
+    // Interpolation step and color level.
     const colors = [...Array(10).keys()].flatMap((i) => [
-      i,
+      min + (max - min) * (i / 10),
       d3.interpolateTurbo(0.05 + (i / 10) * 0.95)
     ]);
     // colors[1] += 'ff';
