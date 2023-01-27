@@ -23,6 +23,7 @@ export class PlainCSV extends Deferrable {
   readonly size: number | undefined;
   readonly unit: string | undefined;
   features?: string[];
+  featNames: string[] = [];
   values?: CSVRetrievedData;
 
   constructor(
@@ -60,6 +61,9 @@ export class PlainCSV extends Deferrable {
       this.values = retrieved.data as Record<string, number | string>[];
       this.features = difference(Object.keys(this.values[0]), ['id', 'idx', 'x', 'y']);
     }
+
+    // To maintain consistency with ChunkedCSV.
+    this.featNames = Object.keys(this.features).map((s) => s.toString());
     this.hydrated = true;
     return this;
   }
