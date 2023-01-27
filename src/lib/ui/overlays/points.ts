@@ -49,7 +49,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     return this._currStyle;
   }
 
-  set currStyle(style: string) {
+  setCurrStyle(style: string, min = 0, max = 10) {
     if (!this.coords) throw new Error('Must run update first.');
     if (style === this._currStyle && this.currPx === this.coords.sizePx) return;
 
@@ -59,10 +59,10 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
     switch (style) {
       case 'quantitative':
-        this.style = genSpotStyle('quantitative', this.coords.size, mPerPx);
+        this.style = genSpotStyle('quantitative', this.coords.size, mPerPx, true, min, max);
         break;
       case 'categorical':
-        this.style = genSpotStyle('categorical', this.coords.size, mPerPx);
+        this.style = genSpotStyle('categorical', this.coords.size, mPerPx, true, min, max);
         break;
       default:
         throw new Error(`Unknown style: ${style}`);
@@ -87,7 +87,15 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
   }
 
-  _updateProperties(sample: Sample, fn: FeatureAndGroup, { dataType, data }: RetrievedData) {
+  _updateProperties(
+    sample: Sample,
+    fn: FeatureAndGroup,
+    {
+      dataType,
+      data,
+      minmax: [min, max]
+    }: { dataType: 'quantitative' | 'categorical'; data: number[]; minmax: [number, number] }
+  ) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
     console.debug(`Updating ${this.uid} to ${fn.feature}.`);
@@ -112,7 +120,13 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       this.currLegend = undefined;
     }
 
-    this.currStyle = dataType;
+    if (dataType === 'quantitative') {
+      this.setCurrStyle(dataType, min, max);
+    } else if (dataType === 'categorical') {
+      this.setCurrStyle(dataType);
+    } else {
+      throw new Error(`Unknown data type: ${dataType}`);
+    }
 
     for (const [i, f] of this.features.entries()) {
       f.set('value', data[i]); // Cannot use silent. Update seems specific to each feature and value.
@@ -145,7 +159,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     const res = await sample.getFeature(fn);
     if (!res) return false;
 
-    const { data, dataType, coords } = res;
+    const { data, dataType, coords, minmax } = res;
     // Check if coord is the same.
     if ((this.currSample !== sample.name || this.coords?.name) !== coords.name) {
       this.source.clear();
@@ -213,7 +227,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
-      this._updateProperties(sample, fn, { dataType, data });
+      this._updateProperties(sample, fn, { dataType, data, minmax });
       this.currFeature = fn;
       this.currSample = sample.name;
     }

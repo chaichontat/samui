@@ -106,15 +106,35 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Joined dataframe
     """
-    if not template.index.is_unique:
-        raise ValueError(
-            f"Template (coords) index is not unique. {template.index[template.index.duplicated()]} duplicated"
-        )
-    if not feat.index.is_unique:
-        raise ValueError(f"Feature index is not unique. {feat.index[feat.index.duplicated()]} duplicated")
+    if "id" in template.columns:
+        template = template.set_index("id")
+
+    if "id" in feat.columns:
+        feat = feat.set_index("id")
+
+    for df in [template, feat]:
+        if not df.index.dtype == "object":
+            raise ValueError(
+                """Index must be string. This is to prevent subtle bugs.
+                Use`df.index = df.index.astype(str)` and verify that the index is unique with `df.index.is_unique`."""
+            )
+
+        if not df.index.is_unique:
+            raise ValueError(
+                f"Template (coords) index is not unique. {df.index[df.index.duplicated()]} duplicated"
+            )
+
+    if "x" in feat.columns or "y" in feat.columns:
+        raise ValueError("Feature dataframe cannot have columns named 'x' or 'y'")
 
     joined = template.join(feat, validate="one_to_one").drop(columns=["x", "y"])
-    joined.fillna(-1, inplace=True)
+
+    # raise error if there are any NaNs
+    if joined.isna().any().any():
+        raise ValueError(
+            f"Feature dataframe is missing values for {joined.isna().any()[joined.isna().any()].index}"
+        )
+
     assert len(joined) == len(template)
     return joined
 

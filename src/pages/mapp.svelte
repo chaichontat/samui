@@ -12,6 +12,7 @@
   import type { Sample } from '$src/lib/data/objects/sample';
   import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
+  import { handleError } from '$src/lib/utils';
 
   import { isEqual } from 'lodash-es';
   import 'ol/ol.css';
@@ -23,7 +24,7 @@
   $: sample
     ?.hydrate()
     .then(updateSample)
-    .catch((e) => alert(e));
+    .catch((e) => handleError(e));
 
   $: showImgControl = $userState.showImgControl;
   $: console.log(sample);
