@@ -178,7 +178,10 @@ class Sample(BaseModel):
             if (df.x.isnull() | df.y.isnull()).any():
                 raise ValueError("x and y must not be null")
             if df.index.dtype != "object":
-                raise ValueError("Index must be string. This is to prevent subtle bugs.")
+                raise ValueError(
+                    """Index must be string. This is to prevent subtle bugs.
+                    Use `df.index = df.index.astype(str)` and verify that it's what you want."""
+                )
 
             df.to_csv(self.path / f"{name}.csv", index_label="id", float_format="%.6e")
 
@@ -192,9 +195,17 @@ class Sample(BaseModel):
         return self
 
     def _join_with_coords(self, df: pd.DataFrame, *, coordName: str) -> pd.DataFrame:
-        # Todo: Check name uniqueness
-        if not df.index.dtype == "object":
-            raise ValueError("Index must be string. This is to prevent subtle bugs.")
+        """Join a feature dataframe with its respective coordinate dataframe.
+        If a column named 'id' exists, it will be used as the index.
+        Otherwise, the index will be used and checked for uniqueness.
+
+        Args:
+            df (pd.DataFrame): Dataframe with equal length as the coordinate dataframe.
+            coordName (str): Name of the coordinate dataframe specified in Sample.add_coords().
+
+        Returns:
+            pd.DataFrame: Joined dataframe
+        """
 
         if not self.coordParams or not coordName in [c.name for c in self.coordParams]:
             raise ValueError(
@@ -202,7 +213,13 @@ class Sample(BaseModel):
             )
 
         coord_params = [c for c in self.coordParams if c.name == coordName][0]
-        template = pd.read_csv(self.path / coord_params.url.url, index_col=0)
+
+        try:
+            template = pd.read_csv(self.path / coord_params.url.url, index_col=0)
+            template.index = template.index.astype(str)
+        except FileNotFoundError:
+            raise ValueError(f"Coord {coordName} not found. Use Sample.add_coords() before adding features.")
+
         try:
             return join_idx(template, df)
         except ValueError as exc:
