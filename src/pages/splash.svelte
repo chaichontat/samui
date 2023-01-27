@@ -37,12 +37,12 @@
     </p>
   </div>
 
-  <button
+  <a
+    href="https://loopybrowser.com/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/HumanPilot/&s=151507&s=15150[%E2%80%A6]151670&s=151671&s=151672&s=151673&s=151674&s=151675&s=151676"
     class="splash-button group rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-cyan-200 dark:text-neutral-100 dark:focus:ring-cyan-800"
-    on:click={preload}
   >
-    <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium-IF Data</span>
-  </button>
+    <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium Data</span>
+  </a>
 
   <a
     href="/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/merfish/&s=BrainReceptorShowcase1"
