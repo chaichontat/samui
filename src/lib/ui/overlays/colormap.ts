@@ -30,10 +30,10 @@ const _colors = {
   cividis: d3.interpolateCividis
 };
 
-const genColormap = genLRU((c: keyof typeof _colors) => {
-  const range = [...Array(10).keys()];
+const genColormap = genLRU((c: keyof typeof _colors, min = 0, max = 10) => {
+  const range = [...Array((max - min) / 10).keys()];
   const cs = range
-    .map((i) => 0.1 * i)
+    .map((i) => Math.min(Math.max(0, (i - min) / (max - min)), 1))
     .map((x) => {
       const z = d3.color(_colors[c](x))!.rgb();
       return [z.r, z.g, z.b, 1];

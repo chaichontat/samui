@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { overlays, sEvent, sOverlay } from '$lib/store';
+  import { overlays, sEvent, sFeatureData, sOverlay } from '$lib/store';
   import * as Plot from '@observablehq/plot';
   import * as d3 from 'd3';
   export let color = 'viridis' | 'turbo';
@@ -44,7 +44,7 @@
       elem = Plot.legend({
         color: {
           interpolate: d3.interpolateTurbo,
-          domain: [0, 10]
+          domain: [$sFeatureData.minmax[0], $sFeatureData.minmax[1]]
         },
         width: 250,
         ticks: 5,
