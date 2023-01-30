@@ -45,7 +45,7 @@ class Sample(BaseModel):
     notesMd: Url | None = None
     metadataMd: Url | None = None
     path: Path = None  # type: ignore  check_path removes the unhappy path.
-    queue_: list[Callable[[], None]] = []
+    queue_: list[tuple[str, Callable[[], None]]] = []
 
     @staticmethod
     def check_path(func: Callable[Concatenate["Sample", P], R]) -> Method[P, R]:
@@ -80,8 +80,12 @@ class Sample(BaseModel):
         if execute:
             log(f"'{self.name}' Executing queued functions")
             for f in self.queue_:
-                f()
+                try:
+                    f[1]()
+                except Exception as e:
+                    raise Exception(f"Error executing queued functions: {f[0]}") from e
             self.queue_ = []
+
         (self.path / "sample.json").write_text(self.json())
         log(f"'{self.name}' written to {self.path}")
         return self
@@ -149,6 +153,7 @@ class Sample(BaseModel):
             self.path / f"{tiff.stem}.tif", quality=quality, save_uncompressed=save_uncompressed
         )
 
+        transform_func()
         self.imgParams = ImageParams.from_names(
             names,
             channels=channels,
@@ -156,7 +161,7 @@ class Sample(BaseModel):
             defaultChannels=defaultChannels,
         )
 
-        self.queue_.append(transform_func)
+        # self.queue_.append((f"Add image: {tiff}", transform_func))
         return self
 
     @check_path
@@ -188,10 +193,13 @@ class Sample(BaseModel):
         self.coordParams = self.coordParams or []
         if name in [c.name for c in self.coordParams]:
             self.coordParams = [c for c in self.coordParams if c.name != name]
+
+        run()
         self.coordParams.append(
             CoordParams(url=Url(f"{name}.csv"), name=name, shape="circle", mPerPx=mPerPx, size=size)
         )
-        self.queue_.append(run)
+
+        # self.queue_.append((f"Add coords {name}", run))
         return self
 
     def _join_with_coords(self, df: pd.DataFrame, *, coordName: str) -> pd.DataFrame:
@@ -262,7 +270,8 @@ class Sample(BaseModel):
                 self.path / f"{name}.csv", index_label="id", float_format="%.6e"
             )
 
-        self.queue_.append(run)
+        run()
+        # self.queue_.append((f"Add csv feature {name}", run))
         self._add_feature(
             PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=dataType, coordName=coordName)
         )
@@ -289,8 +298,8 @@ class Sample(BaseModel):
             header.write(self.path / f"{name}.json")
             (self.path / name).with_suffix(".bin").write_bytes(bytedict)
 
-        self.queue_.append(run)
-
+        # self.queue_.append((f"Add chunked {name}", run))
+        run()
         self._add_feature(
             ChunkedCSVParams(
                 name=name, url=Url(f"{name}.bin"), unit=unit, dataType=dataType, coordName=coordName

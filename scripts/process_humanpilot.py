@@ -149,7 +149,7 @@ for name, s in sample_objs.items():
     except StopIteration as e:
         raise ValueError(f"Could not find layer guesses for {name}. Not at {guesses}.")
 
-    df = pd.read_csv(guess)
+    df = pd.read_csv(guess, dtype=str)
     df = df[df.sample_name == name].drop(columns=["sample_name"])
     df.set_index("spot_name", inplace=True)
 
