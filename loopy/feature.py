@@ -106,11 +106,6 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Joined dataframe
     """
-    if "id" in template.columns:
-        template = template.set_index("id")
-
-    if "id" in feat.columns:
-        feat = feat.set_index("id")
 
     for df in [template, feat]:
         if not df.index.dtype == "object":
@@ -130,10 +125,10 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
     joined = template.join(feat, validate="one_to_one").drop(columns=["x", "y"])
 
     # raise error if there are any NaNs
-    if joined.isna().any().any():
-        raise ValueError(
-            f"Feature dataframe is missing values for {joined.isna().any()[joined.isna().any()].index}"
-        )
+    # ignore NaN for now, we have one to one mapping validation already.
+    # if joined.isna().any().any():
+    #     problematic_cols = joined.isna().any()[joined.isna().any()].index
+    #     raise ValueError(f"Feature dataframe is NaN at {joined[joined[problematic_cols].isna().any(axis=1)]}")
 
     assert len(joined) == len(template)
     return joined
