@@ -1,6 +1,6 @@
 # ➰ Loopy Browser
 
-[![Run Data Prep Workflow](https://github.com/chaichontat/loopy-browser/actions/workflows/data_prep.yml/badge.svg?branch=main)](https://github.com/chaichontat/loopy-browser/actions/workflows/data_prep.yml)
+[![Run HumanPilot Workflow](https://github.com/chaichontat/loopy-browser/actions/workflows/humanpilot.yml/badge.svg)](https://github.com/chaichontat/loopy-browser/actions/workflows/humanpilot.yml)
 
 Loopy Browser is a performant visualization tool for spatial transcriptomics experiments.
 
