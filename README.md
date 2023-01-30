@@ -69,6 +69,42 @@ For example, [scripts/process_merfish.py](scripts/process_merfish.py)
 This creates a sample folder that has an image along with a list of chunked features at `out/BrainReceptorShowcase1`.
 This folder can be dragged directly into Loopy Browser for visualization.
 
+#### Hosting a Sample folder
+
+Loopy Browser can open a link that points to a sample folder directly from a URL in this format
+
+```
+https://loopybrowser.com/from?url=[YOUR URL]&s=[SAMPLE1]&s=[SAMPLE2]
+```
+
+`YOUR URL` is the folder that contains the sample folders.
+`SAMPLE1` and `SAMPLE2` are the sample folders generated from the preprocessing script earlier.
+Note that the name of the sample and the name of the folder must be the same.
+The link can be from a locally hosted server, or more commonly, a cloud service provider such as Amazon S3.
+
+You **must** set up a [CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html) policy on your host.
+This is a security policy that needs to be setup in order to allow your web browser to load the data.
+An example configuration is given below.
+
+```json
+{
+    "AllowedHeaders": [
+        "*"
+    ],
+    "AllowedMethods": [
+        "GET",
+        "HEAD"
+    ],
+    "AllowedOrigins": [
+        "https://loopybrowser.com",
+        "https://dev.loopybrowser.com",
+        "https://loopy-browser.pages.dev",
+        "https://dev.loopy-browser.pages.dev"
+    ],
+    "MaxAgeSeconds": 3000
+}
+```
+
 ### Sample viewing
 
 Loopy allows for viewing multiple samples simultaneously using the "split vertical" or "split horizontal" buttons located next to the sample ID pane.
@@ -89,7 +125,7 @@ The check boxes next to a feature display the border and fill of the spot (Visiu
 There are two separate types of annotations in Loopy Browser:
 
 - ROI annotation
-- feature annotation
+- Feature annotation
 
 Generally, ROI annotation is used for images and feature annotation is used for Visium spots, segmented cells, etc.
 You can only work with one type of annotation at a time (i.e. you cannot annotate both ROIs and features at the same time).
