@@ -139,7 +139,8 @@
         </div>
       </div>
 
-      <button
+      <!-- Disable split -->
+      <!-- <button
         class="donotsave h-9"
         use:tooltip={{ content: 'Split vertical' }}
         on:click={() => dispatch('split', 'v')}
@@ -153,7 +154,7 @@
         on:click={() => dispatch('split', 'h')}
       >
         <Icon src={ArrowsRightLeft} class="svg-icon h-5 w-5" />
-      </button>
+      </button> -->
 
       {#if hie === 0 && width > 800 && !$isOnline}
         <!-- Upload your data -->
