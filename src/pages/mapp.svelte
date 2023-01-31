@@ -4,6 +4,7 @@
     overlays,
     overlaysFeature,
     sEvent,
+    sFeatureData,
     sId,
     sMapp,
     sOverlay,
@@ -126,7 +127,7 @@
         map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
         map.tippy.elem.style.opacity = '1';
         // map.tippy.elem.removeAttribute('hidden');
-        map.tippy.elem.innerHTML = `<code>${pos.id}</code>`;
+        map.tippy.elem.innerHTML = `<code>${pos.id}<br>${$sFeatureData.data[pos.idx]}</code>`;
       }
     } else {
       timeout = setTimeout(hide, 400);
