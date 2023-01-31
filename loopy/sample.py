@@ -60,16 +60,36 @@ class Sample(BaseModel):
         self.queue_.pop()
         return self
 
-    def __init__(self, **data: Any):
-        try:
-            data["path"] = Path(data["path"])
-            data["path"].mkdir(exist_ok=True, parents=True)
-            if not data["path"].is_dir():
-                raise ValueError(f"Path {data['path']} is not a directory")
-        except KeyError:
-            pass
+    def __init__(
+        self,
+        name: str,
+        *,
+        path: Path | str | None = None,
+        imgParams: ImageParams | None = None,
+        coordParams: list[CoordParams] | None = None,
+        featParams: list[FeatureParams] | None = None,
+        overlayParams: OverlayParams | None = None,
+        notesMd: Url | None = None,
+        metadataMd: Url | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if path:
+            path = Path(path)
+            path.mkdir(exist_ok=True, parents=True)
+            if not path.is_dir():
+                raise ValueError(f"Path {path} is not a directory")
 
-        super().__init__(**data)
+        super().__init__(
+            name=name,
+            path=path,
+            imgParams=imgParams,
+            coordParams=coordParams,
+            featParams=featParams,
+            overlayParams=overlayParams,
+            notesMd=notesMd,
+            metadataMd=metadataMd,
+            **kwargs,
+        )
 
     def json(self, **kwargs: Any) -> str:
         return super().json(exclude={"path", "queue_"}, **kwargs)
@@ -89,25 +109,6 @@ class Sample(BaseModel):
         (self.path / "sample.json").write_text(self.json())
         log(f"'{self.name}' written to {self.path}")
         return self
-
-    def append(self, other: Self) -> Self:
-        """Very wasteful"""
-        # other = deepcopy(other)
-        # coordParams, featParams = None, None
-        # if self.coordParams is not None:
-        #     cp = deepcopy(self.coordParams)
-        #     coordParams = cp.extend(other.coordParams or []) or cp
-        # if self.featParams is not None:
-        #     fp = deepcopy(self.featParams)
-        #     featParams = fp.extend(other.featParams or []) or fp
-
-        params = self.dict()
-        params.update(other.dict(exclude_none=True))
-        # params.update({"coordParams": coordParams, "featParams": featParams})
-        return Sample(**params)
-
-    def __add__(self, other: Self) -> Self:
-        return self.append(other)
 
     def set_path(self, path: Path) -> Self:
         self.path = path
