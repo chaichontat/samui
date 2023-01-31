@@ -1,5 +1,5 @@
 <script lang="ts">
-  import List from '$lib/components/list.svelte';
+  import SampleList from '$lib/components/sampleList.svelte';
   import { isOnline, mapIdSample, mapTiles, samples, sEvent, sMapId, sMapp } from '$lib/store';
   import type { Mapp as MappObj } from '$lib/ui/mapp';
   import { byod } from '$src/lib/data/byod';
@@ -8,19 +8,16 @@
   import { Icon } from '@steeze-ui/svelte-icon';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   // import Mapp from './mapp.svelte'; // Dynamic import
-  import type { Hierarchy } from './mapTile';
+  import type { Hierarchy } from '$lib/mapTile';
 
-  let currSampleName: string;
-  $: if (typeof hie === 'number') $mapIdSample[hie] = currSampleName;
+  export let hie: Hierarchy | number;
+  let hieN: number;
+  $: hieN = typeof hie === 'number' ? hie : -1;
 
   let refreshPls = false;
   let width = 0;
 
   const dispatch = createEventDispatcher();
-
-  export let hie: Hierarchy | number;
-  let hieN: number;
-  $: hieN = typeof hie === 'number' ? hie : -1;
 
   // $: if (typeof hie === 'number') {
   //   $focus
@@ -87,7 +84,7 @@
   });
 
   // Stop loading spinner when sample is hydrated.
-  let sampleListElem: List;
+  let sampleListElem: SampleList;
   $: console.log($samples);
 
   $: if ($sEvent?.type === 'renderComplete') {
@@ -119,7 +116,7 @@
         {/if}
 
         <div class:mt-1={hie !== 0} class="min-w-[200px]">
-          <List
+          <SampleList
             bind:this={sampleListElem}
             items={Object.keys($samples)}
             on:change={(e) => {
@@ -131,15 +128,16 @@
               ) {
                 return;
               }
-              currSampleName = e.detail;
+              $mapIdSample[hieN] = e.detail;
             }}
-            active={currSampleName}
+            active={$mapIdSample[hieN]}
             on:addSample={byod}
           />
         </div>
       </div>
 
-      <button
+      <!-- Disable split -->
+      <!-- <button
         class="donotsave h-9"
         use:tooltip={{ content: 'Split vertical' }}
         on:click={() => dispatch('split', 'v')}
@@ -153,7 +151,7 @@
         on:click={() => dispatch('split', 'h')}
       >
         <Icon src={ArrowsRightLeft} class="svg-icon h-5 w-5" />
-      </button>
+      </button> -->
 
       {#if hie === 0 && width > 800 && !$isOnline}
         <!-- Upload your data -->
@@ -174,7 +172,7 @@
       on:click={() => ($sMapId = hieN)}
     >
       {#await import('./mapp.svelte') then mapp}
-        <svelte:component this={mapp.default} sample={$samples[currSampleName]} uid={hie} />
+        <svelte:component this={mapp.default} sample={$samples[$mapIdSample[hieN]]} uid={hie} />
       {/await}
     </div>
   </section>

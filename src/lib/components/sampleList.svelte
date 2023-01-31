@@ -18,7 +18,6 @@
   export let loading = false;
   export let useSpinner = true;
   export let showArrow = true;
-  export let addSample = true;
 
   let lastName: string | undefined;
 
