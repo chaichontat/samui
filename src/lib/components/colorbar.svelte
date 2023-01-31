@@ -70,7 +70,7 @@
     div.appendChild(divs[ol]);
   }
 
-  $: if (div && $sEvent?.type === 'featureUpdated') {
+  $: if (div && $sEvent?.type === 'featureUpdated' && $sFeatureData) {
     updateLegend();
   }
 </script>
