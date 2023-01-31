@@ -1,11 +1,9 @@
 // Bring your own data.
 
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
-import { overlays, samples, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
+import { mapIdSample, overlays, samples, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
 import { get } from 'svelte/store';
 import { fromCSV } from '../io';
-import type { AnnFeatData } from '../sidebar/annotation/annFeat';
-import type { ROIData } from '../sidebar/annotation/annROI';
 import { CoordsData, type Coord } from './objects/coords';
 import { valAnnFeatData, valROIData } from './schemas';
 
@@ -32,7 +30,7 @@ export async function byod() {
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const handle = (await window.showDirectoryPicker()) as Promise<FileSystemDirectoryHandle>;
-  return processHandle(handle);
+  return processHandle(handle, true);
 }
 
 async function processCSV(name: string, text: string) {
@@ -72,7 +70,7 @@ async function processCSV(name: string, text: string) {
 
 export async function processHandle(
   handle: Promise<FileSystemDirectoryHandle | FileSystemFileHandle>,
-  setSample = false
+  setSample = true
 ) {
   const h = await handle;
   if (h instanceof FileSystemFileHandle) {
@@ -100,14 +98,14 @@ export async function processHandle(
 
     if ('rois' in proc) {
       if (valAnnFeatData(proc)) {
-        const annfeatdata = proc as AnnFeatData;
+        const annfeatdata = proc;
         console.log('Got annotation feature data');
         map.persistentLayers.annotations.loadFeatures(annfeatdata);
         return;
       }
 
       if (valROIData(proc)) {
-        const roidata = proc as ROIData;
+        const roidata = proc;
         console.log('Got roi feature data');
         map.persistentLayers.rois.loadFeatures(roidata);
         return;
@@ -123,7 +121,7 @@ export async function processHandle(
   return processFolder(h, setSample);
 }
 
-async function processFolder(handle: FileSystemDirectoryHandle, setSample = false) {
+async function processFolder(handle: FileSystemDirectoryHandle, setSample = true) {
   let sp: SampleParams;
   try {
     sp = (await readFile<SampleParams>(handle, 'sample.json', 'plain')) as SampleParams;
@@ -145,6 +143,11 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = fals
 
   samples.set({ ...existing, [sample.name]: sample });
   if (setSample) {
-    sSample.set(sample);
+    const curr = get(mapIdSample);
+    for (const id of Object.keys(curr)) {
+      curr[id] = sample.name;
+    }
+    mapIdSample.set(curr);
+    console.log('Set sample to', sample.name);
   }
 }
