@@ -93,8 +93,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     {
       dataType,
       data,
-      minmax: [min, max]
-    }: { dataType: 'quantitative' | 'categorical'; data: number[]; minmax: [number, number] }
+      minmax
+    }: { dataType: 'quantitative' | 'categorical'; data: number[]; minmax?: [number, number] }
   ) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
@@ -121,6 +121,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     if (dataType === 'quantitative') {
+      const [min, max] = minmax ?? [Math.min(...data), Math.max(...data)];
       this.setCurrStyle(dataType, min, max);
     } else if (dataType === 'categorical') {
       this.setCurrStyle(dataType);
@@ -205,6 +206,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
           minZoom = Math.max(0, 8 - Math.max(0, orderof2 - 9));
         }
 
+        console.log(ress);
+
         // Limit extent to 1.5x size of the sample.
         const range = [(max[1] - min[1]) * coords.mPerPx, (max[0] - min[0]) * coords.mPerPx];
         this.map.map!.setView(
@@ -218,8 +221,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
             ],
             projection: 'EPSG:3857',
             resolutions: ress,
-            zoom: minZoom + 1,
-            minZoom
+            zoom: minZoom + 1
+            // minZoom
           })
         );
         this.map._needNewView = false;
