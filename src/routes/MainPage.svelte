@@ -17,6 +17,7 @@
     if (!navigator.userAgent.match(/chrome|chromium|crios/i)) {
       alert(
         `Loopy Browser is optimized for Google Chrome.
+        Performance is degraded in Firefox.
         Dragging and dropping files may not work on other browsers.
         If you face issues, please try Google Chrome.`
       );

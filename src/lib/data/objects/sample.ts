@@ -168,7 +168,7 @@ export class Sample extends Deferrable {
       ...res,
       data,
       coords: g,
-      minmax: stats({ key: coordKey, args: [data] }),
+      minmax: stats({ key: `${fn.group}-${fn.feature}`, args: [data] }),
       name: fn
     };
 
