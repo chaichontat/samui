@@ -4,6 +4,8 @@
 
 Loopy Browser is a performant visualization tool for spatial transcriptomics experiments.
 
+**Preprint available now!** [Performant web-based interactive visualization tool for spatially-resolved transcriptomics experiments](https://www.biorxiv.org/content/10.1101/2023.01.28.525943v1).
+
 ## Usage
 
 Head over to https://loopybrowser.com/ to see the Loopy Browser with example Visium-IF data.
