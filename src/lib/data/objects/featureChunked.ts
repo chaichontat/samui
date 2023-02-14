@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { Deferrable } from '$src/lib/definitions';
 import { convertLocalToNetwork, fromCSV, type Url } from '$src/lib/io';
 import { genLRU, oneLRU } from '$src/lib/lru';
+import { handleError } from '$src/lib/utils';
 import pako from 'pako';
 import type { CSVRetrievedData, FeatureData, FeatureParams, FeatureType } from './feature';
 
@@ -123,7 +124,7 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
         headers: {
           Range: `bytes=${this.ptr![idx]}-${this.ptr![idx + 1] - 1}`
         }
-      });
+      }).catch(handleError);
       const blob = await raw.blob();
       const decomped = await ChunkedCSV.decompressBlob(blob);
 
@@ -165,9 +166,9 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
 
-      this.header = await fetch(this.headerUrl.url).then(
-        (res) => res.json() as Promise<ChunkedCSVHeader>
-      );
+      this.header = await fetch(this.headerUrl.url)
+        .then((res) => res.json() as Promise<ChunkedCSVHeader>)
+        .catch(handleError);
     }
 
     if (this.header) {

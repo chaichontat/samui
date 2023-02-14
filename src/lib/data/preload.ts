@@ -1,6 +1,7 @@
 import { browser, dev } from '$app/environment';
 import type { Url } from '../io';
 import { isOnline, samples } from '../store';
+import { handleError } from '../utils';
 import { Sample, type SampleParams } from './objects/sample';
 
 const s3_url = dev ? '' : 'https://libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF';
@@ -16,7 +17,14 @@ export default browser
   : () => {};
 
 export async function getSample(s: string) {
-  const params = await fetch(`${s}/sample.json`).then((r) => r.json() as Promise<SampleParams>);
+  const params = await fetch(`${s}/sample.json`)
+    .then((r) => r.json() as Promise<SampleParams>)
+    .catch(() => handleError(new Error(`Could not get ${s}`)));
+
+  if (!params) {
+    throw new Error(`Could not get ${s}`);
+  }
+
   const converted = convertSamplePreload(params, s);
   return new Sample(converted);
 }
@@ -65,5 +73,13 @@ export function getSampleListFromQuery(winlocsearch: string) {
   const params = new URLSearchParams(winlocsearch);
   const url = params.get('url');
   const s = params.getAll('s');
-  return s.map((ss) => `https://${url ?? ''}${ss}`);
+  if (!s.length)
+    handleError(
+      new Error(
+        `No samples provided in the URL.
+Example format is https://loopybrowser.com/from?url=data2.loopybrowser.com/merfish/&s=BrainReceptorShowcase1
+where s is the sample name.`.replace(/\n/g, ' ')
+      )
+    );
+  return s.map((ss) => `https://${url ?? ''}${url?.endsWith('/') ? '' : '/'}${ss}`);
 }
