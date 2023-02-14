@@ -45,7 +45,7 @@
   </a>
 
   <a
-    href="/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/merfish/&s=BrainReceptorShowcase1"
+    href="/from?url=data2.loopybrowser.com/merfish/&s=BrainReceptorShowcase"
     class="splash-button group rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-emerald-200 dark:text-neutral-100 dark:focus:ring-emerald-800"
   >
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show MERFISH Data</span>
