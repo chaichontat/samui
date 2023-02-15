@@ -72,6 +72,9 @@ function convertSamplePreload(r: Partial<SampleParams>, dirUrl: string) {
 export function getSampleListFromQuery(winlocsearch: string) {
   const params = new URLSearchParams(winlocsearch);
   const url = params.get('url');
+  if (!url) {
+    return [];
+  }
   const s = params.getAll('s');
   if (!s.length)
     handleError(
