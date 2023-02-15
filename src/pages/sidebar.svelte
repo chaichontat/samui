@@ -96,7 +96,7 @@
 <div class="flex-grow min-h-[24px]" />
 
 <div class="mx-auto justify-end text-xs text-center">
-  Loopy Browser {__VERSION__}
+  Samui {__VERSION__}
 </div>
 
 <a

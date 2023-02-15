@@ -16,14 +16,14 @@
   onMount(() => {
     if (!navigator.userAgent.match(/chrome|chromium|crios/i)) {
       alert(
-        `Loopy Browser is optimized for Google Chrome.
+        `Samui is optimized for Google Chrome.
         Performance is degraded in Firefox.
         Dragging and dropping files may not work on other browsers.
         If you face issues, please try Google Chrome.`
       );
     }
 
-    // Load data from URL.
+    // Load data from URL.)
     const urls = getSampleListFromQuery(window.location.search);
     if (urls.length > 0) {
       loadExternal = true;
@@ -58,7 +58,7 @@
 </script>
 
 <svelte:head>
-  <title>Loopy Browser</title>
+  <title>Samui</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </svelte:head>
 

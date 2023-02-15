@@ -16,7 +16,7 @@ from loopy.utils.utils import Url
 
 # The directory contains spaceranger outputs.
 # The out directory contains folders of processed images and features.
-# These can be fed directly to "Add samples" in the Loopy Browser.
+# These can be fed directly to "Add samples" in the Samui.
 
 analyses = {
     "cluster_graph": "outs/analysis/clustering/graphclust/clusters.csv",

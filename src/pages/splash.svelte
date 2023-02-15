@@ -8,7 +8,7 @@
 
 <!-- Splash import -->
 <nav class="flex w-full justify-between py-[18px] pl-4 pr-4 gap-x-4">
-  <div class="text-2xl font-medium text-yellow-300">Loopy Browser</div>
+  <div class="text-2xl font-medium text-yellow-300">Samui</div>
   <div class="flex-grow" />
   <Github />
 </nav>
