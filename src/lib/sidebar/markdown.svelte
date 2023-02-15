@@ -7,6 +7,7 @@
   import remarkRehype from 'remark-rehype';
   import { onMount } from 'svelte';
   import { unified } from 'unified';
+  import { handleError } from '../utils';
 
   let cl = 'text-sm overflow-x-scroll pl-4 -indent-4';
   export { cl as class };
@@ -15,7 +16,7 @@
   let div: HTMLDivElement;
 
   onMount(async () => {
-    const res = await fetch(url);
+    const res = await fetch(url).catch(handleError);
     const text = await res.text();
     const file = await unified()
       .use(remarkParse)

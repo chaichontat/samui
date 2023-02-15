@@ -8,7 +8,7 @@ export function rand() {
   return Math.random().toString(36).substring(2);
 }
 
-export function handleError(e: Error) {
+export function handleError(e: Error, stack = false) {
   console.error(e);
-  alert(`${e?.message ?? e?.reason ?? e} ${e?.stack}`);
+  alert(`${e?.message ?? e?.reason ?? e} ${stack ? e?.stack : ''}`);
 }
