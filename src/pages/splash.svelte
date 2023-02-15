@@ -1,5 +1,4 @@
 <script lang="ts">
-  import preload from '$lib/data/preload';
   import Github from '$src/lib/components/github.svelte';
   import { byod } from '$src/lib/data/byod';
   import { Plus } from '@steeze-ui/heroicons';
@@ -30,7 +29,7 @@
       Preprocessing instructions available
       <a
         class="text-blue-400 hover:underline"
-        href="https://github.com/chaichontat/loopy-browser#example-preprocessing"
+        href="https://github.com/chaichontat/samui#example-preprocessing"
       >
         here.
       </a>
