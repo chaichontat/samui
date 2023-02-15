@@ -1,5 +1,4 @@
 <script lang="ts">
-  import preload from '$lib/data/preload';
   import Github from '$src/lib/components/github.svelte';
   import { byod } from '$src/lib/data/byod';
   import { Plus } from '@steeze-ui/heroicons';
@@ -8,7 +7,7 @@
 
 <!-- Splash import -->
 <nav class="flex w-full justify-between py-[18px] pl-4 pr-4 gap-x-4">
-  <div class="text-2xl font-medium text-yellow-300">Loopy Browser</div>
+  <div class="text-2xl font-medium text-yellow-300">Samui</div>
   <div class="flex-grow" />
   <Github />
 </nav>
@@ -30,7 +29,7 @@
       Preprocessing instructions available
       <a
         class="text-blue-400 hover:underline"
-        href="https://github.com/chaichontat/loopy-browser#example-preprocessing"
+        href="https://github.com/chaichontat/samui#example-preprocessing"
       >
         here.
       </a>
@@ -38,10 +37,10 @@
   </div>
 
   <a
-    href="https://loopybrowser.com/from?url=data2.loopybrowser.com/HumanPilot/&s=151507&s=151508&s=151509&s=151510&s=151669&s=151670&s=151671&s=151672&s=151673&s=151674&s=151675&s=151676"
+    href="/from?url=data2.loopybrowser.com/VisiumIF/&s=Br2720_Ant_IF&s=Br6432_Ant_IF&s=Br6522_Ant_IF&s=Br8667_Post_IF"
     class="splash-button group rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-cyan-200 dark:text-neutral-100 dark:focus:ring-cyan-800"
   >
-    <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium Data</span>
+    <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium-IF Data</span>
   </a>
 
   <a

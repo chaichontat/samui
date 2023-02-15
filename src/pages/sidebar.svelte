@@ -96,12 +96,12 @@
 <div class="flex-grow min-h-[24px]" />
 
 <div class="mx-auto justify-end text-xs text-center">
-  Loopy Browser {__VERSION__}
+  Samui {__VERSION__}
 </div>
 
 <a
   class="mb-6 mt-2 mx-auto text-xs relative inline-flex w-fit items-center justify-center overflow-hidden rounded p-0.5 focus:outline-none focus:ring group bg-gradient-to-br from-cyan-600 to-blue-600 text-neutral-900 hover:text-neutral-50  focus:ring-cyan-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
-  href="https://github.com/chaichontat/loopy-browser/issues"
+  href="https://github.com/chaichontat/samui/issues"
   target="_blank"
   rel="noreferrer"
 >

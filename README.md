@@ -1,16 +1,16 @@
-# ➰ Loopy Browser
+# 🏝️ Samui
 
-[![Run HumanPilot Workflow](https://github.com/chaichontat/loopy-browser/actions/workflows/humanpilot.yml/badge.svg)](https://github.com/chaichontat/loopy-browser/actions/workflows/humanpilot.yml)
+[![Run HumanPilot Workflow](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml/badge.svg)](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml)
 
-Loopy Browser is a performant visualization tool for spatial transcriptomics experiments.
+Samui is a performant visualization tool for spatial transcriptomics experiments.
 
 **Preprint available now!** [Performant web-based interactive visualization tool for spatially-resolved transcriptomics experiments](https://www.biorxiv.org/content/10.1101/2023.01.28.525943v1).
 
 ## Usage
 
-Head over to https://loopybrowser.com/ to see the Loopy Browser with example Visium-IF data.
+Head over to https://samuibrowser.com/ to see Samui with example Visium-IF data.
 
-You need to preprocess your image to form a tiled structure prior to being used in the Loopy Browser.
+You need to preprocess your image to form a tiled structure prior to being used in the Samui.
 
 ### Preprocessing
 
@@ -36,10 +36,10 @@ loopy image [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,Neu
 
 In this case, the output folder has the same name as the input file.
 
-You can drag this folder directly to https://loopybrowser.com/.
+You can drag this folder directly to https://samuibrowser.com/.
 Despite the Browser being a webpage, all data are processed locally on your computer.
 
-**This link opens the expected result: https://loopybrowser.com/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/&s=sample.**
+**This link opens the expected result: https://samuibrowser.com/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/&s=sample.**
 
 Here, the browser retrieves the processed folder hosted on an external server.
 You could share your files with your collaborators using your own file server or AWS S3.
@@ -69,14 +69,14 @@ For example, [scripts/process_merfish.py](scripts/process_merfish.py)
 ```
 
 This creates a sample folder that has an image along with a list of chunked features at `out/BrainReceptorShowcase1`.
-This folder can be dragged directly into Loopy Browser for visualization.
+This folder can be dragged directly into Samui for visualization.
 
 #### Hosting a Sample folder
 
-Loopy Browser can open a link that points to a sample folder directly from a URL in this format
+Samui can open a link that points to a sample folder directly from a URL in this format
 
 ```
-https://loopybrowser.com/from?url=[YOUR URL]&s=[SAMPLE1]&s=[SAMPLE2]
+https://samuibrowser.com/from?url=[YOUR URL]&s=[SAMPLE1]&s=[SAMPLE2]
 ```
 
 `YOUR URL` is the folder that contains the sample folders.
@@ -90,20 +90,10 @@ An example configuration is given below.
 
 ```json
 {
-    "AllowedHeaders": [
-        "*"
-    ],
-    "AllowedMethods": [
-        "GET",
-        "HEAD"
-    ],
-    "AllowedOrigins": [
-        "https://loopybrowser.com",
-        "https://dev.loopybrowser.com",
-        "https://loopy-browser.pages.dev",
-        "https://dev.loopy-browser.pages.dev"
-    ],
-    "MaxAgeSeconds": 3000
+  "AllowedHeaders": ["*"],
+  "AllowedMethods": ["GET", "HEAD"],
+  "AllowedOrigins": ["https://samuibrowser.com/", "https://dev.samuibrowser.com/"],
+  "MaxAgeSeconds": 3000
 }
 ```
 
@@ -124,7 +114,7 @@ The check boxes next to a feature display the border and fill of the spot (Visiu
 
 ### Annotation
 
-There are two separate types of annotations in Loopy Browser:
+There are two separate types of annotations in Samui:
 
 - ROI annotation
 - Feature annotation
@@ -159,7 +149,6 @@ The ability to draw ROIs is simply there to facilitate annotation, but each poin
 Following annotation, the outputs are _feature ID and their labels_.
 The exported results can be dragged back into the browser.
 
-
 ### Example data
 
 #### Visium data
@@ -175,20 +164,19 @@ If cell segmentation or spot deconvolution data are imported, these represent se
 
 Need to add here.
 
-
 ## Installation
 
 Install [`conda`](https://github.com/conda-forge/miniforge#miniforge3). These video guides can be helpful: [Mac](https://www.youtube.com/watch?v=328DQUWZP48) and [Windows](https://www.youtube.com/watch?v=-H_onyfW9VE). Then, in the Terminal, run
 
 ```sh
-git clone https://github.com/chaichontat/loopy-browser/
-cd loopy-browser
+git clone https://github.com/chaichontat/samui/
+cd samui
 conda env create -n loopy -f environment.yml
 ```
 
 ## Nomenclature
 
-Being compatible with static hosting, Loopy Browser has most of its data all precomputed.
+Being compatible with static hosting, Samui has most of its data all precomputed.
 
 - `sample.json`: this contains the overall detail of the sample, such as its names and list of features.
 - `{features}.json`: these are either headers for `ChunkedJSON` or headers and data for `PlainJSON`.
