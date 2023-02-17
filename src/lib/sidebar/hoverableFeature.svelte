@@ -32,7 +32,7 @@
           : 'opacity-80'
       )}
     >
-      {feature.feature}
+      {feature.group} > {feature.feature}
     </div>
   </slot>
 </button>
