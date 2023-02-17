@@ -43,7 +43,7 @@
     } else {
       elem = Plot.legend({
         color: {
-          interpolate: d3.interpolateTurbo,
+          interpolate: (i) => d3.interpolateTurbo(0.05 + i * 0.95),
           domain: [$sFeatureData.minmax[0], $sFeatureData.minmax[1]]
         },
         width: 250,

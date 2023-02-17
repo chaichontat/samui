@@ -41,6 +41,8 @@ function genCategoricalColors() {
 
 /**
  * Generate a style for a feature layer.
+ * Only gets called when switching between quantitative and categorical.
+ * Because a full WebGL rebuild is necessary to change styles.
  * @param type Feature type
  * @param spotDiamPx Diameter of a spot in pixels
  * @param imgmPerPx Resolution of the image in meters per pixel.
@@ -54,9 +56,7 @@ export function genSpotStyle(
   type: FeatureType,
   spotSizeMeter: number,
   mPerPx: number,
-  scale = true,
-  min = 0,
-  max = 1
+  scale = true
 ): LiteralStyle {
   // From mapp.ts
   // Lowest zoom level is 128x the native res of img.
@@ -74,15 +74,20 @@ export function genSpotStyle(
         size: 2
       };
 
+  const genColorInterpolation = (i: number) => {
+    const range = ['-', ['var', 'max'], ['var', 'min']];
+    return ['+', ['var', 'min'], ['*', range, i]];
+  };
+
   if (type === 'quantitative') {
     // Interpolation step and color level.
     const colors = [...Array(10).keys()].flatMap((i) => [
-      min + (max - min) * (i / 10),
+      genColorInterpolation(i / 10),
       d3.interpolateTurbo(0.05 + (i / 10) * 0.95)
     ]);
     // colors[1] += 'ff';
     return {
-      variables: { opacity: 0.9 },
+      variables: { opacity: 1, min: 0, max: 1 },
       symbol: {
         ...common,
         color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
@@ -95,7 +100,7 @@ export function genSpotStyle(
       symbol: {
         ...common,
         color: ['case', ...genCategoricalColors(), '#ffffff'],
-        opacity: ['clamp', ['var', 'opacity'], 0.1, 1]
+        opacity: ['clamp', ['var', 'opacity'], 0.15, 1]
       }
     };
   }

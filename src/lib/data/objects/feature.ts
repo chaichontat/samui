@@ -45,8 +45,8 @@ export const convertCategoricalToNumber = keyLRU((arr: (number | string)[]) => {
 });
 
 export const stats = keyLRU((arr: (number | string)[]) => {
-  if (typeof arr[0] === 'number') {
-    return [Math.min(...(arr as unknown as number[])), Math.max(...(arr as unknown as number[]))];
+  for (let i = 0; i < arr.length; i++) {
+    arr[i] = Number(arr[i]) || 0; // Convert NaN to 0.
   }
-  return undefined;
+  return [Math.min(...(arr as unknown as number[])), Math.max(...(arr as unknown as number[]))];
 });

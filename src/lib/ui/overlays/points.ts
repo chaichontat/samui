@@ -49,7 +49,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     return this._currStyle;
   }
 
-  setCurrStyle(style: string, min = 0, max = 10) {
+  setCurrStyle(style: string) {
     if (!this.coords) throw new Error('Must run update first.');
     if (style === this._currStyle && this.currPx === this.coords.sizePx) return;
 
@@ -59,10 +59,10 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
     switch (style) {
       case 'quantitative':
-        this.style = genSpotStyle('quantitative', this.coords.size, mPerPx, true, min, max);
+        this.style = genSpotStyle('quantitative', this.coords.size, mPerPx, true);
         break;
       case 'categorical':
-        this.style = genSpotStyle('categorical', this.coords.size, mPerPx, true, min, max);
+        this.style = genSpotStyle('categorical', this.coords.size, mPerPx, true);
         break;
       default:
         throw new Error(`Unknown style: ${style}`);
@@ -90,11 +90,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   _updateProperties(
     sample: Sample,
     fn: FeatureAndGroup,
-    {
-      dataType,
-      data,
-      minmax
-    }: { dataType: 'quantitative' | 'categorical'; data: number[]; minmax?: [number, number] }
+    { dataType, data }: { dataType: 'quantitative' | 'categorical'; data: number[] }
   ) {
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
@@ -121,8 +117,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     if (dataType === 'quantitative') {
-      const [min, max] = minmax ?? [Math.min(...data), Math.max(...data)];
-      this.setCurrStyle(dataType, min, max);
+      this.setCurrStyle(dataType);
     } else if (dataType === 'categorical') {
       this.setCurrStyle(dataType);
     } else {
@@ -230,7 +225,8 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
-      this._updateProperties(sample, fn, { dataType, data, minmax });
+      this._updateProperties(sample, fn, { dataType, data });
+      this.layer?.updateStyleVariables({ min: minmax[0], max: minmax[1] });
       this.currFeature = fn;
       this.currSample = sample.name;
     }
