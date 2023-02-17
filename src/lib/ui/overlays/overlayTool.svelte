@@ -14,7 +14,9 @@
   export let map: Mapp;
 
   const setOpacity = oneLRU((name: string, opacity: string) => {
-    $overlays[name]?.layer?.updateStyleVariables({ opacity: Number(opacity) });
+    $overlays[name]?.layer?.updateStyleVariables({
+      opacity: Number(opacity)
+    });
   });
 
   const outlinevis: Record<string, boolean> = {};
@@ -129,6 +131,14 @@
                 : 'None'
               : ''}
           </span>
+
+          <select
+            class="cursor-pointer form-select appearance-none w-full px-3 py-1 text-sm font-normal text-gray-700 bg-gray-800 bg-clip-padding bg-no-repeat border border-solid border-gray-600 rounded transition ease-in-out"
+          >
+            <option value="Turbo">Turbo</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
         </td>
         <td class="w-full" />
         <!-- Opacity bar -->

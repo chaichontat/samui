@@ -40,9 +40,9 @@
         }
       }
 
-      for (const c of image.channels) {
+      for (const [chan, color] of zip(image.channels, colors)) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        bandinfo[c] = { enabled: false, color: 'blue', max: 128 };
+        bandinfo[chan!] = { enabled: false, color: color!, max: 128 };
       }
 
       if (Object.keys(image.defaultChannels).length > 0) {
@@ -158,7 +158,10 @@
                       bg,
                       color !== 'white' ? 'opacity-90' : '',
                       i === 0 ? 'ml-1.5' : '',
-                      `mx-[1px] my-1 flex h-[16px] w-[16px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`
+                      `mx-[1px] my-1 flex h-[16px] w-[16px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`,
+                      imgCtrl.variables[name].color === color
+                        ? 'ring-2 ring-white ring-opacity-80'
+                        : ''
                     )}
                     aria-label={`${color} color button`}
                     data-testid="imgctrl-color-button"
