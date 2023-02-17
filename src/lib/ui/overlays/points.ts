@@ -2,22 +2,18 @@ import Feature from 'ol/Feature.js';
 import { Circle, Geometry, Point } from 'ol/geom.js';
 
 import type { Coord, CoordsData } from '$lib/data/objects/coords';
-import {
-  convertCategoricalToNumber,
-  type FeatureAndGroup,
-  type RetrievedData
-} from '$src/lib/data/objects/feature';
+import { convertCategoricalToNumber, type FeatureAndGroup } from '$src/lib/data/objects/feature';
 import type { Sample } from '$src/lib/data/objects/sample';
 import { keyLRU } from '$src/lib/lru';
 import { FeatureLabel } from '$src/lib/sidebar/annotation/annoUtils';
 import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
-import { rand } from '$src/lib/utils';
+import { handleError, rand } from '$src/lib/utils';
 import { isEqual } from 'lodash-es';
 import { View } from 'ol';
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
 import VectorSource from 'ol/source/Vector.js';
-import { Fill, RegularShape, Stroke, Style } from 'ol/style.js';
+import { Fill, Stroke, Style } from 'ol/style.js';
 import { get } from 'svelte/store';
 import { MapComponent } from '../definitions';
 import type { Mapp } from '../mapp';
@@ -49,7 +45,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     return this._currStyle;
   }
 
-  setCurrStyle(style: string) {
+  async setCurrStyle(style: string) {
     if (!this.coords) throw new Error('Must run update first.');
     if (style === this._currStyle && this.currPx === this.coords.sizePx) return;
 
@@ -70,7 +66,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
     this._currStyle = style;
     this.currPx = this.coords.sizePx;
-    this._rebuildLayer().catch(console.error);
+    await this._rebuildLayer();
   }
 
   updateMask(mask: boolean[]) {
@@ -87,7 +83,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
   }
 
-  _updateProperties(
+  async _updateProperties(
     sample: Sample,
     fn: FeatureAndGroup,
     { dataType, data }: { dataType: 'quantitative' | 'categorical'; data: number[] }
@@ -117,9 +113,9 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     if (dataType === 'quantitative') {
-      this.setCurrStyle(dataType);
+      await this.setCurrStyle(dataType);
     } else if (dataType === 'categorical') {
-      this.setCurrStyle(dataType);
+      await this.setCurrStyle(dataType);
     } else {
       throw new Error(`Unknown data type: ${dataType}`);
     }
@@ -225,8 +221,11 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
-      this._updateProperties(sample, fn, { dataType, data });
-      this.layer?.updateStyleVariables({ min: minmax[0], max: minmax[1] });
+      this._updateProperties(sample, fn, { dataType, data })
+        .then(() => {
+          this.layer?.updateStyleVariables({ min: minmax[0], max: minmax[1] });
+        })
+        .catch(handleError);
       this.currFeature = fn;
       this.currSample = sample.name;
     }
