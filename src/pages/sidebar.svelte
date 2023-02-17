@@ -64,10 +64,10 @@
     </Section>
   {/if}
 
-  <Section title="Notes" defaultOpen>
+  <Section title="Notes" defaultOpen class="-mt-4">
     {#if $sSample?.notesMd}
       {#await import('$src/lib/sidebar/markdown.svelte') then markdown}
-        <svelte:component this={markdown.default} url={$sSample.notesMd.url} />
+        <svelte:component this={markdown.default} url={$sSample.notesMd.url} class="leading-6" />
       {/await}
     {:else}
       No notes.

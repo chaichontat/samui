@@ -9,7 +9,7 @@
   import { unified } from 'unified';
   import { handleError } from '../utils';
 
-  let cl = 'text-sm overflow-x-scroll pl-4 -indent-4';
+  let cl = 'overflow-x-scroll pl-4 -indent-4';
   export { cl as class };
 
   export let url: string;
@@ -31,7 +31,7 @@
   });
 </script>
 
-<div class="relative">
+<div class="prose prose-sm prose-invert">
   <div class={cl} bind:this={div} />
 </div>
 
