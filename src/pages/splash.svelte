@@ -7,7 +7,14 @@
 
 <!-- Splash import -->
 <nav class="flex w-full justify-between py-[18px] pl-4 pr-4 gap-x-4">
-  <div class="text-2xl font-medium text-yellow-300">Samui</div>
+  <div class="text-2xl font-medium">
+    <a
+      href="https://en.wikipedia.org/wiki/Ko_Samui"
+      class="text-teal-400 hover:text-yellow-500 transition-colors duration-200"
+    >
+      🏝️ Samui
+    </a>
+  </div>
   <div class="flex-grow" />
   <Github />
 </nav>
@@ -15,7 +22,7 @@
 <div class="center flex flex-col items-center justify-center gap-y-5">
   <div class="flex flex-col items-center">
     <button
-      class="splash-button group mb-1 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 text-xl font-medium text-neutral-50 ring-pink-800"
+      class="splash-button group mb-1 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 text-xl font-medium text-neutral-50 ring-pink-800"
       on:click={byod}
     >
       <span class="flex items-center px-5 py-3 group-hover:bg-opacity-0">
@@ -38,14 +45,14 @@
 
   <a
     href="/from?url=data2.loopybrowser.com/VisiumIF/&s=Br2720_Ant_IF&s=Br6432_Ant_IF&s=Br6522_Ant_IF&s=Br8667_Post_IF"
-    class="splash-button group rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-cyan-200 dark:text-neutral-100 dark:focus:ring-cyan-800"
+    class="splash-button group rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-cyan-200 dark:text-neutral-100 dark:focus:ring-cyan-800"
   >
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium-IF Data</span>
   </a>
 
   <a
     href="/from?url=data2.loopybrowser.com/merfish/&s=BrainReceptorShowcase"
-    class="splash-button group rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-emerald-200 dark:text-neutral-100 dark:focus:ring-emerald-800"
+    class="splash-button group rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-emerald-200 dark:text-neutral-100 dark:focus:ring-emerald-800"
   >
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show MERFISH Data</span>
   </a>
