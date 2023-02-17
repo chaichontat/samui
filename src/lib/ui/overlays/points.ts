@@ -94,10 +94,12 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
     // TODO: Subsample if coords subsampled.
     if (data?.length !== this.features.length) {
-      console.error(
-        `Intensity length doesn't match. Expected: ${this.source?.getFeatures().length}, got: ${
-          data?.length
-        }`
+      handleError(
+        new Error(
+          `Feature ${fn.group} length does not match with the number of spots. Expected: ${
+            this.source?.getFeatures().length
+          }, got: ${data?.length}`
+        )
       );
       return false;
     }
