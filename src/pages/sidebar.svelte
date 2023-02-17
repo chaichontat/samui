@@ -85,32 +85,34 @@
       </Section>
     {/await}
   {/if}
+
+  <div class="w-full flex flex-col items-center">
+    <div class="mt-3 text-center font-mono text-sm">
+      {#if $sPixel}
+        Position: ({Math.round($sPixel[0])}, {Math.round($sPixel[1])})
+      {/if}
+    </div>
+
+    <div class="flex-grow min-h-[24px]" />
+
+    <div class="mx-auto justify-end text-xs text-center">
+      Samui {__VERSION__}
+    </div>
+
+    <a
+      class="mb-6 mt-2 mx-auto text-xs relative inline-flex w-fit items-center justify-center overflow-hidden rounded p-0.5 focus:outline-none focus:ring group bg-gradient-to-br from-cyan-600 to-blue-600 text-neutral-900 hover:text-neutral-50  focus:ring-cyan-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
+      href="https://github.com/chaichontat/samui/issues"
+      target="_blank"
+      rel="noreferrer"
+    >
+      <span
+        class="flex items-center gap-x-2 rounded bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900 dark:bg-opacity-80 px-2 py-1 group-hover:bg-opacity-0"
+      >
+        Report Issue
+      </span>
+    </a>
+  </div>
 </div>
-
-<div class="mt-3 text-center font-mono text-sm">
-  {#if $sPixel}
-    Position: ({Math.round($sPixel[0])}, {Math.round($sPixel[1])})
-  {/if}
-</div>
-
-<div class="flex-grow min-h-[24px]" />
-
-<div class="mx-auto justify-end text-xs text-center">
-  Samui {__VERSION__}
-</div>
-
-<a
-  class="mb-6 mt-2 mx-auto text-xs relative inline-flex w-fit items-center justify-center overflow-hidden rounded p-0.5 focus:outline-none focus:ring group bg-gradient-to-br from-cyan-600 to-blue-600 text-neutral-900 hover:text-neutral-50  focus:ring-cyan-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
-  href="https://github.com/chaichontat/samui/issues"
-  target="_blank"
-  rel="noreferrer"
->
-  <span
-    class="flex items-center gap-x-2 rounded bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900 dark:bg-opacity-80 px-2 py-1 group-hover:bg-opacity-0"
-  >
-    Report Issue
-  </span>
-</a>
 
 <!-- <div class="mt-6 text-sm">
   <Status />
