@@ -16,10 +16,10 @@
   onMount(() => {
     if (!navigator.userAgent.match(/chrome|chromium|crios/i)) {
       alert(
-        `Samui is optimized for Google Chrome.
-        Performance is degraded in Firefox.
+        `Samui is primarily tested on Google Chrome.
         Dragging and dropping files may not work on other browsers.
-        If you face issues, please try Google Chrome.`
+        Performance is known to be degraded in Firefox.
+        If you face issues, please try Google Chrome.`.replace(/\s+/g, ' ')
       );
     }
 
