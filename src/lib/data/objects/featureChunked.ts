@@ -86,15 +86,15 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
       if (name === -1) throw new Error('-1 sent to retrieve');
       await this.hydrate();
 
-      if (!densify) {
-        switch (this.sparseMode) {
-          case 'record':
-            densify = densifyToRecords(Object.keys(this.names!));
-            break;
-          case 'array':
-            densify = densifyToArray(this.length!); // After hydrated, this is guaranteed to be set.
-            break;
-        }
+      switch (this.sparseMode) {
+        case 'record':
+          densify = densifyToRecords(Object.keys(this.names!));
+          break;
+        case 'array':
+          densify = densifyToArray(this.length!); // After hydrated, this is guaranteed to be set.
+          break;
+        default: // Dense, array.
+          densify = (obj) => obj![0];
       }
 
       let idx: number;
@@ -127,14 +127,19 @@ export class ChunkedCSV extends Deferrable implements FeatureData {
       }).catch(handleError);
       const blob = await raw.blob();
       const decomped = await ChunkedCSV.decompressBlob(blob);
+      console.log(this.sparseMode);
 
-      const ret = await fromCSV(decomped);
+      const ret = await fromCSV(decomped, { header: Boolean(this.sparseMode) });
+
+      console.log(ret);
+
       if (!ret) {
         console.error('Failed to parse chunked CSV');
         return undefined;
       }
 
-      const data = densify ? densify(ret.data) : ret.data;
+      // @ts-ignore
+      const data = densify(ret.data);
       return {
         dataType: this.dataType,
         data,
