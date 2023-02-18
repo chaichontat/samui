@@ -53,7 +53,7 @@ export class PlainCSV extends Deferrable {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      const retrieved = await fromCSV(this.url.url, { download: true });
+      const retrieved = await fromCSV(this.url.url, { download: true, header: true });
       if (!retrieved) {
         console.error(`Cannot fetch ${this.url.url}.`);
         return this;

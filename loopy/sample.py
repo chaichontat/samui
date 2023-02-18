@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import json
 from pathlib import Path
 from typing import Any, Callable, Concatenate, Generic, Literal, ParamSpec, Protocol, TypeVar
 
@@ -13,6 +16,7 @@ from loopy.feature import (
     PlainCSVParams,
     compress_chunked_features,
     join_idx,
+    sparse_compress_chunked_features,
 )
 from loopy.image import Colors, GeoTiff, ImageParams
 from loopy.logger import log
@@ -44,7 +48,9 @@ class Sample(BaseModel):
     overlayParams: OverlayParams | None = None
     notesMd: Url | None = None
     metadataMd: Url | None = None
-    path: Path = None  # type: ignore  check_path removes the unhappy path.
+
+    path: Path = None  # type: ignore
+    lazy: bool = True
     queue_: list[tuple[str, Callable[[], None]]] = []
 
     @staticmethod
@@ -62,8 +68,8 @@ class Sample(BaseModel):
 
     def __init__(
         self,
-        name: str,
         *,
+        name: str | None = None,
         path: Path | str | None = None,
         imgParams: ImageParams | None = None,
         coordParams: list[CoordParams] | None = None,
@@ -71,15 +77,23 @@ class Sample(BaseModel):
         overlayParams: OverlayParams | None = None,
         notesMd: Url | None = None,
         metadataMd: Url | None = None,
+        lazy: bool = True,
+        queue_: list[tuple[str, Callable[[], None]]] = [],
         **kwargs: Any,
     ) -> None:
+        existing_kwargs = {}
         if path:
             path = Path(path)
+            if path.joinpath("sample.json").exists():
+                existing_kwargs = json.loads(path.joinpath("sample.json").read_text())
             path.mkdir(exist_ok=True, parents=True)
             if not path.is_dir():
                 raise ValueError(f"Path {path} is not a directory")
 
-        super().__init__(
+        if not name and (path is None or not existing_kwargs):
+            raise ValueError("Name must be provided if path is not set or sample.json does not exist")
+
+        curr = dict(
             name=name,
             path=path,
             imgParams=imgParams,
@@ -88,16 +102,17 @@ class Sample(BaseModel):
             overlayParams=overlayParams,
             notesMd=notesMd,
             metadataMd=metadataMd,
+            lazy=lazy,
+            queue_=queue_,
             **kwargs,
         )
 
-    def json(self, **kwargs: Any) -> str:
-        return super().json(exclude={"path", "queue_"}, **kwargs)
+        super().__init__(**(existing_kwargs | {k: v for k, v in curr.items() if v is not None}))
 
     @check_path
     def write(self, execute: bool = True) -> Self:
         """Write sample.json to disk"""
-        if execute:
+        if execute and self.lazy:
             log(f"'{self.name}' Executing queued functions")
             for f in self.queue_:
                 try:
@@ -154,15 +169,13 @@ class Sample(BaseModel):
             self.path / f"{tiff.stem}.tif", quality=quality, save_uncompressed=save_uncompressed
         )
 
-        transform_func()
+        transform_func() if not self.lazy else self.queue_.append((f"Add image: {tiff}", transform_func))
         self.imgParams = ImageParams.from_names(
             names,
             channels=channels,
             mPerPx=geotiff.scale,
             defaultChannels=defaultChannels,
         )
-
-        # self.queue_.append((f"Add image: {tiff}", transform_func))
         return self
 
     @check_path
@@ -195,13 +208,23 @@ class Sample(BaseModel):
         if name in [c.name for c in self.coordParams]:
             self.coordParams = [c for c in self.coordParams if c.name != name]
 
-        run()
+        run() if not self.lazy else self.queue_.append((f"Add coords {name}", run))
         self.coordParams.append(
             CoordParams(url=Url(f"{name}.csv"), name=name, shape="circle", mPerPx=mPerPx, size=size)
         )
-
-        # self.queue_.append((f"Add coords {name}", run))
         return self
+
+    def delete_coords(self, name: str):
+        """Delete a coordinate dataframe
+
+        Args:
+            name (str): Name of the coordinate dataframe specified in Sample.add_coords()
+        """
+        if not self.coordParams or not name in [c.name for c in self.coordParams]:
+            raise ValueError(f"Coord name {name} not found")
+
+        self.coordParams = [c for c in self.coordParams if c.name != name]
+        (self.path / f"{name}.csv").unlink()
 
     def _join_with_coords(self, df: pd.DataFrame, *, coordName: str) -> pd.DataFrame:
         """Join a feature dataframe with its respective coordinate dataframe.
@@ -226,6 +249,7 @@ class Sample(BaseModel):
         try:
             template = pd.read_csv(self.path / coord_params.url.url, index_col=0)
             template.index = template.index.astype(str)
+            template = pd.DataFrame(index=template.index)
         except FileNotFoundError:
             raise ValueError(f"Coord {coordName} not found. Use Sample.add_coords() before adding features.")
 
@@ -271,8 +295,7 @@ class Sample(BaseModel):
                 self.path / f"{name}.csv", index_label="id", float_format="%.6e"
             )
 
-        run()
-        # self.queue_.append((f"Add csv feature {name}", run))
+        run() if not self.lazy else self.queue_.append((f"Add csv feature {name}", run))
         self._add_feature(
             PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=dataType, coordName=coordName)
         )
@@ -285,28 +308,46 @@ class Sample(BaseModel):
         *,
         name: str,
         coordName: str,
-        sparse: bool = True,
+        sparse: bool = False,
         unit: str | None = None,
         dataType: Literal["quantitative", "categorical"] = "quantitative",
     ) -> Self:
         def run():
             log(self.name, "Adding chunked feature", f"'{name}'")
             joined = self._join_with_coords(df, coordName=coordName)
-            header, bytedict = compress_chunked_features(
-                joined, "spots", "csc", logger=lambda *args: log(self.name, *args)
-            )
+            if sparse:
+                header, bytedict = sparse_compress_chunked_features(
+                    joined, coordName, "csc", logger=lambda *args: log(self.name, *args)
+                )
+            else:
+                header, bytedict = compress_chunked_features(
+                    joined, "spots", logger=lambda *args: log(self.name, *args)
+                )
             log(f"Writing compressed chunks for {name}:", f"{len(bytedict)} bytes")
             header.write(self.path / f"{name}.json")
             (self.path / name).with_suffix(".bin").write_bytes(bytedict)
 
-        # self.queue_.append((f"Add chunked {name}", run))
-        run()
+        run() if not self.lazy else self.queue_.append((f"Add chunked {name}", run))
         self._add_feature(
             ChunkedCSVParams(
                 name=name, url=Url(f"{name}.bin"), unit=unit, dataType=dataType, coordName=coordName
             )
         )
         return self
+
+    def delete_feature(self, name: str):
+        """Delete a feature from the sample.
+
+        Args:
+            name (str): Name of the feature to delete
+        """
+        if not self.featParams or not name in [f.name for f in self.featParams]:
+            raise ValueError(f"Feature {name} not found.")
+
+        self.featParams = [f for f in self.featParams if f.name != name]
+        (self.path / name).with_suffix(".csv").unlink(missing_ok=True)
+        (self.path / name).with_suffix(".bin").unlink(missing_ok=True)
+        (self.path / name).with_suffix(".json").unlink(missing_ok=True)
 
     def set_default_feature(self, *, group: str, feature: str) -> Self:
         self.overlayParams = self.overlayParams or OverlayParams()
@@ -315,3 +356,6 @@ class Sample(BaseModel):
         if not (fg := FeatureAndGroup(group=group, feature=feature)) in self.overlayParams.defaults:
             self.overlayParams.defaults.append(fg)
         return self
+
+    def json(self, **kwargs: Any) -> str:
+        return super().json(exclude={"path", "lazy", "queue_"}, **kwargs)

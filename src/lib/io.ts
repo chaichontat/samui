@@ -33,7 +33,6 @@ export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { downl
   //@ts-ignore
   Papa.parse(str, {
     dynamicTyping: true,
-    header: true,
     worker: true,
     delimiter: ',',
     skipEmptyLines: 'greedy',

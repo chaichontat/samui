@@ -8,11 +8,11 @@
 <!-- Splash import -->
 <nav class="flex w-full justify-between py-[18px] pl-4 pr-4 gap-x-4">
   <div class="text-2xl font-medium">
-    <a
+    🏝️ <a
       href="https://en.wikipedia.org/wiki/Ko_Samui"
-      class="text-teal-400 hover:text-yellow-500 transition-colors duration-200"
+      class="animate-text bg-gradient-to-br from-yellow-100 via-yellow-200 to-teal-400 bg-clip-text text-transparent duration-300 ease-in-out"
     >
-      🏝️ Samui
+      Samui
     </a>
   </div>
   <div class="flex-grow" />

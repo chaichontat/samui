@@ -70,7 +70,7 @@ export class CoordsData extends Deferrable {
       if (handle) {
         this.url = await convertLocalToNetwork(handle, this.url);
       }
-      await fromCSV(this.url.url, { download: true }).then(
+      await fromCSV(this.url.url, { download: true, header: true }).then(
         (x) => (this._posOri = this.pos = x?.data as Coord[])
       );
     } else {

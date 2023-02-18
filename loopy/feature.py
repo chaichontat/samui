@@ -82,7 +82,6 @@ class ChunkedCSVHeader(ReadonlyModel):
     length: int
     activeDefault: str | None = None
     sparseMode: Literal["record", "array"] | None = None
-    coordName: str | None = None
 
     def write(self, path: Path) -> None:
         path.write_text(self.json())
@@ -91,6 +90,11 @@ class ChunkedCSVHeader(ReadonlyModel):
 class FeatureAndGroup(ReadonlyModel):
     feature: str
     group: str | None = None
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, FeatureAndGroup):
+            return False
+        return self.feature == other.feature and self.group == other.group
 
 
 FeatureParams = ChunkedCSVParams | PlainCSVParams
@@ -119,10 +123,7 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
                 f"Template (coords) index is not unique. {df.index[df.index.duplicated()]} duplicated"
             )
 
-    if "x" in feat.columns or "y" in feat.columns:
-        raise ValueError("Feature dataframe cannot have columns named 'x' or 'y'")
-
-    joined = template.join(feat, validate="one_to_one").drop(columns=["x", "y"])
+    joined = template.join(feat, validate="one_to_one")
 
     # raise error if there are any NaNs
     # ignore NaN for now, we have one to one mapping validation already.
@@ -136,7 +137,29 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
 
 def compress_chunked_features(
     df: pd.DataFrame,
-    coordName: str,
+    logger: Callback = log,
+) -> tuple[ChunkedCSVHeader, bytearray]:
+
+    names = df.columns
+    objs = [df[[name]].T.to_csv(header=False, index=False).encode() for name in df.columns]
+
+    logger("Concatenating and compressing chunks")
+    ptr, outbytes = concat(objs)
+    length = len(df)
+
+    return (
+        ChunkedCSVHeader(
+            names=names.to_list(),
+            ptr=ptr.tolist(),
+            length=length,
+            sparseMode=None,
+        ),
+        outbytes,
+    )
+
+
+def sparse_compress_chunked_features(
+    df: pd.DataFrame,
     mode: Literal["csr", "csc"] = "csc",
     logger: Callback = log,
 ) -> tuple[ChunkedCSVHeader, bytearray]:
@@ -189,7 +212,6 @@ def compress_chunked_features(
             ptr=ptr.tolist(),
             length=length,
             sparseMode="array" if mode == "csc" else "record",
-            coordName=coordName,
         ),
         outbytes,
     )

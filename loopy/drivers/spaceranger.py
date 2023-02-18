@@ -107,7 +107,7 @@ def run_spaceranger(
             mPerPx=mPerPx,
             size=spotDiam,
         )
-        .add_chunked_feature(vis.to_df(), name="genes", coordName="spots", unit="Log counts")
+        .add_chunked_feature(vis.to_df(), name="genes", coordName="spots", unit="Log counts", sparse=True)
         .write()
     )
     return sample

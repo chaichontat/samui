@@ -24,6 +24,8 @@
   $: if ($sMapp && (showSidebar || !showSidebar)) setTimeout(updateSize, 10);
 </script>
 
+<svelte:head><title>Samui {$sSample?.name ? `- ${$sSample.name}` : ''}</title></svelte:head>
+
 <div
   class={classes(
     'relative w-full overflow-hidden',
