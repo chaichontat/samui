@@ -82,7 +82,6 @@ class ChunkedCSVHeader(ReadonlyModel):
     length: int
     activeDefault: str | None = None
     sparseMode: Literal["record", "array"] | None = None
-    coordName: str | None = None
 
     def write(self, path: Path) -> None:
         path.write_text(self.json())
@@ -138,7 +137,6 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
 
 def compress_chunked_features(
     df: pd.DataFrame,
-    coordName: str,
     logger: Callback = log,
 ) -> tuple[ChunkedCSVHeader, bytearray]:
 
@@ -155,7 +153,6 @@ def compress_chunked_features(
             ptr=ptr.tolist(),
             length=length,
             sparseMode=None,
-            coordName=coordName,
         ),
         outbytes,
     )
@@ -163,7 +160,6 @@ def compress_chunked_features(
 
 def sparse_compress_chunked_features(
     df: pd.DataFrame,
-    coordName: str,
     mode: Literal["csr", "csc"] = "csc",
     logger: Callback = log,
 ) -> tuple[ChunkedCSVHeader, bytearray]:
@@ -216,7 +212,6 @@ def sparse_compress_chunked_features(
             ptr=ptr.tolist(),
             length=length,
             sparseMode="array" if mode == "csc" else "record",
-            coordName=coordName,
         ),
         outbytes,
     )
