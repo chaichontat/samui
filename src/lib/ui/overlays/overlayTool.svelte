@@ -1,23 +1,35 @@
 <script lang="ts">
-  import { oneLRU } from '$lib/lru';
-  import { annoFeat, overlays, overlaysFeature, sEvent, sOverlay, sSample } from '$lib/store';
+  import {
+    annoFeat,
+    overlays,
+    overlaysFeature,
+    sEvent,
+    sMapp,
+    sOverlay,
+    sSample
+  } from '$lib/store';
+
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes } from '$src/lib/utils';
-  import { ArrowLongRight, Plus, XMark } from '@steeze-ui/heroicons';
+  import { ArrowLongRight, Link, Plus, XMark } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
-  import type { Mapp } from '../mapp';
   import { tooltip } from '../utils';
-  import { WebGLSpots } from './points';
+  import OverlayAdjust from './overlayAdjust.svelte';
+  import { WebGLSpots, type StyleVars } from './points';
 
   let sample: Sample;
   $: sample = $sSample;
-  export let map: Mapp;
 
-  const setOpacity = oneLRU((name: string, opacity: string) => {
-    $overlays[name]?.layer?.updateStyleVariables({
-      opacity: Number(opacity)
-    });
-  });
+  let linkMinmax = false;
+
+  const setStyleVars = (name: string, obj: { opacity?: string; max?: string; min?: string }) => {
+    const numed: StyleVars = {};
+    for (const [k, v] of Object.entries(obj)) {
+      // @ts-ignore
+      numed[k] = Number(v);
+    }
+    $overlays[name]?.updateStyleVariables(numed);
+  };
 
   const outlinevis: Record<string, boolean> = {};
   const visible: Record<string, boolean> = {};
@@ -33,69 +45,25 @@
     }
   };
 
-  function addOverlay(ev: CustomEvent<{ e: EventTarget & HTMLInputElement }>) {
-    const ol = new WebGLSpots(map);
+  function addOverlay() {
+    const ol = new WebGLSpots($sMapp);
     $overlays[ol.uid] = ol;
     $sOverlay = ol.uid;
   }
-  //   const name = prompt('Overlay name?');
-  //   if (!name) {
-  //     alert('Name cannot be empty.');
-  //     return;
-  //   }
-
-  //   if (name in $sSample.coords) {
-  //     alert('Name cannot be the same as existing overlay.');
-  //     return;
-  //   }
-
-  //   const raw = await getFileFromEvent(ev.detail.e);
-  //   const pos = await fromCSV(raw);
-  //   if (!pos || pos.errors.length) {
-  //     alert(pos?.errors.join(', '));
-  //     return;
-  //   }
-
-  //   for (const p of pos.data) {
-  //     if (!('x' in p) || !('y' in p)) {
-  //       alert('x or y not in every line.');
-  //       return;
-  //     }
-  //   }
-
-  //   const op: CoordsParams = {
-  //     name,
-  //     shape: 'circle',
-  //     pos: pos.data as Coord[],
-  //     mPerPx: sample.image?.mPerPx,
-  //     addedOnline: true
-  //   };
-
-  //   sample!.coords[name] = new CoordsData(op);
-  //   // await map.update({ overlays: sample!.overlays, refresh: true });
-  //   $sSample = $sSample;
-  //   for (const [name, v] of Object.entries(visible)) {
-  //     setVisible(name, v);
-  //   }
-  //   for (const [name, v] of Object.entries(outlinevis)) {
-  //     setVisible(name, v, true);
-  //   }
-  //   $sOverlay = name;
-  // }
 </script>
 
 <table class="min-w-[250px] table-fixed">
   {#if sample}
     {#each Object.entries($overlays) as [uid, ov], i}
       {@const fg = $overlaysFeature[uid]}
-      <tr class:opacity-70={$sOverlay !== ov.uid}>
+      <tr>
         <td>
           <Icon
             src={ArrowLongRight}
             class={classes('svg-icon mr-1', $sOverlay === ov.uid ? '' : 'invisible')}
           />
         </td>
-        <td class="flex items-center">
+        <td class="flex items-center" class:opacity-70={$sOverlay !== ov.uid}>
           <!-- Outline checkbox -->
           <input
             type="checkbox"
@@ -108,6 +76,7 @@
           <input
             type="checkbox"
             class="cursor-pointer"
+            class:opacity-70={$sOverlay !== ov.uid}
             checked
             use:tooltip={{ content: 'Fill' }}
             on:change={(e) => setVisible(uid, e.currentTarget.checked)}
@@ -115,7 +84,7 @@
           &nbsp;
         </td>
         <!-- Overlay name -->
-        <td>
+        <td class:opacity-70={$sOverlay !== ov.uid}>
           <span
             on:click={() => ($sOverlay = uid)}
             class={classes(
@@ -131,27 +100,25 @@
                 : 'None'
               : ''}
           </span>
-
-          <!-- <select
-            class="cursor-pointer form-select appearance-none w-full px-3 py-1 text-sm font-normal text-gray-700 bg-gray-800 bg-clip-padding bg-no-repeat border border-solid border-gray-600 rounded transition ease-in-out"
-          >
-            <option value="Turbo">Turbo</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-          </select> -->
         </td>
         <td class="w-full" />
+        <td class="flex items-center mr-1">
+          <!-- Colormap/scale adjustments -->
+          <OverlayAdjust {ov} />
+          <!-- circle -->
+        </td>
         <!-- Opacity bar -->
         <td>
           <input
             class="max-w-[5rem] -translate-y-0.5 cursor-pointer align-middle opacity-80"
+            class:opacity-70={$sOverlay !== ov.uid}
             type="range"
             min="0"
             max="1"
             value="0.8"
             step="0.01"
-            on:change={(e) => setOpacity(uid, e.currentTarget.value)}
-            on:mousemove={(e) => setOpacity(uid, e.currentTarget.value)}
+            on:change={(e) => setStyleVars(uid, { opacity: e.currentTarget.value })}
+            on:mousemove={(e) => setStyleVars(uid, { opacity: e.currentTarget.value })}
             use:tooltip={{ content: 'Opacity' }}
           />
         </td>
@@ -179,6 +146,33 @@
     {/each}
   {/if}
 </table>
+
+<!-- Link button -->
+<!-- {#if Object.entries($overlays).length > 1}
+  <div class="flex justify-center">
+    <button
+      class={classes(
+        'flex rounded  w-fit p-1 px-2',
+        linkMinmax ? 'bg-sky-600 text-neutral-200' : 'bg-neutral-700 text-neutral-500'
+      )}
+      on:click={() => {
+        linkMinmax = !linkMinmax;
+        if (linkMinmax) {
+          const min = Math.min(...Object.values($overlays).map((o) => o.currStyleVariables?.min));
+          const max = Math.max(...Object.values($overlays).map((o) => o.currStyleVariables?.max));
+          for (const ov of Object.values($overlays)) {
+            ov.updateStyleVariables({ min, max });
+          }
+        }
+      }}
+    >
+      {#if linkMinmax}
+        <Icon src={Link} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[2.5px] stroke-[2.5]" />
+      {/if}
+      Link min/max
+    </button>
+  </div>
+{/if} -->
 
 <div class="flex w-full justify-center border-t border-t-white/30">
   <!-- <FileInput accept=".csv" on:import={addOverlay}> -->
