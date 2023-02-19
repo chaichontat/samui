@@ -1,14 +1,12 @@
 import type { FeatureType } from '$src/lib/data/objects/feature';
-import { genLRU } from '$src/lib/lru';
 import * as d3 from 'd3';
-import { zip } from 'lodash-es';
 import type { LiteralStyle } from 'ol/style/literal';
 
-// export function genColor(band: string, color: keyof typeof _colors) {
-
-//   return ['interpolate', ['linear'], normalize(band), ...genColormap(color)];
-// }
-const _colors = {
+export const colorMaps = {
+  blues: (t: number) => `rgba(0,0,255,${t})`,
+  greens: (t: number) => `rgba(0,255,0,${t})`,
+  reds: (t: number) => `rgba(255,0,0,${t})`,
+  turbo: d3.interpolateTurbo,
   viridis: d3.interpolateViridis,
   inferno: d3.interpolateInferno,
   magma: d3.interpolateMagma,
@@ -18,13 +16,9 @@ const _colors = {
   cubehelixDefault: d3.interpolateCubehelixDefault,
   rainbow: d3.interpolateRainbow,
   sinebow: d3.interpolateSinebow,
-  blues: (t: number) => d3.interpolateBlues(1 - t),
-  greens: d3.interpolateGreens,
-  greys: d3.interpolateGreys,
+  greys: (t: number) => d3.interpolateGreys(1 - t),
   oranges: d3.interpolateOranges,
   purples: d3.interpolatePurples,
-  reds: d3.interpolateReds,
-  turbo: d3.interpolateTurbo,
   cividis: d3.interpolateCividis
 };
 
@@ -39,6 +33,11 @@ function genCategoricalColors() {
   return colors;
 }
 
+function genColorInterpolation(i: number) {
+  const range = ['-', ['var', 'max'], ['var', 'min']];
+  return ['+', ['var', 'min'], ['*', range, i]];
+}
+
 /**
  * Generate a style for a feature layer.
  * Only gets called when switching between quantitative and categorical.
@@ -49,15 +48,20 @@ function genCategoricalColors() {
  *        Necessary to know the base resolution as openlayers operate in "zoom levels"
  *        Can be undefined if no image is loaded.
  * @param scale Whether to scale the features with zoom
- * @param min Minimum value of the feature for colormap
- * @param max Maximum value of the feature for colormap
  */
-export function genSpotStyle(
-  type: FeatureType,
-  spotSizeMeter: number,
-  mPerPx: number,
+export function genSpotStyle({
+  type,
+  spotSizeMeter,
+  mPerPx,
+  colorMap = 'turbo',
   scale = true
-): LiteralStyle {
+}: {
+  type: FeatureType;
+  spotSizeMeter: number;
+  mPerPx: number;
+  colorMap?: keyof typeof colorMaps;
+  scale?: boolean;
+}): LiteralStyle {
   // From mapp.ts
   // Lowest zoom level is 128x the native res of img.
   // Highest zoom level is 1/4x the native res of img.
@@ -74,18 +78,14 @@ export function genSpotStyle(
         size: 2
       };
 
-  const genColorInterpolation = (i: number) => {
-    const range = ['-', ['var', 'max'], ['var', 'min']];
-    return ['+', ['var', 'min'], ['*', range, i]];
-  };
-
   if (type === 'quantitative') {
     // Interpolation step and color level.
     const colors = [...Array(10).keys()].flatMap((i) => [
       genColorInterpolation(i / 10),
-      d3.interpolateTurbo(0.05 + (i / 10) * 0.95)
+      colorMaps[colorMap](0.05 + (i / 10) * 0.95)
     ]);
-    // colors[1] += 'ff';
+    console.log(d3.interpolateTurbo(0.5));
+
     return {
       variables: { opacity: 1, min: 0, max: 1 },
       symbol: {
@@ -94,7 +94,7 @@ export function genSpotStyle(
         opacity: ['clamp', ['*', ['var', 'opacity'], ['get', 'opacity']], 0.15, 1] // Floor before can't hover above.
       }
     };
-  } else {
+  } else if (type === 'categorical') {
     return {
       variables: { opacity: 0.9 },
       symbol: {
@@ -103,5 +103,7 @@ export function genSpotStyle(
         opacity: ['clamp', ['var', 'opacity'], 0.15, 1]
       }
     };
+  } else {
+    throw new Error('Unknown feature type');
   }
 }

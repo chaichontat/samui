@@ -8,7 +8,7 @@ import { keyLRU } from '$src/lib/lru';
 import { FeatureLabel } from '$src/lib/sidebar/annotation/annoUtils';
 import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
 import { handleError, rand } from '$src/lib/utils';
-import { isEqual } from 'lodash-es';
+import { isEqual, throttle } from 'lodash-es';
 import { View } from 'ol';
 import VectorLayer from 'ol/layer/Vector.js';
 import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
@@ -17,11 +17,13 @@ import { Fill, Stroke, Style } from 'ol/style.js';
 import { get } from 'svelte/store';
 import { MapComponent } from '../definitions';
 import type { Mapp } from '../mapp';
-import { genSpotStyle } from './featureColormap';
+import { colorMaps, genSpotStyle } from './featureColormap';
+
+export type StyleVars = { opacity?: number; min?: number; max?: number };
 
 export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point>>> {
   outline: CanvasSpots;
-  _currStyle: string;
+  _currStyle: 'categorical' | 'quantitative';
   uid: string;
   features?: Feature<Point>[];
 
@@ -30,10 +32,16 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   currPx?: number;
   currLegend?: (string | number)[];
   currUnit?: string;
+  currColorMap: keyof typeof colorMaps = 'turbo';
+  currStyleVariables = { opacity: 1, min: 0, max: 0 };
+  z: number;
 
   // WebGLSpots only gets created after mount.
   constructor(map: Mapp) {
-    super(map, genSpotStyle('categorical', 2e-6, map.mPerPx ?? 2e-6));
+    super(
+      map,
+      genSpotStyle({ type: 'categorical', spotSizeMeter: 2e-6, mPerPx: map.mPerPx ?? 2e-6 })
+    );
     this.uid = rand();
     this._currStyle = 'categorical';
     this.outline = new CanvasSpots(this.map);
@@ -45,28 +53,37 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     return this._currStyle;
   }
 
-  async setCurrStyle(style: string) {
+  async setCurrStyle(style: 'categorical' | 'quantitative', colorMap: keyof typeof colorMaps) {
     if (!this.coords) throw new Error('Must run update first.');
-    if (style === this._currStyle && this.currPx === this.coords.sizePx) return;
+    if (
+      style === this._currStyle &&
+      this.currPx === this.coords.sizePx &&
+      colorMap === this.currColorMap
+    ) {
+      return;
+    }
 
     // If image is loaded, view is based on that of image, which means zoom level
     // is tied to the mPerPx of the image.
     const mPerPx = this.map.mPerPx ?? this.coords.mPerPx;
-
-    switch (style) {
-      case 'quantitative':
-        this.style = genSpotStyle('quantitative', this.coords.size, mPerPx, true);
-        break;
-      case 'categorical':
-        this.style = genSpotStyle('categorical', this.coords.size, mPerPx, true);
-        break;
-      default:
-        throw new Error(`Unknown style: ${style}`);
-    }
+    this.style = genSpotStyle({
+      type: style,
+      spotSizeMeter: this.coords.size,
+      mPerPx,
+      colorMap,
+      scale: true
+    });
 
     this._currStyle = style;
+    this.currColorMap = colorMap;
     this.currPx = this.coords.sizePx;
     await this._rebuildLayer();
+    this.layer?.updateStyleVariables(this.currStyleVariables);
+  }
+
+  async setColorMap(colorMap: keyof typeof colorMaps) {
+    await this.setCurrStyle(this.currStyle, colorMap);
+    sEvent.set({ type: 'overlayAdjusted' });
   }
 
   updateMask(mask: boolean[]) {
@@ -115,9 +132,9 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     }
 
     if (dataType === 'quantitative') {
-      await this.setCurrStyle(dataType);
+      await this.setCurrStyle(dataType, this.currColorMap);
     } else if (dataType === 'categorical') {
-      await this.setCurrStyle(dataType);
+      await this.setCurrStyle(dataType, this.currColorMap);
     } else {
       throw new Error(`Unknown data type: ${dataType}`);
     }
@@ -138,10 +155,13 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     });
 
     const prev = this.layer;
-    this.map.map!.addLayer(newLayer);
     if (prev) {
+      const idx = this.map.map!.getLayers().getArray().indexOf(prev);
+      this.map.map!.getLayers().insertAt(idx, newLayer);
       this.map.map!.removeLayer(prev);
       prev.dispose();
+    } else {
+      this.map.map!.addLayer(newLayer);
     }
     this.layer = newLayer;
     console.debug(`Overlay ${this.uid} rebuilt.`);
@@ -225,7 +245,9 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
       this._updateProperties(sample, fn, { dataType, data })
         .then(() => {
-          this.layer?.updateStyleVariables({ min: minmax[0], max: minmax[1] });
+          if (this.currStyleVariables.min === 0 && this.currStyleVariables.max === 0) {
+            this.updateStyleVariables({ min: minmax[0], max: minmax[1] });
+          }
         })
         .catch(handleError);
       this.currFeature = fn;
@@ -270,6 +292,12 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
       return f;
     });
   });
+
+  updateStyleVariables = throttle((opt: { opacity?: number; min?: number; max?: number }) => {
+    this.layer?.updateStyleVariables(opt);
+    this.currStyleVariables = { ...this.currStyleVariables, ...opt };
+    if ('min' in opt || 'max' in opt) sEvent.set({ type: 'overlayAdjusted' });
+  }, 50);
 }
 
 // TODO: Combine activespots and canvasspots

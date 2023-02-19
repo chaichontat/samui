@@ -121,6 +121,7 @@ export const sEvent = writable(
           | 'pointsAdded'
           | 'viewAdjusted'
           | 'maskUpdated'
+          | 'overlayAdjusted'
           | 'renderComplete';
       }
     | undefined
