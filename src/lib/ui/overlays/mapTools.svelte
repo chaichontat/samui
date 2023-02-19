@@ -20,7 +20,8 @@
     map.persistentLayers.active.visible = false;
     map.map.once('rendercomplete', async () => {
       const blob = await toBlob(
-        map.map!.getTargetElement().parentElement!.parentElement!.parentElement!,
+        map.map!.getTargetElement().parentElement!.parentElement!.parentElement!.parentElement!
+          .parentElement!,
         {
           filter: (node) =>
             typeof node.className?.indexOf !== 'function' ||
