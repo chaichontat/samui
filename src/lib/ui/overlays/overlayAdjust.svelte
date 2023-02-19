@@ -1,18 +1,17 @@
 <script lang="ts">
-  import { sEvent } from '$lib/store';
   import type { colorMaps } from '$lib/ui/overlays/featureColormap';
   import DraggableNumber from '$src/lib/components/DraggableNumber.svelte';
   import { sFeatureData } from '$src/lib/store';
-  import { classes } from '$src/lib/utils';
+  import { classes, handleError } from '$src/lib/utils';
   import { Popover, PopoverButton, PopoverPanel, Transition } from '@rgossiaux/svelte-headlessui';
-  import { throttle } from 'lodash-es';
+  import { debounce, throttle } from 'lodash-es';
   import { createEventDispatcher } from 'svelte';
   import { tooltip } from '../utils';
   import type { WebGLSpots } from './points';
 
   export let ov: WebGLSpots;
   let minmax: [number, number] = [0, 0];
-  let colormap: keyof typeof colorMaps = 'viridis';
+  let colormap: keyof typeof colorMaps = 'turbo';
   const dispatch = createEventDispatcher();
 
   let colorMapClass: Record<keyof typeof colorMaps, string> = {
@@ -50,6 +49,10 @@
   }, 50);
 
   $: update(minmax);
+
+  const hover = debounce((cm: keyof typeof colorMaps) => {
+    ov.setColorMap(cm).catch(handleError);
+  }, 200);
 </script>
 
 {#if ov.currStyle === 'quantitative'}
@@ -73,6 +76,8 @@
       <PopoverPanel class="absolute z-10">
         <div
           class="flex flex-col items-center bg-neutral-700/90 backdrop-blur p-3 rounded-lg mt-2 shadow -translate-x-1/2 gap-2"
+          on:mouseout={() => hover(colormap).catch(handleError)}
+          on:blur={() => hover(colormap).catch(handleError)}
         >
           <!-- Color circles -->
           <div class="flex flex-wrap max-w-[16rem] justify-center gap-1">
@@ -85,9 +90,10 @@
                 )}
                 use:tooltip={{ content: name.charAt(0).toUpperCase() + name.slice(1) }}
                 on:click={() => {
-                  ov.setColorMap(name);
+                  ov.setColorMap(name).catch(handleError);
                   colormap = name;
                 }}
+                on:mouseover={() => hover(name)}
               />
             {/each}
           </div>
