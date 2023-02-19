@@ -76,8 +76,8 @@
       <PopoverPanel class="absolute z-10">
         <div
           class="flex flex-col items-center bg-neutral-700/90 backdrop-blur p-3 rounded-lg mt-2 shadow -translate-x-1/2 gap-2"
-          on:mouseout={() => hover(colormap).catch(handleError)}
-          on:blur={() => hover(colormap).catch(handleError)}
+          on:mouseout={() => hover(colormap)}
+          on:blur={() => hover(colormap)}
         >
           <!-- Color circles -->
           <div class="flex flex-wrap max-w-[16rem] justify-center gap-1">

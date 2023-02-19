@@ -34,6 +34,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   currUnit?: string;
   currColorMap: keyof typeof colorMaps = 'turbo';
   currStyleVariables = { opacity: 1, min: 0, max: 0 };
+  z: number;
 
   // WebGLSpots only gets created after mount.
   constructor(map: Mapp) {
@@ -154,10 +155,13 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     });
 
     const prev = this.layer;
-    this.map.map!.addLayer(newLayer);
     if (prev) {
+      const idx = this.map.map!.getLayers().getArray().indexOf(prev);
+      this.map.map!.getLayers().insertAt(idx, newLayer);
       this.map.map!.removeLayer(prev);
       prev.dispose();
+    } else {
+      this.map.map!.addLayer(newLayer);
     }
     this.layer = newLayer;
     console.debug(`Overlay ${this.uid} rebuilt.`);
