@@ -1,10 +1,13 @@
 # 🏝️ Samui
 
+[![DOI](https://zenodo.org/badge/482243832.svg)](https://zenodo.org/badge/latestdoi/482243832)
+
 [![Run HumanPilot Workflow](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml/badge.svg)](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml)
+
 
 Samui is a performant visualization tool for spatial transcriptomics experiments.
 
-**Preprint available now!** [Performant web-based interactive visualization tool for spatially-resolved transcriptomics experiments](https://www.biorxiv.org/content/10.1101/2023.01.28.525943v1).
+**Preprint available now!** [Performant web-based interactive visualization tool for spatially-resolved transcriptomics experiments](https://www.biorxiv.org/content/10.1101/2023.01.28.525943v2).
 
 ## Usage
 
