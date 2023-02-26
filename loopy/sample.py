@@ -54,8 +54,8 @@ class Sample(BaseModel):
     queue_: list[tuple[str, Callable[[], None]]] = []
 
     @staticmethod
-    def check_path(func: Callable[Concatenate["Sample", P], R]) -> Method[P, R]:
-        def wrapper(self: "Sample", *args: P.args, **kwargs: P.kwargs) -> R:
+    def check_path(func: Callable[Concatenate[Sample, P], R]) -> Method[P, R]:
+        def wrapper(self: Sample, *args: P.args, **kwargs: P.kwargs) -> R:
             if self.path is None:
                 raise ValueError("Path not set. Use Sample.set_path() first")
             return func(self, *args, **kwargs)
@@ -317,11 +317,11 @@ class Sample(BaseModel):
             joined = self._join_with_coords(df, coordName=coordName)
             if sparse:
                 header, bytedict = sparse_compress_chunked_features(
-                    joined, coordName, "csc", logger=lambda *args: log(self.name, *args)
+                    joined, mode="csc", logger=lambda *args: log(self.name, *args)
                 )
             else:
                 header, bytedict = compress_chunked_features(
-                    joined, "spots", logger=lambda *args: log(self.name, *args)
+                    joined, logger=lambda *args: log(self.name, *args)
                 )
             log(f"Writing compressed chunks for {name}:", f"{len(bytedict)} bytes")
             header.write(self.path / f"{name}.json")
@@ -359,3 +359,6 @@ class Sample(BaseModel):
 
     def json(self, **kwargs: Any) -> str:
         return super().json(exclude={"path", "lazy", "queue_"}, **kwargs)
+
+    def __repr__(self) -> str:
+        return f"Sample(name={self.name}, path={self.path}) with {[c.name for c in self.coordParams] if self.coordParams else None} as coords and {[f.name for f in self.featParams] if self.featParams else None} as features."

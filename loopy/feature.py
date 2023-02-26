@@ -137,6 +137,7 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
 
 def compress_chunked_features(
     df: pd.DataFrame,
+    *,
     logger: Callback = log,
 ) -> tuple[ChunkedCSVHeader, bytearray]:
 
@@ -160,6 +161,7 @@ def compress_chunked_features(
 
 def sparse_compress_chunked_features(
     df: pd.DataFrame,
+    *,
     mode: Literal["csr", "csc"] = "csc",
     logger: Callback = log,
 ) -> tuple[ChunkedCSVHeader, bytearray]:
