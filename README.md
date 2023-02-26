@@ -5,7 +5,7 @@
 [![Run HumanPilot Workflow](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml/badge.svg)](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml)
 
 
-Samui is a performant visualization tool for spatial transcriptomics experiments.
+Samui (named for an island located in Gulf of Thailand Ko Samui pronounced gaw -- rhyming with raw -- sà mui) is a performant visualization tool for spatial transcriptomics experiments.
 
 **Preprint available now!** [Performant web-based interactive visualization tool for spatially-resolved transcriptomics experiments](https://www.biorxiv.org/content/10.1101/2023.01.28.525943v2).
 
