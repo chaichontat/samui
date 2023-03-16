@@ -71,13 +71,11 @@ def image(
     log(f"Processing {name} from file {tiff} with shape {img.shape}.")
     match channels:
         case None:
-            c = [f"Channel{i}" for i in range(img.shape[0])]
+            c = None
         case "rgb":
             c = "rgb"
         case _:
             c = channels.split(",")
-            if len(c) != img.shape[0]:
-                raise ValueError("Number of channels does not match image shape")
 
     (
         Sample(name=name, path=out / name)
