@@ -1,4 +1,5 @@
 #%%
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -26,10 +27,10 @@ from loopy.utils.utils import remove_dupes
 # This requires a huge amount of memory since each image is 10.2 GB.
 # To download data from Google Cloud in the command line, use [gsutil](https://cloud.google.com/storage/docs/downloading-objects).
 
-sample_dir = Path("temp")
-dapi = (
-    sample_dir / "datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-images-mosaic_DAPI_z0.tif"
-)
+sample_dir = Path("/Users/chaichontat/Downloads/trs")
+# dapi = (
+#     sample_dir / "datasets-mouse_brain_map-BrainReceptorShowcase-Slice1-Replicate1-images-mosaic_DAPI_z0.tif"
+# )
 
 #%% Coords
 coords = remove_dupes(
@@ -40,11 +41,6 @@ coords = remove_dupes(
 
 coords.index = coords.index.map("{:.0f}".format)
 
-# Affine matrix
-scale = np.loadtxt(sample_dir / "micron_to_mosaic_pixel_transform.csv")
-# Inverse transform
-affine = ~Affine(*scale[:2].flatten() * 1e6)
-
 feat = remove_dupes(
     pd.read_csv(
         sample_dir / "cell_by_gene.csv",
@@ -54,14 +50,36 @@ feat = remove_dupes(
 ).apply(lambda x: np.log2(x + 1), raw=True, axis=0)
 feat.index = feat.index.map("{:.0f}".format)
 
+shutil.rmtree(sample_dir / "out_image", ignore_errors=True)
+# This creates a new sample that has only spots.
 s = (
-    Sample(name="BrainReceptorShowcase1", path=Path("./BrainReceptorShowcase1"))
-    .add_coords(coords, name="cellCoords", mPerPx=affine.a, size=2e-6)
-    .add_chunked_feature(feat, name="cells", coordName="cellCoords", unit="Log counts", sparse=True)
-    .add_image(dapi, channels=["DAPI"], scale=affine.a, translate=(affine.c, affine.f))
-    .set_default_feature(group="cells", feature="Oxgr1")
+    Sample(name="sample", path=sample_dir / "out")
+    # You may need to adjust the size to make the spot size more reasonable.
+    .add_coords(coords, name="cellCoords", mPerPx=1e-6, size=1e-5).add_chunked_feature(
+        feat, name="cells", coordName="cellCoords", unit="Log counts", sparse=True
+    )
+    # .set_default_feature(group="cells", feature="Oxgr1") # Example: this needs to match a feature that exists in your sample.
     .write()
 )
 
+# You can drag the result in the out folder to Samui to see your spots.
+
+# %%
+# Next, we will add the image to the sample.
+# This requires alignment from the spot coordinates to the image coordinates.
+
+# Affine matrix
+scale = np.loadtxt(sample_dir / "micron_to_mosaic_pixel_transform.csv")
+# Inverse transform
+affine = ~Affine(*scale[:2].flatten() * 1e6)
+dapi = sample_dir / "mosaic_Cellbound1_z1.tif"
+
+# Make another sample that has an image.
+shutil.rmtree(sample_dir / "out_image", ignore_errors=True)
+shutil.copytree(sample_dir / "out", sample_dir / "out_image")
+s.set_path(sample_dir / "out_image")
+
+#%%
+s.add_image(dapi, channels=["DAPI"], scale=affine.a, translate=(affine.c * 1e-6, affine.f * 1e-6)).write()
 
 # %%
