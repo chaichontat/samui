@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash-es';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { get } from 'svelte/store';
 import type { Sample } from './data/objects/sample';
 import type { samples } from './store';
@@ -15,7 +15,7 @@ export function genLRU<T, K extends Exclude<T, unknown[]>[], V>(
   f: (...args: K) => V,
   max = 100
 ): (...args: K) => V {
-  const cache = new LRU<string, V>({ max });
+  const cache = new LRUCache<string, V>({ max });
   return (...args: K): V => {
     const key = JSON.stringify(args);
     if (cache.has(key)) return cache.get(key) as V; // Checked
@@ -26,7 +26,7 @@ export function genLRU<T, K extends Exclude<T, unknown[]>[], V>(
 }
 
 export function keyLRU<T extends unknown[], R>(f: (...args: T) => R, max = 100) {
-  const cache = new LRU<string, R>({ max });
+  const cache = new LRUCache<string, R>({ max });
 
   return ({ key, args }: { key: string; args: T }): R => {
     if (cache.has(key)) return cache.get(key) as R; // Checked
