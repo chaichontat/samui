@@ -86,7 +86,7 @@ export function genUpdate(
   update: (sample: Sample) => void | Promise<void>
 ): (s: string) => Promise<void> {
   return oneLRU(async (s: string) => {
-    const sample = get(store)[s];
+    const sample = get(store).find((x) => x.name === s)!.sample;
     if (!sample) throw new Error(`Sample ${s} not found.`);
     if (!sample.hydrated) {
       await sample.hydrate();

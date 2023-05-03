@@ -10,8 +10,8 @@ const names = ['Br2720_Ant_IF', 'Br6432_Ant_IF', 'Br6522_Ant_IF', 'Br8667_Post_I
 
 export default browser
   ? async () => {
-      const out = {} as Record<string, Sample>;
-      (await getSamples(names)).forEach((s) => (out[s.name] = s));
+      const out = [] as { name: string; sample: Sample }[];
+      (await getSamples(names)).forEach((s) => out.push({ name: s.name, sample: s }));
       samples.set(out);
     }
   : () => {};
@@ -73,16 +73,19 @@ export function getSampleListFromQuery(winlocsearch: string) {
   const params = new URLSearchParams(winlocsearch);
   const url = params.get('url');
   if (!url) {
-    return [];
+    return { urls: [], names: [] };
   }
   const s = params.getAll('s');
   if (!s.length)
     handleError(
       new Error(
         `No samples provided in the URL.
-Example format is https://loopybrowser.com/from?url=data2.loopybrowser.com/merfish/&s=BrainReceptorShowcase1
+Example format is https://samuibrowser.com/from?url=data2.samuibrowser.com/merfish/&s=BrainReceptorShowcase1
 where s is the sample name.`.replace(/\n/g, ' ')
       )
     );
-  return s.map((ss) => `https://${url ?? ''}${url?.endsWith('/') ? '' : '/'}${ss}`);
+  return {
+    urls: s.map((ss) => `https://${url ?? ''}${url?.endsWith('/') ? '' : '/'}${ss}`),
+    names: s
+  };
 }

@@ -1,7 +1,7 @@
 // Bring your own data.
 
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
-import { mapIdSample, overlays, samples, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
+import { mapIdSample, overlays, sFeatureData, sMapp, sOverlay, sSample, samples } from '$lib/store';
 import { get } from 'svelte/store';
 import { fromCSV } from '../io';
 import { CoordsData, type Coord } from './objects/coords';
@@ -135,13 +135,13 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = true
 
   // Check if sample already exists.
   if (
-    Object.keys(existing).includes(sample.name) &&
+    existing.find((x) => x.name === sample.name) &&
     !confirm(`Sample ${sample.name} already exists. Overwrite?`)
   ) {
     return;
   }
-
-  samples.set({ ...existing, [sample.name]: sample });
+  existing.push({ name: sample.name, sample });
+  samples.set(existing);
   if (setSample) {
     const curr = get(mapIdSample);
     for (const id of Object.keys(curr)) {

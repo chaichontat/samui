@@ -118,7 +118,7 @@
         <div class:mt-1={hie !== 0} class="min-w-[200px]">
           <SampleList
             bind:this={sampleListElem}
-            items={Object.keys($samples)}
+            items={$samples.map((x) => x.name)}
             on:change={(e) => {
               if (
                 $sMapp?.persistentLayers.annotations.points.length > 0 &&
@@ -172,7 +172,11 @@
       on:click={() => ($sMapId = hieN)}
     >
       {#await import('./mapp.svelte') then mapp}
-        <svelte:component this={mapp.default} sample={$samples[$mapIdSample[hieN]]} uid={hie} />
+        <svelte:component
+          this={mapp.default}
+          sample={$samples.find((x) => x.name === $mapIdSample[hieN])?.sample}
+          uid={hie}
+        />
       {/await}
     </div>
   </section>

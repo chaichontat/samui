@@ -27,7 +27,7 @@
   const dispatch = createEventDispatcher();
 
   function handleSampleUpdate(it: typeof items) {
-    rows = it?.sort().map((item, i) => ({
+    rows = it?.map((item, i) => ({
       id: i,
       name: item
     }));
@@ -79,7 +79,7 @@
 
       {#if open}
         <div
-          class="bg-default absolute z-40 mt-2 w-full rounded-lg shadow shadow-blue-900 backdrop-blur "
+          class="bg-default absolute z-40 mt-2 w-full rounded-lg shadow shadow-blue-900 backdrop-blur"
           out:fade={{ duration: 100, easing: cubicOut }}
         >
           <ListboxOptions

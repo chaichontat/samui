@@ -1,12 +1,10 @@
 <!-- Nav of sidebar. -->
 <script lang="ts">
   import { allFeatures, mapIdSample, samples, sMapId } from '$lib/store';
-  import Darkswitch from '../components/darkswitch.svelte';
   import Github from '../components/github.svelte';
-  import Feedback from './Feedback.svelte';
   import FeatureSearchBox from './searchbox/featureSearchBox.svelte';
 
-  $: sample = $samples[$mapIdSample[$sMapId]];
+  $: sample = $samples.find((x) => x.name === $mapIdSample[$sMapId])?.sample;
   $: if (sample) {
     (async () => {
       await sample.promise;

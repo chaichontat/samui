@@ -9,7 +9,7 @@ import type { Geometries } from './sidebar/annotation/annROI';
 import { HoverSelect, type FeatureGroupList } from './sidebar/searchBox';
 import type { WebGLSpots } from './ui/overlays/points';
 
-export const samples: Writable<Record<string, Sample>> = writable({});
+export const samples: Writable<{ name: string; sample: Sample }[]> = writable([]);
 
 export const sMapp = writable(undefined as Mapp | undefined);
 export const sMapId: Writable<number> = writable(0);

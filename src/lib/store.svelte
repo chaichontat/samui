@@ -10,7 +10,7 @@
     sSample
   } from './store';
 
-  $: $sSample = $samples[$mapIdSample[$sMapId]];
+  $: $sSample = $samples.find((x) => x.name === $mapIdSample[$sMapId])?.sample;
 
   const updateOverlay = (fg: FeatureAndGroup | undefined) => ($overlaysFeature[$sOverlay] = fg);
   $: updateOverlay($hoverSelect.active);

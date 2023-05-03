@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { dev } from '$app/environment';
   import { getSample, getSampleListFromQuery } from '$lib/data/preload';
   import Modal from '$src/lib/components/modal.svelte';
   import { processHandle } from '$src/lib/data/byod';
+  import type { Sample } from '$src/lib/data/objects/sample';
   import { samples } from '$src/lib/store';
   import Store from '$src/lib/store.svelte';
   // import MainMap from '$src/pages/mainMap.svelte';
@@ -24,14 +24,22 @@
     }
 
     // Load data from URL.)
-    const urls = getSampleListFromQuery(window.location.search);
+    const { urls, names } = getSampleListFromQuery(window.location.search);
     if (urls.length > 0) {
       loadExternal = true;
-      for (const url of urls) {
+      const tempSamples: Record<string, Sample> = {};
+      const promises = urls.map((url) =>
         getSample(url)
-          .then((sample) => ($samples[sample.name] = sample))
-          .catch(console.error);
-      }
+          .then((sample) => (tempSamples[sample.name] = sample))
+          .catch(console.error)
+      );
+
+      Promise.all(promises)
+        .then(() => {
+          names.forEach((name) => $samples.push({ name, sample: tempSamples[name] }));
+          $samples = $samples;
+        })
+        .catch(console.error);
     } else {
       loadExternal = false;
     }
@@ -79,7 +87,7 @@
     dragTimeout = setTimeout(() => (dragging = false), 100);
   }}
 >
-  {#if Object.keys($samples).length > 0}
+  {#if $samples.length > 0}
     {#await import('$src/pages/mainMap.svelte') then MainMap}
       <svelte:component this={MainMap.default} />
     {/await}
