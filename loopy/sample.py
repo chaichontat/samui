@@ -139,7 +139,7 @@ class Sample(BaseModel):
     @check_path
     def add_image(
         self,
-        tiff: Path,
+        tiff: Path | str,
         channels: list[str] | Literal["rgb"] | None = None,
         scale: float = 1,
         quality: int = 90,
@@ -156,7 +156,7 @@ class Sample(BaseModel):
             quality (int, optional): Quality of the image. Defaults to 90.
             translate (tuple[float,float], optional): Translation of the image. Defaults to (0,0).
         """
-
+        tiff = Path(tiff)
         if not tiff.exists():
             raise ValueError(f"Tiff file {tiff} not found")
 

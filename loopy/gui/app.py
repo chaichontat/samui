@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from loopy.drivers.run_image import run_image
+from loopy.sample import Sample
 
 
 class FileEdit(QLineEdit):
@@ -122,7 +122,7 @@ class MainWindow(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Loopy Preprocessor")
+        self.setWindowTitle("Samui Preprocessor")
         self.setGeometry(300, 300, 600, 200)
 
         self.tiff = FileBoxLine("TIFF File:", extensions="TIFF Files (*.tif *.tiff)")
@@ -159,9 +159,6 @@ class MainWindow(QWidget):
         if not out:
             QMessageBox.warning(self, "No directory", "Please select an output directory.")
             return
-        if not channels:
-            QMessageBox.warning(self, "No channels", "Please enter channel names.")
-            return
         if not quality:
             QMessageBox.warning(self, "No quality", "Please enter a quality.")
             return
@@ -173,7 +170,8 @@ class MainWindow(QWidget):
             # Gray out the run button
             self.runButton.setEnabled(False)
             self.statusBar.updateStatus("Running...")
-            run_image(Path(tiff), Path(out), channels=channels, quality=int(quality), scale=float(scale))
+            Sample(name=Path(tiff).stem, path=out).add_image(tiff, channels=channels if channels else None, scale=float(scale), quality=int(quality)).write()
+
             self.statusBar.updateStatus("Ready.")
             self.runButton.setEnabled(True)
 
