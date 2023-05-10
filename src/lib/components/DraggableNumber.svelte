@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import { oneLRU } from '../lru';
+  import { tooltip } from '../ui/utils';
   export { cl as class };
   export let value = 0;
 
@@ -50,6 +51,7 @@
   type="number"
   bind:this={div}
   bind:value
+  use:tooltip={{ content: 'You can also drag left/right to change' }}
   on:change={(e) => handleChange(Number(e.currentTarget.value))}
 />
 

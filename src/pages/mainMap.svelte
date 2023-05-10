@@ -45,7 +45,7 @@
 
     {#if haveFeatures}
       {#await import('$src/lib/components/colorbar.svelte') then colorbar}
-        <div class="pointer-events-none absolute right-6 bottom-4 z-20">
+        <div class="absolute right-6 bottom-4 z-20 active:pointer-events-none">
           <svelte:component this={colorbar.default} />
         </div>
       {/await}

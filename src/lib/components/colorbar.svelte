@@ -2,6 +2,7 @@
   import { overlays, sEvent } from '$lib/store';
   import * as Plot from '@observablehq/plot';
   import { colorMaps } from '../ui/overlays/featureColormap';
+  import { tooltip } from '../ui/utils';
 
   let div: HTMLDivElement;
   let divs: Record<string, Element> = {};
@@ -81,7 +82,13 @@
   }
 </script>
 
-<div bind:this={div} />
+<div
+  bind:this={div}
+  use:tooltip={{
+    content:
+      "To change scale, click on the colored circle icon next to a layer's name (straight up above this colorbar)."
+  }}
+/>
 
 <style lang="postcss">
   div :global(.alphabet) {
