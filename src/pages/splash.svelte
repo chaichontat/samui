@@ -44,15 +44,15 @@
   </div>
 
   <a
-    href="/from?url=data2.loopybrowser.com/VisiumIF/&s=Br2720_Ant_IF&s=Br6432_Ant_IF&s=Br6522_Ant_IF&s=Br8667_Post_IF"
-    class="splash-button group rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-cyan-200 dark:text-neutral-100 dark:focus:ring-cyan-800"
+    href="/from?url=data2.samuibrowser.com/VisiumIF/&s=Br2720_Ant_IF&s=Br6432_Ant_IF&s=Br6522_Ant_IF&s=Br8667_Post_IF"
+    class="splash-button group rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 text-lg font-medium text-neutral-900 hover:text-neutral-50 focus:ring-cyan-200 dark:text-neutral-100 dark:focus:ring-cyan-800"
   >
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show Visium-IF Data</span>
   </a>
 
   <a
-    href="/from?url=data2.loopybrowser.com/merfish/&s=BrainReceptorShowcase"
-    class="splash-button group rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 text-lg font-medium text-neutral-900 hover:text-neutral-50  focus:ring-emerald-200 dark:text-neutral-100 dark:focus:ring-emerald-800"
+    href="/from?url=data2.samuibrowser.com/merfish/&s=BrainReceptorShowcase"
+    class="splash-button group rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 text-lg font-medium text-neutral-900 hover:text-neutral-50 focus:ring-emerald-200 dark:text-neutral-100 dark:focus:ring-emerald-800"
   >
     <span class="px-5 py-2 group-hover:bg-opacity-0">Show MERFISH Data</span>
   </a>
