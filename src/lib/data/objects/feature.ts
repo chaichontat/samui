@@ -1,8 +1,8 @@
 import { keyLRU } from '$src/lib/lru';
+import * as d3 from 'd3';
 
 export type FeatureType = 'categorical' | 'quantitative' | 'singular';
 export type CSVRetrievedData = Record<string, number | string>[];
-
 // If ChunkedJSON, feature and name.
 // If PlainJSON, only name.
 export type FeatureAndGroup = {
@@ -48,5 +48,5 @@ export const stats = keyLRU((arr: (number | string)[]) => {
   for (let i = 0; i < arr.length; i++) {
     arr[i] = Number(arr[i]) || 0; // Convert NaN to 0.
   }
-  return [Math.min(...(arr as unknown as number[])), Math.max(...(arr as unknown as number[]))];
+  return d3.extent(arr as unknown as number[]);
 });
