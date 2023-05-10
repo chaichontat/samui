@@ -9,6 +9,7 @@
   import Splash from '$src/pages/splash.svelte';
   import { ArrowDown, Cog } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
+  import { zip } from 'lodash-es';
   import { onMount } from 'svelte';
 
   export let loadExternal: boolean;
@@ -28,16 +29,20 @@
     if (urls.length > 0) {
       loadExternal = true;
       const tempSamples: Record<string, Sample> = {};
-      const promises = urls.map((url) =>
-        getSample(url)
-          .then((sample) => (tempSamples[sample.name] = sample))
+      const promises = zip(urls, names).map(([url, name]) =>
+        getSample(url!)
+          .then((sample) => (tempSamples[name!] = sample))
           .catch(console.error)
       );
 
       Promise.all(promises)
         .then(() => {
+          console.log('Loaded external samples', $samples);
+          console.log('Loaded external samples', tempSamples);
+
           names.forEach((name) => $samples.push({ name, sample: tempSamples[name] }));
           $samples = $samples;
+          console.log('Loaded external samples', $samples);
         })
         .catch(console.error);
     } else {
