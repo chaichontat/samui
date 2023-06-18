@@ -63,16 +63,6 @@ repos:
     hooks:
       - id: isort
 
-  - repo: local
-    hooks:
-      - id: pyright
-        name: pyright
-        entry: pyright
-        language: node
-        types: [python]
-        additional_dependencies: ['pyright@1.1.275']
-        pass_filenames: false
-
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.0-alpha.9-for-vscode
     hooks:
