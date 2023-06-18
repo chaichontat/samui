@@ -96,7 +96,14 @@ export async function processHandle(
       return;
     }
 
-    if ('rois' in proc) {
+    if ('type' in proc) {
+      if (valROIData(proc)) {
+        const roidata = proc;
+        console.log('Got roi feature data');
+        map.persistentLayers.rois.loadFeatures(roidata);
+        return;
+      }
+
       if (valAnnFeatData(proc)) {
         const annfeatdata = proc;
         console.log('Got annotation feature data');
@@ -104,12 +111,6 @@ export async function processHandle(
         return;
       }
 
-      if (valROIData(proc)) {
-        const roidata = proc;
-        console.log('Got roi feature data');
-        map.persistentLayers.rois.loadFeatures(roidata);
-        return;
-      }
       alert('Validation error: ' + JSON.stringify(valROIData.errors));
       return;
     }

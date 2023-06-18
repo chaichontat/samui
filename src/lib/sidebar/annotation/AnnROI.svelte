@@ -5,8 +5,8 @@
   import { classes } from '$lib/utils';
   import { ArrowUpOnSquare, PlusSmall } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
-  import AnnoButton from './annoButton.svelte';
   import SharedAnnotate from './SharedAnnotate.svelte';
+  import AnnoButton from './annoButton.svelte';
 </script>
 
 <SharedAnnotate store={annoROI} draw={$sMapp.persistentLayers.rois}>
@@ -35,7 +35,7 @@
     use:tooltip={{ content: 'Export ROIs as JSON' }}
     on:click={() => {
       toJSON(`rois_${$sSample.name}.json`, {
-        rois: $sMapp.persistentLayers.rois.dump(),
+        ...$sMapp.persistentLayers.rois.dump(),
         mPerPx: $sSample.imgParams?.mPerPx,
         sample: $sSample.name,
         time: new Date().toISOString()

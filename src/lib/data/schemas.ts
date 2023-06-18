@@ -5,58 +5,65 @@ import type { ROIData, ROIInstance } from '../sidebar/annotation/annROI';
 const roiInstance: JSONSchemaType<ROIInstance> = {
   type: 'object',
   properties: {
-    label: { type: 'string' },
-    type: { type: 'string', enum: ['Circle', 'Polygon', 'Point'] },
-    coords: {
-      oneOf: [
-        { type: 'array', items: { type: 'number' } },
-        {
-          type: 'array',
-          items: {
-            type: 'array',
-            items: {
+    type: { type: 'string', enum: ['Feature'] },
+    geometry: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: ['Polygon', 'Point', 'LineString'] },
+        coordinates: {
+          oneOf: [
+            { type: 'array', items: { type: 'number' } },
+            {
               type: 'array',
-              items: { type: 'number' }
+              items: {
+                type: 'array',
+                items: {
+                  type: 'array',
+                  items: { type: 'number' }
+                }
+              }
             }
-          }
+          ]
         }
-      ]
+      },
+      required: ['type', 'coordinates']
     },
-    radius: { type: 'number', nullable: true },
+    label: { type: 'string' },
     properties: { type: 'object', nullable: true }
   },
-  required: ['label', 'type', 'coords'],
-  additionalProperties: false
+  required: ['label', 'type', 'geometry']
 };
 
 const roidata: JSONSchemaType<ROIData> = {
   type: 'object',
   properties: {
+    type: { type: 'string', enum: ['FeatureCollection'] },
     sample: { type: 'string' },
     time: { type: 'string' },
     mPerPx: { type: 'number' },
-    rois: {
+    features: {
       type: 'array',
       items: roiInstance
     }
   },
-  required: ['sample', 'rois']
+  required: ['sample', 'type', 'features']
   //   additionalProperties: false
 };
 
 const annFeatData: JSONSchemaType<AnnFeatData> = {
   type: 'object',
   properties: {
+    type: { type: 'string', enum: ['FeatureCollection'] },
     sample: { type: 'string' },
     time: { type: 'string' },
     mPerPx: { type: 'number' },
-    rois: {
+    features: {
       type: 'array',
       items: roiInstance
     },
     coordName: { type: 'string' }
   },
-  required: ['sample', 'rois']
+  required: ['sample', 'type', 'features', 'coordName']
   //   additionalProperties: false
 };
 

@@ -5,8 +5,8 @@
   import { classes } from '$lib/utils';
   import { ArrowUpOnSquare, CursorArrowRays } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
-  import AnnoButton from './annoButton.svelte';
   import SharedAnnotate from './SharedAnnotate.svelte';
+  import AnnoButton from './annoButton.svelte';
 
   // Fix starting coord.
   $: if (!$annoFeat.annotating?.coordName && $annoFeat.keys.length) {
@@ -22,7 +22,7 @@
       $sMapp.persistentLayers.annotations.dumpPoints()
     );
     toJSON(`rois_${$sSample.name}_feature.json`, {
-      rois: $sMapp.persistentLayers.annotations.dump(),
+      ...$sMapp.persistentLayers.annotations.dump(),
       mPerPx: $sSample.imgParams?.mPerPx,
       sample: $sSample.name,
       time: new Date().toISOString(),

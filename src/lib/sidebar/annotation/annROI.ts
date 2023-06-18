@@ -20,9 +20,8 @@ import { rand } from '../../utils';
 export type Geometries = 'Polygon' | 'Circle' | 'Point';
 export type ROIInstance = {
   label: string;
-  type: Geometries;
-  coords: Coordinate[][] | Coordinate;
-  radius?: number;
+  type: 'Feature';
+  geometry: { type: 'Polygon' | 'Point' | 'LineString'; coordinates: Coordinate[][] | Coordinate };
   properties?: Record<string, any>;
 };
 
@@ -30,7 +29,8 @@ export interface ROIData {
   sample: string;
   time: string;
   mPerPx: number;
-  rois: ROIInstance[];
+  type: 'FeatureCollection';
+  features: ROIInstance[];
 }
 
 export class Draww {
@@ -273,7 +273,7 @@ export class Draww {
   }
 
   dump() {
-    const out: ROIData[] = [];
+    const out: ROIData['features'] = [];
     for (const feature of this.source.getFeatures()) {
       const g = feature.getGeometry();
       if (!g) continue;
@@ -291,20 +291,24 @@ export class Draww {
 
       if (g)
         out.push({
-          label: feature.get('label') as string,
-          type: g.getType() as Geometries,
-          // @ts-ignore
-          radius: radius,
-          // @ts-ignore
-          coords: Draww.recurseCoords(coords), // String here but will be converted to number once out in JSON.
-          properties: (({ label, color, ...o }) => o)(g.getProperties()) // Remove label and color.
+          type: 'Feature',
+          geometry: {
+            type: g.getType() == 'Circle' ? 'Point' : g.getType(),
+            // @ts-ignore
+            coordinates: Draww.recurseCoords(coords) // String here but will be converted to number once out in JSON.
+          },
+          properties: {
+            ...(({ label, color, ...o }) => o)(g.getProperties()), // Remove label and color.
+            ...(radius && { radius })
+          },
+          label: feature.get('label') as string
         });
     }
     // console.log(encodeURIComponent(JSON.stringify(out)));
-    return out;
+    return { type: 'FeatureCollection', features: out };
   }
 
-  loadFeatures({ rois: cs, sample, mPerPx }: ROIData) {
+  loadFeatures({ features: cs, sample, mPerPx }: ROIData) {
     if (!cs.length) {
       alert('No ROIs found in this file.');
       return;
@@ -324,14 +328,15 @@ Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
     }
 
     const store = get(this.store);
-    for (const { label, type, coords, radius, properties } of cs) {
-      const geometry =
-        type === 'Circle'
-          ? new Circle(coords as Coordinate, radius)
+    for (const { label, geometry, properties } of cs) {
+      const { type, coordinates } = geometry;
+      const geo =
+        type === 'Point' && properties?.radius
+          ? new Circle(coordinates as Coordinate)
           : type === 'Polygon'
-          ? new Polygon(coords)
-          : new Point(coords as Coordinate);
-      const feature = new Feature({ geometry });
+          ? new Polygon(coordinates)
+          : new Point(coordinates as Coordinate);
+      const feature = new Feature({ geometry: geo });
       let idx = store.keys.findIndex((k) => k === label);
       if (idx === -1) {
         store.keys.push(label);
