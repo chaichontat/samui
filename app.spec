@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import glob
 import sys
 
 import pkgutil
@@ -17,12 +18,28 @@ pyfolder = Path(sys.executable).parent
 
 block_cipher = None
 
+more_dlls = []
+files = []
+if platform.system == "win32":
+    for p in os.environ["PATH"].split(os.pathsep):
+        if p:
+            for p in glob.glob(os.path.join(p, "gdal*.dll")):
+                more_dlls.append((p, "."))
+    for p in (pyfolder / "Library/share/gdal").iterdir():
+        files.append((p, "gdaldata"))
+    for p in (pyfolder / "Library/share/proj").iterdir():
+        files.append((p, "projdata"))
 
 a = Analysis(
-    ['loopy/gui/app.py'],
+    ["loopy/gui/app.py"],
     pathex=[],
-    binaries=[(pyfolder / "gdal_translate", '.')],
-    datas=[],
+    binaries=[
+        (pyfolder / "gdal_translate", ".")
+        if platform.system == "win32"
+        else (pyfolder / "Library/bin/gdal_translate.exe", "."),
+        *more_dlls,
+    ],
+    datas=files,
     hiddenimports=additional_packages,
     hookspath=[],
     hooksconfig={},
@@ -42,14 +59,14 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='samui-preprocessor',
+    name="samui-preprocessor",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -58,7 +75,7 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='samui-preprocessor.app' if platform.system() == 'Darwin' else 'samui-preprocessor',
+    name="samui-preprocessor.app" if platform.system() == "Darwin" else "samui-preprocessor",
     icon=None,
     bundle_identifier=None,
 )

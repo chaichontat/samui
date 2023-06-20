@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 from pathlib import Path
@@ -13,6 +14,11 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+if getattr(sys, "frozen", False) and sys.platform == "win32":
+    os.environ["PROJ_DATA"] = sys._MEIPASS + "/projdata"
+    os.environ["GDAL_DATA"] = sys._MEIPASS + "/gdaldata"
+    print("GDAL_DATA", os.environ["GDAL_DATA"])
 
 from loopy.sample import Sample
 
@@ -190,4 +196,6 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
+    main()
     main()
