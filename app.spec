@@ -20,7 +20,7 @@ block_cipher = None
 
 more_dlls = []
 files = []
-if platform.system == "win32":
+if platform.system() == "Windows":
     for p in os.environ["PATH"].split(os.pathsep):
         if p:
             for p in glob.glob(os.path.join(p, "gdal*.dll")):
@@ -35,7 +35,7 @@ a = Analysis(
     pathex=[],
     binaries=[
         (pyfolder / "Library/bin/gdal_translate.exe", ".")
-        if platform.system == "win32"
+        if platform.system() == "Windows"
         else (pyfolder / "gdal_translate", "."),
         *more_dlls,
     ],
