@@ -30,7 +30,7 @@ repos:
         args:
           - -L
           - mapp,hist
-          - --skip="*/.*,package.json,package-lock.json
+          - --skip="*/.*,package.json,package-lock.json,*.spec
 
   - repo: https://github.com/psf/black
     rev: 23.3.0

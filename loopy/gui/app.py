@@ -170,7 +170,11 @@ class MainWindow(QWidget):
             # Gray out the run button
             self.runButton.setEnabled(False)
             self.statusBar.updateStatus("Running...")
-            Sample(name=Path(tiff).stem, path=out).add_image(tiff, channels=channels if channels else None, scale=float(scale), quality=int(quality)).write()
+            outpath = Path(out) / Path(tiff).stem
+            outpath.mkdir(parents=True, exist_ok=True)
+            Sample(name=Path(tiff).stem, path=outpath).add_image(
+                tiff, channels=channels if channels else None, scale=float(scale), quality=int(quality)
+            ).write()
 
             self.statusBar.updateStatus("Ready.")
             self.runButton.setEnabled(True)
