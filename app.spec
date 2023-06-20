@@ -1,13 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+
 import pkgutil
 import platform
 import rasterio
 
+from pathlib import Path
+
 # list all rasterio and fiona submodules, to include them in the package
-additional_packages = list()
+additional_packages = ["imagecodecs._shared", "imagecodecs._imcd"]
 for package in pkgutil.iter_modules(rasterio.__path__, prefix="rasterio."):
     additional_packages.append(package.name)
+
+pyfolder = Path(sys.executable).parent
 
 block_cipher = None
 
@@ -15,7 +21,7 @@ block_cipher = None
 a = Analysis(
     ['loopy/gui/app.py'],
     pathex=[],
-    binaries=[],
+    binaries=[(pyfolder / "gdal_translate", '.')],
     datas=[],
     hiddenimports=additional_packages,
     hookspath=[],
