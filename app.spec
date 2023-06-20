@@ -34,9 +34,9 @@ a = Analysis(
     ["loopy/gui/app.py"],
     pathex=[],
     binaries=[
-        (pyfolder / "gdal_translate", ".")
+        (pyfolder / "Library/bin/gdal_translate.exe", ".")
         if platform.system == "win32"
-        else (pyfolder / "Library/bin/gdal_translate.exe", "."),
+        else (pyfolder / "gdal_translate", "."),
         *more_dlls,
     ],
     datas=files,
