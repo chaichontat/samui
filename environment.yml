@@ -4,6 +4,8 @@ dependencies:
   - python=3.10
   - click
   - gdal
+  - libblas=*=*openblas
+  - openblas
   - pip
   - pydantic
   - pyqt
