@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import pkgutil
+import platform
 import rasterio
 
 # list all rasterio and fiona submodules, to include them in the package
@@ -51,7 +52,7 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='samui-preprocessor',
+    name='samui-preprocessor.app' if platform.system() == 'Darwin' else 'samui-preprocessor',
     icon=None,
     bundle_identifier=None,
 )
