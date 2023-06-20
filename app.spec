@@ -35,7 +35,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Samui Preprocessor',
+    name='samui-preprocessor',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
