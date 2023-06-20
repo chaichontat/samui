@@ -33,7 +33,7 @@ jobs:
             outname: samui-preprocessor-linux-amd64
           - os: macos-latest
             target: macos
-            outname: samui-preprocessor-macos-amd64
+            outname: samui-preprocessor-macos-amd64.app
           - os: windows-latest
             target: windows
             outname: samui-preprocessor.exe

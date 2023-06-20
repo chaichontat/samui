@@ -51,7 +51,7 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='app.app',
+    name='samui-preprocessor',
     icon=None,
     bundle_identifier=None,
 )
