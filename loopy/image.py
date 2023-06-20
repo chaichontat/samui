@@ -1,6 +1,7 @@
 # pyright: reportMissingTypeArgument=false, reportUnknownParameterType=false
 
 import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Annotated, Any, Callable, Literal
@@ -188,10 +189,15 @@ class GeoTiff(BaseModel):
     ) -> None:
         def run(p: Path):
             logger("Writing COG", p.with_suffix(".tif").as_posix())
+            gt = (
+                sys._MEIPASS + "/gdal_translate"
+                if getattr(sys, "frozen", False) and sys.platform != "win32"
+                else "gdal_translate"
+            )
             # https://stackoverflow.com/questions/4417546/constantly-print-subprocess-output-while-process-is-running/4417735
             with subprocess.Popen(
                 [
-                    "gdal_translate",
+                    gt,
                     p.with_suffix(".tif_").as_posix(),
                     p.with_suffix(".tif").as_posix(),
                     "-co",
