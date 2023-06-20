@@ -6,31 +6,21 @@ on:
       - 'v*'
 
 jobs:
-  createrelease:
+  create_release:
     name: Create Release
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest
     steps:
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-      - name: Output Release URL File
-        run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
-      - name: Save Release URL File for publish
-        uses: actions/upload-artifact@v1
-        with:
-          name: release_url
-          path: release_url.txt
+          generate_release_notes: false
 
-  build:
+  build_release:
     name: Build
-    needs: createrelease
     defaults:
       run:
         shell: bash -l {0}
@@ -39,17 +29,14 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            TARGET: linux
-            OUT_FILE_NAME: samui-preprocessor-linux-amd64
-            ASSET_MIME: application/x-elf
+            target: linux
+            outname: samui-preprocessor-linux-amd64
           - os: macos-latest
-            TARGET: macos
-            OUT_FILE_NAME: samui-preprocessor-macos-amd64
-            ASSET_MIME: application/x-elf
+            target: macos
+            outname: samui-preprocessor-macos-amd64
           - os: windows-latest
-            TARGET: windows
-            OUT_FILE_NAME: samui-preprocessor.exe
-            ASSET_MIME: application/vnd.microsoft.portable-executable
+            target: windows
+            outname: samui-preprocessor.exe
 
     steps:
       - uses: actions/checkout@v3
@@ -60,39 +47,30 @@ jobs:
           cache-downloads: true
           cache-environment: true
           environment-file: environment.yml
-          environment-name: mnsf
+          environment-name: loopy
           init-shell: >-
             bash
+
+      - name: Install current version
+        run: pip install -e .
 
       - name: Install ncurses if Windows
         if: matrix.os == 'windows-latest'
         run: |
           pip install windows-curses
 
-      - name: Build with pyinstaller for ${{matrix.TARGET}}
+      - name: Build with pyinstaller for ${{matrix.target}}
         run: |
           pip install pyinstaller
           pyinstaller app.spec
 
-      - name: Load Release URL File from release job
-        uses: actions/download-artifact@v3
-        with:
-          name: release_url
-
-      - name: Get Release File Name & Upload URL
-        id: get_release_info
-        shell: bash
-        run: |
-          value=`cat release_url/release_url.txt`
-          echo ::set-output name=upload_url::$value
-
       - name: Rename
         if: matrix.os != 'windows-latest'
         run: |
-          mv dist/samui-preprocessor dist/${{matrix.OUT_FILE_NAME}}
+          mv dist/samui-preprocessor dist/${{matrix.outname}}
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            dist/${{matrix.OUT_FILE_NAME}}
+          tag_name: ${{ needs.create_release.outputs.tag-name }}
+          files: dist/${{matrix.outname}}
