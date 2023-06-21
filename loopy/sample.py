@@ -259,7 +259,7 @@ class Sample(BaseModel):
             raise ValueError(f"Sample {self.name} join error.") from exc
 
     def _add_feature(self, fp: FeatureParams):
-        if not self.coordParams or not fp.coordName in [c.name for c in self.coordParams]:
+        if not self.coordParams or fp.coordName not in [c.name for c in self.coordParams]:
             raise ValueError(f"Coord {fp.coordName} not found. Use Sample.add_coords() first")
 
         self.featParams = self.featParams or []
@@ -353,7 +353,7 @@ class Sample(BaseModel):
         self.overlayParams = self.overlayParams or OverlayParams()
         self.overlayParams.defaults = self.overlayParams.defaults or []
         # Check if already exists
-        if not (fg := FeatureAndGroup(group=group, feature=feature)) in self.overlayParams.defaults:
+        if (fg := FeatureAndGroup(group=group, feature=feature)) not in self.overlayParams.defaults:
             self.overlayParams.defaults.append(fg)
         return self
 

@@ -15,6 +15,8 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from loopy.drivers.spaceranger import run_spaceranger
+
 if getattr(sys, "frozen", False) and sys.platform == "win32":
     os.environ["PROJ_DATA"] = sys._MEIPASS + "/projdata"
     os.environ["GDAL_DATA"] = sys._MEIPASS + "/gdaldata"
@@ -131,17 +133,23 @@ class MainWindow(QWidget):
         self.setWindowTitle("Samui Preprocessor")
         self.setGeometry(300, 300, 600, 200)
 
-        self.tiff = FileBoxLine("TIFF File:", extensions="TIFF Files (*.tif *.tiff)")
+        self.label = QLabel(
+            "You can browse for your spaceranger output folder or your TIFF file or both (to overlay TIFF file on top of the spaceranger result)."
+        )
+        self.spaceranger = FileBoxLine("spaceranger output:", folderOnly=True)
+        self.tiff = FileBoxLine("TIFF file:", extensions="TIFF Files (*.tif *.tiff)")
         self.out = FileBoxLine("Out directory", folderOnly=True)
-        self.channels = TextLine(label="Channel names\n(separated by commas)", alphanumeric=True)
-        self.quality = TextLine(label="Compression Quality:", default="95", numbersOnly=True)
-        self.scale = TextLine(label="Scale (in meter/px)", default="1.0", numbersOnly=True)
+        self.channels = TextLine(label="Channel names\n(separated by commas, no spaces)", alphanumeric=True)
+        self.quality = TextLine(label="Compression quality:", default="95", numbersOnly=True)
+        self.scale = TextLine(label="Scale (in meters/px)", default="1.0", numbersOnly=True)
         self.statusBar = StatusBar(self)
 
         self.runButton = QPushButton("Run")
         self.runButton.clicked.connect(self.run)
 
         layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        layout.addWidget(self.spaceranger)
         layout.addWidget(self.tiff)
         layout.addWidget(self.out)
         layout.addWidget(self.channels)
@@ -154,13 +162,16 @@ class MainWindow(QWidget):
 
     @QtCore.pyqtSlot()
     def run(self):
+        spaceranger = self.spaceranger.file_edit.text()
         tiff = self.tiff.file_edit.text()
         out = self.out.file_edit.text()
         channels = self.channels.text.text()
         quality = self.quality.text.text()
         scale = self.scale.text.text()
-        if not tiff:
-            QMessageBox.warning(self, "No file", "Please select a TIFF file.")
+        if not tiff and not spaceranger:
+            QMessageBox.warning(
+                self, "No file/directory", "Please select a TIFF file or a spaceranger output directory."
+            )
             return
         if not out:
             QMessageBox.warning(self, "No directory", "Please select an output directory.")
@@ -178,9 +189,24 @@ class MainWindow(QWidget):
             self.statusBar.updateStatus("Running...")
             outpath = Path(out) / Path(tiff).stem
             outpath.mkdir(parents=True, exist_ok=True)
-            Sample(name=Path(tiff).stem, path=outpath).add_image(
-                tiff, channels=channels if channels else None, scale=float(scale), quality=int(quality)
-            ).write()
+
+            sample = Sample(name=Path(tiff).stem, path=outpath)
+
+            if spaceranger:
+                sample = run_spaceranger(
+                    Path(spaceranger).name,
+                    Path(spaceranger).parent,
+                    outpath,
+                    tif=tiff if tiff else None,
+                    channels=channels.split(",") if channels else None,
+                )
+
+            if tiff:
+                sample.add_image(
+                    tiff, channels=channels if channels else None, scale=float(scale), quality=int(quality)
+                )
+
+            sample.write()
 
             self.statusBar.updateStatus("Ready.")
             self.runButton.setEnabled(True)
@@ -196,6 +222,7 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
     main()
     main()
     main()
