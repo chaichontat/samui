@@ -4,45 +4,62 @@
 
 [![Run HumanPilot Workflow](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml/badge.svg)](https://github.com/chaichontat/samui/actions/workflows/humanpilot.yml)
 
-
 Samui (named for an island located in Gulf of Thailand Ko Samui pronounced gaw -- rhyming with raw -- sà mui) is a performant visualization tool for spatial transcriptomics experiments.
 
 **Preprint available now!** [Performant web-based interactive visualization tool for spatially-resolved transcriptomics experiments](https://www.biorxiv.org/content/10.1101/2023.01.28.525943v2).
 
 ## Usage
 
-Head over to https://samuibrowser.com/ to see Samui with example Visium-IF data.
+Head over to <https://samuibrowser.com/> to see Samui with example Visium-IF data.
 
 You need to preprocess your image to form a tiled structure prior to being used in the Samui.
 
 ### Preprocessing
 
-Download a sample TIFF image from https://libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/sample.tif.
-The preprocessing system can be installed as described [below](#Installation).
-Call the preprocessing GUI with the following command in the terminal.
+For an example case, you can download a sample TIFF image from <https://libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/sample.tif>.
 
 #### GUI
 
+The GUI is intended to be a simple wrapper around the Python interface and is limited to only basic options (processing spaceranger results and TIFF images).
+
+##### Option 1: Run from Prepacked Binary
+
+The binaries are available at [Releases](https://github.com/chaichontat/samui/releases) under `Assets`.
+Windows users should download the file ending with `.exe` and macOS users should download the file ending with `.zip`, which decompresses to an executable `.app` folder.
+
+These files may take up to a minute to start up.
+
+##### Option 2: Run from Command Line
+
+Call the preprocessing GUI with the following command in the terminal.
+
 ```sh
-conda activate loopy
+conda activate samui
 loopy gui
 ```
 
-<img width="712" alt="Loopy preprocessing" src="https://user-images.githubusercontent.com/34997334/193870809-5338cbfa-9d7d-4e12-aca7-8a2c149eb2a2.png">
+<img width="712" alt="Samui preprocessing" src="https://user-images.githubusercontent.com/34997334/193870809-5338cbfa-9d7d-4e12-aca7-8a2c149eb2a2.png">
+
+You can choose a TIFF file to be processed.
+
+The `channels` field is optional. If you want to name the channels, make sure that the number of comma-separated names matches the number of channels in the image.
+For the sample image, this field should be `Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119`.
+
+The output folder will have the same name as the input file and can be dragged directly to <https://samuibrowser.com/> for visualization.
 
 #### In the command line
 
 ```sh
-conda activate loopy
+conda activate samui
 loopy image [PATH TO IMAGE] --scale 0.497e-6 --channels Lipofuscin,DAPI,GFAP,NeuN,OLIG2,TMEM119
 ```
 
 In this case, the output folder has the same name as the input file.
 
-You can drag this folder directly to https://samuibrowser.com/.
+You can drag this folder directly to <https://samuibrowser.com/>.
 Despite the Browser being a webpage, all data are processed locally on your computer.
 
-**This link opens the expected result: https://samuibrowser.com/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/&s=sample.**
+**This link opens the expected result: <https://samuibrowser.com/from?url=libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/&s=sample>.**
 
 Here, the browser retrieves the processed folder hosted on an external server.
 You could share your files with your collaborators using your own file server or AWS S3.
@@ -87,23 +104,32 @@ https://samuibrowser.com/from?url=[YOUR URL]&s=[SAMPLE1]&s=[SAMPLE2]
 Note that the name of the sample and the name of the folder must be the same.
 The link can be from a locally hosted server, or more commonly, a cloud service provider such as Amazon S3.
 
+##### CORS Policy
+
 You **must** set up a [CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html) policy on your host.
-This is a security policy that needs to be setup in order to allow your web browser to load the data.
-An example configuration is given below.
+This is a security policy to prevent malicious actors from access your files.
+You must make an exemption for Samui to load the data.
+An example configuration for Amazon S3 is given below.
 
 ```json
 {
   "AllowedHeaders": ["*"],
-  "AllowedMethods": ["GET", "HEAD"],
+  "AllowedMethods": ["GET", "HEAD", "OPTIONS"],
   "AllowedOrigins": ["https://samuibrowser.com/", "https://dev.samuibrowser.com/"],
   "MaxAgeSeconds": 3000
 }
 ```
 
+Configuration guides for other cloud service providers are available below.
+
+- **Amazon S3**: <https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html>
+- **Cloudflare R2**: <https://developers.cloudflare.com/r2/buckets/cors>
+- **Google Cloud Storage**: <https://cloud.google.com/storage/docs/using-cors>
+
 ### Sample viewing
 
-Loopy allows for viewing multiple samples simultaneously using the "split vertical" or "split horizontal" buttons located next to the sample ID pane.
-Loopy also allows for viewing multiple fluorescent image channels that can be toggled on and off in the window below the sample ID pane.
+Samui allows for viewing multiple samples simultaneously using the "split vertical" or "split horizontal" buttons located next to the sample ID pane.
+Samui also allows for viewing multiple fluorescent image channels that can be toggled on and off in the window below the sample ID pane.
 Each channel can be adjusted individually for color and maximum intensity.
 Users can zoom in/out using a mouse wheel and can navigate around the sample by clicking and dragging.
 Menus can be hidden using the show/hide button to view more of the sample.
