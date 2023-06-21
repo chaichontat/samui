@@ -12,6 +12,7 @@
   let fzf: [string | null, Fzf<readonly string[]>][];
 
   export let featureGroup: FeatureGroupList[] | undefined = $allFeatures;
+  export let selectedGroup: string;
   export let showSearch = false;
   export let set:
     | ((v: SimpleHS<FeatureAndGroup>) => void)
@@ -22,7 +23,7 @@
   const dispatch = createEventDispatcher();
 
   let cl =
-    'bg-neutral-800/95 backdrop-blur-lg absolute top-12 z-40 flex w-full flex-col gap-y-1 rounded-lg px-2 pt-2 pb-4 shadow-lg shadow-neutral-600/50';
+    'bg-neutral-800/95 backdrop-blur-lg absolute top-12 z-40 flex w-[90%] flex-col gap-y-1 rounded-lg px-2 pt-2 mt-4 pb-2 shadow-lg shadow-neutral-600/50 border border-neutral-200/30';
   export { cl as class };
 
   let candidates: {
@@ -36,19 +37,21 @@
   }
 
   $: if (featureGroup) {
-    fzf = featureGroup.map((f) => {
-      const config: ConstructorParameters<typeof Fzf>[1] = {
-        limit: 100,
-        casing: 'case-insensitive'
-      };
-      if (f.weights) {
-        config.tiebreakers = [
-          (a: FzfResultItem<string>, b: FzfResultItem<string>) =>
-            f.weights![f.names[a.item] - f.weights![f.names[b.item]]]
-        ];
-      }
-      return [f.group, new Fzf(f.features, config)];
-    });
+    fzf = featureGroup
+      .filter((f) => f.group === selectedGroup)
+      .map((f) => {
+        const config: ConstructorParameters<typeof Fzf>[1] = {
+          limit: 100,
+          casing: 'case-insensitive'
+        };
+        if (f.weights) {
+          config.tiebreakers = [
+            (a: FzfResultItem<string>, b: FzfResultItem<string>) =>
+              f.weights![f.names[a.item] - f.weights![f.names[b.item]]]
+          ];
+        }
+        return [f.group, new Fzf(f.features, config)];
+      });
   }
 
   $: if (fzf) {
@@ -90,9 +93,9 @@
   {#each candidates as { group, values }, i}
     {#if values.length > 0 && (limit < 0 || i < limit)}
       <div class="flex flex-col sticky">
-        <span class="px-2 pt-1.5 pb-0.5 font-medium capitalize text-yellow-300">
+        <!-- <span class="px-2 pt-1.5 pb-0.5 font-medium capitalize text-yellow-300">
           {group ?? 'Misc.'}
-        </span>
+        </span> -->
         {#each values as v}
           <HoverableFeature
             {set}
