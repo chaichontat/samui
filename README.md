@@ -14,6 +14,16 @@ Head over to <https://samuibrowser.com/> to see Samui with example Visium-IF dat
 
 You need to preprocess your image to form a tiled structure prior to being used in the Samui.
 
+## Installation
+
+Install [`conda`](https://github.com/conda-forge/miniforge#miniforge3). These video guides can be helpful: [Mac](https://www.youtube.com/watch?v=328DQUWZP48) and [Windows](https://www.youtube.com/watch?v=-H_onyfW9VE). Then, in the Terminal, run
+
+```sh
+git clone https://github.com/chaichontat/samui/
+cd samui
+conda env create -n samui -f environment.yml
+```
+
 ### Preprocessing
 
 For an example case, you can download a sample TIFF image from <https://libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/sample.tif>.
@@ -27,7 +37,9 @@ The GUI is intended to be a simple wrapper around the Python interface and is li
 The binaries are available at [Releases](https://github.com/chaichontat/samui/releases) under `Assets`.
 Windows users should download the file ending with `.exe` and macOS users should download the file ending with `.zip`, which decompresses to an executable `.app` folder.
 
-These files may take up to a minute to start up.
+For Mac users, you may need to right click on the app and select "Open" to bypass the security check as these binaries are not signed by Apple.
+
+The application may take up to a minute to start up.
 
 ##### Option 2: Run from Command Line
 
@@ -192,16 +204,6 @@ If cell segmentation or spot deconvolution data are imported, these represent se
 #### MERFISH data
 
 Need to add here.
-
-## Installation
-
-Install [`conda`](https://github.com/conda-forge/miniforge#miniforge3). These video guides can be helpful: [Mac](https://www.youtube.com/watch?v=328DQUWZP48) and [Windows](https://www.youtube.com/watch?v=-H_onyfW9VE). Then, in the Terminal, run
-
-```sh
-git clone https://github.com/chaichontat/samui/
-cd samui
-conda env create -n loopy -f environment.yml
-```
 
 ## Nomenclature
 
