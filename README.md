@@ -80,6 +80,8 @@ The images are available instantly and without any installation on their end!
 
 #### Python API
 
+##### Overview
+
 The main object is `Sample` from `loopy.sample`.
 This is a Pydantic [model](https://docs.pydantic.dev/usage/models/) which provides nice boilerplates.
 
@@ -102,6 +104,38 @@ For example, [scripts/process_merfish.py](scripts/process_merfish.py)
 
 This creates a sample folder that has an image along with a list of chunked features at `out/BrainReceptorShowcase1`.
 This folder can be dragged directly into Samui for visualization.
+
+##### Adding gene expression and cell metadata
+
+To add features to your `Sample`, data must be prepared as a `pandas` `DataFrame` that shares its `index` with the `DataFrame` added via `.add_coords()` (see `coords` in the above example). The `index` uniquely labels each locus (e.g. for Visium, each spot). Each column in the `DataFrame` becomes a feature explorable through Samui, and each row a locus.
+
+As an example, suppose we're creating a Samui `Sample` for a Visium experiment, and have prepared the `DataFrame` `gene_exp`, whose columns are gene names (preferably Ensembl ID, or otherwise some unique identifier!), and whose rows represent spots. While both the `.add_chunked_feature` and `.add_csv_feature` methods exist to add gene expression, we'll use the former because it *lazily* loads data, which may otherwise be too large to load *eagerly* (as with `.add_csv_feature`).
+
+```python
+(
+sample = Sample(name="VisiumSample1", path=out)
+    #   DataFrame 'coords' has columns 'x' and 'y' for spot coordinates, and
+    #   index of spot barcodes
+    .add_coords(coords, name="spotCoords", mPerPx=1e-6, size=2e-5)
+    #   Add feature "Genes", indexed with names that match those of 'coords'
+    .add_chunked_feature(gene_exp, name="Genes", coordName="spotCoords", dataType = "quantitative")
+)
+```
+
+As another example, suppose we have a set of cells with metadata including cell type and their areas. In this case, we'll start by preparing a single `DataFrame` called `cell_df` with columns `cell_type` and `cell_area`, whose index gives unique cell IDs (and thus rows correspond to cells). A feature may only be quantitative or categorical, so we'll split `cell_df` into `cell_type` (categorical) and `cell_area` (quantitative) `DataFrame`s when calling the `.add_csv_feature` method.
+
+```python
+(
+sample = Sample(name="CellSet1", path=out)
+    #   DataFrame 'coords' has columns 'x' and 'y' for cell coordinates, and
+    #   index of cell IDs
+    .add_coords(coords, name="cellCoords", mPerPx=1e-6, size=2e-5)
+    #   Add "Cell Type", a categorical feature
+    .add_csv_feature(cell_df.loc[:, 'cell_type'], name="Cell Type", coordName="cellCoords", dataType="quantitative")
+    #   Add "Cell Area", a quantitative feature
+    .add_csv_feature(cell_df.loc[:, 'cell_area'], name="Cell Area", coordName="cellCoords", dataType="categorical")
+)
+```
 
 #### Hosting a Sample folder
 
