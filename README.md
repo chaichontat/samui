@@ -50,7 +50,7 @@ conda activate samui
 loopy gui
 ```
 
-<img width="712" alt="Samui preprocessing" src="https://user-images.githubusercontent.com/34997334/193870809-5338cbfa-9d7d-4e12-aca7-8a2c149eb2a2.png">
+<img width="712" alt="Samui preprocessing" src="https://github.com/chaichontat/samui/assets/45461721/e7701fbf-7421-4668-8bd3-281ebc9d5c8c">
 
 You can choose a TIFF file to be processed.
 
