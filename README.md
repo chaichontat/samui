@@ -105,24 +105,81 @@ For example, [scripts/process_merfish.py](scripts/process_merfish.py)
 This creates a sample folder that has an image along with a list of chunked features at `out/BrainReceptorShowcase1`.
 This folder can be dragged directly into Samui for visualization.
 
-##### Adding gene expression and cell metadata
+##### Adding coordinates
 
-To add features to your `Sample`, data must be prepared as a `pandas` `DataFrame` that shares its `index` with the `DataFrame` added via `.add_coords()` (see `coords` in the above example). The `index` uniquely labels each locus (e.g. for Visium, each spot). Each column in the `DataFrame` becomes a feature explorable through Samui, and each row a locus.
+Lets break the example above step-by-step.
 
-As an example, suppose we're creating a Samui `Sample` for a Visium experiment, and have prepared the `DataFrame` `gene_exp`, whose columns are gene names (preferably Ensembl ID, or otherwise some unique identifier!), and whose rows represent spots. While both the `.add_chunked_feature` and `.add_csv_feature` methods exist to add gene expression, we'll use the former because it *lazily* loads data, which may otherwise be too large to load *eagerly* (as with `.add_csv_feature`).
+Samui separates the coordinates information and the actual feature values in order to reduce data duplication.
+A coordinate is a pandas DataFrame with columns `x` and `y`in meters.
+
+| index  | x | y |
+|--------|---|---|
+| spot_1 | 1 | 3 |
+| spot_2 | 2 | 1 |
+| spot_3 | 4 | 2 |
+
+This `coords` dataframe can be added to `Sample` with the following method call.
+The index uniquely labels each spot (for Visium data).
 
 ```python
-(
-sample = Sample(name="VisiumSample1", path=out)
-    #   DataFrame 'coords' has columns 'x' and 'y' for spot coordinates, and
-    #   index of spot barcodes
-    .add_coords(coords, name="spotCoords", mPerPx=1e-6, size=2e-5)
-    #   Add feature "Genes", indexed with names that match those of 'coords'
-    .add_chunked_feature(gene_exp, name="Genes", coordName="spotCoords", dataType = "quantitative")
-)
+.add_coords(coords, name="cellCoords", mPerPx=1e-6, size=2e-5)
 ```
 
-As another example, suppose we have a set of cells with metadata including cell type and their areas. In this case, we'll start by preparing a single `DataFrame` called `cell_df` with columns `cell_type` and `cell_area`, whose index gives unique cell IDs (and thus rows correspond to cells). A feature may only be quantitative or categorical, so we'll split `cell_df` into `cell_type` (categorical) and `cell_area` (quantitative) `DataFrame`s when calling the `.add_csv_feature` method.
+This creates 3  20 μm spots.
+
+#### Adding feature information
+
+To add features like gene expression to your `Sample`, you need to prepare the data as a pandas DataFrame. The DataFrame's index must match the index used when adding coordinates with `.add_coords()`.
+
+| index  | gene_1 | gene_2 | gene_3 |
+|--------|--------|--------|--------|
+| spot_1 | 0.5    | 1.2    | 0.8    |
+| spot_2 | 1.1    | 0.3    | 2.1    |
+| spot_3 | 0.7    | 1.5    | 0.6    |
+
+Each DataFrame column becomes a feature you can explore in Samui. Each row represents one spot.
+
+For example, if you have a DataFrame called `gene_exp` for a Visium experiment, the columns are gene names and the rows are spots.
+
+Use `.add_csv_feature` to add the feature to `Sample`.
+
+> WHen the user loads the sample in Samui, the entire feature gets downloaded.
+> To improve performance for large features (whole transcriptome), use `.add_chunked_feature`, which "chunks" the DataFrame column-by-column in sparse format.
+> This way, Samui _lazily_ (only) downloads the column when the user requests that specific column.
+
+```python
+.add_chunked_feature(feat, name="cells", coordName="cellCoords", unit="Log counts", sparse=True, dataType="quantitative")
+.set_default_feature(group="cells", feature="Oxgr1")
+```
+
+The `set_default_feature` method sets the feature that is automatically loaded when the user opens the sample in Samui.
+
+##### Add image
+
+Finally, we add the actual image. Here, `dapi` is a path to a TIFF file.
+
+```python
+.add_image(dapi, channels=["DAPI"], scale=affine.a, translate=(affine.c, affine.f))
+```
+
+The scale factor converts the pixel value to μm and `translate` tuple shifts the origin (top-left) of the image.
+
+Finally, we call
+
+```python
+.write()
+```
+
+to write our sample.
+
+##### Another example
+
+Suppose we have a set of cells with metadata including cell type and their areas.
+In this case, we'll start by preparing a single DataFrame called `cell_df` with columns `cell_type` and `cell_area`, whose index gives unique cell IDs (and thus rows correspond to cells).
+
+A feature may only be quantitative or categorical, so we'll split `cell_df` into `cell_type` (categorical) and `cell_area` (quantitative) DataFrames when calling the `.add_csv_feature` method.
+
+> Samui uses the `dataType` tag to decide whether to show a colorbar or swatches as a legend.
 
 ```python
 (
