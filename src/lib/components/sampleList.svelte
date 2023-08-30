@@ -20,9 +20,7 @@
   export let showArrow = true;
 
   let lastName: string | undefined;
-
   let rows: { id: number; name: string }[] = [];
-  let _active: { id: number; name: string };
 
   const dispatch = createEventDispatcher();
 
@@ -51,20 +49,18 @@
     lastName = name;
   }
 
-  onMount(() => handleChange(items[0]));
-
+  onMount(() => active = items[0]);
+  $: handleChange(active)
   $: handleSampleUpdate(items);
-  $: _active = rows.find((r) => r.name === active)!;
-  $: if (!active) active = items[0];
 </script>
 
 <div class="relative w-full">
   <span class="inline-block w-full rounded-md shadow-sm">
-    <Listbox value={_active} on:change={(e) => handleChange(e.detail.name ?? e.detail)} let:open>
+    <Listbox bind:value={active} let:open>
       <ListboxButton
         class="relative w-full max-w-md cursor-pointer rounded-md border border-neutral-400 bg-neutral-100/90 py-2 pl-3 pr-10 text-left text-neutral-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-neutral-800/80 dark:text-neutral-100 sm:leading-5"
       >
-        <span class="block truncate font-medium">{_active?.name}</span>
+        <span class="block truncate font-medium">{active}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
           {#if loading}
             <Spinner />
@@ -86,7 +82,7 @@
             static
             class="overflow-auto rounded-lg pt-1 pb-1 leading-6 focus:outline-none sm:leading-5"
           >
-            {#each rows as name (name)}
+            {#each rows as {name} (name)}
               <div class="px-1">
                 <ListboxOption
                   value={name}
@@ -100,7 +96,7 @@
                   let:selected
                 >
                   <span class={classes(selected ? 'font-semibold' : 'font-normal')}>
-                    {name.name}
+                    {name}
                   </span>
                   {#if selected && showArrow}
                     <span
