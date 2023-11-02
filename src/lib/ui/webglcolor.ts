@@ -1,6 +1,12 @@
 export class WebGLColorFunc {
+  static subtract(a: unknown[], b: unknown[]) {
+    return ['-', a, b]
+  }
   static normalize(band: string) {
-    return ['/', ['band', ['var', band]], ['var', `${band}Max`]];
+    return ['/',
+      this.clamp(this.subtract(['band', ['var', band]], ['var', `${band}Min`]), 0, 255),
+      this.clamp(this.subtract(['var', `${band}Max`], ['var', `${band}Min`]), 1, 255)
+    ];
   }
 
   static mask(band: ReturnType<typeof this.normalize>, mask: string) {

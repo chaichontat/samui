@@ -1,8 +1,8 @@
 module.exports = {
   plugins: [
-    require('prettier-plugin-tailwindcss'),
-    require('prettier-plugin-svelte'),
-    require('prettier-plugin-packagejson')
+    'prettier-plugin-tailwindcss',
+    'prettier-plugin-svelte',
+    'prettier-plugin-packagejson'
   ],
   tailwindConfig: 'tailwind.config.cjs',
   printWidth: 100,

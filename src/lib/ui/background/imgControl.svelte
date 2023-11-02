@@ -11,6 +11,7 @@
   } from '$src/lib/ui/background/imgColormap';
   import { isEqual, zip } from 'lodash-es';
   import { onMount } from 'svelte';
+  import RangeSlider from 'svelte-range-slider-pips';
   import type { Background } from './imgBackground';
 
   export let background: Background;
@@ -42,17 +43,17 @@
 
       for (const [chan, color] of zip(image.channels, colors)) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        bandinfo[chan!] = { enabled: false, color: color!, max: 128 };
+        bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, 128] };
       }
 
       if (Object.keys(image.defaultChannels).length > 0) {
         for (const [c, b] of Object.entries(image.defaultChannels)) {
-          if (b) bandinfo[b] = { enabled: true, color: c, max: 128 };
+          if (b) bandinfo[b] = { enabled: true, color: c, minmax: [0, 128] };
         }
       } else {
-        bandinfo[image.channels[0]] = { enabled: true, color: 'red', max: 128 };
-        bandinfo[image.channels[1]] = { enabled: true, color: 'green', max: 128 };
-        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', max: 128 };
+        bandinfo[image.channels[0]] = { enabled: true, color: 'red', minmax: [0, 128] };
+        bandinfo[image.channels[1]] = { enabled: true, color: 'green', minmax: [0, 128] };
+        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', minmax: [0, 128] };
       }
 
       imgCtrl = {
@@ -129,16 +130,17 @@
                 </button>
               </td>
               <td class="tabular-nums">
-                <div class="flex">
-                  <input
-                    type="range"
-                    min="0"
-                    max="255"
-                    class="mx-2 min-w-[3rem] max-w-[6rem] cursor-pointer opacity-70 transition-opacity duration-500 group-hover:opacity-100"
-                    bind:value={imgCtrl.variables[name].max}
-                    on:mousedown={() => handleClick(name, imgCtrl.variables[name].color)}
-                    aria-label="Max channel intensity slider"
-                  />
+                <div class="flex items-center">
+                  <div class="min-w-[128px] pl-0.5">
+                    <RangeSlider
+                      min={0}
+                      max={255}
+                      range
+                      springValues={{ stiffness: 1, damping: 1 }}
+                      on:start={() => handleClick(name, imgCtrl.variables[name].color)}
+                      bind:values={imgCtrl.variables[name].minmax}
+                    />
+                  </div>
                   <span
                     class={classes(
                       imgCtrl.variables[name].enabled ? '' : 'opacity-80 hover:opacity-100',
@@ -146,7 +148,7 @@
                     )}
                     aria-label="Max channel intensity"
                   >
-                    Max: {255 - imgCtrl.variables[name].max}
+                    [{imgCtrl.variables[name].minmax}]
                   </span>
                 </div>
               </td>
@@ -198,5 +200,9 @@
     transition-property: max-width;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 1000ms;
+  }
+
+  :global(.rangeSlider) {
+    font-size: 0.6rem; /* default size */
   }
 </style>

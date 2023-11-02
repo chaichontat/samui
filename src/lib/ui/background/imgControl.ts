@@ -1,3 +1,5 @@
+import { maskMap, type BandInfo } from './imgColormap';
+
 export const colors = ['blue', 'green', 'red', 'magenta', 'white'] as const;
 export const bgColors = [
   'bg-blue-600',
@@ -6,8 +8,6 @@ export const bgColors = [
   'bg-fuchsia-500',
   'bg-white'
 ] as const;
-
-export type BandInfo = { enabled: boolean; color: typeof colors[number]; max: number };
 
 type CompCtrl = { type: 'composite'; variables: Record<string, BandInfo> };
 type RGBCtrl = { type: 'rgb'; Exposure: number; Contrast: number; Saturation: number };
@@ -33,9 +33,9 @@ export function colorVarFactory(mapping: string[] | 'rgb' | null) {
       const out: Record<string, number> = {};
 
       for (const [i, b] of bands.entries()) {
-        const { enabled, color, max } = imgCtrl.variables[b];
+        const { enabled, color, minmax } = imgCtrl.variables[b];
         const masks = [`${b}redMask`, `${b}greenMask`, `${b}blueMask`];
-        out[`${b}Max`] = 255 - max;
+        [out[`${b}Min`], out[`${b}Max`]] = minmax;
         out[b] = i + 1;
         if (!enabled) {
           masks.forEach((m) => (out[m] = 0));
@@ -47,14 +47,3 @@ export function colorVarFactory(mapping: string[] | 'rgb' | null) {
     };
   }
 }
-
-// const colorVar = colorVarFactory(mode, channels);
-const maskMap = {
-  red: [1, 0, 0],
-  green: [0, 1, 0],
-  blue: [0, 0, 1],
-  magenta: [1, 0, 1],
-  // cyan: [0, 1, 1],
-  // yellow: [1, 1, 0],
-  white: [1, 1, 1]
-};

@@ -6,9 +6,9 @@ import { Background } from '$src/lib/ui/background/imgBackground';
 import { ActiveSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import { throttle } from 'lodash-es';
 import { Map, MapBrowserEvent, Overlay, View } from 'ol';
+import type { FeatureLike } from 'ol/Feature';
 import ScaleLine from 'ol/control/ScaleLine.js';
 import Zoom from 'ol/control/Zoom.js';
-import type { FeatureLike } from 'ol/Feature';
 import type { Layer } from 'ol/layer';
 import { get } from 'svelte/store';
 import { DrawFeature } from '../sidebar/annotation/annFeat';
@@ -18,10 +18,10 @@ import {
   annoROI,
   mapTiles,
   overlays,
-  setHoverSelect,
   sEvent,
   sOverlay,
-  sPixel
+  sPixel,
+  setHoverSelect
 } from '../store';
 
 type Listener = (
