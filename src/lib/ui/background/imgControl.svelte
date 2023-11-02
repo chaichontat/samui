@@ -68,6 +68,14 @@
   function handleClick(name: string, color: BandInfo['color'] | undefined, alternate = false) {
     if (!imgCtrl) return;
     if (imgCtrl.type === 'composite' && color) {
+      (document.querySelector(`#slider-${name}`) as HTMLElement | null)?.style.setProperty(
+        '--range-handle',
+        color
+      );
+      (document.querySelector(`#slider-${name}`) as HTMLElement | null)?.style.setProperty(
+        '--range-handle-focus',
+        color
+      );
       const v = imgCtrl.variables[name];
       if (v.enabled && v.color === color && alternate) {
         imgCtrl.variables[name].enabled = false;
@@ -131,7 +139,7 @@
               </td>
               <td class="tabular-nums">
                 <div class="flex items-center">
-                  <div class="min-w-[128px] pl-0.5">
+                  <div class="min-w-[128px] pl-0.5 cursor-pointer">
                     <RangeSlider
                       min={0}
                       max={255}
@@ -139,6 +147,7 @@
                       springValues={{ stiffness: 1, damping: 1 }}
                       on:start={() => handleClick(name, imgCtrl.variables[name].color)}
                       bind:values={imgCtrl.variables[name].minmax}
+                      id={`slider-${name}`}
                     />
                   </div>
                   <span
