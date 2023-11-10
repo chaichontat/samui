@@ -139,15 +139,15 @@ class GeoTiff(BaseModel):
                 "nchannels is tested up to 1000. Perhaps you mixed up nchannels and other dimensions?"
             )
 
-        if nc <= 4:
+        if nc <= 3:
             names = [""]
             ncounts = [nc]
             chanlist = [list(range(nc))]
         else:
-            names = [f"_{i}" for i in range(1, (nc - 1) // 4 + 2)]
-            ncounts = [4] * (nc // 4) + ([nc % 4] if nc % 4 else [])
-            chanlist = [list(range(4 * i, 4 * (i + 1))) for i in range(nc // 4)] + (
-                [list(range(4 * (nc // 4), nc))] if nc % 4 else []
+            names = [f"_{i}" for i in range(1, (nc - 1) // 3 + 2)]
+            ncounts = [3] * (nc // 3) + ([nc % 3] if nc % 3 else [])
+            chanlist = [list(range(3 * i, 3 * (i + 1))) for i in range(nc // 3)] + (
+                [list(range(3 * (nc // 3), nc))] if nc % 3 else []
             )
 
         return names, ncounts, chanlist
@@ -164,7 +164,7 @@ class GeoTiff(BaseModel):
     ):
         dst: DatasetWriter
         # Not compressing here since we cannot control the compression level.
-        assert 0 < len(channels) <= 4
+        assert 0 < len(channels) <= 3
         with rasterio.open(
             path.with_suffix(".tif_").as_posix(),
             "w",
