@@ -32,6 +32,7 @@ export interface FeatureData {
 
 // TODO Set spec.
 export const convertCategoricalToNumber = keyLRU((arr: (number | string)[]) => {
+  console.debug("Converting categorical to number")
   const unique = [...new Set(arr)];
   const legend = {} as Record<number | string, number>;
   const legendArr = [] as (number | string)[];
@@ -45,6 +46,9 @@ export const convertCategoricalToNumber = keyLRU((arr: (number | string)[]) => {
 });
 
 export const stats = keyLRU((arr: (number | string)[]) => {
+  if (typeof arr[0] !== 'number') {
+    return [0, 1];
+  }
   for (let i = 0; i < arr.length; i++) {
     arr[i] = Number(arr[i]) || 0; // Convert NaN to 0.
   }
