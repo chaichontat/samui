@@ -5,20 +5,13 @@
     "lib": ["es2021", "DOM"],
     "target": "es2021",
     "strict": true,
-    "baseUrl": ".",
     "esModuleInterop": true,
     // "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "checkJs": true,
-    "paths": {
-      "$src/*": ["src/*"],
-      "$comps/*": ["src/components/*"],
-      "$lib": ["src/lib"],
-      "$lib/*": ["src/lib/*"]
-    },
     "types": [
       "vitest/importMeta",
       "vitest/globals"

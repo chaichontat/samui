@@ -14,7 +14,13 @@ const config = {
       fallback: null,
       compress: true
     }),
-    inlineStyleThreshold: 1024
+    inlineStyleThreshold: 1024,
+    alias: {
+      '$src/*': 'src/*',
+      '$comps/*': 'src/components/*',
+      $lib: 'src/lib',
+      '$lib/*': 'src/lib/*'
+    }
   }
 };
 
