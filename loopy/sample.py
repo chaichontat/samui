@@ -145,6 +145,7 @@ class Sample(BaseModel):
         scale: float = 1,
         quality: int = 90,
         translate: tuple[float, float] = (0, 0),
+        convert_to_8bit: bool = False,
         defaultChannels: dict[Colors, str] | None = None,
         save_uncompressed: bool = False,
     ) -> Self:
@@ -161,7 +162,7 @@ class Sample(BaseModel):
         if not tiff.exists():
             raise ValueError(f"Tiff file {tiff} not found")
 
-        geotiff = GeoTiff.from_tiff(tiff, scale=scale, translate=translate, rgb=channels == "rgb")
+        geotiff = GeoTiff.from_tiff(tiff, scale=scale, translate=translate, rgb=channels == "rgb", convert_to_8bit=convert_to_8bit)
 
         if channels is None:
             channels = [f"C{i}" for i in range(1, geotiff.chans + 1)]

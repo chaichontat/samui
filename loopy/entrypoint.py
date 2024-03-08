@@ -40,9 +40,6 @@ If you're combining this image with the spaceranger output, the name here must m
     "scale", "--scale", "-s", default=1, type=float, help="Scale in meters per pixel.", show_default=True
 )
 @click.option(
-    "quality", "--quality", default=90, type=int, help="JPEG compression quality.", show_default=True
-)
-@click.option(
     "translate",
     "--translate",
     default=(0, 0),
@@ -50,11 +47,16 @@ If you're combining this image with the spaceranger output, the name here must m
     type=click.Tuple([float, float]),
     help="Translation to be applied in y and x.",
 )
+@click.option("--convert8bit", is_flag=True, help="Convert the image to 8-bit. ")
+@click.option(
+    "quality", "--quality", default=90, type=int, help="JPEG compression quality. Only applies if image is 8-bit or converting to 8-bit.", show_default=True
+)
 def image(
     tiff: Path,
     out: Path | None = None,
     name: str | None = None,
     channels: str | None = None,
+    convert8bit: bool = False,
     quality: int = 90,
     scale: float = 1,
     translate: tuple[float, float] = (0, 0),
@@ -79,7 +81,7 @@ def image(
 
     (
         Sample(name=name, path=out / name)
-        .add_image(tiff, channels=c, scale=scale, translate=translate, quality=quality)
+        .add_image(tiff, channels=c, scale=scale, translate=translate, quality=quality, convert_to_8bit=convert8bit)
         .write()
     )
 

@@ -55,9 +55,9 @@ class GeoTiff(BaseModel):
 
     @classmethod
     def from_tiff(
-        cls, tif: Path, *, scale: float, translate: tuple[float, float] = (0, 0), rgb: bool = False
+        cls, tif: Path, *, scale: float, translate: tuple[float, float] = (0, 0), rgb: bool = False, convert_to_8bit: bool = False
     ) -> Self:
-        return cls.from_img(imread(tif), scale=scale, translate=translate, rgb=rgb)
+        return cls.from_img(imread(tif), scale=scale, translate=translate, rgb=rgb, convert_to_8bit=convert_to_8bit)
 
     @classmethod
     def from_img(
@@ -92,7 +92,9 @@ class GeoTiff(BaseModel):
         elif img.dtype == np.uint16:
             if convert_to_8bit:
                 log("Converting uint16 to uint8.", type_="WARNING")
-                dived = np.divide(img, 256, casting="unsafe")  # So that this remains an uint16.
+                maxval = img.max()
+                divide = 2 ** (int(np.log2(maxval)) + 1) // 256
+                dived = np.divide(img, divide, casting="unsafe")  # So that this remains an uint16.
                 del img
                 img = dived.astype(np.uint8)
                 del dived
