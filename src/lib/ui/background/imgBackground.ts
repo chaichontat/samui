@@ -51,7 +51,9 @@ export class Background extends Deferrable {
     this.source.bandCount = this.image.mode === 'rgb' ? 3 : image.channels.length;
 
     this.layer = new WebGLTileLayer({
-      style: Array.isArray(image.channels) ? genCompStyle(image.channels) : genRGBStyle(),
+      style: Array.isArray(image.channels)
+        ? genCompStyle(image.channels, Math.round(image.maxVal / 2))
+        : genRGBStyle(),
       source: this.source,
       zIndex: -1
     });

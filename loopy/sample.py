@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Concatenate, Generic, Literal, ParamSpec, Protocol, TypeVar
 
+import numpy as np
 import pandas as pd
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -175,6 +176,8 @@ class Sample(BaseModel):
             channels=channels,
             mPerPx=geotiff.scale,
             defaultChannels=defaultChannels,
+            dtype="uint8" if geotiff.img.dtype == np.uint8 else "uint16",
+            maxVal=geotiff.img.max()
         )
         return self
 

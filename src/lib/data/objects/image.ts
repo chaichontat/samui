@@ -7,6 +7,8 @@ export type ImageParams = {
   channels: string[] | 'rgb';
   mPerPx: number;
   defaultChannels?: Record<BandInfo['color'], string | undefined>;
+  dtype?: 'uint8' | 'uint16';
+  maxVal?: number;
 };
 
 export class ImgData extends Deferrable {
@@ -14,10 +16,15 @@ export class ImgData extends Deferrable {
   channels: string[] | 'rgb';
   defaultChannels: Record<BandInfo['color'], string | undefined>;
   mPerPx: number;
+  maxVal: number;
 
-  constructor({ urls, channels, defaultChannels, mPerPx }: ImageParams, autoHydrate = false) {
+  constructor(
+    { urls, channels, defaultChannels, mPerPx, maxVal }: ImageParams,
+    autoHydrate = false
+  ) {
     super();
     this.urls = urls;
+    this.maxVal = maxVal ?? 255;
 
     // WebGL limitation
     if (Array.isArray(channels) && !channels.every((c) => /^[a-z0-9_]+$/i.test(c))) {

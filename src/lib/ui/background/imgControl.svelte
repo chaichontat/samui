@@ -3,11 +3,11 @@
   import { classes } from '$lib/utils';
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
-    bgColors,
-    colors,
-    type BandInfo,
-    type CompCtrl,
-    type ImgCtrl
+      bgColors,
+      colors,
+      type BandInfo,
+      type CompCtrl,
+      type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
   import { isEqual, zip } from 'lodash-es';
   import { onMount } from 'svelte';
@@ -41,19 +41,20 @@
         }
       }
 
+      const half = Math.round(image.maxVal / 2)
       for (const [chan, color] of zip(image.channels, colors)) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, 128] };
+        bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, half] };
       }
 
       if (Object.keys(image.defaultChannels).length > 0) {
         for (const [c, b] of Object.entries(image.defaultChannels)) {
-          if (b) bandinfo[b] = { enabled: true, color: c, minmax: [0, 128] };
+          if (b) bandinfo[b] = { enabled: true, color: c, minmax: [0, half] };
         }
       } else {
-        bandinfo[image.channels[0]] = { enabled: true, color: 'red', minmax: [0, 128] };
-        bandinfo[image.channels[1]] = { enabled: true, color: 'green', minmax: [0, 128] };
-        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', minmax: [0, 128] };
+        bandinfo[image.channels[0]] = { enabled: true, color: 'red', minmax: [0, half] };
+        bandinfo[image.channels[1]] = { enabled: true, color: 'green', minmax: [0, half] };
+        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', minmax: [0, half] };
       }
 
       imgCtrl = {
@@ -142,7 +143,7 @@
                   <div class="min-w-[128px] pl-0.5 cursor-pointer">
                     <RangeSlider
                       min={0}
-                      max={255}
+                      max={image.maxVal}
                       range
                       springValues={{ stiffness: 1, damping: 1 }}
                       on:start={() => handleClick(name, imgCtrl.variables[name].color)}
