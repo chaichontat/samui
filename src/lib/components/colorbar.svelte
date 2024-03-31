@@ -92,11 +92,15 @@
 
 <style lang="postcss">
   div :global(.alphabet) {
-    @apply mt-2 flex flex-col items-end gap-0.5;
+    @apply mt-2 flex flex-wrap items-end gap-0.5;
   }
 
   div :global(.alphabet-swatch) {
-    @apply -mr-1 inline-flex flex-row-reverse justify-end gap-x-1;
+    @apply mx-0
+  }
+
+  div :global(.alphabet-swatches) {
+    @apply flex flex-col flex-wrap items-end gap-0.5;
   }
 
   div :global(.legend-name) {
