@@ -49,11 +49,11 @@
       Max value: <input type="range" />
     </Section> -->
 
-    <Section title="Density Plots" defaultOpen class="flex justify-center overflow-visible">
+    <!-- <Section title="Density Plots" defaultOpen class="flex justify-center overflow-visible">
       {#await import('$src/lib/sidebar/plot/plotMini.svelte') then plot}
         <svelte:component this={plot.default} />
       {/await}
-    </Section>
+    </Section> -->
 
     <Section
       title="Feature Annotation"
