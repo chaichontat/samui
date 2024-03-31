@@ -207,7 +207,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
         // 10 layers of tiling.
         // From genSpotStyle. Nasty logic duplication.
         const start = coords.mPerPx * 128;
-        const ress = [...Array(10).keys()].map((i) => start * 2 ** -i);
+        const ress = [...Array(16).keys()].map((i) => start * 2 ** -i);
 
         // Such that the entire sample is covered in 2**9 = 512 px.
         // 8 due to the 4x native res max zoom.
