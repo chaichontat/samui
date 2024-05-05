@@ -42,7 +42,11 @@
       }
 
       const half = Math.round(image.maxVal / 2)
-      for (const [chan, color] of zip(image.channels, colors)) {
+
+      const nColorRatio = image.channels.length / colors.length
+      // Repeat colors to match the number of channels
+      const repeated = new Array(Math.ceil(nColorRatio) * colors.length).fill(colors).flat();
+      for (const [chan, color] of zip(image.channels, repeated)) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, half] };
       }
