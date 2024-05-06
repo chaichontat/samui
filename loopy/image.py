@@ -27,7 +27,7 @@ class ImageParams(ReadonlyModel):
     channels: list[str] | Literal["rgb"]
     defaultChannels: dict[Colors, str] | None = None
     mPerPx: float
-    dtype: Literal['uint8', 'uint16'] | None = None
+    dtype: Literal["uint8", "uint16"] | None = None
     maxVal: int | None = None
 
     def write(self, f: Callable[[Self], None]) -> Self:
@@ -55,9 +55,17 @@ class GeoTiff(BaseModel):
 
     @classmethod
     def from_tiff(
-        cls, tif: Path, *, scale: float, translate: tuple[float, float] = (0, 0), rgb: bool = False, convert_to_8bit: bool = False
+        cls,
+        tif: Path,
+        *,
+        scale: float,
+        translate: tuple[float, float] = (0, 0),
+        rgb: bool = False,
+        convert_to_8bit: bool = False,
     ) -> Self:
-        return cls.from_img(imread(tif), scale=scale, translate=translate, rgb=rgb, convert_to_8bit=convert_to_8bit)
+        return cls.from_img(
+            imread(tif), scale=scale, translate=translate, rgb=rgb, convert_to_8bit=convert_to_8bit
+        )
 
     @classmethod
     def from_img(
@@ -113,7 +121,7 @@ class GeoTiff(BaseModel):
         )
 
     def transform_tiff(
-        self, path_in: Path, *, quality: int = 90, logger: Callback = log, save_uncompressed: bool = False
+        self, path_in: Path, *, quality: int = 90, logger: Callback = log
     ) -> tuple[list[str], Callable[[], None]]:
         logger(f"Transforming {path_in} to COG.")
         if path_in.suffix != ".tif":
@@ -127,21 +135,13 @@ class GeoTiff(BaseModel):
                 return
 
             for name, c in zip(names, chanlist):
-                is_16bit = self._write_uncompressed_geotiff(
+                self._write_compressed_geotiff(
                     path=path_in.with_name(name),
                     channels=c,
                     transform=rasterio.Affine(
                         self.scale, 0, self.translate[0], 0, -self.scale, -self.translate[1]
                     ),
                 )
-
-            self._compress(
-                [path_in.with_name(name) for name in names],
-                is_16bit=is_16bit,  # type: ignore
-                quality=quality,
-                logger=logger,
-                save_uncompressed=save_uncompressed
-            )
 
         return names, run
 
@@ -174,7 +174,7 @@ class GeoTiff(BaseModel):
             return self.img
         return self.img[i] if not self.zlast else self.img[:, :, i]
 
-    def _write_uncompressed_geotiff(
+    def _write_compressed_geotiff(
         self, path: Path, channels: list[int], transform: rasterio.Affine, logger: Callback = log
     ):
         dst: DatasetWriter
@@ -185,68 +185,22 @@ class GeoTiff(BaseModel):
             raise ValueError(f"Unsupported dtype {dtype}. Expected uint8 or uint16.")
 
         with rasterio.open(
-            path.with_suffix(".tif_").as_posix(),
+            path.with_suffix(".tif").as_posix(),
             "w",
             driver="GTiff",
             height=self.height,
             width=self.width,
             count=len(channels),
-            photometric="RGB" if self.rgb else "MINISBLACK",
             transform=transform,  # https://gdal.org/tutorials/geotransforms_tut.html # Flip y-axis.
             dtype=dtype,
             crs="EPSG:32648",  # meters
-            tiled=True,
+            compress="LERC_DEFLATE" if dtype == np.uint16 else "JPEG",
+            tiled="YES",
+            JPEG_QUALITY=99,
+            NUM_THREADS=16,
         ) as dst:  # type: ignore
-            logger("Writing uncompressed GeoTIFF", path.as_posix())
+            logger("Writing compressed GeoTIFF", path.as_posix())
             for idx_out, idx_in in enumerate(channels, 1):
                 dst.write(self._get_slide(idx_in), idx_out)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
-        assert path.with_suffix(".tif_").exists()
         return dtype == np.uint16
-
-    def _compress(
-        self, ps: list[Path], *, is_16bit: bool = False, quality: int = 90, logger: Callback = log, save_uncompressed: bool = False
-    ) -> None:
-        def run(p: Path):
-            logger("Writing COG", p.with_suffix(".tif").as_posix())
-            gt = (
-                sys._MEIPASS + "/gdal_translate"
-                if getattr(sys, "frozen", False) and sys.platform != "win32"
-                else "gdal_translate"
-            )
-            if is_16bit and quality != 100:
-                logger("Quality is set to 100 (lossless) for 16-bit images.", type_="WARNING")
-
-            compression = ["-co", "COMPRESS=LERC_DEFLATE"] if is_16bit else ["-co", "COMPRESS=JPEG", "-co", f"JPEG_QUALITY={int(quality)}"]
-            # https://stackoverflow.com/questions/4417546/constantly-print-subprocess-output-while-process-is-running/4417735
-            with subprocess.Popen(
-                [
-                    gt,
-                    p.with_suffix(".tif_").as_posix(),
-                    p.with_suffix(".tif").as_posix(),
-                    "-co",
-                    "TILED=YES",
-                    *compression,
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                bufsize=1,
-                universal_newlines=True,
-            ) as popen:
-                assert popen.stdout is not None
-                for stdout_line in iter(popen.stdout.readline, ""):
-                    logger("gdal_translate:", stdout_line.strip(), type_="DEBUG")
-
-            if return_code := popen.wait():
-                raise subprocess.CalledProcessError(returncode=return_code, cmd=popen.args)
-
-            if p.with_suffix(".tif").exists():
-                if not save_uncompressed:
-                    p.with_suffix(".tif_").unlink()
-            else:
-                raise FileNotFoundError(f"Could not generate COG {p.with_suffix('.tif').absolute()}")
-
-        with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(lambda: run(p)) for p in ps]
-            for fut in as_completed(futures):
-                fut.result()  # Raise any exceptions

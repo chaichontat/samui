@@ -34,8 +34,7 @@ P, R = ParamSpec("P"), TypeVar("R", covariant=True)
 
 # https://github.com/python/typing/discussions/1040
 class Method(Protocol, Generic[P, R]):
-    def __get__(self, instance: Any, owner: type | None = None) -> Callable[P, R]:
-        ...
+    def __get__(self, instance: Any, owner: type | None = None) -> Callable[P, R]: ...
 
     def __call__(self_, self: Any, *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore
         ...
@@ -147,7 +146,6 @@ class Sample(BaseModel):
         translate: tuple[float, float] = (0, 0),
         convert_to_8bit: bool = False,
         defaultChannels: dict[Colors, str] | None = None,
-        save_uncompressed: bool = False,
     ) -> Self:
         """Add an image to the sample
 
@@ -162,14 +160,14 @@ class Sample(BaseModel):
         if not tiff.exists():
             raise ValueError(f"Tiff file {tiff} not found")
 
-        geotiff = GeoTiff.from_tiff(tiff, scale=scale, translate=translate, rgb=channels == "rgb", convert_to_8bit=convert_to_8bit)
+        geotiff = GeoTiff.from_tiff(
+            tiff, scale=scale, translate=translate, rgb=channels == "rgb", convert_to_8bit=convert_to_8bit
+        )
 
         if channels is None:
             channels = [f"C{i}" for i in range(1, geotiff.chans + 1)]
 
-        names, transform_func = geotiff.transform_tiff(
-            self.path / f"{tiff.stem}.tif", quality=quality, save_uncompressed=save_uncompressed
-        )
+        names, transform_func = geotiff.transform_tiff(self.path / f"{tiff.stem}.tif", quality=quality)
 
         transform_func() if not self.lazy else self.queue_.append((f"Add image: {tiff}", transform_func))
         self.imgParams = ImageParams.from_names(
@@ -178,7 +176,7 @@ class Sample(BaseModel):
             mPerPx=geotiff.scale,
             defaultChannels=defaultChannels,
             dtype="uint8" if geotiff.img.dtype == np.uint8 else "uint16",
-            maxVal=geotiff.img.max()
+            maxVal=geotiff.img.max(),
         )
         return self
 
