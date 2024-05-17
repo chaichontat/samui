@@ -3,11 +3,11 @@
   import { classes } from '$lib/utils';
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
-      bgColors,
-      colors,
-      type BandInfo,
-      type CompCtrl,
-      type ImgCtrl
+    bgColors,
+    colors,
+    type BandInfo,
+    type CompCtrl,
+    type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
   import { isEqual, zip } from 'lodash-es';
   import { onMount } from 'svelte';
@@ -41,24 +41,25 @@
         }
       }
 
-      const half = Math.round(image.maxVal / 2)
+      const half = Math.round(image.maxVal / 2);
 
-      const nColorRatio = image.channels.length / colors.length
+      const nColorRatio = image.channels.length / colors.length;
       // Repeat colors to match the number of channels
       const repeated = new Array(Math.ceil(nColorRatio) * colors.length).fill(colors).flat();
+      const logHalf = Math.sqrt(half);
       for (const [chan, color] of zip(image.channels, repeated)) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, half] };
+        bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, logHalf] };
       }
 
       if (Object.keys(image.defaultChannels).length > 0) {
         for (const [c, b] of Object.entries(image.defaultChannels)) {
-          if (b) bandinfo[b] = { enabled: true, color: c, minmax: [0, half] };
+          if (b) bandinfo[b] = { enabled: true, color: c, minmax: [0, logHalf] };
         }
       } else {
-        bandinfo[image.channels[0]] = { enabled: true, color: 'red', minmax: [0, half] };
-        bandinfo[image.channels[1]] = { enabled: true, color: 'green', minmax: [0, half] };
-        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', minmax: [0, half] };
+        bandinfo[image.channels[0]] = { enabled: true, color: 'red', minmax: [0, logHalf] };
+        bandinfo[image.channels[1]] = { enabled: true, color: 'green', minmax: [0, logHalf] };
+        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', minmax: [0, logHalf] };
       }
 
       imgCtrl = {
@@ -147,7 +148,8 @@
                   <div class="min-w-[128px] pl-0.5 cursor-pointer">
                     <RangeSlider
                       min={0}
-                      max={image.maxVal}
+                      max={Math.sqrt(image.maxVal)}
+                      step={0.1}
                       range
                       springValues={{ stiffness: 1, damping: 1 }}
                       on:start={() => handleClick(name, imgCtrl.variables[name].color)}
@@ -162,7 +164,7 @@
                     )}
                     aria-label="Max channel intensity"
                   >
-                    [{imgCtrl.variables[name].minmax}]
+                    [{imgCtrl.variables[name].minmax.map((x) => Math.round(x ** 2))}]
                   </span>
                 </div>
               </td>

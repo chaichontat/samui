@@ -49,8 +49,8 @@ export function decomposeColors(bands: string[], imgCtrl: CompCtrl) {
   for (const [i, b] of bands.entries()) {
     const { enabled, color, minmax } = imgCtrl.variables[b];
     const masks = [`${b}redMask`, `${b}greenMask`, `${b}blueMask`];
-    out[`${b}Max`] = minmax[1];
-    out[`${b}Min`] = minmax[0];
+    out[`${b}Max`] = minmax[1] ** 2;
+    out[`${b}Min`] = minmax[0] ** 2;
     out[b] = i + 1;
     if (!enabled) {
       masks.forEach((m) => (out[m] = 0));
