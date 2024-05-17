@@ -167,17 +167,23 @@ class Sample(BaseModel):
         if channels is None:
             channels = [f"C{i}" for i in range(1, geotiff.chans + 1)]
 
+        if len(channels) != geotiff.chans:
+            raise ValueError(f"Expected {geotiff.chans} channels, got {len(channels)}")
+
         names, transform_func = geotiff.transform_tiff(self.path / f"{tiff.stem}.tif", quality=quality)
 
         transform_func() if not self.lazy else self.queue_.append((f"Add image: {tiff}", transform_func))
-        self.imgParams = ImageParams.from_names(
-            names,
-            channels=channels,
-            mPerPx=geotiff.scale,
-            defaultChannels=defaultChannels,
-            dtype="uint8" if geotiff.img.dtype == np.uint8 else "uint16",
-            maxVal=geotiff.img.max(),
-        )
+        if not self.imgParams:
+            self.imgParams = ImageParams.from_names(
+                names,
+                channels=channels,
+                mPerPx=geotiff.scale,
+                defaultChannels=defaultChannels,
+                dtype="uint8" if geotiff.img.dtype == np.uint8 else "uint16",
+                maxVal=geotiff.img.max(),
+            )
+        else:
+            self.imgParams.add_from_names(names=names, channels=channels)
         return self
 
     @check_path

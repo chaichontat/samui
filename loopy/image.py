@@ -38,6 +38,16 @@ class ImageParams(ReadonlyModel):
     def from_names(cls, names: list[str], **kwargs: Any) -> Self:
         return cls(urls=[Url(name) for name in names], **kwargs)
 
+    def add(self, urls: list[Url], channels: list[str]) -> Self:
+        if self.channels == "rgb":
+            raise ValueError("Cannot add images to an RGB image.")
+        self.urls.extend(urls)
+        self.channels.extend(channels)
+        return self
+
+    def add_from_names(self, names: list[str], channels: list[str]) -> Self:
+        return self.add([Url(name) for name in names], channels)
+
 
 class GeoTiff(BaseModel):
     img: np.ndarray
@@ -92,7 +102,7 @@ class GeoTiff(BaseModel):
             height, width, chans = img.shape
             zlast = True
 
-        if chans > 10:
+        if chans > 50:
             log(f"Found {chans} channels. This is most likely incorrect.", type_="WARNING")
 
         if img.dtype == np.uint8:
@@ -141,6 +151,7 @@ class GeoTiff(BaseModel):
                     transform=rasterio.Affine(
                         self.scale, 0, self.translate[0], 0, -self.scale, -self.translate[1]
                     ),
+                    quality=quality,
                 )
 
         return names, run
@@ -175,7 +186,12 @@ class GeoTiff(BaseModel):
         return self.img[i] if not self.zlast else self.img[:, :, i]
 
     def _write_compressed_geotiff(
-        self, path: Path, channels: list[int], transform: rasterio.Affine, logger: Callback = log
+        self,
+        path: Path,
+        channels: list[int],
+        transform: rasterio.Affine,
+        logger: Callback = log,
+        quality: int = 99,
     ):
         dst: DatasetWriter
         # Not compressing here since we cannot control the compression level.
@@ -196,8 +212,9 @@ class GeoTiff(BaseModel):
             crs="EPSG:32648",  # meters
             compress="LERC_DEFLATE" if dtype == np.uint16 else "JPEG",
             tiled="YES",
-            JPEG_QUALITY=99,
+            JPEG_QUALITY=quality,
             NUM_THREADS=16,
+            BIGTIFF="YES",
         ) as dst:  # type: ignore
             logger("Writing compressed GeoTIFF", path.as_posix())
             for idx_out, idx_in in enumerate(channels, 1):
