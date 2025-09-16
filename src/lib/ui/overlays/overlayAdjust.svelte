@@ -85,7 +85,7 @@
       type="button"
       aria-label="Adjust overlay color map"
       class={classes(
-        'size-4 rounded-full border border-white/30 bg-gradient-to-r cursor-pointer opacity-80 transition-opacity hover:opacity-100 focus:ring-1 focus:ring-blue-500',
+        'size-4 rounded-full border overlay-trigger border-white/30 bg-gradient-to-r cursor-pointer opacity-80 transition-opacity hover:opacity-100 focus:ring-1 focus:ring-blue-500',
         colorMapClass[colormap]
       )}
     >
@@ -160,3 +160,14 @@
     </Popover.Portal>
   </Popover.Root>
 {/if}
+
+<style lang="postcss">
+  :global(.overlay-trigger) {
+    @apply inline-flex items-center justify-center;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    line-height: 1;
+    box-sizing: border-box;
+  }
+</style>
