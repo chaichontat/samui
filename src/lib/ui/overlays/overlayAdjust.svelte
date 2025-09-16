@@ -70,72 +70,71 @@
       >
         <span class="sr-only">Adjust overlay color map</span>
       </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content forceMount side="bottom" align="center" sideOffset={8}>
-          {#snippet child({ wrapperProps, props, open })}
-            {#if open}
-              {@const { class: rawContentClass, ...contentRest } = props}
-              {@const contentClass: string | undefined =
+
+      <Popover.Content forceMount side="bottom" align="center" sideOffset={8}>
+        {#snippet child({ wrapperProps, props, open })}
+          {#if open}
+            {@const { class: rawContentClass, ...contentRest } = props}
+            {@const contentClass: string | undefined =
                 typeof rawContentClass === 'string' ? rawContentClass : undefined}
-              <div {...wrapperProps}>
-                <div
-                  {...contentRest}
-                  class={classes(
-                    contentClass,
-                    'z-10 flex flex-col items-center gap-2 rounded-lg bg-neutral-700/90 p-3 shadow backdrop-blur'
-                  )}
-                  on:mouseout={() => hover(colormap)}
-                  on:blur={() => hover(colormap)}
-                  transition:scale={{ duration: 120, easing: cubicOut, start: 0.95 }}
-                >
-                  <!-- Color circles -->
-                  <div class="flex max-w-[16rem] flex-wrap justify-center gap-1">
-                    {#each Object.entries(colorMapClass) as [name, cl]}
-                      <div
-                        class={classes(
-                          'h-4 w-4 cursor-pointer rounded-full border border-white/30 bg-gradient-to-r',
-                          cl,
-                          name === colormap && 'ring-2 ring-neutral-200'
-                        )}
-                        use:tooltip={{ content: name.charAt(0).toUpperCase() + name.slice(1) }}
-                        on:click={() => {
-                          ov.setColorMap(name).catch(handleError);
-                          colormap = name;
-                        }}
-                        on:mouseover={() => hover(name)}
-                      />
-                    {/each}
-                  </div>
-                  <!-- Minmax -->
-                  <div class="flex items-center gap-x-2">
-                    Min:
-                    <DraggableNumber
-                      class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
-                      bind:value={minmax[0]}
-                    />
-                    Max:
-                    <DraggableNumber
-                      class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
-                      bind:value={minmax[1]}
-                    />
-                  </div>
-                  <!-- Auto -->
-                  <div>
-                    <button
-                      class="rounded px-2 py-1 bg-cyan-700 transition-colors hover:bg-cyan-600 active:bg-cyan-500"
+            <div {...wrapperProps}>
+              <div
+                {...contentRest}
+                class={classes(
+                  contentClass,
+                  'z-10 flex flex-col items-center gap-2 rounded-lg bg-neutral-700/90 p-3 shadow backdrop-blur'
+                )}
+                on:mouseout={() => hover(colormap)}
+                on:blur={() => hover(colormap)}
+                transition:scale={{ duration: 120, easing: cubicOut, start: 0.95 }}
+              >
+                <!-- Color circles -->
+                <div class="flex max-w-[16rem] flex-wrap justify-center gap-1">
+                  {#each Object.entries(colorMapClass) as [name, cl]}
+                    <div
+                      class={classes(
+                        'h-4 w-4 cursor-pointer rounded-full border border-white/30 bg-gradient-to-r',
+                        cl,
+                        name === colormap && 'ring-2 ring-neutral-200'
+                      )}
+                      use:tooltip={{ content: name.charAt(0).toUpperCase() + name.slice(1) }}
                       on:click={() => {
-                        minmax = [$sFeatureData.minmax[0], $sFeatureData.minmax[1]];
+                        ov.setColorMap(name).catch(handleError);
+                        colormap = name;
                       }}
-                    >
-                      Auto
-                    </button>
-                  </div>
+                      on:mouseover={() => hover(name)}
+                    />
+                  {/each}
+                </div>
+                <!-- Minmax -->
+                <div class="flex items-center gap-x-2">
+                  Min:
+                  <DraggableNumber
+                    class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
+                    bind:value={minmax[0]}
+                  />
+                  Max:
+                  <DraggableNumber
+                    class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
+                    bind:value={minmax[1]}
+                  />
+                </div>
+                <!-- Auto -->
+                <div>
+                  <button
+                    class="rounded px-2 py-1 bg-cyan-700 transition-colors hover:bg-cyan-600 active:bg-cyan-500"
+                    on:click={() => {
+                      minmax = [$sFeatureData.minmax[0], $sFeatureData.minmax[1]];
+                    }}
+                  >
+                    Auto
+                  </button>
                 </div>
               </div>
-            {/if}
-          {/snippet}
-        </Popover.Content>
-      </Popover.Portal>
+            </div>
+          {/if}
+        {/snippet}
+      </Popover.Content>
     </Popover.Root>
   </div>
 {/if}
