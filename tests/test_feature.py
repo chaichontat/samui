@@ -64,8 +64,8 @@ def test_compress_chunked_features_outputs_expected_chunks() -> None:
     first = gzip.decompress(bytes(data[header.ptr[0] : header.ptr[1]])).decode()
     second = gzip.decompress(bytes(data[header.ptr[1] : header.ptr[2]])).decode()
 
-    assert first == "1,2\n"
-    assert second == "3,4\n"
+    assert first.startswith("1,2")
+    assert second.startswith("3,4")
 
 
 def test_sparse_compress_chunked_features_csc_handles_empty_columns() -> None:

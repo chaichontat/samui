@@ -4,6 +4,7 @@
     annoFeat,
     annoROI,
     hoverSelect,
+    sFeatureData,
     overlays,
     sEvent,
     sMapp,
@@ -26,7 +27,8 @@
         sEvent: () => get(sEvent),
         annoFeat: () => get(annoFeat),
         annoROI: () => get(annoROI),
-        hoverSelect: () => get(hoverSelect)
+        hoverSelect: () => get(hoverSelect),
+        sFeatureData: () => get(sFeatureData)
       }
     };
   });
