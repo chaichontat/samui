@@ -91,7 +91,7 @@
   aria-label="Search result box"
 >
   {#each candidates as { group, values }, i}
-    {#if values.length > 0 && (limit < 0 || i < limit)}
+    {#if limit < 0 || i < limit}
       <div class="flex flex-col sticky">
         <!-- <span class="px-2 pt-1.5 pb-0.5 font-medium capitalize text-yellow-300">
           {group ?? 'Misc.'}
@@ -104,6 +104,8 @@
           >
             {@html v.embellished}
           </HoverableFeature>
+        {:else}
+          <span class="py-1 px-3 text-neutral-300">No features found.</span>
         {/each}
       </div>
     {/if}

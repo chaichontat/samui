@@ -32,7 +32,10 @@
     showSidebar ? 'h-[65%] md:h-full md:w-[75%]' : 'h-screen'
   )}
 >
-  <button class="absolute top-6 right-4 z-40" on:click={() => (showSidebar = !showSidebar)}>
+  <button
+    class="absolute top-[1.5rem] right-3 z-40 size-5"
+    on:click={() => (showSidebar = !showSidebar)}
+  >
     <Icon src={Bars3} class="svg-icon h-6 w-6" />
   </button>
 
