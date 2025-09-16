@@ -85,5 +85,9 @@
     "remark-validate-links": "^13.0.1",
     "tippy.js": "^6.3.7",
     "unified": "^11.0.4"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
   }
 }
