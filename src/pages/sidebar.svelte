@@ -38,7 +38,11 @@
       <Section title="Features of Interest" defaultOpen class="flex flex-wrap gap-x-3">
         {#if $sSample?.overlayParams?.importantFeatures}
           {#each $sSample.overlayParams.importantFeatures as feature}
-            <HoverableFeature {feature} set={setHoverSelect} />
+            <HoverableFeature
+              {feature}
+              set={setHoverSelect}
+              data-testid="feature-of-interest-button"
+            />
           {/each}
         {/if}
       </Section>

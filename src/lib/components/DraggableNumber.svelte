@@ -53,6 +53,7 @@
   bind:value
   use:tooltip={{ content: 'You can also drag left/right to change' }}
   on:change={(e) => handleChange(Number(e.currentTarget.value))}
+  {...$$restProps}
 />
 
 <style lang="postcss">

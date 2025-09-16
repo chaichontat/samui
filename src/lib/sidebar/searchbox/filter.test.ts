@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureGroupList } from '../searchBox';
-import { buildGroupMap, highlightMatch, filterFeatures, buildCandidateMap } from './filter';
+import { buildCandidateMap, buildGroupMap, filterFeatures, highlightMatch } from './filter';
 
 describe('FeatureSearchBox filter helpers', () => {
   const groups: FeatureGroupList[] = [
@@ -44,10 +44,34 @@ describe('FeatureSearchBox filter helpers', () => {
     expect(results.map((r) => r.value)).toEqual(['NEFL', 'GFAP']);
   });
 
+  it('filterFeatures clamps empty-query results to twenty entries', () => {
+    const largeGroup: FeatureGroupList[] = [
+      {
+        group: 'genes',
+        features: Array.from({ length: 25 }, (_, idx) => `GENE_${idx}`)
+      }
+    ];
+    const map = buildGroupMap(largeGroup);
+    const results = filterFeatures(map, 'genes', '   ', mockFind);
+    expect(results).toHaveLength(20);
+    expect(results[0].value).toBe('GENE_0');
+    expect(results.at(-1)!.value).toBe('GENE_19');
+  });
+
+  it('filterFeatures returns empty array when group missing', () => {
+    const map = buildGroupMap(groups);
+    expect(filterFeatures(map, 'unknown', 'snap', mockFind)).toEqual([]);
+  });
+
   it('buildCandidateMap aggregates per group results', () => {
     const map = buildGroupMap(groups);
     const result = buildCandidateMap(map, 'f', mockFind);
     expect(result.genes).toEqual([]);
     expect(result.proteins?.map((r) => r.value)).toEqual(['NEFL', 'GFAP']);
+  });
+
+  it('buildGroupMap assigns default key when group undefined', () => {
+    const map = buildGroupMap([{ group: undefined, features: ['A'] }]);
+    expect(map.get('nogroups')).toEqual(['A']);
   });
 });

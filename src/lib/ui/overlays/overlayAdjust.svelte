@@ -131,16 +131,18 @@
                 </div>
                 <!-- Minmax -->
                 <div class="flex items-center gap-x-2">
-                  Min:
-                  <DraggableNumber
-                    class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
-                    bind:value={minmax[0]}
-                  />
-                  Max:
-                  <DraggableNumber
-                    class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
-                    bind:value={minmax[1]}
-                  />
+                    Min:
+                    <DraggableNumber
+                      class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
+                      bind:value={minmax[0]}
+                      data-testid="overlay-min"
+                    />
+                    Max:
+                    <DraggableNumber
+                      class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
+                      bind:value={minmax[1]}
+                      data-testid="overlay-max"
+                    />
                 </div>
                 <!-- Auto -->
                 <div>

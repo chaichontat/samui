@@ -52,12 +52,12 @@
   }
 </script>
 
-<table class="min-w-[250px] table-fixed">
+<table class="min-w-[250px] table-fixed" title="Overlay tools">
   {#if sample}
     <tbody>
       {#each Object.entries($overlays) as [uid, ov], i}
         {@const fg = $overlaysFeature[uid]}
-        <tr data-testid={`overlay-row-${uid}`}>
+        <tr data-testid={`overlay-row-${i}`}>
           <td>
             <Icon
               src={ArrowLongRight}
@@ -113,6 +113,7 @@
           <!-- Opacity bar -->
           <td>
             <input
+              title="Overlay opacity"
               class="max-w-[5rem] -translate-y-0.5 cursor-pointer align-middle opacity-80"
               class:opacity-70={$sOverlay !== ov.uid}
               type="range"
@@ -130,6 +131,7 @@
             {#if i !== 0}
               <button
                 class="flex cursor-pointer items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
+                title={`Remove ${fg?.feature}`}
                 on:click={() => {
                   if ($annoFeat.annotating?.overlay === ov.uid) {
                     alert('You cannot delete the layer you are annotating.');
@@ -184,6 +186,7 @@
   <div
     class="mt-1.5 flex cursor-pointer items-center transition-opacity hover:font-semibold hover:text-white"
     on:click={addOverlay}
+    data-testid="overlay-add-layer"
   >
     <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
     <div class="font-normal">Add Layer</div>

@@ -32,6 +32,20 @@ describe('FeatureSearchBox state helpers', () => {
     expect(fallback.selectedGroup).toBe('a');
   });
 
+  it('labels unnamed groups as "Misc." and resets invalid previous selections', () => {
+    const unnamed = buildGroupMeta(
+      [
+        { group: undefined, features: ['X'] },
+        { group: 'proteins', features: [] }
+      ],
+      'genes'
+    );
+
+    expect(unnamed.groups).toEqual(['Misc.', 'proteins']);
+    expect(unnamed.selectItems[0]).toEqual({ value: 'Misc.', label: 'Misc.' });
+    expect(unnamed.selectedGroup).toBe('Misc.');
+  });
+
   it('derives search input from selected feature when not actively searching', () => {
     const prev = deriveSearchInput({
       showSearch: false,

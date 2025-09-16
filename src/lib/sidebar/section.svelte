@@ -1,8 +1,8 @@
 <script lang="ts">
   import { flashing } from '$lib/store';
-  import { Collapsible, Switch } from 'bits-ui';
   import { ChevronDown } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
+  import { Collapsible, Switch } from 'bits-ui';
   import { slide } from 'svelte/transition';
   import { tooltip } from '../ui/utils';
   import { classes } from '../utils';
@@ -50,7 +50,9 @@
 </script>
 
 <section
+  {title}
   class="w-full"
+  data-test-id={`sidebar-section-${title}`}
   use:tooltip={{ enabled: Boolean(tooltipMsg), content: tooltipMsg }}
   bind:this={div}
   on:click={() => ($flashing === title ? ($flashing = '') : '')}
