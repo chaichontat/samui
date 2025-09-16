@@ -57,7 +57,7 @@
         </span>
 
         <Select.Portal>
-          <Select.Content forceMount side="bottom" align="start" sideOffset={4}>
+          <Select.Content forceMount side="bottom" align="start" sideOffset={4} class="z-50">
             {#snippet child({ wrapperProps, props, open })}
               {#if open}
                 {@const { class: rawContentClass, ...contentRest } = props}
