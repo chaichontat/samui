@@ -9,17 +9,26 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '18.x'
+          node-version: '22.x'
+          cache: 'pnpm'
+      - uses: pnpm/action-setup@v4
+
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
+
+      - name: Vitest
+        run: pnpm run test:unit
+
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: pnpx playwright install --with-deps
+
       - name: Run Playwright tests
-        run: npx playwright test
-      - uses: actions/upload-artifact@v2
+        run: pnpx playwright test
+
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
