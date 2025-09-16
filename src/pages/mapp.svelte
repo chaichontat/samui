@@ -175,7 +175,7 @@
 </section>
 
 <style lang="postcss">
-  @reference '../app.css';
+  @reference "$css"
 
   .map :global(.ol-zoomslider) {
     @apply cursor-pointer rounded bg-neutral-500/50 backdrop-blur transition-all;

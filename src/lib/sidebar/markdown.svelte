@@ -36,6 +36,7 @@
 </div>
 
 <style lang="postcss">
+  @reference "$css"
   div :global(a) {
     @apply text-blue-300 underline active:text-blue-400;
   }

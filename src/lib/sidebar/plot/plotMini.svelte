@@ -36,6 +36,7 @@
 </table>
 
 <style lang="postcss">
+  @reference "$css"
   :global(.axisX path) {
     stroke: #888;
   }

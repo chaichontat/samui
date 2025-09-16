@@ -132,6 +132,7 @@
 </td>
 
 <style lang="postcss">
+  @reference "$css"
   :global(svg .tick) {
     @apply text-neutral-300;
   }

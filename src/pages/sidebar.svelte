@@ -126,6 +126,7 @@
   <Status />
 </div> -->
 <style lang="postcss">
+  @reference "$css"
   section {
     @apply relative hidden w-[90%] pt-4 md:block;
   }
