@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.10
+  python: python3.12
 
 exclude: ^package.json|package-lock.json|conda-lock.yml
 
@@ -8,7 +8,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -18,13 +18,8 @@ repos:
       - id: fix-encoding-pragma
         args: [--remove]
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.4.1
     hooks:
       - id: codespell
         args:
@@ -33,54 +28,31 @@ repos:
           - --skip="*/.*,package.json,package-lock.json,*.spec
 
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 25.1.0
     hooks:
       - id: black
 
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
+    rev: 1.8.6
     hooks:
       - id: bandit
         args: ['-c', 'pyproject.toml', '-ll', '-q']
         additional_dependencies: ['bandit[toml]']
 
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.1.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.13.0
     hooks:
-      - id: autoflake
-        name: autoflake
-        args: ['--in-place', '--remove-unused-variables', '--remove-all-unused-imports']
-        language: python
-        files: \.py$
+      - id: ruff-check
+      - id: ruff-format
+        args: [--fix]
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.6.0
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 6.0.1
     hooks:
       - id: isort
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.0-alpha.9-for-vscode
-    hooks:
-      - id: prettier
-        additional_dependencies:
-          - prettier@2.7.1
-          - prettier-plugin-packagejson@2.3.0
-          - prettier-plugin-svelte@2.8.0
-          - prettier-plugin-tailwindcss@0.1.13
-          - svelte@3.51.0
-
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.43.0
-    hooks:
-      - id: eslint
-        additional_dependencies:
-          - eslint@8.25.0
-          - eslint-plugin-svelte3@4.0.0
-          - eslint-config-prettier@8.5.0
-          - '@typescript-eslint/eslint-plugin@5.40.0'
-          - '@typescript-eslint/parser@5.40.0'

@@ -15,7 +15,9 @@
 </script>
 
 <button
+  {...$$restProps}
   class={'text-ellipsis cursor-pointer underline-offset-2 ' + cl}
+  title={`Show ${feature.group} > ${feature.feature}`}
   use:clickOutside
   on:mouseover={() => set({ hover: feature })}
   on:focus={() => set({ hover: feature })}

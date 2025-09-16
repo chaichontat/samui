@@ -52,3 +52,5 @@ vi.mock('$app/environment', async () => {
 
 window.alert = console.error;
 prompt = () => true;
+console.debug = vi.fn();
+console.log = vi.fn();

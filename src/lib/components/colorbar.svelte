@@ -84,6 +84,7 @@
 
 <div
   bind:this={div}
+  data-testid="overlay-legend"
   use:tooltip={{
     content:
       "To change scale, click on the colored circle icon next to a layer's name (straight up above this colorbar)."

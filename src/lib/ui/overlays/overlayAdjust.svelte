@@ -77,6 +77,11 @@
   const hover = debounce((cm: keyof typeof colorMaps) => {
     ov.setColorMap(cm).catch(handleError);
   }, 200);
+
+  const clampValue = (value: number) => {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, value);
+  };
 </script>
 
 {#if style === 'quantitative'}
@@ -88,6 +93,7 @@
         'size-4 rounded-full border overlay-trigger border-white/30 bg-gradient-to-r cursor-pointer opacity-80 transition-opacity hover:opacity-100 focus:ring-1 focus:ring-blue-500',
         colorMapClass[colormap]
       )}
+      data-testid="overlay-colormap"
     >
       <span class="sr-only">Adjust overlay color map</span>
     </Popover.Trigger>
@@ -125,21 +131,32 @@
                         colormap = name;
                       }}
                       on:mouseover={() => hover(name)}
+                      data-testid={`overlay-colormap-option-${name}`}
                     />
                   {/each}
                 </div>
                 <!-- Minmax -->
                 <div class="flex items-center gap-x-2">
                   Min:
-                  <DraggableNumber
-                    class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
-                    bind:value={minmax[0]}
-                  />
-                  Max:
-                  <DraggableNumber
-                    class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
-                    bind:value={minmax[1]}
-                  />
+                    <DraggableNumber
+                      class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
+                      bind:value={minmax[0]}
+                      data-testid="overlay-min"
+                      on:change={(e) => {
+                        const next = clampValue(e.detail ?? minmax[0]);
+                        minmax = [next, minmax[1]];
+                      }}
+                    />
+                    Max:
+                    <DraggableNumber
+                      class="block w-12 rounded-lg border border-neutral-400 bg-neutral-700 px-1 py-1 text-center text-sm text-neutral-50 focus:border-blue-500 focus:ring-blue-500"
+                      bind:value={minmax[1]}
+                      data-testid="overlay-max"
+                      on:change={(e) => {
+                        const next = clampValue(e.detail ?? minmax[1]);
+                        minmax = [minmax[0], Math.max(next, minmax[0])];
+                      }}
+                    />
                 </div>
                 <!-- Auto -->
                 <div>

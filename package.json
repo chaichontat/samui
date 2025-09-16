@@ -12,10 +12,11 @@
     "lint": "prettier --ignore-path .gitignore --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
     "format": "prettier --ignore-path .gitignore --write --plugin-search-dir=. .",
     "test": "vitest run src",
+    "test:e2e": "NODE_OPTIONS=--no-experimental-strip-types playwright test",
     "test:watch": "vitest src"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.0",
+    "@playwright/test": "1.47.2",
     "@steeze-ui/heroicons": "^2.3.0",
     "@steeze-ui/svelte-icon": "~1.5.0",
     "@sveltejs/adapter-static": "^3.0.9",
@@ -36,6 +37,7 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "autoprefixer": "^10.4.19",
+    "clsx": "^2.1.1",
     "d3": "^7.9.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -52,6 +54,7 @@
     "svelte-check": "^4.3.1",
     "svelte-preprocess": "^6.0.3",
     "svelte-range-slider-pips": "^3.0.7",
+    "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.3",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
@@ -85,5 +88,9 @@
     "remark-validate-links": "^13.0.1",
     "tippy.js": "^6.3.7",
     "unified": "^11.0.4"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
   }
 }

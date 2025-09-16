@@ -19,13 +19,13 @@ jobs:
         os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
-      - name: Install Conda environment
-        uses: mamba-org/provision-with-micromamba@main
+      - name: Install Mamba environment
+        uses: mamba-org/setup-micromamba@v2
         with:
           cache-downloads: true
-          cache-env: true
+          cache-environment: true
           environment-file: environment.yml
           environment-name: loopy
 
@@ -33,9 +33,10 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           pip install windows-curses
+        shell: bash -el {0}
 
       - name: Cache data
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: scripts/temp
           key: ${{ hashFiles('scripts/process_humanpilot.py') }}
@@ -43,4 +44,11 @@ jobs:
       - name: Test
         run: |
           micromamba install -c conda-forge pytest pytest-cov
-          cd scripts; python process_humanpilot.py
+          pytest
+        shell: bash -el {0}
+
+      - name: Run HumanPilot data prep
+        run: |
+          cd scripts
+          python process_humanpilot.py
+        shell: bash -el {0}

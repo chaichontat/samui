@@ -37,7 +37,7 @@
   }
 </script>
 
-<section class="donotsave absolute right-3 top-2 z-20 flex gap-x-4">
+<section title="Map Tools" class="donotsave absolute right-3 top-2 z-20 flex gap-x-4">
   <!-- Overlay selector -->
   {#if showImgControl && haveFeatures}
     {#await import('./overlayTool.svelte') then overlayTool}

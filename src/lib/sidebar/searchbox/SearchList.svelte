@@ -101,6 +101,7 @@
             {set}
             feature={v}
             class="hover-default text-ellipsis whitespace-nowrap cursor-pointer rounded px-4 py-0.5 text-left text-base"
+            data-testid={`feature-suggestion-${v.feature}`}
           >
             {@html v.embellished}
           </HoverableFeature>

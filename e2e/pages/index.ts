@@ -1,0 +1,1 @@
+export { SamuiPage } from './samuiPage';
