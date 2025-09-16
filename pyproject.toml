@@ -1,14 +1,54 @@
-[tool.poetry]
-authors = ["Chaichontat Sriworarat <34997334+chaichontat@users.noreply.github.com>"]
-description = ""
-license = "GPL v3.0"
-name = "loopy-browser"
-packages = [{include = "loopy"}]
-version = "0.0.1"
-
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0"]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loopy-browser"
+version = "0.0.1"
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL v3.0" }
+authors = [
+  { name = "Chaichontat Sriworarat", email = "34997334+chaichontat@users.noreply.github.com" },
+]
+dependencies = [
+  "anndata",
+  "numpy",
+  "pandas",
+  "pydantic>=1.10,<2",
+  "PyQt5",
+  "requests",
+  "rich",
+  "rich-click",
+  "rasterio",
+  "scanpy>=1.10",
+  "scipy",
+  "tifffile",
+  "typing-extensions",
+  "uv",
+]
+
+[project.scripts]
+loopy = "loopy.entrypoint:cli"
+
+[project.optional-dependencies]
+geo = ["gdal==3.8.4"]
+
+[tool.uv]
+dev-dependencies = [
+  "black",
+  "conda-lock",
+  "flake8",
+  "hypothesis",
+  "isort",
+  "pytest",
+  "pytest-cov",
+  "PyQt5-stubs",
+]
+
+[tool.setuptools.packages.find]
+include = ["loopy", "loopy.*"]
 
 [tool.bandit]
 exclude = "tests"
@@ -17,7 +57,7 @@ targets = "loopy"
 
 [tool.black]
 line-length = 110
-target-version = ['py310']
+target-version = ["py310"]
 
 [tool.pyright]
 include = ["loopy"]
@@ -43,11 +83,7 @@ py_version = 310
 src_paths = ["loopy"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=loopy --cov-report=html --cov-report=xml"
-log_cli = 1
+log_cli = true
 # log_cli_level = "DEBUG"
 minversion = "7.0"
 testpaths = ["tests"]
-
-[tool.poetry.scripts]
-loopy = 'loopy.entrypoint:cli'

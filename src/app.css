@@ -3,15 +3,80 @@
 @layer base {
   html {
     @apply subpixel-antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
       'Apple Color Emoji', 'Segoe UI Emoji';
-  }
-  body {
-    @apply text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100;
   }
 
   input[type='checkbox'] {
     @apply rounded;
+  }
+
+  /* 1. Use a more-intuitive box-sizing model */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  /* 2. Remove default margin */
+  * {
+    margin: 0;
+  }
+  /* 3. Enable keyword animations */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      interpolate-size: allow-keywords;
+    }
+  }
+  body {
+    @apply text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100;
+    /* 4. Add accessible line-height */
+    line-height: 1.5;
+    /* 5. Improve text rendering */
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 6. Improve media defaults */
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+  /* 7. Inherit fonts for form controls */
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+  }
+  /* 8. Avoid text overflows */
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+  }
+  /* 9. Improve line wrapping */
+  p {
+    text-wrap: pretty;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
+
+  #root,
+  #__next {
+    isolation: isolate;
   }
 }
 @tailwind components;
@@ -20,7 +85,7 @@
     @apply px-3 py-1.5 text-sm font-medium text-white focus:outline-none focus:ring-1;
   }
   .button {
-    @apply button-base mr-2 mb-2 rounded-lg;
+    @apply button-base mb-2 mr-2 rounded-lg;
   }
 
   .splash-button {
@@ -28,21 +93,22 @@
   }
 
   .splash-button > span {
-    @apply flex items-center gap-x-2 rounded-md bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in  dark:bg-neutral-900 dark:bg-opacity-80;
+    @apply flex items-center gap-x-2 rounded-md bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900 dark:bg-opacity-80;
   }
 
   .svg-icon {
     @apply h-4 w-4 stroke-current stroke-2 transition-[stroke-width] hover:stroke-[2.5];
   }
 }
+
 @tailwind utilities;
 @layer utilities {
   .text-default {
-    @apply text-neutral-800  dark:text-neutral-100;
+    @apply text-neutral-800 dark:text-neutral-100;
   }
 
   .bg-default {
-    @apply bg-neutral-100/90 text-neutral-800  dark:bg-neutral-800/90 dark:text-neutral-100;
+    @apply bg-neutral-100/90 text-neutral-800 dark:bg-neutral-800/90 dark:text-neutral-100;
   }
 
   .border-default {
@@ -62,11 +128,11 @@
   }
 
   .center {
-    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2;
   }
 
   div > .tippy-box {
-    @apply rounded-lg bg-neutral-700/80 py-0.5 px-1 text-center backdrop-blur;
+    @apply rounded-lg bg-neutral-700/80 px-1 py-0.5 text-center backdrop-blur;
   }
 
   div > .tippy-box > .tippy-arrow {
