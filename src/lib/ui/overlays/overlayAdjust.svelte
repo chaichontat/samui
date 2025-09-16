@@ -179,7 +179,8 @@
 {/if}
 
 <style lang="postcss">
-  @reference "$css"
+  @reference '../../../app.css';
+
   :global(.overlay-trigger) {
     @apply inline-flex items-center justify-center;
     appearance: none;

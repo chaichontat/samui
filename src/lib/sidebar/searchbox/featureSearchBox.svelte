@@ -120,7 +120,8 @@
 </div>
 
 <style lang="postcss">
-  @reference "$css"
+  @reference '../../../app.css';
+
   .dark input::placeholder {
     @apply text-neutral-100;
   }

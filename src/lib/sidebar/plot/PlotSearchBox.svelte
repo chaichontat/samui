@@ -132,7 +132,8 @@
 </td>
 
 <style lang="postcss">
-  @reference "$css"
+  @reference '../../../app.css';
+
   :global(svg .tick) {
     @apply text-neutral-300;
   }

@@ -92,7 +92,8 @@
 />
 
 <style lang="postcss">
-  @reference "$css"
+  @reference '../../app.css';
+
   div :global(.alphabet) {
     @apply mt-2 flex flex-wrap items-end gap-0.5;
   }

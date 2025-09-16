@@ -114,7 +114,7 @@
       rel="noreferrer"
     >
       <span
-        class="flex items-center gap-x-2 rounded bg-neutral-50/80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900/80 px-2 py-1 group-hover:bg-opacity-0"
+        class="flex items-center gap-x-2 rounded bg-neutral-50/80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900/80 px-2 py-1 group-hover:bg-neutral-50/0 dark:group-hover:bg-neutral-900/0"
       >
         Report Issue
       </span>
@@ -126,7 +126,8 @@
   <Status />
 </div> -->
 <style lang="postcss">
-  @reference "$css"
+  @reference '../app.css';
+
   section {
     @apply relative hidden w-[90%] pt-4 md:block;
   }
