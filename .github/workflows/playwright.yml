@@ -33,9 +33,7 @@ jobs:
         run: pnpm run build
 
       - name: Run Playwright tests
-        run: pnpx playwright test --reporter=list
-        env:
-          NODE_OPTIONS: --no-experimental-strip-types
+        run: pnpm run test:e2e
 
       - uses: actions/upload-artifact@v4
         if: always()
