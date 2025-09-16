@@ -88,6 +88,7 @@
         'size-4 rounded-full border overlay-trigger border-white/30 bg-gradient-to-r cursor-pointer opacity-80 transition-opacity hover:opacity-100 focus:ring-1 focus:ring-blue-500',
         colorMapClass[colormap]
       )}
+      data-testid="overlay-colormap"
     >
       <span class="sr-only">Adjust overlay color map</span>
     </Popover.Trigger>

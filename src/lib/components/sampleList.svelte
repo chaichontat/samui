@@ -1,8 +1,8 @@
 <script lang="ts">
   import { classes } from '$lib/utils';
-  import { Select } from 'bits-ui';
   import { Check, ChevronUpDown } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
+  import { Select } from 'bits-ui';
   import { createEventDispatcher, onMount } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { fade } from 'svelte/transition';
@@ -21,10 +21,11 @@
   const dispatch = createEventDispatcher();
 
   function handleSampleUpdate(it: typeof items) {
-    rows = it?.map((item, i) => ({
-      id: i,
-      name: item
-    })) ?? [];
+    rows =
+      it?.map((item, i) => ({
+        id: i,
+        name: item
+      })) ?? [];
     selectItems = rows.map(({ name }) => ({ value: name, label: name }));
   }
 
@@ -46,21 +47,24 @@
     lastName = name;
   }
 
-  onMount(() => active = items[0]);
-  $: handleChange(active)
+  onMount(() => (active = items[0]));
+  $: handleChange(active);
   $: handleSampleUpdate(items);
 </script>
 
 <div class="relative w-full">
-  <span class="inline-block w-full rounded-md shadow-sm">
+  <span class="inline-block w-full rounded-md shadow-sm" data-testid="sample-select-wrapper">
     <Select.Root type="single" bind:value={active} items={selectItems}>
       <Select.Trigger
         class="relative w-full max-w-md cursor-pointer rounded-md border border-neutral-400 bg-neutral-100/90 py-2 pl-3 pr-10 text-left text-neutral-800 backdrop-blur transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none dark:bg-neutral-800/80 dark:text-neutral-100 sm:leading-5"
+        data-testid="sample-select"
       >
         <span class="block truncate font-medium">{active}</span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
           {#if loading}
-            <Spinner />
+            <span data-testid="sample-spinner">
+              <Spinner />
+            </span>
           {:else}
             <Icon
               src={ChevronUpDown}
@@ -86,9 +90,11 @@
                   )}
                   transition:fade={{ duration: 100, easing: cubicOut }}
                 >
-                  <Select.Viewport class="overflow-auto rounded-lg pt-1 pb-1 leading-6 focus:outline-none sm:leading-5">
+                  <Select.Viewport
+                    class="overflow-auto rounded-lg pt-1 pb-1 leading-6 focus:outline-none sm:leading-5"
+                  >
                     {#each rows as { name } (name)}
-                      <div class="px-1">
+                      <div class="px-1" data-testid={`sample-option-${name}`}>
                         <Select.Item value={name} label={name}>
                           {#snippet children({ selected, highlighted })}
                             <div

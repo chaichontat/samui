@@ -15,6 +15,7 @@
 </script>
 
 <button
+  {...$$restProps}
   class={'text-ellipsis cursor-pointer underline-offset-2 ' + cl}
   use:clickOutside
   on:mouseover={() => set({ hover: feature })}

@@ -67,21 +67,25 @@
   <Section title="Notes" defaultOpen class="-mt-4">
     {#if $sSample?.notesMd}
       {#await import('$src/lib/sidebar/markdown.svelte') then markdown}
-        <svelte:component this={markdown.default} url={$sSample.notesMd.url} class="leading-6" />
+        <div data-testid="notes-content">
+          <svelte:component this={markdown.default} url={$sSample.notesMd.url} class="leading-6" />
+        </div>
       {/await}
     {:else}
-      No notes.
+      <div data-testid="notes-content">No notes.</div>
     {/if}
   </Section>
 
   {#if $sSample?.metadataMd}
     {#await import('$src/lib/sidebar/markdown.svelte') then markdown}
       <Section title="Metadata">
-        <svelte:component
-          this={markdown.default}
-          class="overflow-x-scroll pl-4 -indent-4 font-mono text-xs"
-          url={$sSample?.metadataMd.url}
-        />
+        <div data-testid="metadata-content">
+          <svelte:component
+            this={markdown.default}
+            class="overflow-x-scroll pl-4 -indent-4 font-mono text-xs"
+            url={$sSample?.metadataMd.url}
+          />
+        </div>
       </Section>
     {/await}
   {/if}

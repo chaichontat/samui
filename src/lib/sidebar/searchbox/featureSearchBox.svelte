@@ -5,40 +5,41 @@
   import { classes } from '../../utils';
   import type { FeatureGroupList } from '../searchBox';
   import SearchList from './SearchList.svelte';
+  import {
+    buildGroupMeta,
+    deriveSearchInput,
+    hasAvailableFeatures,
+    overlaySelectionFeature
+  } from './state';
 
   import { ChevronDown } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
 
   export let featureGroup: FeatureGroupList[] | undefined;
   export let displaySelection = false; // Start with empty search box.
+  export let onSelect = setHoverSelect;
 
   // Top-down update of the search box.
   let showSearch = false;
   let search = '';
   const setSearch = oneLRU((v: string) => (search = v));
-  $: !showSearch &&
-    displaySelection &&
-    $hoverSelect.selected?.feature &&
-    setSearch($hoverSelect.selected?.feature);
-  $: noFeature = !featureGroup?.length || featureGroup?.find((f) => f.features.length) == undefined;
+  $: search = deriveSearchInput({
+    showSearch,
+    displaySelection,
+    selected: $hoverSelect.selected,
+    previous: search
+  });
+  $: noFeature = !hasAvailableFeatures(featureGroup);
 
   // Change search box when overlay is changed.
   sOverlay.subscribe((ov) => {
-    if (ov) search = $overlaysFeature[ov]?.feature ?? '';
+    if (ov) search = overlaySelectionFeature($overlaysFeature, ov, search);
   });
 
   let groups: string[] = [];
   let selectItems: { value: string; label: string }[] = [];
   let selectedGroup = '';
-  $: {
-    groups = featureGroup?.map((f) => f.group ?? 'Misc.') ?? [];
-    selectItems = groups.map((group) => ({ value: group, label: group }));
-    if (!groups.length) {
-      selectedGroup = '';
-    } else if (!selectedGroup || !groups.includes(selectedGroup)) {
-      selectedGroup = groups[0];
-    }
-  }
+  $: ({ groups, selectItems, selectedGroup } = buildGroupMeta(featureGroup, selectedGroup));
 </script>
 
 <div class="flex gap-x-1 w-full">
@@ -48,6 +49,7 @@
         <span class="inline-block w-full rounded-md shadow-sm">
           <Select.Trigger
             class="relative w-full py-2 pl-3 pr-8 text-left transition duration-150 ease-in-out bg-neutral-800 border border-neutral-400 rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300"
+            data-testid="feature-search-group"
           >
             <span class="block truncate">{selectedGroup}</span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -111,9 +113,10 @@
     on:input={() => (showSearch = true)}
     placeholder={noFeature ? 'No feature' : 'Search features'}
     disabled={noFeature}
+    data-testid="feature-search-input"
   />
 
-  <SearchList {search} {selectedGroup} bind:showSearch {featureGroup} set={setHoverSelect} />
+  <SearchList {search} {selectedGroup} bind:showSearch {featureGroup} set={onSelect} />
 </div>
 
 <style lang="postcss">
