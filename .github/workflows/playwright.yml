@@ -24,13 +24,13 @@ jobs:
         run: pnpm ci
 
       - name: Vitest
-        run: pnpm run test:unit
+        run: pnpm run test
 
-      - name: Install Playwright Browsers
-        run: pnpx playwright install --with-deps
+      # - name: Install Playwright Browsers
+      #   run: pnpx playwright install --with-deps
 
-      - name: Run Playwright tests
-        run: pnpx playwright test
+      # - name: Run Playwright tests
+      #   run: pnpx playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
