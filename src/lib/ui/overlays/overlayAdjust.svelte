@@ -90,7 +90,7 @@
       type="button"
       aria-label="Adjust overlay color map"
       class={classes(
-        'size-4 rounded-full border overlay-trigger border-white/30 bg-gradient-to-r cursor-pointer opacity-80 transition-opacity hover:opacity-100 focus:ring-1 focus:ring-blue-500',
+        'size-4 rounded-full border overlay-trigger border-white/30 bg-linear-to-r cursor-pointer opacity-80 transition-opacity hover:opacity-100 focus:ring-1 focus:ring-blue-500',
         colorMapClass[colormap]
       )}
       data-testid="overlay-colormap"
@@ -121,7 +121,7 @@
                   {#each Object.entries(colorMapClass) as [name, cl]}
                     <div
                       class={classes(
-                        'h-4 w-4 cursor-pointer rounded-full border border-white/30 bg-gradient-to-r',
+                        'h-4 w-4 cursor-pointer rounded-full border border-white/30 bg-linear-to-r',
                         cl,
                         name === colormap && 'ring-2 ring-neutral-200'
                       )}

@@ -78,7 +78,7 @@
         $store.currKey = handleNewKey(getPrompt('Enter new label.'));
       }}
     >
-      <Icon src={Plus} class="mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]" />
+      <Icon src={Plus} class="mr-0.5 h-3 w-3 translate-y-px stroke-current stroke-[2.5]" />
       Label
     </AnnoButton>
 
@@ -148,7 +148,7 @@
         $store.selecting = $store.selecting ? undefined : 'Polygon';
       }}
     >
-      <Icon src={Plus} class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]" />
+      <Icon src={Plus} class="-ml-1 mr-0.5 h-3 w-3 translate-y-px stroke-current stroke-[2.5]" />
       Polygon
     </AnnoButton>
 
@@ -164,7 +164,7 @@
     >
       <Icon
         src={PlusCircle}
-        class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]"
+        class="-ml-1 mr-0.5 h-3 w-3 translate-y-px stroke-current stroke-[2.5]"
       />
       Circle
     </AnnoButton>

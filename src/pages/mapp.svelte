@@ -175,6 +175,8 @@
 </section>
 
 <style lang="postcss">
+  @reference '../app.css';
+
   .map :global(.ol-zoomslider) {
     @apply cursor-pointer rounded bg-neutral-500/50 backdrop-blur transition-all;
   }
@@ -196,7 +198,7 @@
   } */
 
   .map :global(.ol-scale-line) {
-    @apply absolute left-4 bottom-8 float-right w-3 bg-transparent text-right font-sans mix-blend-difference;
+    @apply absolute bottom-8 left-4 float-right w-3 bg-transparent text-right font-sans mix-blend-difference;
   }
 
   .map :global(.ol-scale-line-inner) {
@@ -204,7 +206,7 @@
   }
 
   .map :global(.ol-zoom) {
-    @apply absolute bottom-20 left-4 top-auto border-neutral-200 backdrop-blur;
+    @apply absolute top-auto bottom-20 left-4 border-neutral-200 backdrop-blur;
   }
 
   .map :global(.ol-zoom-in) {

@@ -22,7 +22,7 @@
   >
     <Icon
       src={PlusSmall}
-      class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]"
+      class="-ml-1 mr-0.5 h-3 w-3 translate-y-px stroke-current stroke-[2.5]"
     />
     Point
   </AnnoButton>

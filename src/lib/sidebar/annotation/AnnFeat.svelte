@@ -53,7 +53,7 @@
   >
     <Icon
       src={CursorArrowRays}
-      class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]"
+      class="-ml-1 mr-0.5 h-3 w-3 translate-y-px stroke-current stroke-[2.5]"
     />
     Select
   </AnnoButton>
@@ -81,7 +81,7 @@
     : `Add points or selections to annotate ${$annoFeat.annotating.coordName}.`}
 </div>
 <div class="flex">
-  <div class="flex-grow" />
+  <div class="grow" />
   <div class="flex items-center gap-x-2">
     <label class="cursor-pointer">
       <input class="" type="checkbox" bind:checked={$annoFeat.show} />

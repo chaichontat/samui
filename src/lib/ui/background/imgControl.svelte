@@ -135,7 +135,7 @@
                       ['white', 'yellow'].includes(imgCtrl.variables[name].color)
                       ? 'text-black'
                       : '',
-                    `transition-width mx-auto flex items-center rounded-lg px-2 py-[1px]`
+                    `transition-width mx-auto flex items-center rounded-lg px-2 py-px`
                   )}
                   on:click={() => handleClick(name, imgCtrl.variables[name].color, true)}
                   aria-label="Select channel button"
@@ -176,7 +176,7 @@
                       bg,
                       color !== 'white' ? 'opacity-90' : '',
                       i === 0 ? 'ml-1.5' : '',
-                      `mx-[1px] my-1 flex h-[16px] w-[16px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`,
+                      `mx-px my-1 flex h-[16px] w-[16px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`,
                       imgCtrl.variables[name].color === color
                         ? 'ring-2 ring-white ring-opacity-80'
                         : ''
@@ -200,7 +200,7 @@
             step="0.01"
             max="0.5"
             bind:value={imgCtrl[name]}
-            class="col-span-2 min-w-[4rem] max-w-[12rem] cursor-pointer"
+            class="col-span-2 min-w-16 max-w-48 cursor-pointer"
             aria-label={`${name} slider`}
           />
         {/each}

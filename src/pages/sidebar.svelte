@@ -101,20 +101,20 @@
       {/if}
     </div>
 
-    <div class="flex-grow min-h-[24px]" />
+    <div class="grow min-h-[24px]" />
 
     <div class="mx-auto justify-end text-xs text-center">
       Samui {__VERSION__}
     </div>
 
     <a
-      class="mb-6 mt-2 mx-auto text-xs relative inline-flex w-fit items-center justify-center overflow-hidden rounded p-0.5 focus:outline-none focus:ring group bg-gradient-to-br from-cyan-600 to-blue-600 text-neutral-900 hover:text-neutral-50  focus:ring-cyan-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
+      class="mb-6 mt-2 mx-auto text-xs relative inline-flex w-fit items-center justify-center overflow-hidden rounded p-0.5 focus:outline-none focus:ring group bg-linear-to-br from-cyan-600 to-blue-600 text-neutral-900 hover:text-neutral-50 focus:ring-cyan-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
       href="https://github.com/chaichontat/samui/issues"
       target="_blank"
       rel="noreferrer"
     >
       <span
-        class="flex items-center gap-x-2 rounded bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900 dark:bg-opacity-80 px-2 py-1 group-hover:bg-opacity-0"
+        class="flex items-center gap-x-2 rounded bg-neutral-50/80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900/80 px-2 py-1 group-hover:bg-opacity-0"
       >
         Report Issue
       </span>
@@ -131,7 +131,7 @@
   }
 
   :global(.tab) {
-    @apply w-full rounded-lg py-2.5 px-2 text-sm font-medium leading-5 text-neutral-500 ring-opacity-60 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
+    @apply w-full rounded-lg px-2 py-2.5 text-sm leading-5 font-medium text-neutral-500 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
   }
 
   :global(.dark .tab) {
