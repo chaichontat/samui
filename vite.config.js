@@ -3,6 +3,7 @@ import { searchForWorkspaceRoot } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import rollupNative from 'rollup-plugin-natives';
 
 // https://stackoverflow.com/a/70069241
 // Get current tag/commit and last commit date from git
@@ -22,7 +23,7 @@ const config = {
     __VERSION__: version,
     __LASTMOD__: lastmod
   },
-  plugins: [sveltekit()],
+  plugins: [sveltekit(), rollupNative({copyTo: ".vite/build", destDir:"./"})],
   resolve: {
     alias: {
       $src: path.resolve('./src'),
@@ -36,14 +37,10 @@ const config = {
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 1024
+    chunkSizeWarningLimit: 1024,
+    ssrEmitAssets: true,
   },
-
-  test: {
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: 'setupTest.cjs'
-  }
+  assetsInclude:['**/*.node'],
+  optimizeDeps: {exclude: ["fsevents"]},
 };
 export default config;
