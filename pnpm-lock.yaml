@@ -81,9 +81,6 @@ importers:
       '@playwright/test':
         specifier: ^1.44.0
         version: 1.47.2
-      '@rgossiaux/svelte-headlessui':
-        specifier: 2.0.0
-        version: 2.0.0(svelte@5.38.10)
       '@steeze-ui/heroicons':
         specifier: ^2.3.0
         version: 2.4.2
@@ -823,11 +820,6 @@ packages:
 
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
-
-  '@rgossiaux/svelte-headlessui@2.0.0':
-    resolution: {integrity: sha512-ksh245HqMM8yqkzd/OyAK2FCHZYOSA3ldLIHab7C9S60FmifqT24JFVgi8tZpsDEMk3plbfQvfah93n5IEi8sg==}
-    peerDependencies:
-      svelte: ^3.47.0
 
   '@rollup/rollup-android-arm-eabi@4.50.2':
     resolution: {integrity: sha512-uLN8NAiFVIRKX9ZQha8wy6UUs06UNSZ32xj6giK/rmMXAgKahwExvK6SsmgU5/brh4w/nSgj8e0k3c1HBQpa0A==}
@@ -4935,10 +4927,6 @@ snapshots:
   '@polka/url@1.0.0-next.29': {}
 
   '@popperjs/core@2.11.8': {}
-
-  '@rgossiaux/svelte-headlessui@2.0.0(svelte@5.38.10)':
-    dependencies:
-      svelte: 5.38.10
 
   '@rollup/rollup-android-arm-eabi@4.50.2':
     optional: true
