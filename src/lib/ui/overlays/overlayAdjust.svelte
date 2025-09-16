@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { colorMaps } from '$lib/ui/overlays/featureColormap';
   import DraggableNumber from '$src/lib/components/DraggableNumber.svelte';
-  import { sFeatureData } from '$src/lib/store';
+  import { sEvent, sFeatureData, sOverlay } from '$src/lib/store';
   import { classes, handleError } from '$src/lib/utils';
   import { Popover } from 'bits-ui';
   import { debounce, throttle } from 'lodash-es';
@@ -12,8 +12,9 @@
   import type { WebGLSpots } from './points';
 
   export let ov: WebGLSpots;
-  let minmax: [number, number] = [0, 0];
-  let colormap: keyof typeof colorMaps = 'turbo';
+  let minmax: [number, number] = [ov.currStyleVariables.min ?? 0, ov.currStyleVariables.max ?? 0];
+  let colormap: keyof typeof colorMaps = ov.currColorMap ?? 'turbo';
+  let style: WebGLSpots['currStyle'] = ov.currStyle;
   const dispatch = createEventDispatcher();
 
   let colorMapClass: Record<keyof typeof colorMaps, string> = {
@@ -41,8 +42,29 @@
     minmax = [minmax[0], minmax[0]];
   }
 
+  const syncFromOverlay = () => {
+    style = ov.currStyle;
+    colormap = ov.currColorMap ?? colormap;
+    const { min, max } = ov.currStyleVariables;
+    if (typeof min === 'number' && typeof max === 'number') {
+      minmax = [min, max];
+    }
+  };
+
   $: if (minmax[0] === 0 && minmax[1] === 0 && $sFeatureData) {
     minmax = [$sFeatureData.minmax[0], $sFeatureData.minmax[1]];
+  }
+
+  $: if ($sOverlay === ov.uid) {
+    syncFromOverlay();
+  }
+
+  $: if (
+    $sOverlay === ov.uid &&
+    $sEvent &&
+    ['featureUpdated', 'overlayAdjusted'].includes($sEvent.type)
+  ) {
+    syncFromOverlay();
   }
 
   const update = throttle((minmax: [number, number]) => {
@@ -57,7 +79,7 @@
   }, 200);
 </script>
 
-{#if ov.currStyle === 'quantitative'}
+{#if style === 'quantitative'}
   <div class="relative">
     <Popover.Root>
       <Popover.Trigger
