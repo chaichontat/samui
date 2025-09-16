@@ -45,19 +45,24 @@ const config: PlaywrightTestConfig = {
     {
       name: 'chromium',
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5174'
       }
     }
-  ]
+  ],
 
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
   // outputDir: 'test-results/',
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   port: 3000,
-  // },
+  ...(process.env.CI
+    ? {
+        webServer: {
+          command: 'pnpm run preview',
+          port: 4173
+        }
+      }
+    : {})
 };
 
 export default config;

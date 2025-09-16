@@ -26,11 +26,16 @@ jobs:
       - name: Vitest
         run: pnpm run test
 
-      # - name: Install Playwright Browsers
-      #   run: pnpx playwright install --with-deps
+      - name: Install Playwright Browsers
+        run: pnpx playwright install chromium --with-deps
 
-      # - name: Run Playwright tests
-      #   run: pnpx playwright test
+      - name: Build
+        run: pnpm run build
+
+      - name: Run Playwright tests
+        run: pnpx playwright test --reporter=list
+        env:
+          NODE_OPTIONS: --no-experimental-strip-types
 
       - uses: actions/upload-artifact@v4
         if: always()
