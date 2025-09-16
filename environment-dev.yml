@@ -7,7 +7,7 @@ dependencies:
   - hypothesis
   - isort
   - pip
-  - poetry
+  - uv
   - pytest
   - pytest-cov
   - pip:
