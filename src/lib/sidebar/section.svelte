@@ -1,11 +1,6 @@
 <script lang="ts">
   import { flashing } from '$lib/store';
-  import {
-    Disclosure,
-    DisclosureButton,
-    DisclosurePanel,
-    Switch
-  } from '@rgossiaux/svelte-headlessui';
+  import { Collapsible, Switch } from 'bits-ui';
   import { ChevronDown } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { slide } from 'svelte/transition';
@@ -22,6 +17,8 @@
   export let tooltipMsg = '';
 
   let interval: ReturnType<typeof setInterval>;
+  let isOpen = defaultOpen;
+  let prevDefaultOpen = defaultOpen;
 
   function flash(element: HTMLElement) {
     interval = setInterval(() => {
@@ -45,6 +42,11 @@
   } else {
     clearInterval(interval);
   }
+
+  $: if (defaultOpen !== prevDefaultOpen) {
+    isOpen = defaultOpen;
+    prevDefaultOpen = defaultOpen;
+  }
 </script>
 
 <section
@@ -53,10 +55,10 @@
   bind:this={div}
   on:click={() => ($flashing === title ? ($flashing = '') : '')}
 >
-  <Disclosure let:open {defaultOpen}>
-    <DisclosureButton
+  <Collapsible.Root bind:open={isOpen}>
+    <Collapsible.Trigger
+      type="button"
       class={classes(
-        // open ? 'rounded-b-none' : 'delay-150',
         'flex w-full items-center justify-between py-2 pl-3 pr-4 text-left font-medium text-neutral-300 transition-[border-radius] ease-in-out hover:bg-white/10 focus:outline-none'
       )}
     >
@@ -64,48 +66,61 @@
 
       <div class="flex items-center gap-x-3">
         {#if togglable}
-          <Switch
-            as="button"
-            checked={toggled}
-            on:change={(e) => (toggled = e.detail)}
-            on:click={(e) => e.stopPropagation()}
-            class={classes(
-              'focus:shadow-outline relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent shadow-white transition-colors duration-200 ease-in-out focus:outline-none',
-              toggled ? 'bg-blue-700' : 'bg-neutral-600'
-            )}
-            let:checked
-          >
-            <span
-              class={classes(
-                'inline-block h-[18px] w-[18px] translate-y-[1px] transform rounded-full bg-neutral-200 transition duration-200 ease-in-out',
-                checked ? 'translate-x-6' : 'translate-x-0.5'
-              )}
-            />
-          </Switch>
+          <Switch.Root bind:checked={toggled}>
+            {#snippet child({ props, checked })}
+              {@const { class: switchClass, ...switchRest } = props}
+              <button
+                {...switchRest}
+                class={classes(
+                  typeof switchClass === 'string' ? switchClass : undefined,
+                  'focus:shadow-outline relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent shadow-white transition-colors duration-200 ease-in-out focus:outline-none',
+                  checked ? 'bg-blue-700' : 'bg-neutral-600'
+                )}
+                type="button"
+                on:click|stopPropagation
+              >
+                <span
+                  class={classes(
+                    'inline-block h-[18px] w-[18px] translate-y-[1px] transform rounded-full bg-neutral-200 transition duration-200 ease-in-out',
+                    checked ? 'translate-x-6' : 'translate-x-0.5'
+                  )}
+                />
+              </button>
+            {/snippet}
+          </Switch.Root>
         {/if}
         <Icon
           src={ChevronDown}
           class={classes(
             `svg-icon h-4 w-4 stroke-current stroke-[3] transition-transform delay-100 duration-300 ease-in-out`,
-            open ? 'rotate-180' : ''
+            isOpen ? 'rotate-180' : ''
           )}
         />
       </div>
-    </DisclosureButton>
+    </Collapsible.Trigger>
 
-    {#if open}
-      <div transition:slide>
-        <DisclosurePanel
-          class="overflow-visible bg-neutral-800 px-[12px] pt-2 pb-[8px] text-[13px] shadow-inner shadow-neutral-900/30"
-          static
-        >
-          <div class={classes(cl, togglable && !toggled ? toggledOff : '')}>
-            <slot {toggled}>
-              <div class="text-neutral-100">No content</div>
-            </slot>
+    <Collapsible.Content forceMount>
+      {#snippet child({ props, open })}
+        {#if open}
+          {@const { class: rawContentClass, ...contentRest } = props}
+          {@const contentClass: string | undefined =
+            typeof rawContentClass === 'string' ? rawContentClass : undefined}
+          <div
+            {...contentRest}
+            class={classes(
+              contentClass,
+              'overflow-visible bg-neutral-800 px-[12px] pt-2 pb-[8px] text-[13px] shadow-inner shadow-neutral-900/30'
+            )}
+            transition:slide
+          >
+            <div class={classes(cl, togglable && !toggled ? toggledOff : '')}>
+              <slot {toggled}>
+                <div class="text-neutral-100">No content</div>
+              </slot>
+            </div>
           </div>
-        </DisclosurePanel>
-      </div>
-    {/if}
-  </Disclosure>
+        {/if}
+      {/snippet}
+    </Collapsible.Content>
+  </Collapsible.Root>
 </section>
