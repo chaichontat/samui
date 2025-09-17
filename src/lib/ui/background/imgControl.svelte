@@ -110,6 +110,8 @@
   //   table.addEventListener('mouseleave', shrink);
   //   timeout = setTimeout(shrink, 1500);
   // });
+
+  $: console.log(expanded);
 </script>
 
 <!-- bind:this={table} -->
@@ -117,15 +119,19 @@
 <!-- draggable -->
 
 <LiquidGlassIsland
-  baseHeight={400}
+  baseHeight={250}
+  baseWidth={100}
+  expandWidthRatio={4.5}
   bind:expanded
-  class="group overflow-x-hidden px-1 py-1 font-medium"
+  class="group overflow-x-hidden px-2 py-2 font-medium"
   aria-label="Image controls"
-  on:requestState={(e) => (expanded = e.detail)}
+  on:requestState={(e) => (expanded = e.detail.expanded)}
 >
   {#if image && imgCtrl}
     {#if imgCtrl?.type === 'composite'}
-      <table class="table-auto text-sm">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <table class="table-auto text-sm" on:click={(e) => e.stopPropagation()}>
         <tbody>
           <!-- Each channel -->
           {#each image.channels as name}
@@ -216,15 +222,9 @@
     {/if}
   {/if}
 </LiquidGlassIsland>
-<!--
-<style lang="postcss">
-  .transition-width {
-    transition-property: max-width;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 1000ms;
-  }
 
+<style lang="postcss">
   :global(.rangeSlider) {
     font-size: 0.6rem; /* default size */
   }
-</style> -->
+</style>

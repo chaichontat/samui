@@ -1,13 +1,13 @@
 <script lang="ts">
   import { cn } from '$src/lib/utils';
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { spring, tweened } from 'svelte/motion';
 
   export let expanded = false;
   export let baseWidth = 220;
   export let baseHeight = 38;
-  export let expandWidthRatio = 3;
+  export let expandWidthRatio = 2.2;
   export let expandHeightRatio = 1;
   export let reducedMotion: boolean | null = null;
   export let reduceTransparency: boolean | null = null;
@@ -17,7 +17,6 @@
   export let glassGlow = 0.34;
   export let highlight = true;
   export let interactiveTilt = false;
-  export let contentPadding = 18;
   export let settleDuration = 480;
   export let stagger = 110;
   let cl = '';
@@ -25,6 +24,7 @@
 
   type AnimationPhase = { phase: 'start' | 'settle'; expanded: boolean };
   type RequestDetail = { from: boolean; expanded: boolean };
+  type HeightUpdateOptions = { skipSync?: boolean; hard?: boolean };
 
   const dispatch = createEventDispatcher<{
     pointerIntent: { type: 'enter' | 'leave' };
@@ -43,7 +43,6 @@
   $: expandHeightRatio = clampPositive(expandHeightRatio, 1);
   $: glassBlur = Math.max(0, glassBlur);
   $: glassGlow = Math.min(Math.max(glassGlow, 0), 1);
-  $: contentPadding = Math.max(0, contentPadding);
   $: settleDuration = Math.max(120, settleDuration);
   $: stagger = Math.max(0, stagger);
 
@@ -64,10 +63,16 @@
   let transparencyReduced = reduceTransparency ?? false;
 
   let shell: HTMLDivElement | null = null;
+  let main: HTMLDivElement | null = null;
   let tiltX = 0;
   let tiltY = 0;
   let glowX = 0;
   let glowY = 0;
+  let mounted = false;
+  let heightInitialized = false;
+  let isOrchestrating = false;
+  const heightTargets = new Map<boolean, number>();
+  const HEIGHT_EPSILON = 0.5;
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -86,6 +91,8 @@
   }
 
   onMount(() => {
+    mounted = true;
+
     if (typeof window === 'undefined') return;
 
     if (reduceTransparency === null && 'matchMedia' in window) {
@@ -105,6 +112,8 @@
     } else if (reducedMotion !== null) {
       setMotionPreference(reducedMotion);
     }
+
+    scheduleHeightRefresh(expanded, { hard: true });
   });
 
   onDestroy(() => {
@@ -114,6 +123,7 @@
     if (reduceMotionMedia && reduceMotionListener) {
       reduceMotionMedia.removeEventListener('change', reduceMotionListener);
     }
+    mounted = false;
   });
 
   $: if (reduceTransparency !== null) {
@@ -126,10 +136,12 @@
 
   type Targets = { width: number; height: number };
   const computeTargets = (targetExpanded: boolean): Targets => {
+    const fallbackHeight = targetExpanded ? baseHeight * expandHeightRatio : baseHeight;
+    const measuredHeight = heightTargets.get(targetExpanded) ?? fallbackHeight;
     if (targetExpanded) {
-      return { width: baseWidth * expandWidthRatio, height: baseHeight * expandHeightRatio };
+      return { width: baseWidth * expandWidthRatio, height: measuredHeight };
     }
-    return { width: baseWidth, height: baseHeight };
+    return { width: baseWidth, height: measuredHeight };
   };
 
   const initialTargets = computeTargets(expanded);
@@ -145,11 +157,13 @@
   $: {
     const nextSignature = `${baseWidth}:${baseHeight}:${expandWidthRatio}:${expandHeightRatio}`;
     if (nextSignature !== baseSignature && expanded === previousExpanded) {
+      scheduleHeightRefresh(expanded, { hard: true });
       const nextTargets = computeTargets(expanded);
       if (prefersReducedMotion) {
         widthTween.set(nextTargets.width);
         heightTween.set(nextTargets.height);
       } else {
+        console.log('forcing size update');
         widthSpring.set(nextTargets.width, { hard: true });
         heightSpring.set(nextTargets.height, { hard: true });
       }
@@ -159,13 +173,24 @@
 
   async function orchestrateTransition(next: boolean, prev: boolean) {
     const ticket = ++animationTicket;
-    const targets = computeTargets(next);
     dispatch('animationPhase', { phase: 'start', expanded: next });
+
+    isOrchestrating = true;
+    if (mounted) {
+      await refreshHeightForState(next, { skipSync: true });
+      if (ticket !== animationTicket) {
+        isOrchestrating = false;
+        return;
+      }
+    }
+
+    const targets = computeTargets(next);
 
     if (prefersReducedMotion) {
       widthTween.set(targets.width);
       heightTween.set(targets.height);
       dispatch('animationPhase', { phase: 'settle', expanded: next });
+      isOrchestrating = false;
       return;
     }
 
@@ -192,14 +217,17 @@
     };
 
     await sequence();
-    if (ticket !== animationTicket) return;
+    if (ticket !== animationTicket) {
+      isOrchestrating = false;
+      return;
+    }
 
     const bounce = async () => {
       let widthOvershoot = 0;
       let heightOvershoot = 0;
 
       if (next) {
-        widthOvershoot = 0.045;
+        widthOvershoot = 0.02;
         heightOvershoot = 0.08;
       } else if (!next && prev) {
         widthOvershoot = -0.05;
@@ -226,6 +254,7 @@
     await bounce();
     dispatch('animationPhase', { phase: 'settle', expanded: next });
     await wait(settleDuration);
+    isOrchestrating = false;
   }
 
   $: if (expanded !== previousExpanded) {
@@ -244,7 +273,63 @@
 
   $: widthValue = prefersReducedMotion ? $widthTween : $widthSpring;
   $: heightValue = prefersReducedMotion ? $heightTween : $heightSpring;
-  $: radiusValue = 32;
+  $: radiusValue = 12;
+  // heightInitialized ? `height:${heightValue}px;` :
+  $: mainStyle = `width:${widthValue}px;${'height:auto;'}border-radius:${radiusValue}px;`;
+
+  function handleSlotChange() {
+    scheduleHeightRefresh(expanded);
+  }
+
+  function measureNaturalHeight(state: boolean): number | null {
+    if (!main) return null;
+    const targetWidth = state ? baseWidth * expandWidthRatio : baseWidth;
+    const previousHeight = main.style.height;
+    const previousWidth = main.style.width;
+    main.style.width = `${targetWidth}px`;
+    main.style.height = 'auto';
+    const measured = main.getBoundingClientRect().height;
+    main.style.width = previousWidth;
+    main.style.height = previousHeight;
+    if (!Number.isFinite(measured) || measured <= 0) return null;
+    return measured;
+  }
+
+  function syncHeightForActiveState(hard = false) {
+    const target = heightTargets.get(expanded);
+    if (target === undefined) return;
+    const normalized = Math.max(target, 1);
+    heightSpring.set(normalized, hard ? { hard: true } : undefined);
+    heightTween.set(normalized);
+    heightInitialized = true;
+  }
+
+  function storeMeasuredHeight(state: boolean, height: number, options: HeightUpdateOptions = {}) {
+    const normalized = Math.max(height, 1);
+    const previous = heightTargets.get(state);
+    if (previous !== undefined && Math.abs(previous - normalized) < HEIGHT_EPSILON) {
+      return;
+    }
+    heightTargets.set(state, normalized);
+
+    const skipSync = (options.skipSync ?? false) || isOrchestrating;
+    if (state === expanded && (!skipSync || !heightInitialized)) {
+      syncHeightForActiveState(options.hard ?? !heightInitialized);
+    }
+  }
+
+  async function refreshHeightForState(state: boolean, options: HeightUpdateOptions = {}) {
+    if (!mounted) return;
+    await tick();
+    const measured = measureNaturalHeight(state);
+    if (measured === null) return;
+    storeMeasuredHeight(state, measured, options);
+  }
+
+  function scheduleHeightRefresh(state: boolean, options: HeightUpdateOptions = {}) {
+    if (!mounted) return;
+    void refreshHeightForState(state, options);
+  }
 
   function resetTilt() {
     tiltX = 0;
@@ -314,10 +399,7 @@
   data-testid="liquid-glass-island"
   {...$$restProps}
 >
-  <div
-    class={cn('lgis-main', cl)}
-    style={`width:${widthValue}px;height:${heightValue}px;padding:${Math.max(contentPadding - 6, 8)}px ${contentPadding}px;border-radius:${radiusValue}px;`}
-  >
+  <div bind:this={main} class={cn('lgis-main', cl)} style={mainStyle}>
     <div class="lgis-motion">
       <!-- <span class="lgis-sheen" aria-hidden="true"></span> -->
       <span class="lgis-highlight" aria-hidden="true"></span>
