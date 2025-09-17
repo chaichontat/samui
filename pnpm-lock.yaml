@@ -26,6 +26,9 @@ importers:
       fzf:
         specifier: ^0.5.2
         version: 0.5.2
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
       html-to-image:
         specifier: ^1.11.11
         version: 1.11.13
