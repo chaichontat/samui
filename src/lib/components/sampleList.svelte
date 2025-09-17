@@ -5,7 +5,7 @@
   import { Select } from 'bits-ui';
   import { createEventDispatcher, onMount } from 'svelte';
   import { cubicOut } from 'svelte/easing';
-  import { fade } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
   import Spinner from './spinner.svelte';
 
   export let items: string[];
@@ -68,7 +68,7 @@
           {:else}
             <Icon
               src={ChevronUpDown}
-              class="h-5 w-5 stroke-current stroke-2 text-neutral-500 dark:text-neutral-200"
+              class="size-4 stroke-current stroke-2 text-neutral-500 dark:text-neutral-200"
             />
           {/if}
         </span>
@@ -88,7 +88,7 @@
                     contentClass,
                     'bg-default z-40 mt-2 w-full rounded-lg shadow shadow-blue-900 backdrop-blur'
                   )}
-                  transition:fade={{ duration: 100, easing: cubicOut }}
+                  transition:fly={{ y: 10, duration: 100, easing: cubicOut }}
                 >
                   <Select.Viewport
                     class="overflow-auto rounded-lg pt-1 pb-1 leading-6 focus:outline-none sm:leading-5"
@@ -99,18 +99,18 @@
                           {#snippet children({ selected, highlighted })}
                             <div
                               class={classes(
-                                'relative cursor-pointer select-none rounded-lg py-2 pl-3 pr-9 focus:outline-none',
+                                // 'relative flex w-full items-center gap-2 rounded-lg py-2 pl-3 pr-4'
+                                'w-full relative flex items-center cursor-pointer select-none rounded-lg py-2 pl-3 pr-9 focus:outline-none',
                                 highlighted ? 'hover-default' : ''
                               )}
                             >
-                              <span class={classes(selected ? 'font-semibold' : 'font-normal')}>
+                              <div class={classes(selected ? 'font-semibold' : 'font-normal')}>
                                 {name}
-                              </span>
-                              {#if selected && showArrow}
-                                <span class="absolute inset-y-0 right-0 flex items-center pr-4">
-                                  <Icon src={Check} class="h-5 w-5 stroke-current stroke-2" />
-                                </span>
-                              {/if}
+                              </div>
+
+                              <div class={classes(selected && showArrow ? '' : 'opacity-0')}>
+                                <Icon src={Check} class="size-4 stroke-current stroke-2" />
+                              </div>
                             </div>
                           {/snippet}
                         </Select.Item>
