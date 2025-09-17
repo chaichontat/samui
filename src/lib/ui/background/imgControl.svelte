@@ -1,6 +1,6 @@
 <script lang="ts">
   import { sEvent } from '$lib/store';
-  import { classes } from '$lib/utils';
+  import { classes, cn } from '$lib/utils';
   import { LiquidGlassIsland } from '$src/lib/components/liquid-glass';
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
@@ -10,6 +10,8 @@
     type CompCtrl,
     type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
+  import { ArrowRight } from '@steeze-ui/heroicons';
+  import { Icon } from '@steeze-ui/svelte-icon';
   import { isEqual, zip } from 'lodash-es';
   import { onMount } from 'svelte';
   import RangeSlider from 'svelte-range-slider-pips';
@@ -112,6 +114,17 @@
   // });
 
   $: console.log(expanded);
+  $: maxNameWidth = 80;
+  $: if (table && imgCtrl) {
+    const buttonCells = document?.querySelectorAll(
+      'td[aria-label="button-cell"]'
+    ) as NodeListOf<HTMLTableCellElement>;
+    if (buttonCells) {
+      const maxWidth = Math.max(...Array.from(buttonCells).map((cell) => cell.clientWidth));
+      maxNameWidth = maxWidth;
+      console.log('Max button cell width:', maxWidth);
+    }
+  }
 </script>
 
 <!-- bind:this={table} -->
@@ -120,10 +133,10 @@
 
 <LiquidGlassIsland
   baseHeight={250}
-  baseWidth={100}
-  expandWidthRatio={4.5}
+  baseWidth={maxNameWidth + 11}
+  expandWidthRatio={455 / (maxNameWidth + 11)}
   bind:expanded
-  class="group overflow-x-hidden px-2 py-2 font-medium"
+  class="relative group overflow-x-hidden pl-1.5 pr-2 py-2 font-medium"
   aria-label="Image controls"
   on:requestState={(e) => (expanded = e.detail.expanded)}
 >
@@ -131,28 +144,42 @@
     {#if imgCtrl?.type === 'composite'}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-      <table class="table-auto text-sm" on:click={(e) => e.stopPropagation()}>
+      <table
+        class="table-auto text-sm w-[380px]"
+        on:click={(e) => e.stopPropagation()}
+        bind:this={table}
+      >
         <tbody>
           <!-- Each channel -->
           {#each image.channels as name}
             <tr aria-label={`${name} controls`} class="">
-              <td class="" bind:this={cell}>
+              <td
+                class="flex justify-center -translate-y-[1.5px]"
+                bind:this={cell}
+                aria-label="button-cell"
+              >
                 <button
-                  class={classes(
-                    imgCtrl.variables[name].enabled
-                      ? bgColors[colors.findIndex((x) => x === imgCtrl.variables[name].color)] +
-                          ' text-white'
-                      : 'opacity-80 hover:opacity-100',
-                    imgCtrl.variables[name].enabled &&
-                      ['white', 'yellow'].includes(imgCtrl.variables[name].color)
-                      ? 'text-black'
-                      : '',
-                    `transition-width mx-auto flex items-center rounded-lg px-2 py-[1px]`
-                  )}
+                  class="max-w-[120px]"
                   on:click={() => handleClick(name, imgCtrl.variables[name].color, true)}
                   aria-label="Select channel button"
                 >
-                  <div class="whitespace-nowrap">{name}</div>
+                  <div
+                    class={classes(
+                      imgCtrl.variables[name].enabled
+                        ? bgColors[colors.findIndex((x) => x === imgCtrl.variables[name].color)] +
+                            ' text-white'
+                        : 'opacity-80 hover:opacity-100',
+                      imgCtrl.variables[name].enabled &&
+                        ['white', 'yellow'].includes(imgCtrl.variables[name].color)
+                        ? 'text-black'
+                        : '',
+                      `rounded-lg px-2 py-[1px] w-fit max-w-[100px]`
+                    )}
+                  >
+                    <div class="truncate" aria-label="Channel name">
+                      {name}
+                    </div>
+                  </div>
                 </button>
               </td>
               <td class="tabular-nums">
@@ -180,22 +207,20 @@
                   </span>
                 </div>
               </td>
-              <td class="flex items-center justify-center gap-x-1.5">
+              <td class="flex items-center justify-center gap-x-1.5 ml-1">
                 {#each zip(colors, bgColors) as [color, bg], i}
                   <button
                     on:click={() => handleClick(name, color, true)}
-                    class={classes(
+                    class={cn(
                       bg,
                       color !== 'white' ? 'opacity-90' : '',
-                      i === 0 ? 'ml-1.5' : '',
-                      `mx-[1px] my-1 flex h-[16px] w-[16px] items-center rounded-full opacity-80 transition-opacity duration-500 group-hover:opacity-100`,
-                      imgCtrl.variables[name].color === color
-                        ? 'ring-2 ring-white ring-opacity-80'
-                        : ''
+                      i === 0 ? 'ml-2' : '',
+                      `mx-[1px] my-1 flex size-4 rounded-full transition-opacity duration-500 translate-y-[1.5px]`,
+                      imgCtrl.variables[name].color === color ? 'ring-2 ring-white opacity-100' : ''
                     )}
                     aria-label={`${color} color button`}
                     data-testid="imgctrl-color-button"
-                  />
+                  ></button>
                 {/each}
               </td>
             </tr>
@@ -220,7 +245,20 @@
     {:else}
       <div>This should never show up.</div>
     {/if}
+  {:else}
+    <div class="flex flex-col gap-1.5 my-1.5 ml-1">
+      <div class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[70px] h-[18px] py-2"></div>
+      <div class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[70px] h-[18px] py-2"></div>
+      <div class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[70px] h-[18px] py-2"></div>
+    </div>
   {/if}
+
+  <!-- <button class="absolute top-1/2">
+    <div
+      class="absolute left-[80px] w-0 h-0 border-l-[6px] border-b-[6px] border-l-transparent border-b-gray-300"
+    ></div> -->
+
+  <!-- <Icon class="size-3 stroke-[2]" /> -->
 </LiquidGlassIsland>
 
 <style lang="postcss">

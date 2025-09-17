@@ -12,8 +12,8 @@
   export let reducedMotion: boolean | null = null;
   export let reduceTransparency: boolean | null = null;
   export let glassBlur = 24;
-  export let glassTint = 'rgba(30, 34, 42, 0.52)';
-  export let glassBorderTint = 'rgba(255, 255, 255, 0.55)';
+  export let glassTint = 'rgba(20, 24, 32, 0.62)';
+  export let glassBorderTint = 'rgba(255, 255, 255, 0.9)';
   export let glassGlow = 0.34;
   export let highlight = true;
   export let interactiveTilt = false;
@@ -228,10 +228,10 @@
 
       if (next) {
         widthOvershoot = 0.02;
-        heightOvershoot = 0.08;
+        heightOvershoot = 0.04;
       } else if (!next && prev) {
-        widthOvershoot = -0.05;
-        heightOvershoot = -0.07;
+        widthOvershoot = -0.02;
+        heightOvershoot = -0.03;
       }
 
       if (widthOvershoot !== 0) {
@@ -458,6 +458,7 @@
       var(--lgis-shadow),
       0 0 28px rgba(114, 174, 255, calc(0.4 * var(--lgis-glow)));
     overflow: hidden;
+    transition: box-shadow 150ms cubic-bezier(0.25, 0, 0.4, 1);
   }
 
   .lgis-shell:hover .lgis-main,
@@ -569,7 +570,7 @@
     padding: 0 8px;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(12px) scale(0.97);
+    transform: translateY(12px) scale(0.99);
     transition:
       opacity 200ms cubic-bezier(0.25, 0, 0.4, 1),
       transform 260ms cubic-bezier(0.25, 0, 0.4, 1);
@@ -629,7 +630,7 @@
   }
 
   .lgis-shell[data-expanded='true'] .lgis-main {
-    animation: lgis-expand-bounce 520ms cubic-bezier(0.5, 1, 0.75, 1.25) forwards;
+    animation: lgis-expand-bounce 440ms cubic-bezier(0.5, 1, 0.75, 1.25) forwards;
   }
 
   .lgis-shell[data-expanded='false'] .lgis-main {
@@ -687,13 +688,13 @@
 
   @keyframes lgis-expand-bounce {
     0% {
-      transform: scaleX(0.92) scaleY(0.9);
+      transform: scaleX(1) scaleY(1);
     }
     52% {
-      transform: scaleX(1.06) scaleY(1.09);
+      transform: scaleX(1.01) scaleY(1);
     }
     74% {
-      transform: scaleX(0.99) scaleY(0.96);
+      transform: scaleX(1) scaleY(1.01);
     }
     100% {
       transform: scaleX(1) scaleY(1);
@@ -702,13 +703,13 @@
 
   @keyframes lgis-collapse-bounce {
     0% {
-      transform: scaleX(1.04) scaleY(1.05);
+      transform: scaleX(1) scaleY(1);
     }
     60% {
-      transform: scaleX(0.92) scaleY(0.9);
+      transform: scaleX(0.99) scaleY(1.01);
     }
     82% {
-      transform: scaleX(1.02) scaleY(1.01);
+      transform: scaleX(1.02) scaleY(1);
     }
     100% {
       transform: scaleX(1) scaleY(1);
