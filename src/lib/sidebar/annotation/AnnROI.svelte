@@ -29,7 +29,7 @@
 
   <button
     class={classes(
-      'button my-0 h-full w-min bg-neutral-600 py-1 px-2 duration-75 hover:bg-neutral-500',
+      'button my-0 h-7 bg-neutral-600 py-1 px-2 duration-75 hover:bg-neutral-500',
       'disabled:cursor-auto disabled:bg-neutral-500 hover:disabled:bg-neutral-500 disabled:text-neutral-300'
     )}
     use:tooltip={{ content: 'Export ROIs as JSON' }}
