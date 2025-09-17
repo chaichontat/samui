@@ -489,11 +489,11 @@
     background:
       linear-gradient(
         130deg,
-        rgba(255, 255, 255, 0.65),
+        rgba(255, 255, 255, 0.5),
         rgba(255, 255, 255, 0.18) 45%,
         rgba(0, 0, 0, 0.42)
       ),
-      linear-gradient(210deg, rgba(196, 226, 255, 0.42), rgba(74, 93, 114, 0.45));
+      linear-gradient(210deg, rgba(196, 226, 255, 0.3), rgba(74, 93, 114, 0.2));
     background-blend-mode: screen;
     pointer-events: none;
     opacity: 0.95;
