@@ -1,12 +1,13 @@
 <script lang="ts">
   import { sId, sMapp, sSample, userState } from '$lib/store';
   import type { Mapp } from '$lib/ui/mapp';
+  import GlassIsland from '$src/lib/components/glass/GlassIsland.svelte';
   import { Camera, EyeSlash } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { saveAs } from 'file-saver';
   import { toBlob } from 'html-to-image';
+  import { scale } from 'svelte/transition';
   import { tooltip } from '../utils';
-  // import OverlayTool from './overlayTool.svelte'; // Dynamic import
 
   export let haveFeatures: boolean;
   let map: Mapp;
@@ -41,10 +42,22 @@
   <!-- Overlay selector -->
   {#if showImgControl && haveFeatures}
     {#await import('./overlayTool.svelte') then overlayTool}
-      <div
-        class="inline-flex h-min flex-col gap-y-1 rounded-lg bg-neutral-800/80 p-2 px-3 text-sm font-medium backdrop-blur-lg dark:text-white/90"
-      >
-        <svelte:component this={overlayTool.default} {map} />
+      <div transition:scale={{ duration: 200, start: 0.85 }} class="inline-flex">
+        <GlassIsland
+          class="relative group overflow-hidden px-2   py-1.5 text-sm font-medium text-white/90"
+          baseWidth={280}
+          baseHeight={160}
+          expandWidthRatio={1.18}
+          expandHeightRatio={1.05}
+          expanded={true}
+          highlight={true}
+          interactiveTilt={false}
+          glassBorderWidth={0}
+        >
+          <div class="relative flex flex-col gap-y-1">
+            <svelte:component this={overlayTool.default} {map} />
+          </div>
+        </GlassIsland>
       </div>
     {/await}
   {/if}

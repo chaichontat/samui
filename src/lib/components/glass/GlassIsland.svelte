@@ -14,7 +14,8 @@
   export let glassBlur = 24;
   export let glassTint = 'rgba(20, 24, 32, 0.62)';
   export let glassBorderTint = 'rgba(255, 255, 255, 0.9)';
-  export let glassGlow = 0.34;
+  export let glassBorderWidth = 1;
+  export let glassGlow = 0.3;
   export let highlight = true;
   export let interactiveTilt = false;
   export let settleDuration = 480;
@@ -375,7 +376,7 @@
     }
   }
 
-  $: cssVars = `--lgis-blur:${glassBlur}px;--lgis-tint:${glassTint};--lgis-border:${glassBorderTint};--lgis-border-width:${1.6}px;--lgis-radius:${radiusValue}px;--lgis-glow:${glassGlow};--lgis-tilt-x:${tiltX.toFixed(3)}deg;--lgis-tilt-y:${tiltY.toFixed(3)}deg;--lgis-glow-x:${glowX.toFixed(2)}px;--lgis-glow-y:${glowY.toFixed(2)}px;`;
+  $: cssVars = `--lgis-blur:${glassBlur}px;--lgis-tint:${glassTint};--lgis-border:${glassBorderTint};--lgis-border-width:${glassBorderWidth}px;--lgis-radius:${radiusValue}px;--lgis-glow:${glassGlow};--lgis-tilt-x:${tiltX.toFixed(3)}deg;--lgis-tilt-y:${tiltY.toFixed(3)}deg;--lgis-glow-x:${glowX.toFixed(2)}px;--lgis-glow-y:${glowY.toFixed(2)}px;`;
 </script>
 
 <div
