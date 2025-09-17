@@ -171,8 +171,8 @@
       {#snippet child({ props })}
         <GlassIsland
           baseHeight={250}
-          baseWidth={maxNameWidth + 11}
-          expandWidthRatio={455 / (maxNameWidth + 11)}
+          baseWidth={maxNameWidth + 12}
+          expandWidthRatio={450 / (maxNameWidth + 12)}
           bind:expanded
           class="relative group overflow-x-hidden pl-1.5 pr-2 py-2 font-medium"
           aria-label="Image controls"
@@ -195,7 +195,7 @@
                   {#each image.channels as name}
                     <tr aria-label={`${name} controls`} class="">
                       <td
-                        class="flex justify-center -translate-y-[1.5px] relative"
+                        class="flex justify-center min-w-[70px] -translate-y-[1.5px] relative"
                         bind:this={cell}
                         aria-label="button-cell"
                       >
@@ -296,15 +296,23 @@
             {/if}
           {:else}
             <div class="flex flex-col gap-1.5 my-1.5 ml-1">
-              <div
-                class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[70px] h-[18px] py-2"
-              ></div>
-              <div
-                class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[70px] h-[18px] py-2"
-              ></div>
-              <div
-                class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[70px] h-[18px] py-2"
-              ></div>
+              {#each Array.from({ length: 3 }) as _}
+                <div class="flex gap-x-2">
+                  <div
+                    class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[80px] h-[18px] py-2"
+                  ></div>
+                  <div
+                    class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[150px] h-[18px] py-2 ml-1"
+                  ></div>
+                  <div class="flex gap-x-1">
+                    {#each Array.from({ length: 7 }) as _}
+                      <div
+                        class="rounded-full bg-gray-600/30 animate-pulse size-[18px] mx-[1px] inline-block"
+                      ></div>
+                    {/each}
+                  </div>
+                </div>
+              {/each}
             </div>
           {/if}
         </GlassIsland>
