@@ -1,6 +1,7 @@
 <script lang="ts">
   import { sEvent } from '$lib/store';
   import { classes } from '$lib/utils';
+  import { LiquidGlassIsland } from '$src/lib/components/liquid-glass';
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
     bgColors,
@@ -22,6 +23,7 @@
 
   let imgCtrl: ImgCtrl | undefined;
   let image: ImgData | undefined;
+  let expanded = false;
 
   const bandinfo: Record<string, BandInfo> = {};
 
@@ -100,22 +102,26 @@
 
   const shrink = () => table && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
   let timeout: ReturnType<typeof setTimeout> | undefined;
-  onMount(() => {
-    table.addEventListener('mouseenter', () => {
-      clearTimeout(timeout);
-      table.style.maxWidth = '100%';
-    });
-    table.addEventListener('mouseleave', shrink);
-    timeout = setTimeout(shrink, 1500);
-  });
+  // onMount(() => {
+  //   table.addEventListener('mouseenter', () => {
+  //     clearTimeout(timeout);
+  //     table.style.maxWidth = '100%';
+  //   });
+  //   table.addEventListener('mouseleave', shrink);
+  //   timeout = setTimeout(shrink, 1500);
+  // });
 </script>
 
-<div
-  bind:this={table}
-  class="group flex max-w-full flex-col overflow-x-hidden rounded-lg bg-neutral-800/80 px-1 py-1 font-medium ring-4 ring-neutral-800/80 backdrop-blur-lg transition-all duration-1000 ease-in-out"
-  class:hidden={!(image && imgCtrl)}
-  draggable
+<!-- bind:this={table} -->
+<!-- class:hidden={!(image && imgCtrl)} -->
+<!-- draggable -->
+
+<LiquidGlassIsland
+  baseHeight={400}
+  bind:expanded
+  class="group overflow-x-hidden px-1 py-1 font-medium"
   aria-label="Image controls"
+  on:requestState={(e) => (expanded = e.detail)}
 >
   {#if image && imgCtrl}
     {#if imgCtrl?.type === 'composite'}
@@ -209,8 +215,8 @@
       <div>This should never show up.</div>
     {/if}
   {/if}
-</div>
-
+</LiquidGlassIsland>
+<!--
 <style lang="postcss">
   .transition-width {
     transition-property: max-width;
@@ -221,4 +227,4 @@
   :global(.rangeSlider) {
     font-size: 0.6rem; /* default size */
   }
-</style>
+</style> -->
