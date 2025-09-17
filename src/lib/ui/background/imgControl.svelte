@@ -1,7 +1,7 @@
 <script lang="ts">
   import { sEvent } from '$lib/store';
   import { classes, cn } from '$lib/utils';
-  import { LiquidGlassIsland } from '$src/lib/components/liquid-glass';
+  import GlassIsland from '$src/lib/components/glass/GlassIsland.svelte';
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
     bgColors,
@@ -10,10 +10,7 @@
     type CompCtrl,
     type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
-  import { ArrowRight } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
   import { isEqual, zip } from 'lodash-es';
-  import { onMount } from 'svelte';
   import RangeSlider from 'svelte-range-slider-pips';
   import type { Background } from './imgBackground';
 
@@ -131,7 +128,7 @@
 <!-- class:hidden={!(image && imgCtrl)} -->
 <!-- draggable -->
 
-<LiquidGlassIsland
+<GlassIsland
   baseHeight={250}
   baseWidth={maxNameWidth + 11}
   expandWidthRatio={455 / (maxNameWidth + 11)}
@@ -259,7 +256,7 @@
     ></div> -->
 
   <!-- <Icon class="size-3 stroke-[2]" /> -->
-</LiquidGlassIsland>
+</GlassIsland>
 
 <style lang="postcss">
   :global(.rangeSlider) {
