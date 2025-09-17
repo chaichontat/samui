@@ -171,8 +171,8 @@
       {#snippet child({ props })}
         <GlassIsland
           baseHeight={250}
-          baseWidth={maxNameWidth + 12}
-          expandWidthRatio={450 / (maxNameWidth + 12)}
+          baseWidth={maxNameWidth + 11.5}
+          expandWidthRatio={450 / (maxNameWidth + 11.5)}
           bind:expanded
           class="relative group overflow-x-hidden pl-1.5 pr-2 py-2 font-medium"
           aria-label="Image controls"
