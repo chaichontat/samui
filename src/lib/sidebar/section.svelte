@@ -6,6 +6,7 @@
   import { slide } from 'svelte/transition';
   import { tooltip } from '../ui/utils';
   import { classes } from '../utils';
+  import { cubicOut } from 'svelte/easing';
 
   let cl = '';
   export { cl as class };
@@ -94,7 +95,7 @@
         <Icon
           src={ChevronDown}
           class={classes(
-            `svg-icon h-4 w-4 stroke-current stroke-[3] transition-transform delay-100 duration-300 ease-in-out`,
+            `svg-icon size-3 stroke-current stroke-[3] transition-transform delay-100 duration-100 ease-in-out`,
             isOpen ? 'rotate-180' : ''
           )}
         />
@@ -113,7 +114,7 @@
               contentClass,
               'overflow-visible bg-neutral-800 px-[12px] pt-2 pb-[8px] text-[13px] shadow-inner shadow-neutral-900/30'
             )}
-            transition:slide
+            transition:slide={{ duration: 200, easing: cubicOut }}
           >
             <div class={classes(cl, togglable && !toggled ? toggledOff : '')}>
               <slot {toggled}>

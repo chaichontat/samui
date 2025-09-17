@@ -10,6 +10,7 @@
     sOverlay,
     userState
   } from '$lib/store';
+  import { cn } from '$lib/utils';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { oneLRU } from '$src/lib/lru';
   import ImgControl from '$src/lib/ui/background/imgControl.svelte';
@@ -165,9 +166,10 @@
   {#if sample}
     <!-- Img control -->
     <div
-      class="absolute top-[72px] left-1 z-30 h-fit md:left-4"
-      class:hidden={!showImgControl}
-      style="max-width: calc(100% - 20px);"
+      class={cn(
+        'absolute top-[72px] left-1 z-30 h-fit md:left-4 max-w-[calc(100%-20px)]',
+        !showImgControl && 'hidden'
+      )}
     >
       <ImgControl background={map.persistentLayers.background} />
     </div>
@@ -196,7 +198,7 @@
   } */
 
   .map :global(.ol-scale-line) {
-    @apply absolute left-4 bottom-8 float-right w-3 bg-transparent text-right font-sans mix-blend-difference;
+    @apply absolute bottom-8 left-4 float-right w-3 bg-transparent text-right font-sans mix-blend-difference;
   }
 
   .map :global(.ol-scale-line-inner) {

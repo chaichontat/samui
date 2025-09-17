@@ -401,27 +401,8 @@
 >
   <div bind:this={main} class={cn('lgis-main', cl)} style={mainStyle}>
     <div class="lgis-motion">
-      <!-- <span class="lgis-sheen" aria-hidden="true"></span> -->
       <span class="lgis-highlight" aria-hidden="true"></span>
       <slot />
-      <!-- <div class="lgis-leading" data-testid="lgis-leading">
-          <slot name="compactLeading" />
-        </div>
-        <div class="lgis-center" data-testid="lgis-compact">
-          <slot name="compact" />
-        </div>
-        <div class="lgis-trailing" data-testid="lgis-trailing">
-          <slot name="compactTrailing" />
-        </div>
-      </div> -->
-
-      <!-- <div class="lgis-layer lgi-expanded" data-active={expanded ? 'true' : 'false'}>
-        <slot />
-      </div> -->
-
-      <!-- <div class="lgis-layer lgi-overlay" data-active={expanded ? 'true' : 'false'}>
-        <slot name="overlay" />
-      </div> -->
     </div>
   </div>
 </div>
@@ -518,21 +499,6 @@
     opacity: 0.9;
   }
 
-  .lgis-sheen {
-    position: absolute;
-    inset: -24%;
-    background: linear-gradient(
-      120deg,
-      transparent 35%,
-      rgba(255, 255, 255, 0.4) 52%,
-      transparent 68%
-    );
-    opacity: 0;
-    pointer-events: none;
-    filter: blur(0.6px);
-    transition: opacity 220ms ease;
-  }
-
   .lgis-highlight {
     position: absolute;
     top: 10%;
@@ -555,69 +521,6 @@
     mix-blend-mode: screen;
   }
 
-  .lgis-shell:hover .lgis-sheen,
-  .lgis-shell:focus-visible .lgis-sheen {
-    opacity: 0.6;
-    animation: lgis-sheen 6s linear infinite;
-  }
-
-  .lgis-layer {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 8px;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(12px) scale(0.99);
-    transition:
-      opacity 200ms cubic-bezier(0.25, 0, 0.4, 1),
-      transform 260ms cubic-bezier(0.25, 0, 0.4, 1);
-  }
-
-  .lgis-layer[data-active='true'] {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0) scale(1);
-  }
-
-  .lgi-compact {
-    justify-content: space-between;
-    font-size: 0.92rem;
-    letter-spacing: -0.005em;
-  }
-
-  .lgis-leading,
-  .lgis-trailing {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .lgis-center {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    font-weight: 500;
-  }
-
-  .lgi-expanded {
-    align-items: stretch;
-    justify-content: stretch;
-  }
-
-  .lgi-overlay {
-    align-items: flex-start;
-    justify-content: flex-end;
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .lgis-shell.no-highlight .lgis-sheen,
   .lgis-shell.no-highlight .lgis-highlight {
     opacity: 0;
     animation: none;
@@ -659,30 +562,16 @@
   }
 
   .reduce-transparency .lgis-main::after,
-  .reduce-transparency .lgis-highlight,
-  .reduce-transparency .lgis-sheen {
+  .reduce-transparency .lgis-highlight {
     opacity: 0;
     animation: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .lgis-shell,
-    .lgis-main,
-    .lgis-layer {
+    .lgis-main {
       transition: none !important;
       animation: none !important;
-    }
-  }
-
-  @keyframes lgis-sheen {
-    0% {
-      transform: translate3d(-60%, -50%, 0) rotate(12deg);
-    }
-    50% {
-      transform: translate3d(0%, 0%, 0) rotate(12deg);
-    }
-    100% {
-      transform: translate3d(60%, 50%, 0) rotate(12deg);
     }
   }
 

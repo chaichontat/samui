@@ -37,7 +37,7 @@
   }
 </script>
 
-<section title="Map Tools" class="donotsave absolute right-3 top-2 z-20 flex gap-x-4">
+<section title="Map Tools" class="donotsave absolute right-9 top-2 z-20 flex gap-x-4">
   <!-- Overlay selector -->
   {#if showImgControl && haveFeatures}
     {#await import('./overlayTool.svelte') then overlayTool}
@@ -48,20 +48,26 @@
       </div>
     {/await}
   {/if}
-
-  <div class="-mt-1 mr-2 flex flex-col gap-y-4 md:mt-[47px]">
-    <!-- Show/hide -->
-    <button
-      class="z-20"
-      on:click={() => ($userState.showImgControl = !showImgControl)}
-      use:tooltip={{ content: 'Show/hide' }}
-    >
-      <Icon src={EyeSlash} class="svg-icon h-6 w-6" />
-    </button>
-
-    <!-- Screenshot -->
-    <button class="z-20" use:tooltip={{ content: 'Screenshot' }} on:click={screenshot}>
-      <Icon src={Camera} class="svg-icon h-6 w-6" />
-    </button>
-  </div>
 </section>
+
+<div class="mr-2 flex flex-col gap-y-4 md:gap-y-5 mt-1 md:mt-[56px] donotsave">
+  <!-- Show/hide -->
+  <button
+    class="z-20"
+    on:click={() => ($userState.showImgControl = !showImgControl)}
+    use:tooltip={{ content: 'Show/hide' }}
+    aria-label="Show/hide image controls"
+  >
+    <Icon src={EyeSlash} class="svg-icon size-5" />
+  </button>
+
+  <!-- Screenshot -->
+  <button
+    class="z-20"
+    use:tooltip={{ content: 'Screenshot' }}
+    on:click={screenshot}
+    aria-label="Screenshot"
+  >
+    <Icon src={Camera} class="svg-icon size-5" />
+  </button>
+</div>
