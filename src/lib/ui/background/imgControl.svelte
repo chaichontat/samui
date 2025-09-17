@@ -11,6 +11,7 @@
     type ImgCtrl
   } from '$src/lib/ui/background/imgColormap';
   import { isEqual, zip } from 'lodash-es';
+  import { onMount } from 'svelte';
   import RangeSlider from 'svelte-range-slider-pips';
   import type { Background } from './imgBackground';
 
@@ -99,16 +100,50 @@
   $: if (imgCtrl) s();
   const s = () => background?.updateStyle(imgCtrl!);
 
-  const shrink = () => table && (table.style.maxWidth = `${cell.clientWidth + 8}px`);
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  // onMount(() => {
-  //   table.addEventListener('mouseenter', () => {
-  //     clearTimeout(timeout);
-  //     table.style.maxWidth = '100%';
-  //   });
-  //   table.addEventListener('mouseleave', shrink);
-  //   timeout = setTimeout(shrink, 1500);
-  // });
+  const COLLAPSE_DELAY_MS = 3000;
+  let collapseTimer: ReturnType<typeof setTimeout> | null = null;
+  let collapseInitiated = false;
+  let mounted = false;
+
+  const clearCollapseTimer = () => {
+    if (collapseTimer) {
+      clearTimeout(collapseTimer);
+      collapseTimer = null;
+    }
+  };
+
+  const scheduleCollapse = () => {
+    if (!mounted || collapseInitiated) return;
+
+    collapseInitiated = true;
+    clearCollapseTimer();
+    collapseTimer = setTimeout(() => {
+      expanded = false;
+      collapseTimer = null;
+    }, COLLAPSE_DELAY_MS);
+  };
+
+  const handleInteraction = () => {
+    clearCollapseTimer();
+  };
+
+  onMount(() => {
+    mounted = true;
+    expanded = true;
+    if (imgCtrl) {
+      scheduleCollapse();
+    }
+
+    return () => {
+      clearCollapseTimer();
+      mounted = false;
+      collapseInitiated = false;
+    };
+  });
+
+  $: if (mounted && imgCtrl && !collapseInitiated) {
+    scheduleCollapse();
+  }
 
   $: console.log(expanded);
   $: maxNameWidth = 80;
@@ -136,6 +171,8 @@
   class="relative group overflow-x-hidden pl-1.5 pr-2 py-2 font-medium"
   aria-label="Image controls"
   on:requestState={(e) => (expanded = e.detail.expanded)}
+  on:mouseenter={handleInteraction}
+  on:mousedown={handleInteraction}
 >
   {#if image && imgCtrl}
     {#if imgCtrl?.type === 'composite'}
@@ -151,7 +188,7 @@
           {#each image.channels as name}
             <tr aria-label={`${name} controls`} class="">
               <td
-                class="flex justify-center -translate-y-[1.5px]"
+                class="flex justify-center -translate-y-[1.5px] relative"
                 bind:this={cell}
                 aria-label="button-cell"
               >
@@ -178,6 +215,11 @@
                     </div>
                   </div>
                 </button>
+                <button
+                  class="h-full w-2 absolute -right-1"
+                  aria-label="Expand controls"
+                  on:click={() => (expanded = true)}
+                ></button>
               </td>
               <td class="tabular-nums">
                 <div class="flex items-center">
