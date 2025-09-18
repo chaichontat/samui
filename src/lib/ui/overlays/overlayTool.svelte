@@ -34,7 +34,18 @@
 
   const outlinevis: Record<string, boolean> = {};
   const visible: Record<string, boolean> = {};
+  const ensureState = (uid: string) => {
+    if (!(uid in outlinevis)) {
+      outlinevis[uid] = $overlays[uid]?.outline?.visible ?? false;
+    }
+    if (!(uid in visible)) {
+      const layerVisible = $overlays[uid]?.layer?.getVisible?.();
+      visible[uid] = layerVisible == undefined ? true : layerVisible;
+    }
+  };
+  $: Object.keys($overlays).forEach(ensureState);
   const setVisible = (name: string, c: boolean | null, outline = false) => {
+    ensureState(name);
     if (outline) {
       const layer = $overlays[name]?.outline;
       if (layer) layer.visible = c ?? false;
@@ -53,12 +64,40 @@
   }
 </script>
 
-<table class="min-w-[250px] table-fixed ml-1 mt-1" title="Overlay tools">
+<table
+  class="min-w-[250px] table-fixed ml-1 mt-1"
+  title="Overlay tools"
+  data-testid="overlay-table"
+  data-render-complete={$sEvent?.type === 'renderComplete' ? 'true' : 'false'}
+  data-feature-min={$sFeatureData?.minmax?.[0] ?? ''}
+  data-feature-max={$sFeatureData?.minmax?.[1] ?? ''}
+  data-view-zoom={$sMapp?.map?.getView()?.getZoom?.() ?? ''}
+  data-view-center={$sMapp?.map?.getView()?.getCenter?.()?.join(',') ?? ''}
+>
   {#if sample}
     <tbody>
       {#each Object.entries($overlays) as [uid, ov], i}
         {@const fg = $overlaysFeature[uid]}
-        <tr data-testid={`overlay-row-${i}`} data-selected={uid === $sOverlay}>
+        <tr
+          data-testid={`overlay-row-${i}`}
+          data-selected={uid === $sOverlay}
+          data-overlay-uid={uid}
+          data-overlay-feature={fg?.feature ?? ''}
+          data-overlay-group={fg?.group ?? ''}
+          data-overlay-colormap={ov.currColorMap ?? ''}
+          data-overlay-style={ov.currStyle}
+          data-overlay-visible={String(ov.layer?.getVisible?.() ?? false)}
+          data-overlay-outline-visible={String(ov.outline?.visible ?? false)}
+          data-overlay-opacity={
+            ov.currStyleVariables?.opacity != undefined ? `${ov.currStyleVariables.opacity}` : ''
+          }
+          data-overlay-min={
+            ov.currStyleVariables?.min != undefined ? `${ov.currStyleVariables.min}` : ''
+          }
+          data-overlay-max={
+            ov.currStyleVariables?.max != undefined ? `${ov.currStyleVariables.max}` : ''
+          }
+        >
           <!-- <td class="size-3">
             <Icon
               src={ArrowLongRight}
@@ -71,6 +110,7 @@
               <Checkbox.Root
                 class="bg-transparent  border-white/70  data-[state=unchecked]:hover:border-dark-40 peer inline-flex size-4 items-center justify-center rounded border"
                 name={`Border outline for ${fg?.feature}`}
+                checked={outlinevis[uid]}
                 onCheckedChange={(e) => setVisible(uid, e, true)}
                 data-testid="overlay-toggle-border"
               >
@@ -86,6 +126,7 @@
               <Checkbox.Root
                 class="bg-transparent border-white/70  data-[state=unchecked] data-[state=unchecked]:hover:border-dark-40 peer inline-flex size-4 items-center justify-center rounded border"
                 name={`Border outline for ${fg?.feature}`}
+                checked={visible[uid]}
                 onCheckedChange={(e) => setVisible(uid, e)}
                 data-testid="overlay-toggle-fill"
               >
