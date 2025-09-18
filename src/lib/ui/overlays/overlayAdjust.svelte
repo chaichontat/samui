@@ -163,7 +163,9 @@
                   <button
                     class="rounded px-2 py-1 bg-cyan-700 transition-colors hover:bg-cyan-600 active:bg-cyan-500"
                     on:click={() => {
-                      minmax = [$sFeatureData.minmax[0], $sFeatureData.minmax[1]];
+                      const [autoMin, autoMax] = $sFeatureData.minmax;
+                      minmax = [autoMin, autoMax];
+                      ov.updateStyleVariables({ min: autoMin, max: autoMax });
                     }}
                   >
                     Auto

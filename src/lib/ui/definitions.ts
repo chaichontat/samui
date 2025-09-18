@@ -4,28 +4,28 @@ import type { Mapp } from '$src/lib/ui/mapp';
 
 import type { Geometry, Point } from 'ol/geom';
 import type { Layer } from 'ol/layer';
-import type WebGLPointsLayer from 'ol/layer/WebGLPoints';
+import WebGLVectorLayer from 'ol/layer/WebGLVector';
 import VectorSource from 'ol/source/Vector';
 import type { Style } from 'ol/style';
+import type { StyleVariables } from 'ol/style/flat';
 import type { LiteralStyle } from 'ol/style/literal';
 
-type MyWebGLPointsLayer = WebGLPointsLayer<VectorSource<Point>>;
-export type OLLayer = Layer | MyWebGLPointsLayer;
+type MyWebGLVectorLayer = WebGLVectorLayer<VectorSource<Point>>;
+export type OLLayer = Layer | MyWebGLVectorLayer;
 
 export class MapComponent<T extends OLLayer> extends Deferrable {
   source: VectorSource<Geometry>;
   map: Mapp;
   layer?: T;
-  style: T extends MyWebGLPointsLayer ? LiteralStyle : Style;
+  style: LiteralStyle | Style;
+  styleVariables?: StyleVariables;
   coords?: CoordsData;
 
-  constructor(
-    map: Mapp,
-    style: T extends WebGLPointsLayer<VectorSource<Point>> ? LiteralStyle : Style
-  ) {
+  constructor(map: Mapp, style: LiteralStyle | Style, styleVariables?: StyleVariables) {
     super();
     this.map = map;
     this.style = style;
+    this.styleVariables = styleVariables;
     this.source = new VectorSource();
   }
 
