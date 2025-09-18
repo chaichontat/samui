@@ -2,17 +2,42 @@ import tippy from 'tippy.js';
 
 export function tooltip(
   node: HTMLElement,
-  { content, enabled = true }: { content: string; enabled?: boolean }
+  initial: { content: string; enabled?: boolean }
 ) {
-  if (enabled) {
+  let tip: ReturnType<typeof tippy> | undefined;
+  let current = initial;
+
+  const apply = ({ content, enabled = true }: { content: string; enabled?: boolean }) => {
+    if (!enabled) {
+      tip?.destroy();
+      tip = undefined;
+      node.removeAttribute('aria-label');
+      node.removeAttribute('title');
+      return;
+    }
+
     node.setAttribute('aria-label', content);
     node.title = '';
-    const tip = tippy(node, { content, delay: [100, 0] });
-    return {
-      update: (newmsg: string): void => tip.setContent(newmsg),
-      destroy: (): void => tip.destroy()
-    };
-  }
+
+    if (!tip) {
+      tip = tippy(node, { content, delay: [100, 0] });
+    } else {
+      tip.setContent(content);
+    }
+  };
+
+  apply(current);
+
+  return {
+    update(newParams: { content: string; enabled?: boolean }) {
+      current = newParams;
+      apply(current);
+    },
+    destroy() {
+      tip?.destroy();
+      tip = undefined;
+    }
+  };
 }
 
 export function clickOutside(node: HTMLElement) {

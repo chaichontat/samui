@@ -51,7 +51,7 @@
   type="number"
   bind:this={div}
   bind:value
-  use:tooltip={{ content: 'You can also drag left/right to change' }}
+  use:tooltip={{ content: 'You can also drag left/right to change', enabled: false }}
   on:change={(e) => handleChange(Number(e.currentTarget.value))}
   {...$$restProps}
 />
