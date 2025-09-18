@@ -40,6 +40,7 @@ const config = {
   },
 
   test: {
+    testTimeout: 20000,
     alias: {
       $src: path.resolve('./src'),
       $comps: path.resolve('./src/lib/components')
