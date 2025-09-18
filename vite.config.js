@@ -40,10 +40,37 @@ const config = {
   },
 
   test: {
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: 'setupTest.cjs'
+    alias: {
+      $src: path.resolve('./src'),
+      $comps: path.resolve('./src/lib/components')
+    },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          include: ['src/**/*.browser.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+          setupFiles: ['vitest-browser-svelte'],
+          browser: {
+            headless: true,
+            provider: 'playwright', // or 'webdriverio'
+            enabled: true,
+            instances: [{ browser: 'chromium' }]
+          }
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+          exclude: ['src/**/*.browser.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: 'setupTest.cjs'
+        }
+      }
+    ]
   }
 };
 export default config;
