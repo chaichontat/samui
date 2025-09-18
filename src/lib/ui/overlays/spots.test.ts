@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const vectorSourceInstances: FakeVectorSource[] = [];
+const webglVectorLayerInstances: FakeWebGLVectorLayer[] = [];
 
 class FakeVectorSource {
   features: any[] = [];
@@ -74,6 +75,25 @@ class FakeFeatureLabel extends FakeFeature {
   label?: string;
 }
 
+class FakeWebGLVectorLayer {
+  options: any;
+  source: any;
+  updateStyleVariables = vi.fn((vars: Record<string, any>) => {
+    this.options.variables = { ...this.options.variables, ...vars };
+  });
+  setStyle = vi.fn((style: any) => {
+    this.options.style = style;
+  });
+  changed = vi.fn();
+  dispose = vi.fn();
+
+  constructor(options: any) {
+    this.options = { ...options };
+    this.source = options.source;
+    webglVectorLayerInstances.push(this);
+  }
+}
+
 vi.mock('ol/source/Vector.js', () => ({ default: FakeVectorSource }));
 vi.mock('ol/layer/Vector.js', () => ({ default: FakeVectorLayer }));
 vi.mock('ol/geom.js', () => ({ Circle: FakeCircle, Point: FakePoint }));
@@ -84,16 +104,35 @@ vi.mock('ol/style.js', () => ({
   Stroke: class {},
   Style: class {}
 }));
-vi.mock('ol/layer/WebGLPoints.js', () => ({ default: class {} }));
+vi.mock('ol/layer/WebGLVector.js', () => ({ default: FakeWebGLVectorLayer }));
 vi.mock('ol', () => ({ View: class {}, Feature: FakeFeature }));
 
-const mapStub = () => ({
-  map: {
-    addLayer: vi.fn(),
-    removeLayer: vi.fn()
-  },
-  promise: Promise.resolve()
-});
+const mapStub = () => {
+  const layers: any[] = [];
+  const addLayer = vi.fn((layer: any) => {
+    layers.push(layer);
+  });
+  const removeLayer = vi.fn((layer: any) => {
+    const idx = layers.indexOf(layer);
+    if (idx >= 0) layers.splice(idx, 1);
+  });
+  const getLayers = () => ({
+    getArray: () => layers,
+    insertAt: (idx: number, layer: any) => {
+      layers.splice(idx, 0, layer);
+    }
+  });
+
+  return {
+    map: {
+      addLayer,
+      removeLayer,
+      getLayers
+    },
+    mPerPx: 2e-6,
+    promise: Promise.resolve()
+  };
+};
 
 const coords = {
   name: 'coords',
@@ -107,6 +146,7 @@ const coords = {
 
 beforeEach(() => {
   vectorSourceInstances.length = 0;
+  webglVectorLayerInstances.length = 0;
 });
 
 describe('ActiveSpots', () => {
@@ -121,6 +161,64 @@ describe('ActiveSpots', () => {
     const circle = active.feature.getGeometry() as FakeCircle;
     expect(circle.lastSet).toEqual({ center: [10, -20], radius: coords.size! / 2 });
     expect(active.feature.get('id')).toBe('a');
+  });
+});
+
+describe('WebGLSpots', () => {
+  it('constructs a WebGLVectorLayer with style and variables', async () => {
+    const { WebGLSpots } = await import('$src/lib/ui/overlays/points');
+    const map = mapStub();
+    const overlay = new WebGLSpots(map as any);
+    overlay.coords = {
+      size: 2,
+      sizePx: 4,
+      mPerPx: 10
+    } as any;
+
+    await overlay.setCurrStyle('quantitative', 'turbo');
+
+    expect(webglVectorLayerInstances).toHaveLength(1);
+    const layer = webglVectorLayerInstances[0];
+    expect(layer.options.style).toMatchObject({ 'circle-radius': expect.anything() });
+    expect(layer.options.variables).toMatchObject({ opacity: 1, min: 0, max: 0 });
+    expect(layer.updateStyleVariables).toHaveBeenCalledWith(overlay.currStyleVariables);
+  });
+
+  it('preserves live style variables when switching styles', async () => {
+    const { WebGLSpots } = await import('$src/lib/ui/overlays/points');
+    const map = mapStub();
+    const overlay = new WebGLSpots(map as any);
+    overlay.coords = {
+      size: 2,
+      sizePx: 4,
+      mPerPx: 10
+    } as any;
+
+    await overlay.setCurrStyle('quantitative', 'turbo');
+    overlay.updateStyleVariables({ opacity: 0.4 });
+
+    await overlay.setCurrStyle('categorical', overlay.currColorMap);
+
+    const layer = webglVectorLayerInstances.at(-1)!;
+    expect(overlay.currStyleVariables.opacity).toBeCloseTo(0.4);
+    expect(layer.options.variables?.opacity).toBeCloseTo(0.4);
+    expect(layer.updateStyleVariables).toHaveBeenCalledWith(overlay.currStyleVariables);
+  });
+});
+
+describe('genSpotStyle', () => {
+  it('returns separated style and variables for quantitative overlays', async () => {
+    const { genSpotStyle } = await import('$src/lib/ui/overlays/featureColormap');
+    const result = genSpotStyle({
+      type: 'quantitative',
+      spotSizeMeter: 2e-6,
+      mPerPx: 2e-6,
+      colorMap: 'turbo',
+      scale: true
+    });
+
+    expect(result.style).toHaveProperty('circle-radius');
+    expect(result.variables).toMatchObject({ opacity: 1, min: 0, max: 0 });
   });
 });
 

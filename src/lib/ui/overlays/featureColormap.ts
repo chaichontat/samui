@@ -1,6 +1,7 @@
 import type { FeatureType } from '$src/lib/data/objects/feature';
 import * as d3 from 'd3';
 import type { LiteralStyle } from 'ol/style/literal';
+import type { StyleVariables } from 'ol/style/flat';
 
 export const colorMaps = {
   blues: (t: number) => `rgba(0,0,255,${t})`,
@@ -49,6 +50,8 @@ function genColorInterpolation(i: number) {
  *        Can be undefined if no image is loaded.
  * @param scale Whether to scale the features with zoom
  */
+export type SpotStyle = { style: LiteralStyle; variables: StyleVariables };
+
 export function genSpotStyle({
   type,
   spotSizeMeter,
@@ -61,7 +64,7 @@ export function genSpotStyle({
   mPerPx: number;
   colorMap?: keyof typeof colorMaps;
   scale?: boolean;
-}): LiteralStyle {
+}): SpotStyle {
   // From mapp.ts
   // Lowest zoom level is 128x the native res of img.
   // Highest zoom level is 1/4x the native res of img.
@@ -80,20 +83,24 @@ export function genSpotStyle({
     ]);
 
     return {
-      variables: { opacity: 1, min: 0, max: 1 },
-      'circle-radius': radiusExpression,
-      'circle-fill-color': ['interpolate', ['linear'], ['get', 'value'], ...colors],
-      'circle-opacity': ['clamp', ['*', ['var', 'opacity'], ['get', 'opacity']], 0.15, 1]
-    } satisfies LiteralStyle;
+      style: {
+        'circle-radius': radiusExpression,
+        'circle-fill-color': ['interpolate', ['linear'], ['get', 'value'], ...colors],
+        'circle-opacity': ['clamp', ['*', ['var', 'opacity'], ['get', 'opacity']], 0.15, 1]
+      },
+      variables: { opacity: 1, min: 0, max: 0 }
+    } satisfies SpotStyle;
   }
 
   if (type === 'categorical') {
     return {
-      variables: { opacity: 0.9 },
-      'circle-radius': radiusExpression,
-      'circle-fill-color': ['case', ...genCategoricalColors(), '#ffffff'],
-      'circle-opacity': ['clamp', ['var', 'opacity'], 0.15, 1]
-    } satisfies LiteralStyle;
+      style: {
+        'circle-radius': radiusExpression,
+        'circle-fill-color': ['case', ...genCategoricalColors(), '#ffffff'],
+        'circle-opacity': ['clamp', ['var', 'opacity'], 0.15, 1]
+      },
+      variables: { opacity: 0.9 }
+    } satisfies SpotStyle;
   }
 
   throw new Error('Unknown feature type');
