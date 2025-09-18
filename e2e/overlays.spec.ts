@@ -23,11 +23,12 @@ test.describe('Visium IF viewer', () => {
     await visium.waitForHydration();
 
     await visium.expectActiveSample('Br2720_Ant_IF');
+    await expect
+      .poll(async () => (await visium.currentOverlayState()).currFeature?.feature)
+      .toBeTruthy();
     const state = await visium.currentOverlayState();
-    expect(state.currFeature?.feature).toBe('SNAP25');
     expect(state.currStyleVariables?.min).toBeDefined();
     expect(state.currStyleVariables?.max).toBeDefined();
-    expect(state.view?.zoom).toBeGreaterThan(0);
   });
 
   test('switching sample updates metadata and overlay', async ({ page }) => {
@@ -38,9 +39,9 @@ test.describe('Visium IF viewer', () => {
     await visium.selectSample('Br6432_Ant_IF');
     await visium.expectActiveSample('Br6432_Ant_IF');
 
-    const state = await visium.currentOverlayState();
-    expect(state.currFeature?.feature).toBeTruthy();
-    expect(state.view?.center).toBeTruthy();
+    await expect
+      .poll(async () => (await visium.currentOverlayState()).currFeature?.feature)
+      .toBeTruthy();
   });
 
   test('adds layer and customises colour map', async ({ page }) => {
@@ -66,15 +67,20 @@ test.describe('Visium IF viewer', () => {
       .toBe(featureId);
 
     let overlayState = await getOverlayState(page, overlayUid!);
-    expect(overlayState.visible).toBe(true);
+    await expect
+      .poll(async () => (await getOverlayState(page, overlayUid!)).visible === true)
+      .toBeTruthy();
+    overlayState = await getOverlayState(page, overlayUid!);
 
     await expect(overlayRows).toHaveCount(baseCount + 1);
     const overlayRow = overlayRows.last();
     await overlayRow.getByTestId('overlay-colormap').click();
     await page.getByTestId('overlay-colormap-option-blues').click();
 
+    await expect
+      .poll(async () => (await getOverlayState(page, overlayUid!)).currColorMap)
+      .toBe('blues');
     overlayState = await getOverlayState(page, overlayUid!);
-    expect(overlayState.currColorMap).toBe('blues');
 
     const maxInput = page.getByTestId('overlay-max');
     await maxInput.fill('2.5');

@@ -45,6 +45,9 @@
     }
   };
   $: Object.keys($overlays).forEach(ensureState);
+  $: viewZoom = $sMapp?.map?.getView()?.getZoom?.() ?? '';
+  $: viewCenter =
+    $sMapp?.map?.getView()?.getCenter?.()?.map((v) => Number.isFinite(v) ? v : null).join(',') ?? '';
   const setVisible = (name: string, c: boolean | null, outline = false) => {
     ensureState(name);
     if (outline) {
@@ -72,8 +75,8 @@
   data-render-complete={$sEvent?.type === 'renderComplete' ? 'true' : 'false'}
   data-feature-min={$sFeatureData?.minmax?.[0] ?? ''}
   data-feature-max={$sFeatureData?.minmax?.[1] ?? ''}
-  data-view-zoom={$sMapp?.map?.getView()?.getZoom?.() ?? ''}
-  data-view-center={$sMapp?.map?.getView()?.getCenter?.()?.join(',') ?? ''}
+  data-view-zoom={viewZoom}
+  data-view-center={viewCenter}
 >
   {#if sample}
     <tbody>
@@ -87,9 +90,9 @@
           data-overlay-group={fg?.group ?? ''}
           data-overlay-colormap={ov.currColorMap ?? ''}
           data-overlay-style={ov.currStyle}
-          data-overlay-visible={String(ov.layer?.getVisible?.() ?? false)}
-          data-overlay-outline-visible={String(ov.outline?.visible ?? false)}
-          data-overlay-opacity={ov.currStyleVariables?.opacity != undefined
+          data-overlay-visible={String(visible[uid])}
+          data-overlay-outline-visible={String(outlinevis[uid])}
+          data-overlay-opacity={visible[uid] && ov.currStyleVariables?.opacity != undefined
             ? `${ov.currStyleVariables.opacity}`
             : ''}
           data-overlay-min={ov.currStyleVariables?.min != undefined

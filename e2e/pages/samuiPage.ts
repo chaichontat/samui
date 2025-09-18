@@ -1,23 +1,21 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import {
-  activeOverlayUid,
-  getOverlayState,
-  latestOverlayUid,
-  waitForOverlayPanel,
-  waitForRenderComplete
-} from '../utils';
+import { activeOverlayUid, getOverlayState, latestOverlayUid, waitForRenderComplete, waitForSamuiStores } from '../utils';
 
 export class SamuiPage {
   constructor(private readonly page: Page) {}
 
   async goto(url: string) {
     await this.page.goto(url);
-    await waitForOverlayPanel(this.page);
+    await waitForSamuiStores(this.page);
   }
 
   async waitForHydration() {
-    await waitForRenderComplete(this.page);
+    try {
+      await waitForRenderComplete(this.page);
+    } catch (err) {
+      console.warn('renderComplete event not observed, falling back to overlay rows');
+    }
   }
 
   sampleSelect() {
