@@ -42,6 +42,7 @@
         const toVerify = JSON.parse(ls) as CompCtrl;
         if (toVerify.variables && isEqual(Object.keys(toVerify.variables), image.channels)) {
           imgCtrl = toVerify;
+          return imgCtrl;
         }
       }
 
@@ -52,13 +53,14 @@
       const repeated = new Array(Math.ceil(nColorRatio) * colors.length).fill(colors).flat();
       const logHalf = Math.sqrt(half);
       for (const [chan, color] of zip(image.channels, repeated)) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, logHalf] };
+        if (!chan || !color) continue;
+        bandinfo[chan] = { enabled: false, color, minmax: [0, logHalf] };
       }
 
       if (Object.keys(image.defaultChannels).length > 0) {
         for (const [c, b] of Object.entries(image.defaultChannels)) {
-          if (b) bandinfo[b] = { enabled: true, color: c, minmax: [0, logHalf] };
+          if (!b) continue;
+          bandinfo[b] = { enabled: true, color: c, minmax: [0, logHalf] };
         }
       } else {
         bandinfo[image.channels[0]] = { enabled: true, color: 'red', minmax: [0, logHalf] };
