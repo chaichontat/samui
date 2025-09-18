@@ -1,5 +1,11 @@
 <div title="GitHub" class="">
-  <a target="_blank" href="https://github.com/chaichontat/samui" rel="noopener" class="normal-case">
+  <a
+    target="_blank"
+    href="https://github.com/chaichontat/samui"
+    rel="noopener"
+    class="normal-case"
+    aria-label="Samui GitHub repository"
+  >
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"

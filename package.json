@@ -65,6 +65,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@lucide/svelte": "^0.544.0",
     "@observablehq/plot": "^0.6.14",
     "@tailwindcss/postcss": "^4.1.13",
     "ajv": "^8.13.0",
@@ -72,6 +73,7 @@
     "fast-kde": "^0.2.2",
     "file-saver": "^2.0.5",
     "fzf": "^0.5.2",
+    "highlight.js": "^11.11.1",
     "html-to-image": "^1.11.11",
     "loam": "^1.2.0",
     "lodash-es": "^4.17.21",

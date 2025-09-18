@@ -8,11 +8,12 @@
     sOverlay,
     sSample
   } from '$lib/store';
-
   import type { Sample } from '$src/lib/data/objects/sample';
-  import { classes } from '$src/lib/utils';
-  import { ArrowLongRight, Link, Plus, XMark } from '@steeze-ui/heroicons';
+  import { classes, cn } from '$src/lib/utils';
+  import { Check } from '@lucide/svelte';
+  import { Plus, XMark } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
+  import { Checkbox } from 'bits-ui';
   import { tooltip } from '../utils';
   import OverlayAdjust from './overlayAdjust.svelte';
   import { WebGLSpots, type StyleVars } from './points';
@@ -52,44 +53,56 @@
   }
 </script>
 
-<table class="min-w-[250px] table-fixed" title="Overlay tools">
+<table class="min-w-[250px] table-fixed ml-1 mt-1" title="Overlay tools">
   {#if sample}
     <tbody>
       {#each Object.entries($overlays) as [uid, ov], i}
         {@const fg = $overlaysFeature[uid]}
-        <tr data-testid={`overlay-row-${i}`}>
-          <td>
+        <tr data-testid={`overlay-row-${i}`} data-selected={uid === $sOverlay}>
+          <!-- <td class="size-3">
             <Icon
               src={ArrowLongRight}
               class={classes('svg-icon mr-1', $sOverlay === ov.uid ? '' : 'invisible')}
             />
-          </td>
-          <td class="flex items-center" class:opacity-70={$sOverlay !== ov.uid}>
+          </td> -->
+          <td class="flex items-center gap-x-0.5" class:opacity-60={$sOverlay !== ov.uid}>
             <!-- Outline checkbox -->
-            <input
-              type="checkbox"
-              class="mr-1 cursor-pointer"
-              use:tooltip={{ content: 'Border. Disabled for samples with >100,000 points.' }}
-              on:change={(e) => setVisible(uid, e.currentTarget.checked, true)}
-              data-testid="overlay-toggle-border"
-            />
+            <div class="size-4" use:tooltip={{ content: `${fg?.feature} outline` }}>
+              <Checkbox.Root
+                class="bg-transparent  border-white/70  data-[state=unchecked]:hover:border-dark-40 peer inline-flex size-4 items-center justify-center rounded border"
+                name={`Border outline for ${fg?.feature}`}
+                onCheckedChange={(e) => setVisible(uid, e, true)}
+                data-testid="overlay-toggle-border"
+              >
+                {#snippet children({ checked })}
+                  <div class="text-white/90 inline-flex items-center justify-center">
+                    <Check class={cn('size-4', !checked && 'invisible')} />
+                  </div>
+                {/snippet}
+              </Checkbox.Root>
+            </div>
 
-            <!-- Fill checkbox -->
-            <input
-              type="checkbox"
-              class="cursor-pointer"
-              class:opacity-70={$sOverlay !== ov.uid}
-              checked
-              use:tooltip={{ content: 'Fill' }}
-              on:change={(e) => setVisible(uid, e.currentTarget.checked)}
-              data-testid="overlay-toggle-fill"
-            />
+            <div class="size-4" use:tooltip={{ content: `${fg?.feature} fill` }}>
+              <Checkbox.Root
+                class="bg-transparent border-white/70  data-[state=unchecked] data-[state=unchecked]:hover:border-dark-40 peer inline-flex size-4 items-center justify-center rounded border"
+                name={`Border outline for ${fg?.feature}`}
+                onCheckedChange={(e) => setVisible(uid, e)}
+                data-testid="overlay-toggle-fill"
+              >
+                {#snippet children({ checked })}
+                  <div class="text-white/90 inline-flex items-center justify-center">
+                    <Check class={cn('size-4', !checked && 'invisible')} />
+                  </div>
+                {/snippet}
+              </Checkbox.Root>
+            </div>
             &nbsp;
           </td>
           <!-- Overlay name -->
           <td class:opacity-70={$sOverlay !== ov.uid}>
-            <span
+            <button
               on:click={() => ($sOverlay = uid)}
+              aria-label={`Select ${fg?.feature}`}
               class={classes(
                 'mr-2 max-w-40 cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
                 uid === $annoFeat.annotating?.overlay ? 'text-teal-400' : 'text-white'
@@ -102,9 +115,9 @@
                     }`
                   : 'None'
                 : ''}
-            </span>
+            </button>
           </td>
-          <td class="w-full" />
+          <td class="w-full"></td>
           <td class="flex items-center mr-1">
             <!-- Colormap/scale adjustments -->
             <OverlayAdjust {ov} />
@@ -127,10 +140,10 @@
               data-testid="overlay-opacity"
             />
           </td>
-          <td class="h-4 w-4">
+          <td class="min-w-6">
             {#if i !== 0}
               <button
-                class="flex cursor-pointer items-center pl-1 opacity-80 transition-opacity hover:opacity-100"
+                class="flex cursor-pointer items-center opacity-70 ml-1 transition-opacity hover:opacity-100"
                 title={`Remove ${fg?.feature}`}
                 on:click={() => {
                   if ($annoFeat.annotating?.overlay === ov.uid) {
@@ -144,7 +157,7 @@
                   sEvent.set({ type: 'featureUpdated' });
                 }}
               >
-                <Icon src={XMark} class="svg-icon" />
+                <Icon src={XMark} class="svg-icon stroke-[2.5px]" />
               </button>
             {/if}
           </td>

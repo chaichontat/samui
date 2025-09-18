@@ -1,12 +1,13 @@
 <script lang="ts">
   import { sId, sMapp, sSample, userState } from '$lib/store';
   import type { Mapp } from '$lib/ui/mapp';
+  import GlassIsland from '$src/lib/components/glass/GlassIsland.svelte';
   import { Camera, EyeSlash } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { saveAs } from 'file-saver';
   import { toBlob } from 'html-to-image';
+  import { scale } from 'svelte/transition';
   import { tooltip } from '../utils';
-  // import OverlayTool from './overlayTool.svelte'; // Dynamic import
 
   export let haveFeatures: boolean;
   let map: Mapp;
@@ -37,31 +38,49 @@
   }
 </script>
 
-<section title="Map Tools" class="donotsave absolute right-3 top-2 z-20 flex gap-x-4">
+<section title="Map Tools" class="donotsave absolute right-9 top-2 z-20 flex gap-x-4">
   <!-- Overlay selector -->
   {#if showImgControl && haveFeatures}
     {#await import('./overlayTool.svelte') then overlayTool}
-      <div
-        class="inline-flex h-min flex-col gap-y-1 rounded-lg bg-neutral-800/80 p-2 px-3 text-sm font-medium backdrop-blur-lg dark:text-white/90"
-      >
-        <svelte:component this={overlayTool.default} {map} />
+      <div transition:scale={{ duration: 200, start: 0.85 }} class="inline-flex">
+        <GlassIsland
+          class="relative group overflow-hidden px-2   py-1.5 text-sm font-medium text-white/90"
+          baseWidth={280}
+          baseHeight={160}
+          expandWidthRatio={1.18}
+          expandHeightRatio={1.05}
+          expanded={true}
+          highlight={true}
+          interactiveTilt={false}
+          glassBorderWidth={0}
+        >
+          <div class="relative flex flex-col gap-y-1">
+            <svelte:component this={overlayTool.default} {map} />
+          </div>
+        </GlassIsland>
       </div>
     {/await}
   {/if}
-
-  <div class="-mt-1 mr-2 flex flex-col gap-y-4 md:mt-[47px]">
-    <!-- Show/hide -->
-    <button
-      class="z-20"
-      on:click={() => ($userState.showImgControl = !showImgControl)}
-      use:tooltip={{ content: 'Show/hide' }}
-    >
-      <Icon src={EyeSlash} class="svg-icon h-6 w-6" />
-    </button>
-
-    <!-- Screenshot -->
-    <button class="z-20" use:tooltip={{ content: 'Screenshot' }} on:click={screenshot}>
-      <Icon src={Camera} class="svg-icon h-6 w-6" />
-    </button>
-  </div>
 </section>
+
+<div class="mr-2 flex flex-col gap-y-4 md:gap-y-5 mt-1 md:mt-[56px] donotsave">
+  <!-- Show/hide -->
+  <button
+    class="z-20"
+    on:click={() => ($userState.showImgControl = !showImgControl)}
+    use:tooltip={{ content: 'Show/hide' }}
+    aria-label="Show/hide image controls"
+  >
+    <Icon src={EyeSlash} class="svg-icon size-5" />
+  </button>
+
+  <!-- Screenshot -->
+  <button
+    class="z-20"
+    use:tooltip={{ content: 'Screenshot' }}
+    on:click={screenshot}
+    aria-label="Screenshot"
+  >
+    <Icon src={Camera} class="svg-icon size-5" />
+  </button>
+</div>
