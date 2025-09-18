@@ -4,6 +4,7 @@
     overlays,
     overlaysFeature,
     sEvent,
+    sFeatureData,
     sMapp,
     sOverlay,
     sSample
@@ -88,15 +89,15 @@
           data-overlay-style={ov.currStyle}
           data-overlay-visible={String(ov.layer?.getVisible?.() ?? false)}
           data-overlay-outline-visible={String(ov.outline?.visible ?? false)}
-          data-overlay-opacity={
-            ov.currStyleVariables?.opacity != undefined ? `${ov.currStyleVariables.opacity}` : ''
-          }
-          data-overlay-min={
-            ov.currStyleVariables?.min != undefined ? `${ov.currStyleVariables.min}` : ''
-          }
-          data-overlay-max={
-            ov.currStyleVariables?.max != undefined ? `${ov.currStyleVariables.max}` : ''
-          }
+          data-overlay-opacity={ov.currStyleVariables?.opacity != undefined
+            ? `${ov.currStyleVariables.opacity}`
+            : ''}
+          data-overlay-min={ov.currStyleVariables?.min != undefined
+            ? `${ov.currStyleVariables.min}`
+            : ''}
+          data-overlay-max={ov.currStyleVariables?.max != undefined
+            ? `${ov.currStyleVariables.max}`
+            : ''}
         >
           <!-- <td class="size-3">
             <Icon

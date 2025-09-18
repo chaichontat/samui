@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { sEvent } from '$lib/store';
   import { handleError } from '$src/lib/utils';
   import { onMount } from 'svelte';
   import '../app.css';
