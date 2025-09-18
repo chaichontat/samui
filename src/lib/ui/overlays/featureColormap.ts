@@ -66,44 +66,35 @@ export function genSpotStyle({
   // Lowest zoom level is 128x the native res of img.
   // Highest zoom level is 1/4x the native res of img.
   // The factor of 64 is 128 and the conversion of diameter to radius.
-  const sizePx = spotSizeMeter / (mPerPx * 64);
-  const ress = [...Array(10).keys()].map((i) => [i, sizePx * 2 ** (i - 1)]).flat();
-  const common = scale
-    ? {
-        symbolType: 'circle',
-        size: ['clamp', ['interpolate', ['exponential', 1.2], ['zoom'], ...ress], 2, 65535]
-      }
-    : {
-        symbolType: 'circle',
-        size: 2
-      };
+  const diameterPx = spotSizeMeter / (mPerPx * 64);
+  const baseRadiusPx = Math.max(diameterPx / 2, 1);
+  const radiusStops = [...Array(10).keys()].map((i) => [i, baseRadiusPx * 2 ** (i - 1)]).flat();
+  const radiusExpression = scale
+    ? ['clamp', ['interpolate', ['exponential', 1.2], ['zoom'], ...radiusStops], 1, 32768]
+    : baseRadiusPx;
 
   if (type === 'quantitative') {
-    // Interpolation step and color level.
     const colors = [...Array(10).keys()].flatMap((i) => [
       genColorInterpolation(i / 10),
       colorMaps[colorMap](0.05 + (i / 10) * 0.95)
     ]);
-    console.log(d3.interpolateTurbo(0.5));
 
     return {
       variables: { opacity: 1, min: 0, max: 1 },
-      symbol: {
-        ...common,
-        color: ['interpolate', ['linear'], ['get', 'value'], ...colors],
-        opacity: ['clamp', ['*', ['var', 'opacity'], ['get', 'opacity']], 0.15, 1] // Floor before can't hover above.
-      }
-    };
-  } else if (type === 'categorical') {
+      'circle-radius': radiusExpression,
+      'circle-fill-color': ['interpolate', ['linear'], ['get', 'value'], ...colors],
+      'circle-opacity': ['clamp', ['*', ['var', 'opacity'], ['get', 'opacity']], 0.15, 1]
+    } satisfies LiteralStyle;
+  }
+
+  if (type === 'categorical') {
     return {
       variables: { opacity: 0.9 },
-      symbol: {
-        ...common,
-        color: ['case', ...genCategoricalColors(), '#ffffff'],
-        opacity: ['clamp', ['var', 'opacity'], 0.15, 1]
-      }
-    };
-  } else {
-    throw new Error('Unknown feature type');
+      'circle-radius': radiusExpression,
+      'circle-fill-color': ['case', ...genCategoricalColors(), '#ffffff'],
+      'circle-opacity': ['clamp', ['var', 'opacity'], 0.15, 1]
+    } satisfies LiteralStyle;
   }
+
+  throw new Error('Unknown feature type');
 }
