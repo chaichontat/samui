@@ -571,18 +571,15 @@ test('range slider start event triggers channel selection', async () => {
   await userEvent.click(toggleButton as HTMLButtonElement);
   expect(latestComposite(background).variables.dapi.enabled).toBe(false);
 
-  // Trigger slider start event - should re-enable and apply color
+  // Trigger a real interaction on the slider shell - should re-enable the channel selection
   if (slider) {
-    const startEvent = new CustomEvent('start', { bubbles: true });
-    slider.dispatchEvent(startEvent);
+    await fireEvent.pointerDown(slider, { pointerType: 'mouse', button: 0 });
+    await fireEvent.mouseDown(slider, { button: 0 });
     await flush();
   }
 
-  // Should set CSS variables for the color
-  const sliderElement = document.querySelector('#slider-dapi') as HTMLElement;
-  expect(sliderElement).toBeTruthy();
-  const styles = window.getComputedStyle(sliderElement);
-  expect(styles.getPropertyValue('--range-handle')).toBe('blue');
+  await expect.poll(() => latestComposite(background).variables.dapi.enabled).toBe(true);
+  await expect.poll(() => latestComposite(background).variables.dapi.color).toBe('blue');
 
   screen.unmount();
 });
