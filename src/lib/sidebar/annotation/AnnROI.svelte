@@ -33,6 +33,7 @@
       'disabled:cursor-auto disabled:bg-neutral-500 hover:disabled:bg-neutral-500 disabled:text-neutral-300'
     )}
     use:tooltip={{ content: 'Export ROIs as JSON' }}
+    data-testid="roi-export"
     on:click={() => {
       toJSON(`rois_${$sSample.name}.json`, {
         ...$sMapp.persistentLayers.rois.dump(),

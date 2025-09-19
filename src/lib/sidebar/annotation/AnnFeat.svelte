@@ -64,6 +64,7 @@
       'disabled:cursor-auto disabled:bg-neutral-500 hover:disabled:bg-neutral-500 disabled:text-neutral-300'
     )}
     use:tooltip={{ content: 'Export annotated points as CSV' }}
+    data-testid="feature-export"
     disabled={$annoFeat.keys.length === 0}
     on:click={out}
   >
