@@ -5,7 +5,7 @@ import type { BandInfo, CompCtrl, ImgCtrl, RGBCtrl } from '$src/lib/ui/backgroun
 import ImgControl from '$src/lib/ui/background/imgControl.svelte';
 import { fireEvent } from '@testing-library/svelte';
 import { userEvent } from '@vitest/browser/context';
-import { beforeEach, expect, test } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
 class BackgroundSpy extends Background {
@@ -408,6 +408,9 @@ test('GlassIsland contracts when collapsed via keyboard toggle', async () => {
   ) as HTMLElement | null;
   if (!island) throw new Error('island not found');
 
+  const clickSpy = vi.fn();
+  island.addEventListener('click', clickSpy);
+
   const mainPanel = ensureGlassMain(island);
 
   await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
@@ -429,6 +432,9 @@ test('GlassIsland re-expands after being reopened', async () => {
     '[data-testid="liquid-glass-island"]'
   ) as HTMLElement | null;
   if (!island) throw new Error('island not found');
+
+  const clickSpy = vi.fn();
+  island.addEventListener('click', clickSpy);
 
   const mainPanel = ensureGlassMain(island);
 
@@ -463,6 +469,9 @@ test('GlassIsland toggles via mouse clicks on the shell', async () => {
   ) as HTMLElement | null;
   if (!island) throw new Error('island not found');
 
+  const clickSpy = vi.fn();
+  island.addEventListener('click', clickSpy);
+
   const mainPanel = ensureGlassMain(island);
 
   await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
@@ -477,6 +486,8 @@ test('GlassIsland toggles via mouse clicks on the shell', async () => {
   };
 
   await clickShell();
+
+  expect(clickSpy).toHaveBeenCalled();
 
   await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('false');
   await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeLessThan(200);
@@ -606,20 +617,14 @@ test('maxNameWidth dynamically adjusts based on button cell widths', async () =>
   screen.unmount();
 });
 
-test('table click stops event propagation', async () => {
+test('table click keeps island expanded', async () => {
   const { screen } = await setupCompositeControl();
 
-  let outerClicked = false;
   let tableClicked = false;
 
   const island = screen.container.querySelector(
     '[data-testid="liquid-glass-island"]'
   ) as HTMLElement;
-
-  // Add click listener to parent
-  island.addEventListener('click', () => {
-    outerClicked = true;
-  });
 
   const table = screen.container.querySelector('table');
   expect(table).toBeTruthy();
@@ -630,13 +635,15 @@ test('table click stops event propagation', async () => {
     // The component should stop propagation
   });
 
+  const initialExpanded = island.getAttribute('data-expanded');
+
   // Click on table
   await userEvent.click(table as HTMLElement);
   await flush();
 
   // Table click should be handled but not propagated to parent
   expect(tableClicked).toBe(true);
-  expect(outerClicked).toBe(false);
+  expect(island.getAttribute('data-expanded')).toBe(initialExpanded);
 
   screen.unmount();
 });

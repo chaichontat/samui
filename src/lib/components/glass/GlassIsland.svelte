@@ -1,78 +1,119 @@
 <script lang="ts">
   import { cn } from '$src/lib/utils';
-  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { spring, tweened } from 'svelte/motion';
 
-  export let expanded = false;
-  export let baseWidth = 220;
-  export let baseHeight = 38;
-  export let expandWidthRatio = 2.2;
-  export let expandHeightRatio = 1;
-  export let reducedMotion: boolean | null = null;
-  export let reduceTransparency: boolean | null = null;
-  export let glassBlur = 24;
-  export let glassTint = 'rgba(20, 24, 32, 0.62)';
-  export let glassBorderTint = 'rgba(255, 255, 255, 0.9)';
-  export let glassBorderWidth = 1;
-  export let glassGlow = 0.3;
-  export let highlight = true;
-  export let interactiveTilt = false;
-  export let settleDuration = 480;
-  export let stagger = 110;
-  let cl = '';
-  export { cl as class };
+  let {
+    expanded = $bindable(false),
+    baseWidth = 220,
+    baseHeight = 38,
+    expandWidthRatio = 2.2,
+    expandHeightRatio = 1,
+    reducedMotion = null,
+    reduceTransparency = null,
+    glassBlur = 24,
+    glassTint = 'rgba(20, 24, 32, 0.62)',
+    glassBorderTint = 'rgba(255, 255, 255, 0.9)',
+    glassBorderWidth = 1,
+    glassGlow = 0.3,
+    highlight = true,
+    settleDuration = 480,
+    stagger = 110,
+    class: cl = '',
+    onPointerIntent,
+    onTransparencyFallback,
+    onReduceMotionFallback,
+    onStateChange,
+    onAnimationPhase,
+    onRequestState,
+    onclick,
+    onkeydown: externalKeydown,
+    children,
+    ...restProps
+  }: {
+    expanded?: boolean;
+    baseWidth?: number;
+    baseHeight?: number;
+    expandWidthRatio?: number;
+    expandHeightRatio?: number;
+    reducedMotion?: boolean | null;
+    reduceTransparency?: boolean | null;
+    glassBlur?: number;
+    glassTint?: string;
+    glassBorderTint?: string;
+    glassBorderWidth?: number;
+    glassGlow?: number;
+    highlight?: boolean;
+    settleDuration?: number;
+    stagger?: number;
+    class?: string;
+    onPointerIntent?: (detail: { type: 'enter' | 'leave' }) => void;
+    onTransparencyFallback?: (detail: { enabled: boolean }) => void;
+    onReduceMotionFallback?: (detail: { enabled: boolean }) => void;
+    onStateChange?: (detail: { expanded: boolean }) => void;
+    onAnimationPhase?: (detail: { phase: 'start' | 'settle'; expanded: boolean }) => void;
+    onRequestState?: (detail: { from: boolean; expanded: boolean }) => void;
+    onclick?: (event: MouseEvent) => void;
+    onkeydown?: (event: KeyboardEvent) => void;
+    children?: () => any;
+    [key: string]: any;
+  } = $props();
 
-  type AnimationPhase = { phase: 'start' | 'settle'; expanded: boolean };
-  type RequestDetail = { from: boolean; expanded: boolean };
   type HeightUpdateOptions = { skipSync?: boolean; hard?: boolean };
-
-  const dispatch = createEventDispatcher<{
-    pointerIntent: { type: 'enter' | 'leave' };
-    transparencyFallback: { enabled: boolean };
-    reduceMotionFallback: { enabled: boolean };
-    stateChange: { expanded: boolean };
-    animationPhase: AnimationPhase;
-    requestState: RequestDetail;
-  }>();
 
   const clampPositive = (value: number, fallback: number) =>
     Number.isFinite(value) && value > 0 ? value : fallback;
-  $: baseWidth = clampPositive(baseWidth, 120);
-  $: baseHeight = clampPositive(baseHeight, 28);
-  $: expandWidthRatio = clampPositive(expandWidthRatio, 1);
-  $: expandHeightRatio = clampPositive(expandHeightRatio, 1);
-  $: glassBlur = Math.max(0, glassBlur);
-  $: glassGlow = Math.min(Math.max(glassGlow, 0), 1);
-  $: settleDuration = Math.max(120, settleDuration);
-  $: stagger = Math.max(0, stagger);
 
-  const widthSpring = spring(baseWidth, { stiffness: 0.16, damping: 0.5 });
-  const heightSpring = spring(baseHeight, { stiffness: 0.14, damping: 0.48 });
+  $effect(() => {
+    baseWidth = clampPositive(baseWidth, 120);
+    baseHeight = clampPositive(baseHeight, 28);
+    expandWidthRatio = clampPositive(expandWidthRatio, 1);
+    expandHeightRatio = clampPositive(expandHeightRatio, 1);
+    glassBlur = Math.max(0, glassBlur);
+    glassGlow = Math.min(Math.max(glassGlow, 0), 1);
+    settleDuration = Math.max(120, settleDuration);
+    stagger = Math.max(0, stagger);
+  });
 
-  const widthTween = tweened(baseWidth, { duration: 220, easing: cubicOut });
-  const heightTween = tweened(baseHeight, { duration: 220, easing: cubicOut });
+  const computeNormalized = () => ({
+    baseWidth: clampPositive(baseWidth, 120),
+    baseHeight: clampPositive(baseHeight, 28),
+    expandWidthRatio: clampPositive(expandWidthRatio, 1),
+    expandHeightRatio: clampPositive(expandHeightRatio, 1),
+    glassBlur: Math.max(0, glassBlur),
+    glassGlow: Math.min(Math.max(glassGlow, 0), 1),
+    settleDuration: Math.max(120, settleDuration),
+    stagger: Math.max(0, stagger)
+  });
+
+  const initialNormalized = computeNormalized();
+  const normalized = $derived.by(computeNormalized);
+
+  const widthSpring = spring(initialNormalized.baseWidth, { stiffness: 0.16, damping: 0.5 });
+  const heightSpring = spring(initialNormalized.baseHeight, { stiffness: 0.14, damping: 0.48 });
+
+  const widthTween = tweened(initialNormalized.baseWidth, { duration: 220, easing: cubicOut });
+  const heightTween = tweened(initialNormalized.baseHeight, { duration: 220, easing: cubicOut });
 
   const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-  let prefersReducedMotion = reducedMotion ?? false;
+  let prefersReducedMotion = $state(reducedMotion ?? false);
   let reduceMotionMedia: MediaQueryList | null = null;
   let reduceMotionListener: ((event: MediaQueryListEvent) => void) | null = null;
 
   let reduceTransparencyMedia: MediaQueryList | null = null;
   let reduceTransparencyListener: ((event: MediaQueryListEvent) => void) | null = null;
-  let transparencyReduced = reduceTransparency ?? false;
+  let transparencyReduced = $state(reduceTransparency ?? false);
 
-  let shell: HTMLDivElement | null = null;
-  let main: HTMLDivElement | null = null;
-  let tiltX = 0;
-  let tiltY = 0;
-  let glowX = 0;
-  let glowY = 0;
-  let mounted = false;
-  let heightInitialized = false;
-  let isOrchestrating = false;
-  const heightTargets = new Map<boolean, number>();
+  let shell: HTMLDivElement | null = $state(null);
+  let main: HTMLDivElement | null = $state(null);
+  let glowX = $state(0);
+  let glowY = $state(0);
+  let mounted = $state(false);
+  let heightInitialized = $state(false);
+  let isOrchestrating = $state(false);
+  const heightTargets = $state(new Map<boolean, number>());
   const HEIGHT_EPSILON = 0.5;
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -80,14 +121,14 @@
   function setTransparencyPreference(value: boolean) {
     if (transparencyReduced !== value) {
       transparencyReduced = value;
-      dispatch('transparencyFallback', { enabled: transparencyReduced });
+      onTransparencyFallback?.({ enabled: transparencyReduced });
     }
   }
 
   function setMotionPreference(value: boolean) {
     if (prefersReducedMotion !== value) {
       prefersReducedMotion = value;
-      dispatch('reduceMotionFallback', { enabled: prefersReducedMotion });
+      onReduceMotionFallback?.({ enabled: prefersReducedMotion });
     }
   }
 
@@ -127,36 +168,59 @@
     mounted = false;
   });
 
-  $: if (reduceTransparency !== null) {
-    setTransparencyPreference(reduceTransparency);
-  }
+  $effect(() => {
+    if (reduceTransparency !== null) {
+      setTransparencyPreference(reduceTransparency);
+    }
+  });
 
-  $: if (reducedMotion !== null) {
-    setMotionPreference(reducedMotion);
-  }
+  $effect(() => {
+    if (reducedMotion !== null) {
+      setMotionPreference(reducedMotion);
+    }
+  });
 
   type Targets = { width: number; height: number };
   const computeTargets = (targetExpanded: boolean): Targets => {
-    const fallbackHeight = targetExpanded ? baseHeight * expandHeightRatio : baseHeight;
+    const {
+      baseWidth: normalizedBaseWidth,
+      baseHeight: normalizedBaseHeight,
+      expandWidthRatio: normalizedWidthRatio,
+      expandHeightRatio: normalizedHeightRatio
+    } = normalized;
+
+    const fallbackHeight = targetExpanded
+      ? normalizedBaseHeight * normalizedHeightRatio
+      : normalizedBaseHeight;
     const measuredHeight = heightTargets.get(targetExpanded) ?? fallbackHeight;
     if (targetExpanded) {
-      return { width: baseWidth * expandWidthRatio, height: measuredHeight };
+      return {
+        width: normalizedBaseWidth * normalizedWidthRatio,
+        height: measuredHeight
+      };
     }
-    return { width: baseWidth, height: measuredHeight };
+    return { width: normalizedBaseWidth, height: measuredHeight };
   };
 
-  const initialTargets = computeTargets(expanded);
-  widthSpring.set(initialTargets.width, { hard: true });
-  heightSpring.set(initialTargets.height, { hard: true });
-  widthTween.set(initialTargets.width);
-  heightTween.set(initialTargets.height);
+  // Initialize springs/tweens with initial computed values
+  $effect(() => {
+    if (baseSignature === '') {
+      // Initial setup
+      baseSignature = `${normalized.baseWidth}:${normalized.baseHeight}:${normalized.expandWidthRatio}:${normalized.expandHeightRatio}`;
+      const initialTargets = computeTargets(expanded);
+      widthSpring.set(initialTargets.width, { hard: true });
+      heightSpring.set(initialTargets.height, { hard: true });
+      widthTween.set(initialTargets.width);
+      heightTween.set(initialTargets.height);
+    }
+  });
 
-  let animationTicket = 0;
-  let previousExpanded = expanded;
-  let baseSignature = `${baseWidth}:${baseHeight}:${expandWidthRatio}:${expandHeightRatio}`;
+  let animationTicket = $state(0);
+  let previousExpanded = $state(expanded);
+  let baseSignature = $state('');
 
-  $: {
-    const nextSignature = `${baseWidth}:${baseHeight}:${expandWidthRatio}:${expandHeightRatio}`;
+  $effect(() => {
+    const nextSignature = `${normalized.baseWidth}:${normalized.baseHeight}:${normalized.expandWidthRatio}:${normalized.expandHeightRatio}`;
     if (nextSignature !== baseSignature && expanded === previousExpanded) {
       scheduleHeightRefresh(expanded, { hard: true });
       const nextTargets = computeTargets(expanded);
@@ -164,17 +228,16 @@
         widthTween.set(nextTargets.width);
         heightTween.set(nextTargets.height);
       } else {
-        console.log('forcing size update');
         widthSpring.set(nextTargets.width, { hard: true });
         heightSpring.set(nextTargets.height, { hard: true });
       }
       baseSignature = nextSignature;
     }
-  }
+  });
 
   async function orchestrateTransition(next: boolean, prev: boolean) {
     const ticket = ++animationTicket;
-    dispatch('animationPhase', { phase: 'start', expanded: next });
+    onAnimationPhase?.({ phase: 'start', expanded: next });
 
     isOrchestrating = true;
     if (mounted) {
@@ -190,7 +253,7 @@
     if (prefersReducedMotion) {
       widthTween.set(targets.width);
       heightTween.set(targets.height);
-      dispatch('animationPhase', { phase: 'settle', expanded: next });
+      onAnimationPhase?.({ phase: 'settle', expanded: next });
       isOrchestrating = false;
       return;
     }
@@ -202,13 +265,13 @@
       if (next && !prev) {
         widthStore.set(targets.width);
         if (ticket !== animationTicket) return;
-        await wait(stagger);
+        await wait(normalized.stagger);
         if (ticket !== animationTicket) return;
         heightStore.set(targets.height);
       } else if (!next && prev) {
         heightStore.set(targets.height);
         if (ticket !== animationTicket) return;
-        await wait(stagger - 20);
+        await wait(normalized.stagger - 20);
         if (ticket !== animationTicket) return;
         widthStore.set(targets.width);
       } else {
@@ -228,17 +291,17 @@
       let heightOvershoot = 0;
 
       if (next) {
-        widthOvershoot = 0.02;
-        heightOvershoot = 0.04;
+        widthOvershoot = 0.015;
+        heightOvershoot = 0.015;
       } else if (!next && prev) {
-        widthOvershoot = -0.02;
+        widthOvershoot = -0.03;
         heightOvershoot = -0.03;
       }
 
       if (widthOvershoot !== 0) {
         widthStore.set(targets.width * (1 + widthOvershoot));
         if (ticket !== animationTicket) return;
-        await wait(95);
+        await wait(!next && prev ? 200 : 100);
         if (ticket !== animationTicket) return;
         widthStore.set(targets.width);
       }
@@ -246,45 +309,46 @@
       if (heightOvershoot !== 0) {
         heightStore.set(targets.height * (1 + heightOvershoot));
         if (ticket !== animationTicket) return;
-        await wait(95);
+        await wait(200);
         if (ticket !== animationTicket) return;
         heightStore.set(targets.height);
       }
     };
 
     await bounce();
-    dispatch('animationPhase', { phase: 'settle', expanded: next });
-    await wait(settleDuration);
+    onAnimationPhase?.({ phase: 'settle', expanded: next });
+    await wait(normalized.settleDuration);
     isOrchestrating = false;
   }
 
-  $: if (expanded !== previousExpanded) {
-    orchestrateTransition(expanded, previousExpanded);
-    dispatch('stateChange', { expanded });
-    previousExpanded = expanded;
-  }
+  $effect(() => {
+    if (expanded !== previousExpanded) {
+      orchestrateTransition(expanded, previousExpanded);
+      onStateChange?.({ expanded });
+      previousExpanded = expanded;
+    }
+  });
 
-  $: {
+  $effect(() => {
     const targets = computeTargets(expanded);
     if (prefersReducedMotion) {
       widthTween.set(targets.width);
       heightTween.set(targets.height);
     }
-  }
+  });
 
-  $: widthValue = prefersReducedMotion ? $widthTween : $widthSpring;
-  $: heightValue = prefersReducedMotion ? $heightTween : $heightSpring;
-  $: radiusValue = 12;
+  const widthValue = $derived(prefersReducedMotion ? $widthTween : $widthSpring);
+  const radiusValue = $derived(12);
   // heightInitialized ? `height:${heightValue}px;` :
-  $: mainStyle = `width:${widthValue}px;${'height:auto;'}border-radius:${radiusValue}px;`;
-
-  function handleSlotChange() {
-    scheduleHeightRefresh(expanded);
-  }
+  const mainStyle = $derived(
+    `width:${widthValue}px;${'height:auto;'}border-radius:${radiusValue}px;`
+  );
 
   function measureNaturalHeight(state: boolean): number | null {
     if (!main) return null;
-    const targetWidth = state ? baseWidth * expandWidthRatio : baseWidth;
+    const targetWidth = state
+      ? normalized.baseWidth * normalized.expandWidthRatio
+      : normalized.baseWidth;
     const previousHeight = main.style.height;
     const previousWidth = main.style.width;
     main.style.width = `${targetWidth}px`;
@@ -332,38 +396,26 @@
     void refreshHeightForState(state, options);
   }
 
-  function resetTilt() {
-    tiltX = 0;
-    tiltY = 0;
-    glowX = 0;
-    glowY = 0;
-  }
-
   function handlePointerEnter() {
-    dispatch('pointerIntent', { type: 'enter' });
+    onPointerIntent?.({ type: 'enter' });
   }
 
   function handlePointerLeave() {
-    dispatch('pointerIntent', { type: 'leave' });
-    resetTilt();
+    onPointerIntent?.({ type: 'leave' });
   }
 
-  function handlePointerMove(event: PointerEvent) {
-    if (!interactiveTilt || transparencyReduced || prefersReducedMotion || !shell) return;
-    const rect = shell.getBoundingClientRect();
-    const nx = clamp((event.clientX - rect.left) / rect.width, 0, 1);
-    const ny = clamp((event.clientY - rect.top) / rect.height, 0, 1);
-    const tiltRange = 5.5;
-    tiltX = (nx - 0.5) * tiltRange;
-    tiltY = -(ny - 0.5) * tiltRange;
-    const glowRange = 8;
-    glowX = (nx - 0.5) * glowRange;
-    glowY = (ny - 0.5) * glowRange;
-  }
+  const shouldToggle = (event?: Event) => {
+    if (!event) return true;
+    const target = event.target as HTMLElement | null;
+    if (!target) return true;
+    return !target.closest('[data-lgis-stop-toggle]');
+  };
 
-  function handleClick() {
+  function handleClick(event?: MouseEvent) {
+    if (!shouldToggle(event)) return;
     const next = !expanded;
-    dispatch('requestState', { from: expanded, expanded: next });
+    expanded = next;
+    onRequestState?.({ from: !next, expanded: next });
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -372,11 +424,14 @@
       handleClick();
     }
     if (event.key === 'Escape') {
-      dispatch('requestState', { from: expanded, expanded: false });
+      expanded = false;
+      onRequestState?.({ from: true, expanded: false });
     }
   }
 
-  $: cssVars = `--lgis-blur:${glassBlur}px;--lgis-tint:${glassTint};--lgis-border:${glassBorderTint};--lgis-border-width:${glassBorderWidth}px;--lgis-radius:${radiusValue}px;--lgis-glow:${glassGlow};--lgis-tilt-x:${tiltX.toFixed(3)}deg;--lgis-tilt-y:${tiltY.toFixed(3)}deg;--lgis-glow-x:${glowX.toFixed(2)}px;--lgis-glow-y:${glowY.toFixed(2)}px;`;
+  const cssVars = $derived(
+    `--lgis-blur:${normalized.glassBlur}px;--lgis-tint:${glassTint};--lgis-border:${glassBorderTint};--lgis-border-width:${glassBorderWidth}px;--lgis-radius:${radiusValue}px;--lgis-glow:${normalized.glassGlow};--lgis-glow-x:${glowX.toFixed(2)}px;--lgis-glow-y:${glowY.toFixed(2)}px;`
+  );
 </script>
 
 <div
@@ -384,26 +439,30 @@
   class="lgis-shell"
   class:reduce-transparency={transparencyReduced}
   class:no-highlight={!highlight || transparencyReduced}
-  class:no-tilt={!interactiveTilt || transparencyReduced || prefersReducedMotion}
   class:reduced-motion={prefersReducedMotion}
   data-expanded={expanded}
   style={cssVars}
-  on:pointerenter={handlePointerEnter}
-  on:pointerleave={handlePointerLeave}
-  on:pointermove={handlePointerMove}
-  on:click={handleClick}
-  on:keydown={handleKeydown}
+  onpointerenter={handlePointerEnter}
+  onpointerleave={handlePointerLeave}
+  onclick={(event) => {
+    handleClick(event);
+    onclick?.(event);
+  }}
+  onkeydown={(event) => {
+    handleKeydown(event);
+    externalKeydown?.(event);
+  }}
   role="button"
   tabindex="0"
   aria-pressed={expanded}
   aria-expanded={expanded}
   data-testid="liquid-glass-island"
-  {...$$restProps}
+  {...restProps}
 >
   <div bind:this={main} class={cn('lgis-main', cl)} style={mainStyle}>
     <div class="lgis-motion">
       <span class="lgis-highlight" aria-hidden="true"></span>
-      <slot />
+      {@render children?.()}
     </div>
   </div>
 </div>
@@ -448,18 +507,6 @@
     box-shadow:
       0 20px 42px rgba(10, 14, 25, calc(0.5 * var(--lgis-glow))),
       0 0 36px rgba(140, 190, 255, calc(0.55 * var(--lgis-glow)));
-  }
-
-  .lgis-motion {
-    position: relative;
-    display: grid;
-    place-items: stretch;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transform: perspective(800px) rotateX(var(--lgis-tilt-y, 0deg))
-      rotateY(var(--lgis-tilt-x, 0deg));
-    will-change: transform;
   }
 
   .lgis-main::before {
@@ -527,12 +574,6 @@
     animation: none;
   }
 
-  .lgis-shell.no-tilt .lgis-motion,
-  .lgis-shell.no-tilt:hover .lgis-motion,
-  .lgis-shell.no-tilt:focus-visible .lgis-motion {
-    transform: none;
-  }
-
   .lgis-shell[data-expanded='true'] .lgis-main {
     animation: lgis-expand-bounce 440ms cubic-bezier(0.5, 1, 0.75, 1.25) forwards;
   }
@@ -581,10 +622,7 @@
       transform: scaleX(1) scaleY(1);
     }
     52% {
-      transform: scaleX(1.01) scaleY(1);
-    }
-    74% {
-      transform: scaleX(1) scaleY(1.01);
+      transform: scaleX(1.01) scaleY(0.99);
     }
     100% {
       transform: scaleX(1) scaleY(1);
@@ -595,11 +633,8 @@
     0% {
       transform: scaleX(1) scaleY(1);
     }
-    60% {
-      transform: scaleX(0.99) scaleY(1.01);
-    }
     82% {
-      transform: scaleX(1.02) scaleY(1);
+      transform: scaleX(0.99) scaleY(1.01);
     }
     100% {
       transform: scaleX(1) scaleY(1);
