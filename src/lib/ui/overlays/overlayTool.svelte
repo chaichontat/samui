@@ -47,7 +47,11 @@
   $: Object.keys($overlays).forEach(ensureState);
   $: viewZoom = $sMapp?.map?.getView()?.getZoom?.() ?? '';
   $: viewCenter =
-    $sMapp?.map?.getView()?.getCenter?.()?.map((v) => Number.isFinite(v) ? v : null).join(',') ?? '';
+    $sMapp?.map
+      ?.getView()
+      ?.getCenter?.()
+      ?.map((v) => (Number.isFinite(v) ? v : null))
+      .join(',') ?? '';
   const setVisible = (name: string, c: boolean | null, outline = false) => {
     ensureState(name);
     if (outline) {
@@ -80,7 +84,7 @@
 >
   {#if sample}
     <tbody>
-      {#each Object.entries($overlays) as [uid, ov], i}
+      {#each Object.entries($overlays) as [uid, ov], i (uid)}
         {@const fg = $overlaysFeature[uid]}
         <tr
           data-testid={`overlay-row-${i}`}
@@ -241,14 +245,17 @@
 
 <div class="flex w-full justify-center border-t border-t-white/30">
   <!-- <FileInput accept=".csv" on:import={addOverlay}> -->
-  <div
-    class="mt-1.5 flex cursor-pointer items-center transition-opacity hover:font-semibold hover:text-white"
-    on:click={addOverlay}
+  <button
+    class="mt-1.5 flex cursor-pointer w-full items-center justify-center transition-opacity hover:font-semibold hover:text-white"
+    on:click|stopPropagation={addOverlay}
     data-testid="overlay-add-layer"
   >
-    <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
-    <div class="font-normal">Add Layer</div>
-  </div>
+    <div class="flex items-center">
+      <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
+      <div class="font-normal">Add Layer</div>
+      <div></div>
+    </div>
+  </button>
   <!-- </FileInput> -->
 </div>
 
