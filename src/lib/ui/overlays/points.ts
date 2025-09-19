@@ -11,9 +11,10 @@ import { handleError, rand } from '$src/lib/utils';
 import { isEqual, throttle } from 'lodash-es';
 import { View } from 'ol';
 import VectorLayer from 'ol/layer/Vector.js';
-import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
+import WebGLVectorLayer from 'ol/layer/WebGLVector.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style } from 'ol/style.js';
+import type { StyleVariables } from 'ol/style/flat';
 import { get } from 'svelte/store';
 import { MapComponent } from '../definitions';
 import type { Mapp } from '../mapp';
@@ -21,7 +22,7 @@ import { colorMaps, genSpotStyle } from './featureColormap';
 
 export type StyleVars = { opacity?: number; min?: number; max?: number };
 
-export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point>>> {
+export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point>>> {
   outline: CanvasSpots;
   _currStyle: 'categorical' | 'quantitative';
   uid: string;
@@ -33,20 +34,25 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   currLegend?: (string | number)[];
   currUnit?: string;
   currColorMap: keyof typeof colorMaps = 'turbo';
-  currStyleVariables = { opacity: 1, min: 0, max: 0 };
+  currStyleVariables: StyleVariables = {};
+  userStyleOverrides: StyleVariables = {};
   z: number;
 
   // WebGLSpots only gets created after mount.
   constructor(map: Mapp) {
-    super(
-      map,
-      genSpotStyle({ type: 'categorical', spotSizeMeter: 2e-6, mPerPx: map.mPerPx ?? 2e-6 })
-    );
+    const init = genSpotStyle({
+      type: 'categorical',
+      spotSizeMeter: 2e-6,
+      mPerPx: map.mPerPx ?? 2e-6
+    });
+    super(map, init.style, init.variables);
     this.uid = rand();
     this._currStyle = 'categorical';
     this.outline = new CanvasSpots(this.map);
     this.outline.mount();
     this.outline.visible = false;
+    this.currStyleVariables = { ...init.variables };
+    this.userStyleOverrides = {};
   }
 
   get currStyle() {
@@ -66,14 +72,15 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
     // If image is loaded, view is based on that of image, which means zoom level
     // is tied to the mPerPx of the image.
     const mPerPx = this.map.mPerPx ?? this.coords.mPerPx;
-    this.style = genSpotStyle({
+    const { style: nextStyle, variables } = genSpotStyle({
       type: style,
       spotSizeMeter: this.coords.size,
       mPerPx,
       colorMap,
       scale: true
     });
-
+    this.style = nextStyle;
+    this.currStyleVariables = { ...variables, ...this.userStyleOverrides };
     this._currStyle = style;
     this.currColorMap = colorMap;
     this.currPx = this.coords.sizePx;
@@ -148,21 +155,21 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
 
   async _rebuildLayer() {
     await this.map.promise;
-    const newLayer = new WebGLPointsLayer({
+    if (this.layer) {
+      this.layer.setStyle(this.style);
+      this.layer.updateStyleVariables(this.currStyleVariables);
+      this.layer.changed();
+      return;
+    }
+
+    const newLayer = new WebGLVectorLayer({
       source: this.source as VectorSource<Point>,
       style: this.style,
+      variables: this.currStyleVariables,
       zIndex: 10
     });
 
-    const prev = this.layer;
-    if (prev) {
-      const idx = this.map.map!.getLayers().getArray().indexOf(prev);
-      this.map.map!.getLayers().insertAt(idx, newLayer);
-      this.map.map!.removeLayer(prev);
-      prev.dispose();
-    } else {
-      this.map.map!.addLayer(newLayer);
-    }
+    this.map.map!.addLayer(newLayer);
     this.layer = newLayer;
     console.debug(`Overlay ${this.uid} rebuilt.`);
   }
@@ -296,6 +303,7 @@ export class WebGLSpots extends MapComponent<WebGLPointsLayer<VectorSource<Point
   updateStyleVariables = throttle((opt: { opacity?: number; min?: number; max?: number }) => {
     this.layer?.updateStyleVariables(opt);
     this.currStyleVariables = { ...this.currStyleVariables, ...opt };
+    this.userStyleOverrides = { ...this.userStyleOverrides, ...opt };
     if ('min' in opt || 'max' in opt) sEvent.set({ type: 'overlayAdjusted' });
   }, 50);
 }

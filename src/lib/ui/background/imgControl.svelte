@@ -1,140 +1,152 @@
 <script lang="ts">
   import { sEvent } from '$lib/store';
-  import { classes, cn } from '$lib/utils';
   import GlassIsland from '$src/lib/components/glass/GlassIsland.svelte';
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
-    bgColors,
-    colors,
     type BandInfo,
     type CompCtrl,
-    type ImgCtrl
+    type ImgCtrl,
+    type RGBCtrl
   } from '$src/lib/ui/background/imgColormap';
+  import {
+    buildCompositeController,
+    buildRgbController,
+    cloneController,
+    selectChannelColor
+  } from '$src/lib/ui/background/imgControlState';
   import { Tooltip } from 'bits-ui';
-  import { isEqual, zip } from 'lodash-es';
   import { onMount } from 'svelte';
-  import RangeSlider from 'svelte-range-slider-pips';
   import { fly } from 'svelte/transition';
+  import CompositeChannelTable from './CompositeChannelTable.svelte';
   import type { Background } from './imgBackground';
 
-  export let background: Background;
-  export let small = false;
-
-  let table: HTMLDivElement;
-  let cell: HTMLTableCellElement;
-
-  let imgCtrl: ImgCtrl | undefined;
-  let image: ImgData | undefined;
-  let expanded = false;
-
-  const bandinfo: Record<string, BandInfo> = {};
-
-  // imgCtrl is a global variable.
-  function initialSet(): ImgCtrl | undefined {
-    image = background.image;
-    if (!image) return undefined;
-
-    if (image.channels === 'rgb') {
-      imgCtrl = { type: 'rgb', Exposure: 0, Contrast: 0, Saturation: 0 };
-    } else if (Array.isArray(image.channels)) {
-      const ls = localStorage.getItem('imgCtrl');
-      if (ls) {
-        const toVerify = JSON.parse(ls) as CompCtrl;
-        if (toVerify.variables && isEqual(Object.keys(toVerify.variables), image.channels)) {
-          imgCtrl = toVerify;
-        }
-      }
-
-      const half = Math.round(image.maxVal / 2);
-
-      const nColorRatio = image.channels.length / colors.length;
-      // Repeat colors to match the number of channels
-      const repeated = new Array(Math.ceil(nColorRatio) * colors.length).fill(colors).flat();
-      const logHalf = Math.sqrt(half);
-      for (const [chan, color] of zip(image.channels, repeated)) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        bandinfo[chan!] = { enabled: false, color: color!, minmax: [0, logHalf] };
-      }
-
-      if (Object.keys(image.defaultChannels).length > 0) {
-        for (const [c, b] of Object.entries(image.defaultChannels)) {
-          if (b) bandinfo[b] = { enabled: true, color: c, minmax: [0, logHalf] };
-        }
-      } else {
-        bandinfo[image.channels[0]] = { enabled: true, color: 'red', minmax: [0, logHalf] };
-        bandinfo[image.channels[1]] = { enabled: true, color: 'green', minmax: [0, logHalf] };
-        bandinfo[image.channels[2]] = { enabled: true, color: 'blue', minmax: [0, logHalf] };
-      }
-
-      imgCtrl = {
-        type: 'composite',
-        variables: bandinfo
-      };
-    } else {
-      throw new Error('Invalid channels');
-    }
-  }
-
-  function handleClick(name: string, color: BandInfo['color'] | undefined, alternate = false) {
-    if (!imgCtrl) return;
-    if (imgCtrl.type === 'composite' && color) {
-      (document.querySelector(`#slider-${name}`) as HTMLElement | null)?.style.setProperty(
-        '--range-handle',
-        color
-      );
-      (document.querySelector(`#slider-${name}`) as HTMLElement | null)?.style.setProperty(
-        '--range-handle-focus',
-        color
-      );
-      const v = imgCtrl.variables[name];
-      if (v.enabled && v.color === color && alternate) {
-        imgCtrl.variables[name].enabled = false;
-      } else {
-        const dupe = Object.values(imgCtrl.variables).find((v) => v.color === color && v.enabled);
-        if (dupe) dupe.enabled = false;
-        imgCtrl.variables[name].enabled = true;
-        imgCtrl.variables[name].color = color;
-      }
-    }
-  }
-
-  $: if ($sEvent?.type === 'sampleUpdated') initialSet();
-  $: if (imgCtrl) s();
-  const s = () => background?.updateStyle(imgCtrl!);
+  let {
+    background,
+    small = false
+  }: {
+    background: Background;
+    small?: boolean;
+  } = $props();
 
   const COLLAPSE_DELAY_MS = 3000;
-  let collapseTimer: ReturnType<typeof setTimeout> | null = null;
-  let collapseInitiated = false;
-  let mounted = false;
 
-  const clearCollapseTimer = () => {
+  let image = $state<ImgData | undefined>(undefined);
+  let controller = $state<ImgCtrl | undefined>(undefined);
+  let expanded = $state(false);
+  let maxNameWidth = $state(80);
+
+  let compositeController = $state<CompCtrl | undefined>(undefined);
+  let rgbController = $state<RGBCtrl | undefined>(undefined);
+
+  let mounted = false;
+  let mountTimestamp = 0;
+  let collapseTimer: ReturnType<typeof setTimeout> | null = null;
+  let collapseInitiated = $state(false);
+
+  function initialiseController(): void {
+    const nextImage = background.image;
+    image = nextImage;
+
+    if (!nextImage) {
+      controller = undefined;
+      return;
+    }
+
+    if (nextImage.channels === 'rgb') {
+      controller = buildRgbController();
+    } else if (Array.isArray(nextImage.channels)) {
+      controller = buildCompositeController(nextImage);
+    } else {
+      throw new Error('Invalid channel configuration');
+    }
+
+    collapseInitiated = false;
+  }
+
+  const clearCollapseTimer = (resetInitiated = true) => {
     if (collapseTimer) {
       clearTimeout(collapseTimer);
       collapseTimer = null;
+    }
+    if (resetInitiated) {
+      collapseInitiated = false;
     }
   };
 
   const scheduleCollapse = () => {
     if (!mounted || collapseInitiated) return;
 
+    clearCollapseTimer(false);
     collapseInitiated = true;
-    clearCollapseTimer();
     collapseTimer = setTimeout(() => {
       expanded = false;
       collapseTimer = null;
+      collapseInitiated = false;
     }, COLLAPSE_DELAY_MS);
   };
 
-  const handleInteraction = () => {
+  const applyChannelSelection = (
+    channel: string,
+    color: BandInfo['color'] | undefined,
+    allowToggleOff = false
+  ) => {
+    selectChannelColor(controller, channel, color, allowToggleOff);
+  };
+
+  const handleInteraction = (event?: Event) => {
+    if (event && event.isTrusted === false) return;
+    if (typeof performance !== 'undefined' && performance.now() - mountTimestamp < 50) {
+      return;
+    }
     clearCollapseTimer();
   };
 
+  const controllerSnapshot = $derived.by(() => cloneController(controller));
+
+  const sampleEvent = $derived($sEvent?.type);
+
+  $effect(() => {
+    if (sampleEvent === 'sampleUpdated') {
+      initialiseController();
+    }
+  });
+
+  $effect(() => {
+    const ctrl = controller;
+    if (!ctrl) {
+      compositeController = undefined;
+      rgbController = undefined;
+      return;
+    }
+
+    if (ctrl.type === 'composite') {
+      compositeController = ctrl;
+      rgbController = undefined;
+    } else if (ctrl.type === 'rgb') {
+      rgbController = ctrl;
+      compositeController = undefined;
+    } else {
+      compositeController = undefined;
+      rgbController = undefined;
+    }
+  });
+
+  $effect(() => {
+    if (!controllerSnapshot) return;
+    background?.updateStyle(controllerSnapshot);
+  });
+
+  $effect(() => {
+    const ctrl = controller;
+    if (!mounted || !ctrl || collapseInitiated || !expanded) return;
+    scheduleCollapse();
+  });
+
   onMount(() => {
     mounted = true;
+    mountTimestamp = typeof performance !== 'undefined' ? performance.now() : 0;
     expanded = true;
-    if (imgCtrl) {
-      scheduleCollapse();
-    }
+    initialiseController();
 
     return () => {
       clearCollapseTimer();
@@ -142,28 +154,7 @@
       collapseInitiated = false;
     };
   });
-
-  $: if (mounted && imgCtrl && !collapseInitiated) {
-    scheduleCollapse();
-  }
-
-  $: console.log(expanded);
-  $: maxNameWidth = 80;
-  $: if (table && imgCtrl) {
-    const buttonCells = document?.querySelectorAll(
-      'td[aria-label="button-cell"]'
-    ) as NodeListOf<HTMLTableCellElement>;
-    if (buttonCells) {
-      const maxWidth = Math.max(...Array.from(buttonCells).map((cell) => cell.clientWidth));
-      maxNameWidth = maxWidth;
-      console.log('Max button cell width:', maxWidth);
-    }
-  }
 </script>
-
-<!-- bind:this={table} -->
-<!-- class:hidden={!(image && imgCtrl)} -->
-<!-- draggable -->
 
 <Tooltip.Provider delayDuration={!expanded ? 700 : 1500}>
   <Tooltip.Root>
@@ -171,121 +162,36 @@
       {#snippet child({ props })}
         <GlassIsland
           baseHeight={250}
-          baseWidth={maxNameWidth + 11.5}
-          expandWidthRatio={450 / (maxNameWidth + 11.5)}
+          baseWidth={maxNameWidth + 11}
+          expandWidthRatio={450 / (maxNameWidth + 11)}
           bind:expanded
           class="relative group overflow-x-hidden pl-1.5 pr-2 py-2 font-medium"
           aria-label="Image controls"
-          on:requestState={(e) => (expanded = e.detail.expanded)}
-          on:mouseenter={handleInteraction}
-          on:mousedown={handleInteraction}
+          onRequestState={(detail) => (expanded = detail.expanded)}
+          onmouseenter={handleInteraction}
+          onmousedown={handleInteraction}
           {...props}
         >
-          {#if image && imgCtrl}
-            {#if imgCtrl?.type === 'composite'}
-              <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-              <table
-                class="table-auto text-sm w-[380px]"
-                on:click={(e) => e.stopPropagation()}
-                bind:this={table}
-              >
-                <tbody>
-                  <!-- Each channel -->
-                  {#each image.channels as name}
-                    <tr aria-label={`${name} controls`} class="">
-                      <td
-                        class="flex justify-center min-w-[70px] -translate-y-[1.5px] relative"
-                        bind:this={cell}
-                        aria-label="button-cell"
-                      >
-                        <button
-                          class="max-w-[120px]"
-                          on:click={() => handleClick(name, imgCtrl.variables[name].color, true)}
-                          aria-label="Select channel button"
-                        >
-                          <div
-                            class={classes(
-                              imgCtrl.variables[name].enabled
-                                ? bgColors[
-                                    colors.findIndex((x) => x === imgCtrl.variables[name].color)
-                                  ] + ' text-white'
-                                : 'opacity-80 hover:opacity-100',
-                              imgCtrl.variables[name].enabled &&
-                                ['white', 'yellow'].includes(imgCtrl.variables[name].color)
-                                ? 'text-black'
-                                : '',
-                              `rounded-lg px-2 py-[1px] w-fit max-w-[100px]`
-                            )}
-                          >
-                            <div class="truncate" aria-label="Channel name">
-                              {name}
-                            </div>
-                          </div>
-                        </button>
-                        <button
-                          class="h-full w-2 absolute -right-1"
-                          aria-label="Expand controls"
-                          on:click={() => (expanded = true)}
-                        ></button>
-                      </td>
-                      <td class="tabular-nums">
-                        <div class="flex items-center">
-                          <div class="min-w-[128px] pl-0.5 cursor-pointer">
-                            <RangeSlider
-                              min={0}
-                              max={Math.sqrt(image.maxVal)}
-                              step={0.1}
-                              range
-                              springValues={{ stiffness: 1, damping: 1 }}
-                              on:start={() => handleClick(name, imgCtrl.variables[name].color)}
-                              bind:values={imgCtrl.variables[name].minmax}
-                              id={`slider-${name}`}
-                            />
-                          </div>
-                          <span
-                            class={classes(
-                              imgCtrl.variables[name].enabled ? '' : 'opacity-80 hover:opacity-100',
-                              'whitespace-nowrap'
-                            )}
-                            aria-label="Max channel intensity"
-                          >
-                            [{imgCtrl.variables[name].minmax.map((x) => Math.round(x ** 2))}]
-                          </span>
-                        </div>
-                      </td>
-                      <td class="flex items-center justify-center gap-x-1.5 ml-1">
-                        {#each zip(colors, bgColors) as [color, bg], i}
-                          <button
-                            on:click={() => handleClick(name, color, true)}
-                            class={cn(
-                              bg,
-                              color !== 'white' ? 'opacity-90' : '',
-                              i === 0 ? 'ml-2' : '',
-                              `mx-[1px] my-1 flex size-4 rounded-full transition-opacity duration-500 translate-y-[1.5px]`,
-                              imgCtrl.variables[name].color === color
-                                ? 'ring-2 ring-white opacity-100'
-                                : ''
-                            )}
-                            aria-label={`${color} color button`}
-                            data-testid="imgctrl-color-button"
-                          ></button>
-                        {/each}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            {:else if imgCtrl.type === 'rgb'}
+          {#if image && controller}
+            {#if compositeController}
+              <CompositeChannelTable
+                {image}
+                controller={compositeController}
+                onSelect={applyChannelSelection}
+                onRequestExpand={() => (expanded = true)}
+                bind:maxNameWidth
+              />
+            {:else if rgbController}
               <div class="grid grid-cols-3 gap-y-1.5 gap-x-1">
-                {#each ['Exposure', 'Contrast', 'Saturation'] as name}
+                {#each ['Exposure', 'Contrast', 'Saturation'] as name (name)}
+                  {@const key = name as keyof RGBCtrl}
                   <div class="px-1">{small ? name.slice(0, 3) : name}:</div>
                   <input
                     type="range"
                     min="-0.5"
                     step="0.01"
                     max="0.5"
-                    bind:value={imgCtrl[name]}
+                    bind:value={rgbController[key]}
                     class="col-span-2 min-w-[4rem] max-w-[12rem] cursor-pointer"
                     aria-label={`${name} slider`}
                   />
@@ -296,7 +202,7 @@
             {/if}
           {:else}
             <div class="flex flex-col gap-1.5 my-1.5 ml-1">
-              {#each Array.from({ length: 3 }) as _}
+              {#each Array.from({ length: 3 }) as _, i (i)}
                 <div class="flex gap-x-2">
                   <div
                     class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[80px] h-[18px] py-2"
@@ -305,7 +211,7 @@
                     class="bg-gray-600/30 animate-pulse rounded-lg px-2 w-[150px] h-[18px] py-2 ml-1"
                   ></div>
                   <div class="flex gap-x-1">
-                    {#each Array.from({ length: 7 }) as _}
+                    {#each Array.from({ length: 7 }) as _, j (j)}
                       <div
                         class="rounded-full bg-gray-600/30 animate-pulse size-[18px] mx-[1px] inline-block"
                       ></div>

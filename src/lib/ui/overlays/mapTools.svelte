@@ -47,7 +47,7 @@
           class="relative group overflow-hidden px-2   py-1.5 text-sm font-medium text-white/90"
           baseWidth={280}
           baseHeight={160}
-          expandWidthRatio={1.18}
+          expandWidthRatio={1}
           expandHeightRatio={1.05}
           expanded={true}
           highlight={true}

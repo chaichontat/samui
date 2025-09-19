@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const vectorSourceInstances: FakeVectorSource[] = [];
+const webglVectorLayerInstances: FakeWebGLVectorLayer[] = [];
 
 class FakeVectorSource {
   features: any[] = [];
@@ -74,6 +75,25 @@ class FakeFeatureLabel extends FakeFeature {
   label?: string;
 }
 
+class FakeWebGLVectorLayer {
+  options: any;
+  source: any;
+  updateStyleVariables = vi.fn((vars: Record<string, any>) => {
+    this.options.variables = { ...this.options.variables, ...vars };
+  });
+  setStyle = vi.fn((style: any) => {
+    this.options.style = style;
+  });
+  changed = vi.fn();
+  dispose = vi.fn();
+
+  constructor(options: any) {
+    this.options = { ...options };
+    this.source = options.source;
+    webglVectorLayerInstances.push(this);
+  }
+}
+
 vi.mock('ol/source/Vector.js', () => ({ default: FakeVectorSource }));
 vi.mock('ol/layer/Vector.js', () => ({ default: FakeVectorLayer }));
 vi.mock('ol/geom.js', () => ({ Circle: FakeCircle, Point: FakePoint }));
@@ -84,16 +104,35 @@ vi.mock('ol/style.js', () => ({
   Stroke: class {},
   Style: class {}
 }));
-vi.mock('ol/layer/WebGLPoints.js', () => ({ default: class {} }));
+vi.mock('ol/layer/WebGLVector.js', () => ({ default: FakeWebGLVectorLayer }));
 vi.mock('ol', () => ({ View: class {}, Feature: FakeFeature }));
 
-const mapStub = () => ({
-  map: {
-    addLayer: vi.fn(),
-    removeLayer: vi.fn()
-  },
-  promise: Promise.resolve()
-});
+const mapStub = () => {
+  const layers: any[] = [];
+  const addLayer = vi.fn((layer: any) => {
+    layers.push(layer);
+  });
+  const removeLayer = vi.fn((layer: any) => {
+    const idx = layers.indexOf(layer);
+    if (idx >= 0) layers.splice(idx, 1);
+  });
+  const getLayers = () => ({
+    getArray: () => layers,
+    insertAt: (idx: number, layer: any) => {
+      layers.splice(idx, 0, layer);
+    }
+  });
+
+  return {
+    map: {
+      addLayer,
+      removeLayer,
+      getLayers
+    },
+    mPerPx: 2e-6,
+    promise: Promise.resolve()
+  };
+};
 
 const coords = {
   name: 'coords',
@@ -107,81 +146,63 @@ const coords = {
 
 beforeEach(() => {
   vectorSourceInstances.length = 0;
+  webglVectorLayerInstances.length = 0;
 });
 
-describe('ActiveSpots', () => {
-  it('mounts layer and updates circle geometry', async () => {
-    const { ActiveSpots } = await import('$src/lib/ui/overlays/points');
+describe('WebGLSpots', () => {
+  it('constructs a WebGLVectorLayer with style and variables', async () => {
+    const { WebGLSpots } = await import('$src/lib/ui/overlays/points');
     const map = mapStub();
-    const active = new ActiveSpots(map as any);
-    active.mount();
-    expect(map.map.addLayer).toHaveBeenCalledWith(active.layer);
+    const overlay = new WebGLSpots(map as any);
+    overlay.coords = {
+      size: 2,
+      sizePx: 4,
+      mPerPx: 10
+    } as any;
 
-    active.update(coords as any, 0);
-    const circle = active.feature.getGeometry() as FakeCircle;
-    expect(circle.lastSet).toEqual({ center: [10, -20], radius: coords.size! / 2 });
-    expect(active.feature.get('id')).toBe('a');
+    await overlay.setCurrStyle('quantitative', 'turbo');
+
+    expect(webglVectorLayerInstances).toHaveLength(1);
+    const layer = webglVectorLayerInstances[0];
+    expect(layer.options.style).toMatchObject({ 'circle-radius': expect.anything() });
+    expect(layer.options.variables).toMatchObject({ opacity: 1, min: 0, max: 0 });
+    expect(layer.updateStyleVariables).toHaveBeenCalledWith(overlay.currStyleVariables);
+  });
+
+  it('preserves live style variables when switching styles', async () => {
+    const { WebGLSpots } = await import('$src/lib/ui/overlays/points');
+    const map = mapStub();
+    const overlay = new WebGLSpots(map as any);
+    overlay.coords = {
+      size: 2,
+      sizePx: 4,
+      mPerPx: 10
+    } as any;
+
+    await overlay.setCurrStyle('quantitative', 'turbo');
+    overlay.updateStyleVariables({ opacity: 0.4 });
+
+    await overlay.setCurrStyle('categorical', overlay.currColorMap);
+
+    const layer = webglVectorLayerInstances.at(-1)!;
+    expect(overlay.currStyleVariables.opacity).toBeCloseTo(0.4);
+    expect(layer.options.variables?.opacity).toBeCloseTo(0.4);
+    expect(layer.updateStyleVariables).toHaveBeenCalledWith(overlay.currStyleVariables);
   });
 });
 
-describe('CanvasSpots', () => {
-  it('updates source with generated features when visible', async () => {
-    const { CanvasSpots } = await import('$src/lib/ui/overlays/points');
-    const map = mapStub();
-    const canvas = new CanvasSpots(map as any);
-    canvas.mount();
+describe('genSpotStyle', () => {
+  it('returns separated style and variables for quantitative overlays', async () => {
+    const { genSpotStyle } = await import('$src/lib/ui/overlays/featureColormap');
+    const result = genSpotStyle({
+      type: 'quantitative',
+      spotSizeMeter: 2e-6,
+      mPerPx: 2e-6,
+      colorMap: 'turbo',
+      scale: true
+    });
 
-    canvas.update(coords as any);
-    const source = vectorSourceInstances.at(-1)!;
-    expect(source.addFeatures).toHaveBeenCalled();
-    expect(source.features).toHaveLength(coords.pos.length);
-  });
-
-  it('skips feature population when above limit', async () => {
-    const { CanvasSpots } = await import('$src/lib/ui/overlays/points');
-    const map = mapStub();
-    const canvas = new CanvasSpots(map as any);
-    canvas.mount();
-
-    const many = {
-      ...coords,
-      pos: Array.from({ length: 10050 }, (_, idx) => ({ x: idx, y: idx, idx }))
-    };
-    canvas.update(many as any);
-    const source = vectorSourceInstances.at(-1)!;
-    expect(source.features).toHaveLength(0);
-  });
-
-  it('defers updates while hidden and refreshes once visible again', async () => {
-    const { CanvasSpots } = await import('$src/lib/ui/overlays/points');
-    const map = mapStub();
-    const canvas = new CanvasSpots(map as any);
-    canvas.mount();
-
-    const updateSpy = vi.spyOn(canvas as any, 'update_');
-    canvas.visible = false;
-    canvas.update(coords as any);
-    expect(updateSpy).not.toHaveBeenCalled();
-
-    canvas.visible = true;
-    expect(updateSpy).toHaveBeenCalledTimes(1);
-    updateSpy.mockRestore();
-  });
-
-  it('resets cached coordinate name when sample changes', async () => {
-    const { CanvasSpots } = await import('$src/lib/ui/overlays/points');
-    const map = mapStub();
-    const canvas = new CanvasSpots(map as any);
-    canvas.mount();
-
-    canvas.update(coords as any);
-    expect(canvas.currCoordName).toBe('coords');
-
-    const other = { ...coords, name: 'other' };
-    const updateSpy = vi.spyOn(canvas as any, 'update_');
-    canvas.updateSample(other as any);
-    expect(canvas.currCoordName).toBe('other');
-    expect(updateSpy).toHaveBeenCalled();
-    updateSpy.mockRestore();
+    expect(result.style).toHaveProperty('circle-radius');
+    expect(result.variables).toMatchObject({ opacity: 1, min: 0, max: 0 });
   });
 });

@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 type OverlayState = {
   currFeature?: { group: string; feature: string };
-  currStyleVariables?: { opacity: number; min: number; max: number };
+  currStyleVariables?: { opacity?: number; min?: number; max?: number };
   currColorMap?: string;
   visible?: boolean;
   outlineVisible?: boolean;
@@ -10,33 +10,17 @@ type OverlayState = {
 };
 
 export async function waitForSamuiStores(page: Page) {
-  await page.waitForFunction(
-    () => typeof window !== 'undefined' &&
-      typeof (window as any).__SAMUI__ !== 'undefined' &&
-      typeof (window as any).__SAMUI__.stores?.sMapp === 'function'
-  );
+  await page.waitForFunction(() => {
+    const api = (window as any).__SAMUI__;
+    return Boolean(api?.stores?.sMapp);
+  });
 }
 
-export async function getOverlayState(page: Page, uid: string): Promise<OverlayState> {
-  return page.evaluate((overlayUid) => {
+export async function waitForRenderComplete(page: Page) {
+  await page.waitForFunction(() => {
     const api = (window as any).__SAMUI__;
-    const stores = api?.stores;
-    if (!stores) return {};
-    const mapp = stores.sMapp();
-    const overlays = stores.overlays();
-    const overlay = overlays?.[overlayUid];
-    return {
-      currFeature: overlay?.currFeature,
-      currStyleVariables: overlay?.currStyleVariables,
-      currColorMap: overlay?.currColorMap,
-      visible: overlay?.layer?.getVisible?.(),
-      outlineVisible: overlay?.outline?.visible,
-      view: {
-        zoom: mapp?.map?.getView()?.getZoom?.(),
-        center: mapp?.map?.getView()?.getCenter?.() ?? null
-      }
-    };
-  }, uid);
+    return api?.stores?.sEvent?.()?.type === 'renderComplete';
+  });
 }
 
 export async function activeOverlayUid(page: Page) {
@@ -53,6 +37,29 @@ export async function latestOverlayUid(page: Page) {
     const keys = Object.keys(overlays);
     return keys[keys.length - 1];
   });
+}
+
+export async function getOverlayState(page: Page, uid: string): Promise<OverlayState> {
+  return page.evaluate((overlayUid) => {
+    const api = (window as any).__SAMUI__;
+    const stores = api?.stores;
+    if (!stores) return {};
+    const mapp = stores.sMapp?.();
+    const overlays = stores.overlays?.();
+    const overlay = overlays?.[overlayUid];
+    const view = mapp?.map?.getView?.();
+    return {
+      currFeature: overlay?.currFeature,
+      currStyleVariables: overlay?.currStyleVariables,
+      currColorMap: overlay?.currColorMap,
+      visible: overlay?.layer?.getVisible?.(),
+      outlineVisible: overlay?.outline?.visible,
+      view: {
+        zoom: view?.getZoom?.(),
+        center: view?.getCenter?.() ?? null
+      }
+    } satisfies OverlayState;
+  }, uid);
 }
 
 export async function featureDataBounds(page: Page) {

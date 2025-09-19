@@ -1,2 +1,5 @@
 onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild
   - svelte-preprocess
+  - unrs-resolver
