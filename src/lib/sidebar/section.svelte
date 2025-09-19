@@ -3,10 +3,10 @@
   import { ChevronDown } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { Collapsible, Switch } from 'bits-ui';
+  import { cubicOut } from 'svelte/easing';
   import { slide } from 'svelte/transition';
   import { tooltip } from '../ui/utils';
   import { classes } from '../utils';
-  import { cubicOut } from 'svelte/easing';
 
   let cl = '';
   export { cl as class };
@@ -76,7 +76,7 @@
                 {...switchRest}
                 class={classes(
                   typeof switchClass === 'string' ? switchClass : undefined,
-                  'focus:shadow-outline relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent shadow-white transition-colors duration-200 ease-in-out focus:outline-none',
+                  'focus:shadow-outline relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent shadow-white transition-colors duration-200 ease-in-out focus:outline-none',
                   checked ? 'bg-blue-700' : 'bg-neutral-600'
                 )}
                 type="button"
@@ -84,7 +84,7 @@
               >
                 <span
                   class={classes(
-                    'inline-block h-[18px] w-[18px] translate-y-[1px] transform rounded-full bg-neutral-200 transition duration-200 ease-in-out',
+                    'inline-block h-[18px] w-[18px] translate-y-px transform rounded-full bg-neutral-200 transition duration-200 ease-in-out',
                     checked ? 'translate-x-6' : 'translate-x-0.5'
                   )}
                 />
@@ -95,7 +95,7 @@
         <Icon
           src={ChevronDown}
           class={classes(
-            `svg-icon size-3 stroke-current stroke-[3] transition-transform delay-100 duration-100 ease-in-out`,
+            `svg-icon size-3 stroke-current stroke-3 transition-transform delay-100 duration-100 ease-in-out`,
             isOpen ? 'rotate-180' : ''
           )}
         />

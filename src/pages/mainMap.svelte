@@ -33,7 +33,7 @@
   )}
 >
   <button
-    class="absolute top-[1.5rem] right-3 z-40 size-5"
+    class="absolute top-6 right-3 z-40 size-5"
     on:click={() => (showSidebar = !showSidebar)}
   >
     <Icon src={Bars3} class="svg-icon h-6 w-6" />

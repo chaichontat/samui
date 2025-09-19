@@ -57,6 +57,7 @@
 />
 
 <style lang="postcss">
+  @reference '../../app.css';
   /* Remove arrows */
   input[type='number']::-webkit-outer-spin-button,
   input[type='number']::-webkit-inner-spin-button,

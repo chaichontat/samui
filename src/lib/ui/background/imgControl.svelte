@@ -244,7 +244,10 @@
 </Tooltip.Provider>
 
 <style lang="postcss">
-  :global(.rangeSlider) {
-    font-size: 0.6rem; /* default size */
+  @reference "$css"
+  .transition-width {
+    transition-property: max-width;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 1000ms;
   }
 </style>
