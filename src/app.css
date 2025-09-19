@@ -1,5 +1,126 @@
-@import 'tippy.js/dist/tippy.css';
-@tailwind base;
+@import 'tippy.js/dist/tippy.css' layer(base);
+@import 'tailwindcss';
+
+@plugin '@tailwindcss/typography';
+@plugin '@tailwindcss/forms';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1;
+  --text-7xl: 4.5rem;
+  --text-7xl--line-height: 1;
+  --text-8xl: 6rem;
+  --text-8xl--line-height: 1;
+  --text-9xl: 8rem;
+  --text-9xl--line-height: 1;
+  --text-mb: 15px;
+
+  --animate-text: text 5s ease infinite;
+
+  @keyframes text {
+    0%,
+    100% {
+      background-size: 200% 200%;
+      background-position: left center;
+    }
+    50% {
+      background-size: 200% 200%;
+      background-position: right center;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility button-base {
+  @apply px-3 py-1.5 text-sm font-medium text-white focus:ring-1 focus:outline-hidden;
+}
+@utility button {
+  @apply button-base mr-2 mb-2 rounded-lg;
+}
+@utility splash-button {
+  @apply relative inline-flex w-fit items-center justify-center overflow-hidden rounded-lg bg-linear-to-br p-0.5 focus:ring-2 focus:outline-hidden;
+
+  & > span {
+    @apply flex items-center gap-x-2 rounded-md bg-neutral-50/80 backdrop-blur-sm transition-all duration-75 ease-in dark:bg-neutral-900/80;
+  }
+}
+@utility svg-icon {
+  @apply h-4 w-4 stroke-current stroke-2 transition-[stroke-width] hover:stroke-[2.5];
+}
+@utility text-default {
+  @apply text-neutral-800 dark:text-neutral-100;
+}
+@utility bg-default {
+  @apply bg-neutral-100/90 text-neutral-800 dark:bg-neutral-800/90 dark:text-neutral-100;
+}
+@utility border-default {
+  @apply border-neutral-300 dark:border-neutral-600;
+}
+@utility hover-default {
+  @apply hover:bg-neutral-300/80 active:bg-neutral-400/80 dark:hover:bg-neutral-700/80 dark:active:bg-neutral-600/80;
+}
+@utility picker {
+  @apply bg-default flex w-full flex-col rounded-lg backdrop-blur-sm;
+}
+@utility picker-el {
+  @apply hover-default cursor-pointer rounded-sm px-4 text-base;
+}
+@utility center {
+  @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+}
+@utility tippy-box {
+  div > & {
+    @apply rounded-lg bg-neutral-700/80 px-1 py-0.5 text-center backdrop-blur-sm;
+  }
+
+  div > & > .tippy-arrow {
+    @apply text-neutral-700/80;
+  }
+}
+@utility tippy-arrow {
+  div > .tippy-box > & {
+    @apply text-neutral-700/80;
+  }
+}
+
 @layer base {
   html {
     @apply subpixel-antialiased;
@@ -9,7 +130,7 @@
   }
 
   input[type='checkbox'] {
-    @apply rounded;
+    @apply rounded-sm;
   }
 
   /* 1. Use a more-intuitive box-sizing model */
@@ -77,65 +198,5 @@
   #root,
   #__next {
     isolation: isolate;
-  }
-}
-@tailwind components;
-@layer components {
-  .button-base {
-    @apply px-3 py-1.5 text-sm font-medium text-white focus:outline-none focus:ring-1;
-  }
-  .button {
-    @apply button-base mb-2 mr-2 rounded-lg;
-  }
-
-  .splash-button {
-    @apply relative inline-flex w-fit items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br p-0.5 focus:outline-none focus:ring-2;
-  }
-
-  .splash-button > span {
-    @apply flex items-center gap-x-2 rounded-md bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900 dark:bg-opacity-80;
-  }
-
-  .svg-icon {
-    @apply h-4 w-4 stroke-current stroke-2 transition-[stroke-width] hover:stroke-[2.5];
-  }
-}
-
-@tailwind utilities;
-@layer utilities {
-  .text-default {
-    @apply text-neutral-800 dark:text-neutral-100;
-  }
-
-  .bg-default {
-    @apply bg-neutral-100/90 text-neutral-800 dark:bg-neutral-800/90 dark:text-neutral-100;
-  }
-
-  .border-default {
-    @apply border-neutral-300 dark:border-neutral-600;
-  }
-
-  .hover-default {
-    @apply hover:bg-neutral-300/80 active:bg-neutral-400/80 dark:hover:bg-neutral-700/80 dark:active:bg-neutral-600/80;
-  }
-
-  .picker {
-    @apply bg-default flex w-full flex-col rounded-lg backdrop-blur;
-  }
-
-  .picker-el {
-    @apply hover-default cursor-pointer rounded px-4 text-base;
-  }
-
-  .center {
-    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2;
-  }
-
-  div > .tippy-box {
-    @apply rounded-lg bg-neutral-700/80 px-1 py-0.5 text-center backdrop-blur;
-  }
-
-  div > .tippy-box > .tippy-arrow {
-    @apply text-neutral-700/80;
   }
 }

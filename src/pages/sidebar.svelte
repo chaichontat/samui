@@ -101,7 +101,7 @@
       {/if}
     </div>
 
-    <div class="flex-grow min-h-[24px]" />
+    <div class="grow min-h-[24px]" />
 
     <div class="mx-auto justify-end text-xs text-center">
       Samui {__VERSION__}
@@ -114,7 +114,7 @@
       rel="noreferrer"
     >
       <span
-        class="flex items-center gap-x-2 rounded bg-neutral-50 bg-opacity-80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900 dark:bg-opacity-80 px-2 py-1 group-hover:bg-opacity-0"
+        class="flex items-center gap-x-2 rounded bg-neutral-50/80 backdrop-blur transition-all duration-75 ease-in dark:bg-neutral-900/80 px-2 py-1 group-hover:bg-neutral-50/0 dark:group-hover:bg-neutral-900/0"
       >
         Report Issue
       </span>
@@ -126,12 +126,14 @@
   <Status />
 </div> -->
 <style lang="postcss">
+  @reference '../app.css';
+
   section {
     @apply relative hidden w-[90%] pt-4 md:block;
   }
 
   :global(.tab) {
-    @apply w-full rounded-lg px-2 py-2.5 text-sm font-medium leading-5 text-neutral-500 ring-opacity-60 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
+    @apply ring-opacity-60 w-full rounded-lg px-2 py-2.5 text-sm leading-5 font-medium text-neutral-500 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
   }
 
   :global(.dark .tab) {

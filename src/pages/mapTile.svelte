@@ -94,12 +94,12 @@
 
 {#if typeof hie === 'number'}
   <section
-    class="relative box-content h-full w-full flex-grow overflow-x-hidden"
+    class="relative box-content h-full w-full grow overflow-x-hidden"
     id={`view-${hieN}`}
     bind:clientWidth={width}
   >
     <div
-      class="absolute top-4 left-4 z-50 flex max-w-[48rem] items-center justify-between gap-x-3 text-sm md:text-base"
+      class="absolute top-4 left-4 z-50 flex max-w-3xl items-center justify-between gap-x-3 text-sm md:text-base"
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
@@ -156,10 +156,10 @@
       {#if hie === 0 && width > 800 && !$isOnline}
         <!-- Upload your data -->
         <button
-          class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-neutral-900 hover:text-neutral-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
+          class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-linear-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-neutral-900 hover:text-neutral-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
           on:click={byod}
         >
-          <span class="px-5 py-2 group-hover:bg-opacity-0">Add Sample</span>
+          <span class="px-5 py-2 group-hover:bg-neutral-50/0 dark:group-hover:bg-neutral-900/0">Add Sample</span>
         </button>
       {/if}
     </div>

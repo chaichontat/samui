@@ -153,7 +153,7 @@
               on:click={() => ($sOverlay = uid)}
               aria-label={`Select ${fg?.feature}`}
               class={classes(
-                'mr-2 max-w-[10rem] cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
+                'mr-2 max-w-40 cursor-pointer select-none overflow-auto text-ellipsis whitespace-nowrap capitalize',
                 uid === $annoFeat.annotating?.overlay ? 'text-teal-400' : 'text-white'
               )}
             >
@@ -176,7 +176,7 @@
           <td>
             <input
               title="Overlay opacity"
-              class="max-w-[5rem] -translate-y-0.5 cursor-pointer align-middle opacity-80"
+              class="max-w-20 -translate-y-0.5 cursor-pointer align-middle opacity-80"
               class:opacity-70={$sOverlay !== ov.uid}
               type="range"
               min="0"
@@ -251,7 +251,7 @@
     data-testid="overlay-add-layer"
   >
     <div class="flex items-center">
-      <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[1px] stroke-[2.5]" />
+      <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-px stroke-[2.5]" />
       <div class="font-normal">Add Layer</div>
       <div></div>
     </div>

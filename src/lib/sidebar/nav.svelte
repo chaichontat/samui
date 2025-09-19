@@ -14,7 +14,7 @@
 </script>
 
 <nav class="flex items-center gap-x-3 bg-neutral-900 px-3 pt-4 pb-3 text-mb backdrop-blur">
-  <div class="flex-grow">
+  <div class="grow">
     <FeatureSearchBox featureGroup={$allFeatures} />
   </div>
   <!-- <Darkswitch /> Will be back! -->

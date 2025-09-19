@@ -107,7 +107,7 @@
   {#if dragging}
     <Modal>
       <div class="mb-2 animate-bounce rounded-full bg-blue-600 p-[10px] drop-shadow-xl">
-        <Icon src={ArrowDown} class="h-8 w-8 stroke-current stroke-[3]" />
+        <Icon src={ArrowDown} class="h-8 w-8 stroke-current stroke-3" />
       </div>
       Drop Sample Here
     </Modal>

@@ -53,7 +53,7 @@
   >
     <Icon
       src={CursorArrowRays}
-      class="-ml-1 mr-0.5 h-3 w-3 translate-y-[1px] stroke-current stroke-[2.5]"
+      class="-ml-1 mr-0.5 h-3 w-3 translate-y-px stroke-current stroke-[2.5]"
     />
     Select
   </AnnoButton>
@@ -64,6 +64,7 @@
       'disabled:cursor-auto disabled:bg-neutral-500 hover:disabled:bg-neutral-500 disabled:text-neutral-300'
     )}
     use:tooltip={{ content: 'Export annotated points as CSV' }}
+    data-testid="feature-export"
     disabled={$annoFeat.keys.length === 0}
     on:click={out}
   >
@@ -81,7 +82,7 @@
     : `Add points or selections to annotate ${$annoFeat.annotating.coordName}.`}
 </div>
 <div class="flex">
-  <div class="flex-grow" />
+  <div class="grow" />
   <div class="flex items-center gap-x-2">
     <label class="cursor-pointer">
       <input class="" type="checkbox" bind:checked={$annoFeat.show} />

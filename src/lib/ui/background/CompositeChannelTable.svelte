@@ -108,7 +108,7 @@
         </td>
         <td class="tabular-nums">
           <div class="flex items-center">
-            <div class="min-w-[128px] pl-0.5 cursor-pointer">
+            <div class="min-w-[128px] pl-1 cursor-pointer">
               <RangeSlider
                 min={0}
                 max={Math.sqrt(image.maxVal)}
@@ -151,3 +151,9 @@
     {/each}
   </tbody>
 </table>
+
+<style>
+  :global(.rangeSlider) {
+    font-size: 0.6rem; /* default size */
+  }
+</style>
