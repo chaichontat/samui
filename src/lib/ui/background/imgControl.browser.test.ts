@@ -3,6 +3,7 @@ import { ImgData, type ImageParams } from '$src/lib/data/objects/image';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import type { BandInfo, CompCtrl, ImgCtrl, RGBCtrl } from '$src/lib/ui/background/imgColormap';
 import ImgControl from '$src/lib/ui/background/imgControl.svelte';
+import { fireEvent } from '@testing-library/svelte';
 import { userEvent } from '@vitest/browser/context';
 import { beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
@@ -35,6 +36,14 @@ const flush = () =>
   });
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function ensureGlassMain(island: HTMLElement): HTMLElement {
+  const main = island.querySelector('.lgis-main');
+  if (!(main instanceof HTMLElement)) throw new Error('GlassIsland main not found');
+  return main;
+}
+
+const measureWidth = (element: HTMLElement) => element.getBoundingClientRect().width;
 
 function latestComposite(background: BackgroundSpy): CompCtrl {
   const call = background.calls[background.calls.length - 1];
@@ -391,6 +400,95 @@ test('component has mouse interaction handlers for auto-collapse prevention', as
   screen.unmount();
 });
 
+test('GlassIsland contracts when collapsed via keyboard toggle', async () => {
+  const { screen } = await setupCompositeControl();
+
+  const island = screen.container.querySelector(
+    '[data-testid="liquid-glass-island"]'
+  ) as HTMLElement | null;
+  if (!island) throw new Error('island not found');
+
+  const mainPanel = ensureGlassMain(island);
+
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
+
+  island.focus();
+  await fireEvent.keyDown(island, { key: 'Enter' });
+  await flush();
+
+  await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('false');
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeLessThan(200);
+
+  screen.unmount();
+});
+
+test('GlassIsland re-expands after being reopened', async () => {
+  const { screen } = await setupCompositeControl();
+
+  const island = screen.container.querySelector(
+    '[data-testid="liquid-glass-island"]'
+  ) as HTMLElement | null;
+  if (!island) throw new Error('island not found');
+
+  const mainPanel = ensureGlassMain(island);
+
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
+
+  island.focus();
+  await fireEvent.keyDown(island, { key: 'Enter' });
+  await flush();
+
+  await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('false');
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeLessThan(200);
+
+  const expandButton = screen.container.querySelector(
+    'button[aria-label="Expand controls"]'
+  ) as HTMLButtonElement | null;
+  if (!expandButton) throw new Error('expand button not found');
+
+  await userEvent.click(expandButton);
+  await flush();
+
+  await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('true');
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
+
+  screen.unmount();
+});
+
+test('GlassIsland toggles via mouse clicks on the shell', async () => {
+  const { screen } = await setupCompositeControl();
+
+  const island = screen.container.querySelector(
+    '[data-testid="liquid-glass-island"]'
+  ) as HTMLElement | null;
+  if (!island) throw new Error('island not found');
+
+  const mainPanel = ensureGlassMain(island);
+
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
+
+  const clickShell = async () => {
+    await fireEvent.pointerDown(island, { pointerType: 'mouse', button: 0 });
+    await fireEvent.mouseDown(island, { button: 0 });
+    await fireEvent.pointerUp(island, { pointerType: 'mouse', button: 0 });
+    await fireEvent.mouseUp(island, { button: 0 });
+    await fireEvent.click(island, { button: 0 });
+    await flush();
+  };
+
+  await clickShell();
+
+  await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('false');
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeLessThan(200);
+
+  await clickShell();
+
+  await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('true');
+  await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
+
+  screen.unmount();
+});
+
 test('clicking already selected color toggles it off', async () => {
   const { background, screen } = await setupCompositeControl();
 
@@ -486,13 +584,13 @@ test('maxNameWidth dynamically adjusts based on button cell widths', async () =>
   await flush();
 
   // Check that the GlassIsland baseWidth was adjusted
-  screen.container.querySelector(
-    '[data-testid="liquid-glass-island"]'
-  ) as HTMLElement;
+  screen.container.querySelector('[data-testid="liquid-glass-island"]') as HTMLElement;
 
   // The component calculates maxNameWidth from button cells
   const buttonCells = screen.container.querySelectorAll('td[aria-label="button-cell"]');
-  const maxWidth = Math.max(...Array.from(buttonCells).map((cell) => (cell as HTMLElement).clientWidth));
+  const maxWidth = Math.max(
+    ...Array.from(buttonCells).map((cell) => (cell as HTMLElement).clientWidth)
+  );
 
   // GlassIsland baseWidth should be maxNameWidth + 11.5
   // We can't directly test the prop, but we can verify button cells exist and have width
@@ -502,7 +600,7 @@ test('maxNameWidth dynamically adjusts based on button cell widths', async () =>
   // Verify the longest channel name is rendered
   const longChannelName = Array.from(
     screen.container.querySelectorAll('[aria-label="Channel name"]')
-  ).find(node => node.textContent?.includes('veryLongChannelName'));
+  ).find((node) => node.textContent?.includes('veryLongChannelName'));
   expect(longChannelName).toBeTruthy();
 
   screen.unmount();
@@ -595,9 +693,10 @@ test('cleanup properly removes timers and resets state on unmount', async () => 
 
     // All timers should be cleared
     expect(clearedTimers.length).toBeGreaterThan(0);
-    expect(clearedTimers.some(id => activeTimers.includes(id))).toBe(true);
+    expect(clearedTimers.some((id) => activeTimers.includes(id))).toBe(true);
   } finally {
     (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = originalSetTimeout;
-    (window as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout = originalClearTimeout;
+    (window as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout =
+      originalClearTimeout;
   }
 });
