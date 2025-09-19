@@ -89,6 +89,7 @@
 
   const initialNormalized = computeNormalized();
   const normalized = $derived.by(computeNormalized);
+  const isLockedExpanded = $derived(normalized.expandWidthRatio === 1);
 
   const widthSpring = spring(initialNormalized.baseWidth, { stiffness: 0.16, damping: 0.5 });
   const heightSpring = spring(initialNormalized.baseHeight, { stiffness: 0.14, damping: 0.48 });
@@ -188,6 +189,14 @@
       expandWidthRatio: normalizedWidthRatio,
       expandHeightRatio: normalizedHeightRatio
     } = normalized;
+
+    if (isLockedExpanded) {
+      const lockedHeight = heightTargets.get(true) ?? normalizedBaseHeight * normalizedHeightRatio;
+      return {
+        width: normalizedBaseWidth * normalizedWidthRatio,
+        height: lockedHeight
+      };
+    }
 
     const fallbackHeight = targetExpanded
       ? normalizedBaseHeight * normalizedHeightRatio
@@ -322,7 +331,18 @@
   }
 
   $effect(() => {
+    if (isLockedExpanded && !expanded) {
+      expanded = true;
+    }
+  });
+
+  $effect(() => {
     if (expanded !== previousExpanded) {
+      if (isLockedExpanded) {
+        previousExpanded = expanded;
+        onStateChange?.({ expanded });
+        return;
+      }
       orchestrateTransition(expanded, previousExpanded);
       onStateChange?.({ expanded });
       previousExpanded = expanded;
@@ -341,17 +361,25 @@
   const radiusValue = $derived(12);
   // heightInitialized ? `height:${heightValue}px;` :
   const mainStyle = $derived(
-    `width:${widthValue}px;${'height:auto;'}border-radius:${radiusValue}px;`
+    isLockedExpanded
+      ? `width:auto;height:auto;border-radius:${radiusValue}px;`
+      : `width:${widthValue}px;height:auto;border-radius:${radiusValue}px;`
   );
 
   function measureNaturalHeight(state: boolean): number | null {
     if (!main) return null;
-    const targetWidth = state
-      ? normalized.baseWidth * normalized.expandWidthRatio
-      : normalized.baseWidth;
+    const targetWidth = isLockedExpanded
+      ? null
+      : state
+        ? normalized.baseWidth * normalized.expandWidthRatio
+        : normalized.baseWidth;
     const previousHeight = main.style.height;
     const previousWidth = main.style.width;
-    main.style.width = `${targetWidth}px`;
+    if (targetWidth === null) {
+      main.style.width = 'auto';
+    } else {
+      main.style.width = `${targetWidth}px`;
+    }
     main.style.height = 'auto';
     const measured = main.getBoundingClientRect().height;
     main.style.width = previousWidth;
@@ -413,12 +441,14 @@
 
   function handleClick(event?: MouseEvent) {
     if (!shouldToggle(event)) return;
+    if (isLockedExpanded) return;
     const next = !expanded;
     expanded = next;
     onRequestState?.({ from: !next, expanded: next });
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    if (isLockedExpanded) return;
     if (event.key === ' ' || event.key === 'Enter') {
       event.preventDefault();
       handleClick();
@@ -459,7 +489,12 @@
   data-testid="liquid-glass-island"
   {...restProps}
 >
-  <div bind:this={main} class={cn('lgis-main', cl)} style={mainStyle}>
+  <div
+    bind:this={main}
+    class={cn('lgis-main', cl)}
+    style={mainStyle}
+    data-testid="liquid-glass-island-main"
+  >
     <div class="lgis-motion">
       <span class="lgis-highlight" aria-hidden="true"></span>
       {@render children?.()}
