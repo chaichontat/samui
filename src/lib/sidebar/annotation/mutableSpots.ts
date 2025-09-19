@@ -29,6 +29,7 @@ export class MutableSpots extends BaseSpots {
   select: Select;
   coords: undefined;
   lastPreviewed = undefined as string | undefined;
+  pendingPolygons: Feature<Polygon | Circle>[] = [];
 
   constructor(map: Mapp, style?: Style) {
     super(map, style);
@@ -84,7 +85,7 @@ export class MutableSpots extends BaseSpots {
   static getCircleCoords = (f: Feature<Circle>) => f.getGeometry()!.getCenter();
 
   startDraw(coords: CoordsData, keyMap: Record<string, number>, overlaySource: VectorSource) {
-    this.clear();
+    this.clear({ preservePending: true });
     this.coordsSource = coords;
     this.overlaySource = overlaySource;
     this.points = new Array(coords.pos!.length);
@@ -92,6 +93,10 @@ export class MutableSpots extends BaseSpots {
     this.pointType = this.coordsSource.size ? 'Circle' : 'Point';
     this.getPointCoords =
       this.pointType === 'Point' ? MutableSpots.getPointCoords : MutableSpots.getCircleCoords;
+    if (this.pendingPolygons.length) {
+      const queued = this.pendingPolygons.splice(0);
+      queued.forEach((feature) => this.addFromPolygon(feature));
+    }
   }
 
   previewPoints(label: string | undefined) {
@@ -183,6 +188,10 @@ export class MutableSpots extends BaseSpots {
   }
 
   addFromPolygon(polygonFeat: Feature<Polygon | Circle>) {
+    if (!this.coordsSource || !this.overlaySource) {
+      this.pendingPolygons.push(polygonFeat);
+      return;
+    }
     const label = polygonFeat.get('label') as string;
     if (!label) {
       alert('Set annotation label first.');
@@ -254,9 +263,12 @@ export class MutableSpots extends BaseSpots {
   }
 
   getAllPointsByLabel() {
+    if (!this.points) {
+      return { unlabeled: [] } as Record<string, number[]>;
+    }
     const points = { unlabeled: [] } as Record<string, number[]>;
-    for (let i = 0; i < this.points!.length; i++) {
-      const f = this.points![i];
+    for (let i = 0; i < this.points.length; i++) {
+      const f = this.points[i];
       const label = f ? f.getLabel() : undefined; // Can be undefined for deleted points.
       if (!label) {
         points.unlabeled.push(i);
@@ -269,6 +281,9 @@ export class MutableSpots extends BaseSpots {
   }
 
   getCounts() {
+    if (!this.points) {
+      return { total_: 0, unlabeled_: 0 } as Record<string, number>;
+    }
     let sum = 0;
     const counts = {} as Record<string, number>;
     Object.entries(this.getAllPointsByLabel()).forEach(([label, ps]) => {
@@ -277,11 +292,11 @@ export class MutableSpots extends BaseSpots {
       sum += ps.length;
     });
     counts.total_ = sum;
-    counts.unlabeled_ = this.points!.length - sum;
+    counts.unlabeled_ = this.points.length - sum;
     return counts;
   }
 
-  clear() {
+  clear({ preservePending = false }: { preservePending?: boolean } = {}) {
     if (
       this.source.getFeatures().length &&
       !prompt('This will clear previous points. Are you sure?')
@@ -292,6 +307,9 @@ export class MutableSpots extends BaseSpots {
     this.points = undefined;
     this.coordsSource = undefined;
     this.keyMap = undefined;
+    if (!preservePending) {
+      this.pendingPolygons = [];
+    }
   }
 
   relabel(old: string, newlabel: string) {
@@ -369,7 +387,10 @@ const dontCheck = [
   'length',
   'startDraw',
   'length',
-  'mount'
+  'mount',
+  'getCounts',
+  'getAllPointsByLabel',
+  'addFromPolygon'
 ];
 
 Object.getOwnPropertyNames(MutableSpots.prototype).forEach((name) => {

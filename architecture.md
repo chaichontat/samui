@@ -57,9 +57,10 @@ Because these are Svelte stores, components usually import what they need and re
 
 ## Annotation & Masking Flows
 
-- `SharedAnnotate.svelte` binds either `annoROI` or `annoFeat` to the map’s drawing interactions, sets up keyboard handlers, and clears drawn features whenever a new sample loads (`sEvent.type === 'sampleUpdated'`).
+- `SharedAnnotate.svelte` binds either `annoROI` or `annoFeat` to the map’s drawing interactions, sets up keyboard handlers, and clears drawn features whenever a new sample loads (`sEvent.type === 'sampleUpdated'`). When feature annotations reset, it also marks `annoFeat.ready = false` so counters pause until coordinates come back.
+- Readiness flags (`annoFeat.ready`, `annoROI.ready`) gate sidebar counts; they flip back to `true` only after the draw layer has rehydrated. This prevents the historical “Coords not set at getCounts” crash during sample switches or imports.
 - `AnnFeat.svelte` ensures the feature being annotated matches `sFeatureData.coords`, triggers drawing of points when labels exist, and provides exporters (`toCSV`, `toJSON`).
-- `MutableSpots` mirrors polygon annotations onto individual spot points, applying colour cues and back-filling counts for the UI. Every change raises `sEvent` with `pointsAdded` so plots and counts recompute.
+- `MutableSpots` mirrors polygon annotations onto individual spot points, applying colour cues and back-filling counts for the UI. It queues polygon operations until coordinates are hydrated and returns zero counts when empty, eliminating readiness races. Every change still raises `sEvent` with `pointsAdded` so plots and counts recompute.
 - Histogram components in `src/lib/sidebar/plot` write boolean arrays into `mask` and dispatch `maskUpdated`. `mapp.svelte` reacts by calling `updateMask` on the active overlay, dimming masked-out points.
 
 ## BYOD Inputs and External Files
@@ -104,7 +105,8 @@ Samui exposes two complementary annotation systems that share UI scaffolding but
 
 ### Shared Infrastructure
 
-- `SharedAnnotate.svelte` binds either `annoROI` or `annoFeat` to the corresponding OpenLayers controller (`Draww` for ROIs, `DrawFeature`/`MutableSpots` for feature labels). It manages draw-mode toggles, label prompts, keyboard listeners, and automatically clears annotations when the sample changes (`sEvent.type === 'sampleUpdated'`).
+- `SharedAnnotate.svelte` binds either `annoROI` or `annoFeat` to the corresponding OpenLayers controller (`Draww` for ROIs, `DrawFeature`/`MutableSpots` for feature labels). It manages draw-mode toggles, label prompts, keyboard listeners, and automatically clears annotations when the sample changes (`sEvent.type === 'sampleUpdated'`). When feature annotations reset, it flips `annoFeat.ready` to `false` so sidebar counts pause until coordinates hydrate.
+- Readiness flags on `annoFeat`/`annoROI` gate counter recomputation. The sidebar renders zero totals until the relevant draw layer reports `ready: true`, eliminating the “Coords not set at getCounts” timing window.
 - `Mapp` instantiates persistent layers (`persistentLayers.rois`, `persistentLayers.annotations`) so drawn features remain across component rerenders. Colors derive from `d3.schemeTableau10`, indexed per label.
 - Every change emits `sEvent = { type: 'pointsAdded' }`, giving sidebar counters and plots a single hook for refresh events.
 
@@ -118,9 +120,9 @@ Samui exposes two complementary annotation systems that share UI scaffolding but
 ### Feature Annotation (`annoFeat` + `DrawFeature` + `MutableSpots`)
 
 1. `AnnFeat.svelte` adds a “Select” tool on top of `SharedAnnotate`. Annotation is only allowed once a feature is selected and `annoFeat.annotating` is set, safeguarding against coord mismatches.
-2. `DrawFeature.startDraw` receives the active `CoordsData` and connects `MutableSpots` to the overlay’s vector source so point annotations mirror overlay data.
+2. `DrawFeature.startDraw` receives the active `CoordsData`, connects `MutableSpots` to the overlay’s vector source, flushes any polygon imports queued while the sample was loading, and sets `annoFeat.ready = true` before emitting `pointsAdded`.
 3. Polygons add or remove labels from all enclosed points via `MutableSpots.addFromPolygon` / `modifyFromPolygon`. Individual points can be toggled in “Select” mode.
-4. `MutableSpots` stores labels as comma-separated stacks, allowing multiple assignments per point while highlighting only the most recent. All mutations restyle the OpenLayers feature and emit `pointsAdded`.
+4. `MutableSpots` stores labels as comma-separated stacks, allowing multiple assignments per point while highlighting only the most recent. It queues polygon mutations until coordinates exist and returns zeroed counts when cleared, then restyles features and emits `pointsAdded` once data is ready.
 5. CSV export (`toCSV`) leverages `MutableSpots.dump()`; imports (`MutableSpots.load`) validate IDs against the current coordinate set, add any new labels to `annoFeat.keys`, and reapply label assignments. BYOD CSV ingestion (in `processCSV`) funnels into the same pathway.
 
 ### Caveats & Unknowns
