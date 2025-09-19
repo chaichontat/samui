@@ -5,7 +5,6 @@
   import { Camera, EyeSlash } from '@steeze-ui/heroicons';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { saveAs } from 'file-saver';
-  import { toBlob } from 'html-to-image';
   import { scale } from 'svelte/transition';
   import { tooltip } from '../utils';
 
@@ -14,8 +13,18 @@
   $: map = $sMapp;
   $: showImgControl = $userState.showImgControl;
 
-  function screenshot() {
+  let htmlToImageModule: typeof import('html-to-image') | undefined;
+
+  async function loadHtmlToImage() {
+    if (!htmlToImageModule) {
+      htmlToImageModule = await import('html-to-image');
+    }
+    return htmlToImageModule;
+  }
+
+  async function screenshot() {
     if (!map.map) return;
+    const { toBlob } = await loadHtmlToImage();
     const old = $sId.idx;
     $sId.idx = undefined;
     map.persistentLayers.active.visible = false;
