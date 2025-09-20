@@ -52,7 +52,7 @@ const config = {
         test: {
           name: 'browser',
           include: ['src/**/*.browser.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-          setupFiles: ['vitest-browser-svelte'],
+          setupFiles: ['vitest-browser-svelte', './setupTestBrowser.cjs'],
           browser: {
             headless: true,
             provider: 'playwright', // or 'webdriverio'
