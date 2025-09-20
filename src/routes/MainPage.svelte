@@ -7,8 +7,7 @@
   import Store from '$src/lib/store.svelte';
   // import MainMap from '$src/pages/mainMap.svelte';
   import Splash from '$src/pages/splash.svelte';
-  import { ArrowDown, Cog } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { ArrowDown, Cog } from '@lucide/svelte';
   import { zip } from 'lodash-es';
   import { onMount } from 'svelte';
 
@@ -98,7 +97,7 @@
     {/await}
   {:else if loadExternal}
     <Modal>
-      <Icon src={Cog} class="svg-icon h-12 w-12 stroke-1 animate-spin stroke-blue-200" /> Loading data...
+      <Cog class="svg-icon h-12 w-12 stroke-1 animate-spin stroke-blue-200" /> Loading data...
     </Modal>
   {:else}
     <Splash />
@@ -107,7 +106,7 @@
   {#if dragging}
     <Modal>
       <div class="mb-2 animate-bounce rounded-full bg-blue-600 p-[10px] drop-shadow-xl">
-        <Icon src={ArrowDown} class="h-8 w-8 stroke-current stroke-3" />
+        <ArrowDown class="h-8 w-8 stroke-current stroke-3" />
       </div>
       Drop Sample Here
     </Modal>

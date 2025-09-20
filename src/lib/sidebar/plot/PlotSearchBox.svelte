@@ -9,8 +9,7 @@
   } from '$lib/store';
   import type { FeatureAndGroup } from '$src/lib/data/objects/feature';
   import HoverableFeature from '$src/lib/sidebar/hoverableFeature.svelte';
-  import { Pencil } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { Pencil } from '@lucide/svelte';
   import * as d3 from 'd3';
   import { writable } from 'svelte/store';
   import { HoverSelect } from '../searchBox';
@@ -97,8 +96,7 @@
         setTimeout(() => box.select(), 25);
       }}
     >
-      <Icon
-        src={Pencil}
+      <Pencil
         class="svg-icon stroke-2 stroke-indigo-300/90 h-3 w-3 group-hover:stroke-violet-400"
       />
       <HoverableFeature

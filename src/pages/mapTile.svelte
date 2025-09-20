@@ -4,8 +4,7 @@
   import type { Mapp as MappObj } from '$lib/ui/mapp';
   import { byod } from '$src/lib/data/byod';
   import { tooltip } from '$src/lib/ui/utils';
-  import { ArrowsRightLeft, ArrowsUpDown, XMark } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { X } from '@lucide/svelte';
   import { afterUpdate, createEventDispatcher } from 'svelte';
   // import Mapp from './mapp.svelte'; // Dynamic import
   import type { Hierarchy } from '$lib/mapTile';
@@ -103,7 +102,7 @@
     >
       {#if hie > 0}
         <button use:tooltip={{ content: 'Close View' }} on:click={() => dispatch('delete')}>
-          <Icon src={XMark} class="svg-icon h-5 w-5" />
+          <X class="svg-icon h-5 w-5" />
         </button>
       {/if}
 
@@ -142,7 +141,7 @@
         use:tooltip={{ content: 'Split vertical' }}
         on:click={() => dispatch('split', 'v')}
       >
-        <Icon src={ArrowsUpDown} class="svg-icon h-5 w-5" />
+        <ArrowUpDown class="svg-icon h-5 w-5" />
       </button>
 
       <button
@@ -150,7 +149,7 @@
         use:tooltip={{ content: 'Split horizontal' }}
         on:click={() => dispatch('split', 'h')}
       >
-        <Icon src={ArrowsRightLeft} class="svg-icon h-5 w-5" />
+        <ArrowLeftRight class="svg-icon h-5 w-5" />
       </button> -->
 
       {#if hie === 0 && width > 800 && !$isOnline}
@@ -159,7 +158,9 @@
           class="donotsave splash-button group mb-2 mr-2 translate-y-1 rounded-lg bg-linear-to-br from-cyan-500 to-blue-500 p-0.5 text-sm font-medium text-neutral-900 hover:text-neutral-50 focus:ring-2 focus:ring-cyan-200 group-hover:from-cyan-500 group-hover:to-blue-500 dark:text-neutral-100 dark:focus:ring-cyan-800"
           on:click={byod}
         >
-          <span class="px-5 py-2 group-hover:bg-neutral-50/0 dark:group-hover:bg-neutral-900/0">Add Sample</span>
+          <span class="px-5 py-2 group-hover:bg-neutral-50/0 dark:group-hover:bg-neutral-900/0">
+            Add Sample
+          </span>
         </button>
       {/if}
     </div>

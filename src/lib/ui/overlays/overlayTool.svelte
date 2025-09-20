@@ -11,9 +11,7 @@
   } from '$lib/store';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { classes, cn } from '$src/lib/utils';
-  import { Check } from '@lucide/svelte';
-  import { Plus, XMark } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { Check, Plus, X } from '@lucide/svelte';
   import { Checkbox } from 'bits-ui';
   import { tooltip } from '../utils';
   import OverlayAdjust from './overlayAdjust.svelte';
@@ -106,12 +104,7 @@
             ? `${ov.currStyleVariables.max}`
             : ''}
         >
-          <!-- <td class="size-3">
-            <Icon
-              src={ArrowLongRight}
-              class={classes('svg-icon mr-1', $sOverlay === ov.uid ? '' : 'invisible')}
-            />
-          </td> -->
+          <!-- Placeholder cell for selection indicator icon -->
           <td class="flex items-center gap-x-0.5" class:opacity-60={$sOverlay !== ov.uid}>
             <!-- Outline checkbox -->
             <div class="size-4" use:tooltip={{ content: `${fg?.feature} outline` }}>
@@ -206,7 +199,7 @@
                   sEvent.set({ type: 'featureUpdated' });
                 }}
               >
-                <Icon src={XMark} class="svg-icon stroke-[2.5px]" />
+                <X class="svg-icon stroke-[2.5px]" stroke-width={2.5} />
               </button>
             {/if}
           </td>
@@ -216,33 +209,6 @@
   {/if}
 </table>
 
-<!-- Link button -->
-<!-- {#if Object.entries($overlays).length > 1}
-  <div class="flex justify-center">
-    <button
-      class={classes(
-        'flex rounded  w-fit p-1 px-2',
-        linkMinmax ? 'bg-sky-600 text-neutral-200' : 'bg-neutral-700 text-neutral-500'
-      )}
-      on:click={() => {
-        linkMinmax = !linkMinmax;
-        if (linkMinmax) {
-          const min = Math.min(...Object.values($overlays).map((o) => o.currStyleVariables?.min));
-          const max = Math.max(...Object.values($overlays).map((o) => o.currStyleVariables?.max));
-          for (const ov of Object.values($overlays)) {
-            ov.updateStyleVariables({ min, max });
-          }
-        }
-      }}
-    >
-      {#if linkMinmax}
-        <Icon src={Link} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-[2.5px] stroke-[2.5]" />
-      {/if}
-      Link min/max
-    </button>
-  </div>
-{/if} -->
-
 <div class="flex w-full justify-center border-t border-t-white/30">
   <!-- <FileInput accept=".csv" on:import={addOverlay}> -->
   <button
@@ -251,7 +217,7 @@
     data-testid="overlay-add-layer"
   >
     <div class="flex items-center">
-      <Icon src={Plus} class="svg-icon mr-1 h-[14px] w-[14px] translate-y-px stroke-[2.5]" />
+      <Plus class="svg-icon mr-1 h-[14px] w-[14px] translate-y-px stroke-[2.5]" stroke-width={2.5} />
       <div class="font-normal">Add Layer</div>
       <div></div>
     </div>

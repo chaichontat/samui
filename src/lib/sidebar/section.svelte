@@ -1,7 +1,6 @@
 <script lang="ts">
   import { flashing } from '$lib/store';
-  import { ChevronDown } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { ChevronDown } from '@lucide/svelte';
   import { Collapsible, Switch } from 'bits-ui';
   import { cubicOut } from 'svelte/easing';
   import { slide } from 'svelte/transition';
@@ -84,7 +83,7 @@
               >
                 <span
                   class={classes(
-                    'inline-block h-[18px] w-[18px] translate-y-px transform rounded-full bg-neutral-200 transition duration-200 ease-in-out',
+                    'inline-block h-[18px] w-[18px] translate-y-px transform rounded-full bg-neutral-200 transition duration-200 ease-out',
                     checked ? 'translate-x-6' : 'translate-x-0.5'
                   )}
                 />
@@ -92,10 +91,9 @@
             {/snippet}
           </Switch.Root>
         {/if}
-        <Icon
-          src={ChevronDown}
+        <ChevronDown
           class={classes(
-            `svg-icon size-3 stroke-current stroke-3 transition-transform delay-100 duration-100 ease-in-out`,
+            `svg-icon size-3.5 stroke-current stroke-[2.5px] transition-transform duration-250 ease-out`,
             isOpen ? 'rotate-180' : ''
           )}
         />

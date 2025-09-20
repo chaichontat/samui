@@ -91,11 +91,11 @@
   const normalized = $derived.by(computeNormalized);
   const isLockedExpanded = $derived(normalized.expandWidthRatio === 1);
 
-  const widthSpring = spring(initialNormalized.baseWidth, { stiffness: 0.16, damping: 0.5 });
+  const widthSpring = spring(initialNormalized.baseWidth, { stiffness: 0.15, damping: 0.7 });
   const heightSpring = spring(initialNormalized.baseHeight, { stiffness: 0.14, damping: 0.48 });
 
-  const widthTween = tweened(initialNormalized.baseWidth, { duration: 220, easing: cubicOut });
-  const heightTween = tweened(initialNormalized.baseHeight, { duration: 220, easing: cubicOut });
+  const widthTween = tweened(initialNormalized.baseWidth, { duration: 150, easing: cubicOut });
+  const heightTween = tweened(initialNormalized.baseHeight, { duration: 150, easing: cubicOut });
 
   const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 

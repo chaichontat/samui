@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ChevronDown } from '@lucide/svelte';
   import { Select } from 'bits-ui';
   import { oneLRU } from '../../lru';
   import { hoverSelect, overlaysFeature, sOverlay, setHoverSelect } from '../../store';
@@ -11,9 +12,6 @@
     hasAvailableFeatures,
     overlaySelectionFeature
   } from './state';
-
-  import { ChevronDown } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
 
   export let featureGroup: FeatureGroupList[] | undefined;
   export let displaySelection = false; // Start with empty search box.
@@ -53,7 +51,7 @@
           >
             <span class="block truncate">{selectedGroup}</span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <Icon class="w-4 h-4 translate-y-[0.25] text-neutral-400" src={ChevronDown} />
+              <ChevronDown class="w-4 h-4 translate-y-[0.25] text-neutral-400" />
             </span>
           </Select.Trigger>
         </span>

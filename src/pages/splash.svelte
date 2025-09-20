@@ -2,8 +2,7 @@
   import Github from '$src/lib/components/github.svelte';
   import ImportInstructionsDialog from '$src/lib/components/ImportInstructionsDialog.svelte';
   import { byod } from '$src/lib/data/byod';
-  import { Plus } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { Plus } from '@lucide/svelte';
 
   let showProcessingGuide = false;
 </script>
@@ -31,7 +30,7 @@
       <span
         class="flex items-center px-5 py-3 group-hover:bg-neutral-50/0 dark:group-hover:bg-neutral-900/0"
       >
-        <Icon src={Plus} class="h-4 w-4 translate-y-px stroke-current stroke-4" />
+        <Plus class="h-4 w-4 translate-y-px stroke-current stroke-4" />
         Import Sample
       </span>
     </button>

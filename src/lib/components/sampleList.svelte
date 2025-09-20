@@ -1,7 +1,6 @@
 <script lang="ts">
   import { classes } from '$lib/utils';
-  import { Check, ChevronUpDown } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { Check, ChevronsUpDown } from '@lucide/svelte';
   import { Select } from 'bits-ui';
   import { createEventDispatcher, onMount } from 'svelte';
   import { cubicOut } from 'svelte/easing';
@@ -66,8 +65,7 @@
               <Spinner />
             </span>
           {:else}
-            <Icon
-              src={ChevronUpDown}
+            <ChevronsUpDown
               class="size-4 stroke-current stroke-2 text-neutral-500 dark:text-neutral-200"
             />
           {/if}
@@ -109,7 +107,7 @@
                               </div>
 
                               <div class={classes(selected && showArrow ? '' : 'opacity-0')}>
-                                <Icon src={Check} class="size-4 stroke-current stroke-2" />
+                                <Check class="size-4 stroke-current stroke-2" />
                               </div>
                             </div>
                           {/snippet}

@@ -3,8 +3,7 @@
   import { classes } from '$lib/utils';
   import type { Draww } from '$src/lib/sidebar/annotation/annROI';
   import type { Mapp } from '$src/lib/ui/mapp';
-  import { Plus, PlusCircle, XMark } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { CirclePlus, Plus, X } from '@lucide/svelte';
   import { schemeTableau10 } from 'd3';
   import AnnoButton from './annoButton.svelte';
 
@@ -88,7 +87,10 @@
         $store.currKey = handleNewKey(getPrompt('Enter new label.'));
       }}
     >
-      <Icon src={Plus} class="mr-0.5 h-3 w-3 translate-y-[0px] stroke-current stroke-[2.5]" />
+      <Plus
+        class="mr-0.5 h-3 w-3 translate-y-[0px] stroke-current stroke-[2.5]"
+        stroke-width={2.5}
+      />
       Label
     </AnnoButton>
 
@@ -126,7 +128,7 @@
                 $store.keys = $store.keys;
               }}
             >
-              <Icon src={XMark} class="svg-icon stroke-neutral-400 hover:stroke-white" />
+              <X class="svg-icon stroke-neutral-400 hover:stroke-white" />
             </button>
           </label>
         {/if}
@@ -158,9 +160,9 @@
         $store.selecting = $store.selecting ? undefined : 'Polygon';
       }}
     >
-      <Icon
-        src={Plus}
+      <Plus
         class="-ml-1 mr-0.5 h-3 w-3 translate-y-[0.5px] stroke-current stroke-[2.5]"
+        stroke-width={2.5}
       />
       Polygon
     </AnnoButton>
@@ -175,9 +177,9 @@
         $store.selecting = $store.selecting ? undefined : 'Circle';
       }}
     >
-      <Icon
-        src={PlusCircle}
+      <CirclePlus
         class="-ml-1 mr-0.5 h-3 w-3 translate-y-[0.75px] stroke-current stroke-[2.5]"
+        stroke-width={2.5}
       />
       Circle
     </AnnoButton>

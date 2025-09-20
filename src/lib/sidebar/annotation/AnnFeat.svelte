@@ -3,8 +3,7 @@
   import { annoFeat, sFeatureData, sMapp, sOverlay, sSample } from '$lib/store';
   import { tooltip } from '$lib/ui/utils';
   import { classes } from '$lib/utils';
-  import { ArrowUpOnSquare, CursorArrowRays } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { MousePointerClick, SquareArrowUp } from '@lucide/svelte';
   import SharedAnnotate from './SharedAnnotate.svelte';
   import AnnoButton from './annoButton.svelte';
 
@@ -51,9 +50,9 @@
       $annoFeat.selecting = $annoFeat.selecting ? undefined : 'Select';
     }}
   >
-    <Icon
-      src={CursorArrowRays}
+    <MousePointerClick
       class="-ml-1 mr-0.5 h-3 w-3 translate-y-px stroke-current stroke-[2.5]"
+      stroke-width={2.5}
     />
     Select
   </AnnoButton>
@@ -68,7 +67,7 @@
     disabled={$annoFeat.keys.length === 0}
     on:click={out}
   >
-    <Icon src={ArrowUpOnSquare} class="svg-icon" />
+    <SquareArrowUp class="svg-icon" stroke-width={2.5} />
   </button>
 </SharedAnnotate>
 
@@ -76,10 +75,10 @@
   {!$annoFeat.annotating?.coordName
     ? 'Not annotating.'
     : $annoFeat.keys.length === 0
-    ? 'Add labels to start annoFeat.'
-    : $annoFeat.selecting
-    ? `Selecting ${$annoFeat.annotating.coordName}.`
-    : `Add points or selections to annotate ${$annoFeat.annotating.coordName}.`}
+      ? 'Add labels to start annoFeat.'
+      : $annoFeat.selecting
+        ? `Selecting ${$annoFeat.annotating.coordName}.`
+        : `Add points or selections to annotate ${$annoFeat.annotating.coordName}.`}
 </div>
 <div class="flex">
   <div class="grow" />

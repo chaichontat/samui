@@ -7,8 +7,7 @@
   import { classes } from '$src/lib/utils';
   import MapTile from '$src/pages/mapTile.svelte';
   // import Sidebar from '$src/pages/sidebar.svelte'; // Dynamic import
-  import { Bars3 } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { Menu } from '@lucide/svelte';
 
   let hie: Hierarchy = { root: true, maps: $mapTiles };
 
@@ -32,11 +31,8 @@
     showSidebar ? 'h-[65%] md:h-full md:w-[75%]' : 'h-screen'
   )}
 >
-  <button
-    class="absolute top-6 right-3 z-40 size-5"
-    on:click={() => (showSidebar = !showSidebar)}
-  >
-    <Icon src={Bars3} class="svg-icon h-6 w-6" />
+  <button class="absolute top-6 right-3 z-40 size-5" on:click={() => (showSidebar = !showSidebar)}>
+    <Menu class="svg-icon h-6 w-6" />
   </button>
 
   <article class="h-full w-full" id="allMaps">

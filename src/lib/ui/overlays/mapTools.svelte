@@ -2,8 +2,7 @@
   import { sId, sMapp, sSample, userState } from '$lib/store';
   import type { Mapp } from '$lib/ui/mapp';
   import GlassIsland from '$src/lib/components/glass/GlassIsland.svelte';
-  import { Camera, EyeSlash } from '@steeze-ui/heroicons';
-  import { Icon } from '@steeze-ui/svelte-icon';
+  import { Camera, EyeOff } from '@lucide/svelte';
   import { saveAs } from 'file-saver';
   import { scale } from 'svelte/transition';
   import { tooltip } from '../utils';
@@ -80,7 +79,7 @@
     use:tooltip={{ content: 'Show/hide' }}
     aria-label="Show/hide image controls"
   >
-    <Icon src={EyeSlash} class="svg-icon size-5" />
+    <EyeOff class="svg-icon size-5" />
   </button>
 
   <!-- Screenshot -->
@@ -90,6 +89,6 @@
     on:click={screenshot}
     aria-label="Screenshot"
   >
-    <Icon src={Camera} class="svg-icon size-5" />
+    <Camera class="svg-icon size-5" />
   </button>
 </div>
