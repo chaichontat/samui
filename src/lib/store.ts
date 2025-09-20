@@ -34,7 +34,8 @@ export const annoROI = writable({
   currKey: undefined as number | undefined,
   keys: [] as string[],
   show: true,
-  selecting: undefined as Geometries | undefined
+  selecting: undefined as Geometries | undefined,
+  ready: true
 });
 
 const escHandlerRoi = (e: KeyboardEvent) => {
@@ -62,7 +63,8 @@ export const annoFeat = writable({
   show: true,
   annotating: undefined as { coordName: string; overlay: string } | undefined,
   selecting: undefined as Geometries | 'Select' | undefined,
-  reverseKeys: {} as Record<string, number>
+  reverseKeys: {} as Record<string, number>,
+  ready: false
 });
 
 annoFeat.subscribe((ann) => {

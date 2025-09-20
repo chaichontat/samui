@@ -15,12 +15,18 @@
   export let buttonClass = 'bg-blue-700 shadow-blue-700/20 hover:bg-blue-600';
 
   let nPoints: Record<string, number> = { _total: 0 };
+  let storeReady = true;
   let map: Mapp;
   $: map = $sMapp;
 
   $: if ($sEvent?.type === 'sampleUpdated') {
     draw.clear();
+    if ($store === $annoFeat) {
+      annoFeat.update((current) => ({ ...current, ready: false }));
+    }
   }
+
+  $: storeReady = $store === $annoFeat ? $store.ready : true;
 
   const alphanumeric = /^[a-zA-Z0-9_]*$/;
   function handleNewKey(name: string | null) {
@@ -65,6 +71,10 @@
   }
 
   $: if (['pointsAdded', 'sampleUpdated'].includes($sEvent?.type)) {
+    nPoints = storeReady ? draw.getCounts() : { _total: 0 };
+  }
+
+  $: if ($store === $annoFeat && storeReady && !$sEvent?.type) {
     nPoints = draw.getCounts();
   }
 </script>
@@ -83,7 +93,7 @@
     </AnnoButton>
 
     <div class="ml-4 flex items-center gap-x-3 flex-wrap">
-      {#each $store.keys as key, i}
+      {#each $store.keys as key, i (i)}
         {#if key !== 'No one is going to name this.'}
           <label
             class="flex items-center gap-x-1 hover:underline cursor-pointer"
