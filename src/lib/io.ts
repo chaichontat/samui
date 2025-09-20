@@ -1,5 +1,16 @@
 import saveAs from 'file-saver';
-import Papa, { type ParseConfig, type ParseResult } from 'papaparse';
+import type { ParseConfig, ParseResult } from 'papaparse';
+
+type PapaparseInstance = (typeof import('papaparse'))['default'];
+
+let papaparsePromise: Promise<PapaparseInstance> | null = null;
+
+async function loadPapaparse() {
+  if (!papaparsePromise) {
+    papaparsePromise = import('papaparse').then((module) => module.default);
+  }
+  return papaparsePromise;
+}
 
 export type Url = { url: string; type: 'local' | 'network' };
 
@@ -20,30 +31,29 @@ export async function getFile(handle: FileSystemDirectoryHandle, name: string) {
     .catch(() => alert(`Cannot get file ${name}`));
 }
 
-export async function fromCSV<T>(str: string, options?: ParseConfig<T> | { download: boolean }) {
-  let out: ParseResult<T> | undefined;
-  let res: () => void;
-  const promise: Promise<void> = new Promise((resolve) => (res = resolve));
+type CsvParseOptions<T> = ParseConfig<T> & { download?: boolean };
 
-  //@ts-ignore
-  if (options?.download) {
-    str = str.startsWith('http') || str.startsWith('blob') ? str : location.origin + str;
+export async function fromCSV<T>(str: string, options?: CsvParseOptions<T>) {
+  const Papa = await loadPapaparse();
+
+  if (options?.download && !str.startsWith('http') && !str.startsWith('blob')) {
+    str = location.origin + str;
   }
 
-  //@ts-ignore
-  Papa.parse(str, {
-    dynamicTyping: true,
-    worker: true,
-    delimiter: ',',
-    skipEmptyLines: 'greedy',
-    complete: (results: Papa.ParseResult<T>) => {
-      out = results;
-      res();
-    },
-    ...options
+  return await new Promise<ParseResult<T> | undefined>((resolve) => {
+    Papa.parse(str, {
+      dynamicTyping: true,
+      worker: true,
+      delimiter: ',',
+      skipEmptyLines: 'greedy',
+      ...options,
+      complete: (results) => resolve(results),
+      error: (error) => {
+        console.error('Failed to parse CSV', error);
+        resolve(undefined);
+      }
+    });
   });
-  await promise;
-  return out;
 }
 
 export function toCSV(name: string, obj: object[] | string) {

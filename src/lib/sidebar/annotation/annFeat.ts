@@ -26,6 +26,7 @@ export class DrawFeature extends Draww {
   // Comparison point for points after modifying event.
   featuresBeforeMod: Record<number, Feature<Geometry>> = {};
   coordsSource?: CoordsData;
+  pendingPolygons: Feature<Polygon | Circle>[] = [];
 
   constructor(map: Mapp, store: typeof annoROI, mutspot: MutableSpots) {
     super(map, store);
@@ -110,6 +111,10 @@ Got ${coordName} but current feature has ${coords.name}.`
     console.log('Start drawing at', coords.name);
     this.coordsSource = coords;
     this.points.startDraw(coords, get(annoFeat).reverseKeys, get(overlays)[get(sOverlay)].source);
+    annoFeat.update((state) => ({ ...state, ready: true }));
+    const queued = this.pendingPolygons.splice(0);
+    queued.forEach((feature) => this.points.addFromPolygon(feature));
+    sEvent.set({ type: 'pointsAdded' });
   }
 
   getCounts() {
@@ -159,6 +164,8 @@ Got ${coordName} but current feature has ${coords.name}.`
   }
 
   clear() {
+    annoFeat.update((state) => ({ ...state, ready: false }));
+    this.pendingPolygons = [];
     super.clear();
     this.points.clear();
   }

@@ -6,12 +6,14 @@ import { schemeTableau10 } from 'd3';
 import Feature from 'ol/Feature.js';
 import Circle from 'ol/geom/Circle.js';
 import Point from 'ol/geom/Point.js';
+import Polygon from 'ol/geom/Polygon.js';
 import VectorSource from 'ol/source/Vector.js';
 import { afterEach, expect, test, vi } from 'vitest';
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const stubAlert = vi.fn();
+const stubPrompt = vi.fn(() => 'ok');
 
 function buildOverlaySource(coords: CoordsData) {
   const overlay = new VectorSource();
@@ -42,6 +44,7 @@ afterEach(() => {
 });
 
 vi.stubGlobal('alert', stubAlert);
+vi.stubGlobal('prompt', stubPrompt);
 
 function featureAt<T extends Point | Circle>(mutable: MutableSpots, idx: number) {
   return mutable.source.getFeatureById(idx) as FeatureLabel<T> | undefined;
@@ -105,6 +108,36 @@ test('MutableSpots add accepts arrays and reports counts', async () => {
   cleanup();
 });
 
+test('MutableSpots replays polygons queued before startDraw', async () => {
+  const coords = new CoordsData({
+    name: 'mutable-pending-polygons',
+    shape: 'circle',
+    mPerPx: 1,
+    size: 5,
+    pos: Array.from({ length: 5 }, (_, idx) => ({ x: idx * 2, y: idx }))
+  });
+  const overlaySource = buildOverlaySource(coords);
+  const { map, cleanup } = await renderMappHarness({ coords });
+  const mutable = new MutableSpots(map).mount();
+
+  const polygon = new Feature(new Circle([0, 0], 6));
+  polygon.setId('poly-init');
+  polygon.set('label', 'Tumor');
+
+  mutable.addFromPolygon(polygon as any);
+  expect(mutable.pendingPolygons).toHaveLength(1);
+
+  mutable.startDraw(coords, { Tumor: 0 }, overlaySource);
+  await flush();
+
+  expect(mutable.pendingPolygons).toHaveLength(0);
+  expect(featureAt<Circle>(mutable, 0)?.getLabel()).toBe('Tumor');
+
+  map.map?.removeInteraction(mutable.select);
+  mutable.dispose?.();
+  cleanup();
+});
+
 test('MutableSpots polygon operations add, modify, delete and relabel', async () => {
   const coords = new CoordsData({
     name: 'mutable-poly',
@@ -158,6 +191,78 @@ test('MutableSpots polygon operations add, modify, delete and relabel', async ()
   expect(countsAfterRelabel.B).toBe(labeledAfterDelete);
   expect(countsAfterRelabel.total_).toBe(labeledAfterDelete);
   expect(countsAfterRelabel.unlabeled_).toBe(coords.pos!.length - labeledAfterDelete);
+
+  map.map?.removeInteraction(mutable.select);
+  mutable.dispose?.();
+  cleanup();
+});
+
+test('MutableSpots getCounts before startDraw should be safe', async () => {
+  const coords = new CoordsData({
+    name: 'mutable-before-start',
+    shape: 'circle',
+    mPerPx: 1,
+    size: 4,
+    pos: Array.from({ length: 4 }, (_, idx) => ({ x: idx * 2, y: 0 }))
+  });
+
+  const { map, cleanup } = await renderMappHarness({ coords });
+  const mutable = new MutableSpots(map).mount();
+
+  expect(() => mutable.getCounts()).not.toThrow();
+
+  mutable.dispose?.();
+  cleanup();
+});
+
+test('MutableSpots getCounts immediately after clear should not throw', async () => {
+  const coords = new CoordsData({
+    name: 'mutable-clear',
+    shape: 'circle',
+    mPerPx: 1,
+    size: 4,
+    pos: Array.from({ length: 3 }, (_, idx) => ({ x: idx * 2, y: 0 }))
+  });
+  const { mutable, cleanup, map } = await setupMutable({ coords });
+
+  mutable.add([0, 1], 'Tumor');
+  await flush();
+
+  mutable.clear();
+
+  expect(() => mutable.getCounts()).not.toThrow();
+
+  map.map?.removeInteraction(mutable.select);
+  mutable.dispose?.();
+  cleanup();
+});
+
+test('MutableSpots addFromPolygon without coords should not crash', async () => {
+  const coords = new CoordsData({
+    name: 'mutable-import',
+    shape: 'circle',
+    mPerPx: 1,
+    size: 4,
+    pos: Array.from({ length: 5 }, (_, idx) => ({ x: idx * 3, y: idx }))
+  });
+  const { mutable, cleanup, map } = await setupMutable({ coords });
+
+  mutable.clear();
+
+  const polygon = new Polygon([
+    [
+      [0, 0],
+      [10, 0],
+      [10, 10],
+      [0, 10],
+      [0, 0]
+    ]
+  ]);
+  const polygonFeature = new Feature(polygon);
+  polygonFeature.setId('poly-1');
+  polygonFeature.set('label', 'Tumor');
+
+  expect(() => mutable.addFromPolygon(polygonFeature)).not.toThrow();
 
   map.map?.removeInteraction(mutable.select);
   mutable.dispose?.();
