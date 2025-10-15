@@ -1,7 +1,7 @@
 import type { FeatureType } from '$src/lib/data/objects/feature';
 import * as d3 from 'd3';
-import type { LiteralStyle } from 'ol/style/literal';
 import type { StyleVariables } from 'ol/style/flat';
+import type { LiteralStyle } from 'ol/style/literal';
 
 export const colorMaps = {
   blues: (t: number) => `rgba(0,0,255,${t})`,
@@ -70,10 +70,11 @@ export function genSpotStyle({
   // Highest zoom level is 1/4x the native res of img.
   // The factor of 64 is 128 and the conversion of diameter to radius.
   const diameterPx = spotSizeMeter / (mPerPx * 64);
-  const baseRadiusPx = Math.max(diameterPx / 2, 1);
+  const baseRadiusPx = Math.max(diameterPx / 2, 0.001);
+  const minRadiusPx = Math.max(baseRadiusPx / 2, 0.001);
   const radiusStops = [...Array(10).keys()].map((i) => [i, baseRadiusPx * 2 ** (i - 1)]).flat();
   const radiusExpression = scale
-    ? ['clamp', ['interpolate', ['exponential', 1.2], ['zoom'], ...radiusStops], 1, 32768]
+    ? ['clamp', ['interpolate', ['exponential', 1.2], ['zoom'], ...radiusStops], minRadiusPx, 32768]
     : baseRadiusPx;
 
   if (type === 'quantitative') {

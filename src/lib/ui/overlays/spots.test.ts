@@ -205,4 +205,22 @@ describe('genSpotStyle', () => {
     expect(result.style).toHaveProperty('circle-radius');
     expect(result.variables).toMatchObject({ opacity: 1, min: 0, max: 0 });
   });
+
+  it('respects small spot sizes when scaling overlays', async () => {
+    const { genSpotStyle } = await import('$src/lib/ui/overlays/featureColormap');
+    const result = genSpotStyle({
+      type: 'quantitative',
+      spotSizeMeter: 5e-7,
+      mPerPx: 2e-6,
+      colorMap: 'turbo',
+      scale: true
+    });
+
+    const radiusExpression = result.style['circle-radius'] as unknown[];
+    expect(radiusExpression[0]).toBe('clamp');
+    const minRadius = radiusExpression[2];
+    expect(typeof minRadius).toBe('number');
+    expect(minRadius as number).toBeLessThan(1);
+    expect(minRadius as number).toBeGreaterThan(0);
+  });
 });
