@@ -56,6 +56,42 @@ export function buildCompositeController(image: ImgData): CompCtrl {
   return { type: 'composite', variables };
 }
 
+export function normalizeCompositeController(image: ImgData, controller: CompCtrl): CompCtrl {
+  if (!Array.isArray(image.channels)) return controller;
+  const sqrtMax = Math.sqrt(image.maxVal ?? 0);
+  const keep = new Set(image.channels);
+  for (const key of Object.keys(controller.variables)) {
+    if (!keep.has(key)) {
+      delete controller.variables[key];
+    }
+  }
+
+  const palette = new Array(Math.ceil(image.channels.length / colors.length))
+    .fill(colors)
+    .flat() as BandInfo['color'][];
+
+  image.channels.forEach((channel, idx) => {
+    const defaultColor = palette[idx] ?? colors[idx % colors.length];
+    const existing = controller.variables[channel];
+    if (existing) {
+      if (!Array.isArray(existing.minmax) || existing.minmax.length !== 2) {
+        existing.minmax = [0, sqrtMax];
+      }
+      if (!existing.color) {
+        existing.color = defaultColor;
+      }
+    } else {
+      controller.variables[channel] = {
+        enabled: false,
+        color: defaultColor,
+        minmax: [0, sqrtMax]
+      };
+    }
+  });
+
+  return controller;
+}
+
 export function restoreCompositeController(channels: CompositeChannels): CompCtrl | null {
   const snapshot = localStorage.getItem('imgCtrl');
   if (!snapshot) return null;
@@ -110,4 +146,3 @@ export function cloneController(ctrl: ImgCtrl | undefined): ImgCtrl | undefined 
   if (!ctrl) return undefined;
   return JSON.parse(JSON.stringify(ctrl)) as ImgCtrl;
 }
-

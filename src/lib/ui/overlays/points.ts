@@ -28,7 +28,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
   uid: string;
   features?: Feature<Point>[];
 
-  currSample?: string;
+  currSample?: Sample;
   currFeature?: FeatureAndGroup;
   currPx?: number;
   currLegend?: (string | number)[];
@@ -36,6 +36,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
   currColorMap: keyof typeof colorMaps = 'turbo';
   currStyleVariables: StyleVariables = {};
   userStyleOverrides: StyleVariables = {};
+  coordKeys: WeakMap<CoordsData, string>;
   z: number;
 
   // WebGLSpots only gets created after mount.
@@ -53,6 +54,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     this.outline.visible = false;
     this.currStyleVariables = { ...init.variables };
     this.userStyleOverrides = {};
+    this.coordKeys = new WeakMap();
   }
 
   get currStyle() {
@@ -178,16 +180,26 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     console.debug(`Update called: ${this.uid} to ${fn.feature}.`);
     if (!fn.feature) return false;
     const res = await sample.getFeature(fn);
-    if (!res) return false;
+    if (!res) {
+      this.source.clear();
+      this.features = undefined;
+      this.coords = undefined;
+      this.currFeature = undefined;
+      this.currSample = sample;
+      sFeatureData.set(undefined);
+      return false;
+    }
 
     const { data, dataType, coords, minmax } = res;
     // Check if coord is the same.
-    if ((this.currSample !== sample.name || this.coords?.name) !== coords.name) {
+    if (this.currSample !== sample || this.coords !== coords) {
       this.source.clear();
-      this.features = this.genPoints({
-        key: `${sample.name}-${coords.name}`,
-        args: [coords]
-      });
+      let cacheKey = this.coordKeys.get(coords);
+      if (!cacheKey) {
+        cacheKey = `${sample.name}-${coords.name}-${rand()}`;
+        this.coordKeys.set(coords, cacheKey);
+      }
+      this.features = this.genPoints({ key: cacheKey, args: [coords] });
       this.coords = coords;
 
       // Set the view to new coords when no image is available.
@@ -249,7 +261,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
       }
     }
 
-    if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
+    if (this.currSample !== sample || !isEqual(this.currFeature, fn)) {
       this._updateProperties(sample, fn, { dataType, data })
         .then(() => {
           if (this.currStyleVariables.min === 0 && this.currStyleVariables.max === 0) {
@@ -258,7 +270,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
         })
         .catch(handleError);
       this.currFeature = fn;
-      this.currSample = sample.name;
+      this.currSample = sample;
     }
 
     // Tell WebGL to update. Intentionally not updating on source directly to minimize redraws.

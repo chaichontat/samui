@@ -12,6 +12,7 @@
     buildCompositeController,
     buildRgbController,
     cloneController,
+    normalizeCompositeController,
     selectChannelColor
   } from '$src/lib/ui/background/imgControlState';
   import { Tooltip } from 'bits-ui';
@@ -55,7 +56,7 @@
     if (nextImage.channels === 'rgb') {
       controller = buildRgbController();
     } else if (Array.isArray(nextImage.channels)) {
-      controller = buildCompositeController(nextImage);
+      controller = normalizeCompositeController(nextImage, buildCompositeController(nextImage));
     } else {
       throw new Error('Invalid channel configuration');
     }
