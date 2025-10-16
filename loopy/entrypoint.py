@@ -206,6 +206,26 @@ def h5ad(
 
         coords = pd.DataFrame(ad.obsm["spatial"][:, :2], columns=["x", "y"], index=ad.obs_names.astype(str))
 
+        # Warn if the overall physical extent is unusually large (> 10 cm).
+        try:
+            x_extent_px = float(coords["x"].max() - coords["x"].min())
+            y_extent_px = float(coords["y"].max() - coords["y"].min())
+            width_m = x_extent_px * m_per_px
+            height_m = y_extent_px * m_per_px
+            threshold_m = 0.10  # 10 cm
+            if max(width_m, height_m) > threshold_m:
+                width_cm = width_m * 100
+                height_cm = height_m * 100
+                log(
+                    "Large physical extent detected:",
+                    f"~{width_cm:.2f} cm × {height_cm:.2f} cm",
+                    f"(m_per_px={m_per_px:g}).",
+                    "If this looks wrong, check your coordinate units or pass --m-per-px accordingly.",
+                    type_="WARNING",
+                )
+        except Exception as e:
+            log("Failed to compute extent:", str(e), type_="WARNING")
+
         X = ad.X
         is_sparse = sp.issparse(X)
         if is_sparse:
