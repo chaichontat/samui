@@ -29,6 +29,9 @@
     .catch((e) => handleError(e));
 
   $: showImgControl = $userState.showImgControl;
+  // Only show image controls when a background image exists
+  $: hasBgImage = Boolean(map?.persistentLayers?.background?.image);
+  $: showImgControlEffective = showImgControl && hasBgImage;
   $: console.log(sample);
 
   export let uid: number;
@@ -154,7 +157,7 @@
     id={mapName}
     bind:this={mapElem}
     class="map h-full w-full"
-    class:small={showImgControl && small}
+    class:small={showImgControlEffective && small}
   />
   <!-- Map tippy -->
   <div
@@ -168,7 +171,7 @@
     <div
       class={cn(
         'absolute top-[72px] left-1 z-30 h-fit md:left-4 max-w-[calc(100%-20px)]',
-        !showImgControl && 'hidden'
+        !showImgControlEffective && 'hidden'
       )}
     >
       <ImgControl background={map.persistentLayers.background} />
