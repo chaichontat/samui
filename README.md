@@ -24,6 +24,17 @@ cd samui
 conda env create -n samui -f environment.yml
 ```
 
+### Serving a Sample Locally
+
+After preprocessing, you can host a sample directory with `loopy serve` for browser access:
+
+```sh
+pip install .[server]  # installs FastAPI/Uvicorn extras if not already available
+loopy serve ./out/MySample
+```
+
+The command launches a HTTP server that exposes your sample. Your browser should open up with a warning about an invalid certificate. You can safely ignore it as you're accessing your own dataset. Set `--host 0.0.0.0` when you need to reach the server from another machine on your network.
+
 ### Preprocessing
 
 For an example case, you can download a sample TIFF image from <https://libd-spatial-dlpfc-loopy.s3.amazonaws.com/VisiumIF/sample.tif>.
