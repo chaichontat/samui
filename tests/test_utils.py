@@ -133,3 +133,40 @@ def test_writable_write_joins_root(tmp_path: Path) -> None:
     writable.write(dest, writer)
 
     assert captured == [dest / "inner.txt"]
+
+
+def test_infer_feature_data_type_series_numeric_and_string() -> None:
+    s_num = pd.Series([1, 2, 3], dtype=int)
+    s_str = pd.Series(["a", "b", "c"], dtype=object)
+
+    assert utils.infer_feature_data_type(s_num) == "quantitative"
+    assert utils.infer_feature_data_type(s_str) == "categorical"
+
+
+def test_infer_feature_data_type_dataframe_all_numeric() -> None:
+    df = pd.DataFrame({"a": [1, 2], "b": [0.1, 0.2]})
+    assert utils.infer_feature_data_type(df) == "quantitative"
+
+
+def test_infer_feature_data_type_dataframe_mixed_and_categorical() -> None:
+    df_mixed = pd.DataFrame({"a": [1, 2], "b": ["x", "y"]})
+    assert utils.infer_feature_data_type(df_mixed) == "categorical"
+
+    df_cat = pd.DataFrame({"a": pd.Series(["x", "y"], dtype="category")})
+    assert utils.infer_feature_data_type(df_cat) == "categorical"
+
+
+def test_estimate_spot_diameter_basic_grid() -> None:
+    # Create a simple grid with spacing 10 (pixels). Nearest neighbor distance is 10.
+    xs, ys = np.meshgrid(np.arange(0, 50, 10), np.arange(0, 50, 10))
+    coords = pd.DataFrame({"x": xs.flatten(), "y": ys.flatten()})
+
+    est = utils.estimate_spot_diameter(coords, m_per_px=1.0, subsample=5000, factor=0.55, rng=0)
+    assert 5.0 < est < 6.0  # around 5.5
+
+
+def test_estimate_spot_diameter_validations() -> None:
+    with pytest.raises(ValueError):
+        utils.estimate_spot_diameter(pd.DataFrame({"x": [0]}), m_per_px=1.0)
+    with pytest.raises(ValueError):
+        utils.estimate_spot_diameter(pd.DataFrame({"a": [0], "b": [1]}), m_per_px=1.0)
