@@ -35,9 +35,14 @@ samui = "loopy.entrypoint:cli"
 
 [project.optional-dependencies]
 geo = ["gdal==3.8.4"]
+server = [
+  # FastAPI versions <0.100 depend on Pydantic v1t
+  "fastapi>=0.95,<0.100",
+  "uvicorn[standard]>=0.20",
+]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
   "black",
   "conda-lock",
   "flake8",

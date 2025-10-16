@@ -228,7 +228,7 @@ class Sample(BaseModel):
         Args:
             name (str): Name of the coordinate dataframe specified in Sample.add_coords()
         """
-        if not self.coordParams or not name in [c.name for c in self.coordParams]:
+        if not self.coordParams or name not in [c.name for c in self.coordParams]:
             raise ValueError(f"Coord name {name} not found")
 
         self.coordParams = [c for c in self.coordParams if c.name != name]
@@ -247,10 +247,8 @@ class Sample(BaseModel):
             pd.DataFrame: Joined dataframe
         """
 
-        if not self.coordParams or not coordName in [c.name for c in self.coordParams]:
-            raise ValueError(
-                f"Coord name {coordName}. Check coordName or add coords using Sample.add_coords() first"
-            )
+        if not self.coordParams or coordName not in [c.name for c in self.coordParams]:
+            raise ValueError(f"Coord name {coordName}. Check coordName or add coords using Sample.add_coords() first")
 
         coord_params = [c for c in self.coordParams if c.name == coordName][0]
 
@@ -304,9 +302,7 @@ class Sample(BaseModel):
             )
 
         run() if not self.lazy else self.queue_.append((f"Add csv feature {name}", run))
-        self._add_feature(
-            PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=dataType, coordName=coordName)
-        )
+        self._add_feature(PlainCSVParams(name=name, url=Url(url=f"{name}.csv"), dataType=dataType, coordName=coordName))
         return self
 
     @check_path
@@ -328,18 +324,14 @@ class Sample(BaseModel):
                     joined, mode="csc", logger=lambda *args: log(self.name, *args)
                 )
             else:
-                header, bytedict = compress_chunked_features(
-                    joined, logger=lambda *args: log(self.name, *args)
-                )
+                header, bytedict = compress_chunked_features(joined, logger=lambda *args: log(self.name, *args))
             log(f"Writing compressed chunks for {name}:", f"{len(bytedict)} bytes")
             header.write(self.path / f"{name}.json")
             (self.path / name).with_suffix(".bin").write_bytes(bytedict)
 
         run() if not self.lazy else self.queue_.append((f"Add chunked {name}", run))
         self._add_feature(
-            ChunkedCSVParams(
-                name=name, url=Url(f"{name}.bin"), unit=unit, dataType=dataType, coordName=coordName
-            )
+            ChunkedCSVParams(name=name, url=Url(f"{name}.bin"), unit=unit, dataType=dataType, coordName=coordName)
         )
         return self
 
