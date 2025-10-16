@@ -206,6 +206,21 @@ describe('Sample', () => {
     expect(sample.metadataMd).toEqual(sampleParams.metadataMd);
   });
 
+  it('reports feature availability and returns the first available feature', async () => {
+    const sample = new Sample(sampleParams);
+    await sample.hydrate();
+    plainCsvInstances[0].featNames = ['geneA', 'geneB'];
+    chunkedCsvInstances[0].featNames = ['proteinX'];
+    chunkedCsvInstances[0].names = { proteinX: 0 };
+
+    expect(sample.hasFeature({ group: 'plain', feature: 'geneA' })).toBe(true);
+    expect(sample.hasFeature({ group: 'plain', feature: 'missing' })).toBe(false);
+    expect(sample.hasFeature({ group: 'chunked', feature: 'proteinX' })).toBe(true);
+
+    const first = await sample.firstFeature();
+    expect(first).toEqual({ group: 'plain', feature: 'geneA' });
+  });
+
   it('hydrates image and features once', async () => {
     const handle = { kind: 'dir' } as unknown as FileSystemDirectoryHandle;
     const sample = new Sample(sampleParams, handle);

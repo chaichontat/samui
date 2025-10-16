@@ -50,6 +50,13 @@
   });
 
   // Drops
+  function clearQueryString() {
+    if (window.history && window.location.search.length > 0) {
+      const nextUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', nextUrl);
+    }
+  }
+
   function handleDrop(e: Event) {
     dragging = false;
     e.stopPropagation();
@@ -63,7 +70,13 @@
     const handle = file.getAsFileSystemHandle() as Promise<
       FileSystemDirectoryHandle | FileSystemFileHandle
     >;
-    processHandle(handle, true).catch(console.error);
+    processHandle(handle, true)
+      .then((result) => {
+        if (result === 'folder') {
+          clearQueryString();
+        }
+      })
+      .catch(console.error);
   }
   let dragging = false;
   let dragTimeout: ReturnType<typeof setTimeout>;
