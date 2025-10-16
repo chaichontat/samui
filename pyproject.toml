@@ -31,6 +31,7 @@ dependencies = [
 
 [project.scripts]
 loopy = "loopy.entrypoint:cli"
+samui = "loopy.entrypoint:cli"
 
 [project.optional-dependencies]
 geo = ["gdal==3.8.4"]
