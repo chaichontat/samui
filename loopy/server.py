@@ -448,7 +448,7 @@ def get_or_create_self_signed(
 
     # Reuse if exists
     if cert_path.exists() and key_path.exists():
-        log("Using cached TLS cert:", cert_path)
+        log("Using cached TLS cert:", cert_path, type_="DEBUG")
         return str(cert_path), str(key_path)
 
     # Generate new key+cert

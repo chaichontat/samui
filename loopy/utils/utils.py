@@ -118,7 +118,7 @@ def estimate_spot_diameter(
     """Estimate spot diameter in meters from coordinates using a nearest‑neighbor heuristic.
 
     The heuristic computes the median nearest‑neighbor distance in the input coordinate space
-    and multiplies by a packing factor (default 0.55, approximating hexagonal packing) and `m_per_px`.
+    and multiplies by a packing factor (default 0.25, approximating hexagonal packing) and `m_per_px`.
 
     Args:
         coords: DataFrame with columns 'x' and 'y' (in pixel units of the coordinate system).
