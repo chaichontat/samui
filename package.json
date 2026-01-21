@@ -83,7 +83,7 @@
     "highlight.js": "^11.11.1",
     "html-to-image": "^1.11.11",
     "loam": "^1.2.0",
-    "lodash-es": "^4.17.21",
+    "lodash-es": "^4.17.23",
     "lru-cache": "^10.2.2",
     "ol": "^10.6.1",
     "ol-pmtiles": "^2.0.2",
