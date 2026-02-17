@@ -74,7 +74,7 @@
     "@lucide/svelte": "^0.544.0",
     "@observablehq/plot": "^0.6.14",
     "@tailwindcss/postcss": "^4.1.13",
-    "ajv": "^8.13.0",
+    "ajv": "^8.18.0",
     "bits-ui": "^2.9.8",
     "fast-kde": "^0.2.2",
     "file-saver": "^2.0.5",
