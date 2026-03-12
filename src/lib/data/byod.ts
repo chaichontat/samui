@@ -1,11 +1,26 @@
 // Bring your own data.
 
 import { Sample, type SampleParams } from '$lib/data/objects/sample';
-import { mapIdSample, overlays, sFeatureData, sMapp, sOverlay, sSample, samples } from '$lib/store';
+import {
+  mapIdSample,
+  overlays,
+  sFeatureData,
+  sMapId,
+  sMapp,
+  sOverlay,
+  sSample,
+  samples
+} from '$lib/store';
 import { get } from 'svelte/store';
 import { fromCSV } from '../io';
 import { CoordsData, type Coord } from './objects/coords';
 import { valAnnFeatData, valROIData } from './schemas';
+import {
+  buildTiffSampleParams,
+  getTiffImportLimitMessage,
+  isTiffFileName,
+  MAX_BROWSER_TIFF_BYTES
+} from './tiffImport';
 
 async function readFile<T extends object>(
   dirHandle: FileSystemDirectoryHandle,
@@ -75,6 +90,11 @@ export async function processHandle(
   const h = await handle;
   if (h instanceof FileSystemFileHandle) {
     const file = await h.getFile();
+    if (isTiffFileName(file.name)) {
+      await processTiff(file, setSample);
+      return;
+    }
+
     const text = await file.text();
     let proc: object | object[] | undefined;
     try {
@@ -122,6 +142,67 @@ export async function processHandle(
   return processFolder(h, setSample);
 }
 
+function registerImportedSample(sample: Sample, setSample = true) {
+  const existing = [...get(samples)];
+  const existingIdx = existing.findIndex((entry) => entry.name === sample.name);
+
+  if (existingIdx >= 0 && !confirm(`Sample ${sample.name} already exists. Overwrite?`)) {
+    return false;
+  }
+
+  if (existingIdx >= 0) {
+    existing.splice(existingIdx, 1, { name: sample.name, sample });
+  } else {
+    existing.push({ name: sample.name, sample });
+  }
+  samples.set(existing);
+
+  if (setSample) {
+    const curr = { ...get(mapIdSample) };
+    if (Object.keys(curr).length === 0) {
+      curr[get(sMapId)] = sample.name;
+    } else {
+      for (const id of Object.keys(curr)) {
+        curr[id] = sample.name;
+      }
+    }
+    mapIdSample.set(curr);
+    console.log('Set sample to', sample.name);
+  }
+
+  return true;
+}
+
+async function processTiff(file: File, setSample = true) {
+  if (file.size > MAX_BROWSER_TIFF_BYTES) {
+    alert(getTiffImportLimitMessage());
+    return;
+  }
+
+  try {
+    const params = await buildTiffSampleParams(file);
+    const sample = new Sample(params);
+    const imported = registerImportedSample(sample, setSample);
+    if (!imported) {
+      return;
+    }
+
+    if (!localStorage.getItem('samui:tiff-import-notice')) {
+      const scaleMessage =
+        params.imgParams?.mPerPx === 1
+          ? ' Pixel scale defaulted to 1 because the TIFF did not expose meter-based resolution metadata.'
+          : '';
+      alert(
+        `Imported ${sample.name} as an image-only TIFF sample.${scaleMessage} Coordinates and feature overlays still require a prepared sample folder.`
+      );
+      localStorage.setItem('samui:tiff-import-notice', 'true');
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to import TIFF file.';
+    alert(message);
+  }
+}
+
 async function processFolder(handle: FileSystemDirectoryHandle, setSample = true) {
   let sp: SampleParams;
   try {
@@ -131,24 +212,6 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = true
     return;
   }
 
-  const existing = get(samples);
   const sample = new Sample(sp, handle);
-
-  // Check if sample already exists.
-  if (
-    existing.find((x) => x.name === sample.name) &&
-    !confirm(`Sample ${sample.name} already exists. Overwrite?`)
-  ) {
-    return;
-  }
-  existing.push({ name: sample.name, sample });
-  samples.set(existing);
-  if (setSample) {
-    const curr = get(mapIdSample);
-    for (const id of Object.keys(curr)) {
-      curr[id] = sample.name;
-    }
-    mapIdSample.set(curr);
-    console.log('Set sample to', sample.name);
-  }
+  registerImportedSample(sample, setSample);
 }

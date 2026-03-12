@@ -124,6 +124,7 @@ export const sEvent = writable(
           | 'viewAdjusted'
           | 'maskUpdated'
           | 'overlayAdjusted'
+          | 'imgDefaultsUpdated'
           | 'renderComplete';
       }
     | undefined

@@ -21,12 +21,17 @@ export type CompCtrl = { type: 'composite'; variables: Record<string, BandInfo> 
 export type RGBCtrl = { type: 'rgb'; Exposure: number; Contrast: number; Saturation: number };
 export type ImgCtrl = CompCtrl | RGBCtrl;
 
-export function genCompStyle(bands: string[], max: number): Style {
+export function genCompStyle(
+  bands: string[],
+  max: number,
+  defaultMinMax: Record<string, [number, number]> = {}
+): Style {
   const vars: Record<string, number> = {};
   bands.forEach((b, i) => {
+    const defaults = defaultMinMax[b];
     vars[b] = i + 1;
-    vars[`${b}Max`] = max;
-    vars[`${b}Min`] = 0;
+    vars[`${b}Max`] = defaults?.[1] ?? max;
+    vars[`${b}Min`] = defaults?.[0] ?? 0;
     vars[`${b}redMask`] = 1;
     vars[`${b}greenMask`] = 1;
     vars[`${b}blueMask`] = 1;

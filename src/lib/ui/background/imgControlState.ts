@@ -32,16 +32,22 @@ export function buildCompositeController(image: ImgData): CompCtrl {
   const variables: Record<string, BandInfo> = {};
   for (const [channel, color] of zip(image.channels, repeatedPalette)) {
     if (!channel || !color) continue;
-    variables[channel] = { enabled: false, color, minmax: [0, logHalf] };
+    const defaults = image.defaultMinMax[channel];
+    variables[channel] = {
+      enabled: false,
+      color,
+      minmax: defaults ? [Math.sqrt(defaults[0]), Math.sqrt(defaults[1])] : [0, logHalf]
+    };
   }
 
   if (Object.keys(image.defaultChannels).length > 0) {
     for (const [color, channel] of Object.entries(image.defaultChannels)) {
       if (!channel) continue;
+      const defaults = image.defaultMinMax[channel];
       variables[channel] = {
         enabled: true,
         color: color as BandInfo['color'],
-        minmax: [0, logHalf]
+        minmax: defaults ? [Math.sqrt(defaults[0]), Math.sqrt(defaults[1])] : [0, logHalf]
       };
     }
   } else {
@@ -49,7 +55,12 @@ export function buildCompositeController(image: ImgData): CompCtrl {
     presets.forEach((color, idx) => {
       const defaultChannel = image.channels[idx];
       if (!defaultChannel) return;
-      variables[defaultChannel] = { enabled: true, color, minmax: [0, logHalf] };
+      const defaults = image.defaultMinMax[defaultChannel];
+      variables[defaultChannel] = {
+        enabled: true,
+        color,
+        minmax: defaults ? [Math.sqrt(defaults[0]), Math.sqrt(defaults[1])] : [0, logHalf]
+      };
     });
   }
 
@@ -110,4 +121,3 @@ export function cloneController(ctrl: ImgCtrl | undefined): ImgCtrl | undefined 
   if (!ctrl) return undefined;
   return JSON.parse(JSON.stringify(ctrl)) as ImgCtrl;
 }
-

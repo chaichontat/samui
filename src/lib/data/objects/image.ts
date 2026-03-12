@@ -6,7 +6,10 @@ export type ImageParams = {
   urls: Url[];
   channels: string[] | 'rgb';
   mPerPx: number;
+  renderMode?: 'local-tiff';
+  size?: { height: number; width: number };
   defaultChannels?: Record<BandInfo['color'], string | undefined>;
+  defaultMinMax?: Record<string, [number, number]>;
   dtype?: 'uint8' | 'uint16';
   maxVal?: number;
 };
@@ -14,12 +17,24 @@ export type ImageParams = {
 export class ImgData extends Deferrable {
   urls: readonly Url[];
   channels: string[] | 'rgb';
+  renderMode?: 'local-tiff';
+  size?: { height: number; width: number };
   defaultChannels: Record<BandInfo['color'], string | undefined>;
+  defaultMinMax: Record<string, [number, number]>;
   mPerPx: number;
   maxVal: number;
 
   constructor(
-    { urls, channels, defaultChannels, mPerPx, maxVal }: ImageParams,
+    {
+      urls,
+      channels,
+      defaultChannels,
+      defaultMinMax,
+      mPerPx,
+      maxVal,
+      renderMode,
+      size
+    }: ImageParams,
     autoHydrate = false
   ) {
     super();
@@ -33,7 +48,10 @@ export class ImgData extends Deferrable {
     }
 
     this.channels = channels;
+    this.renderMode = renderMode;
+    this.size = size;
     this.defaultChannels = defaultChannels ?? {};
+    this.defaultMinMax = defaultMinMax ?? {};
     this.mPerPx = mPerPx;
 
     if (autoHydrate) {

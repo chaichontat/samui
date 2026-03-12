@@ -106,7 +106,7 @@
   const sampleEvent = $derived($sEvent?.type);
 
   $effect(() => {
-    if (sampleEvent === 'sampleUpdated') {
+    if (sampleEvent === 'sampleUpdated' || sampleEvent === 'imgDefaultsUpdated') {
       initialiseController();
     }
   });
