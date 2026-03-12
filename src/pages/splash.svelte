@@ -36,7 +36,7 @@
     </button>
 
     <div class="text-center text-neutral-200">
-      <p>Or drag and drop your sample folder!</p>
+      <p>Or drag and drop a sample folder or TIFF.</p>
       <div class="mt-3 flex flex-col flex-wrap items-center justify-center gap-y-1">
         <button
           type="button"

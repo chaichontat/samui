@@ -9,12 +9,6 @@
 
   const dispatch = createEventDispatcher<{ close: void }>();
 
-  const cliSnippet = `conda activate loopy
-loopy image path/to/image.tif --scale 0.5e-6 --channels DAPI,GFAP
-
-# Optional: integrate spaceranger output
-loopy spaceranger /path/to/spaceranger --out ./loopy --name sample_name`;
-
   const apiSnippet = `from pathlib import Path
 from loopy.sample import Sample
 import pandas as pd
@@ -59,8 +53,8 @@ coords = pd.read_csv("coords.csv", index_col=0)
                   Process Data for Samui
                 </Dialog.Title>
                 <Dialog.Description class="mt-1 text-sm text-neutral-300">
-                  Follow these steps to prepare a sample folder that imports cleanly into the
-                  browser.
+                  Prepare a full sample folder for overlays and metadata, or drag a TIFF directly
+                  into the browser for image-only viewing.
                 </Dialog.Description>
               </div>
               <Dialog.Close
@@ -97,22 +91,11 @@ coords = pd.read_csv("coords.csv", index_col=0)
                     <p class="mt-0.5 text-neutral-300">
                       Choose either the command line or Python API workflow; both populate
                       <code class="font-mono text-neutral-100">sample.json</code>
-                      , which is the data manifest along with actual data files. In this example, we
-                      process a large TIFF image for Samui and overlay it with a point cloud feature.
+                      , which is the data manifest along with actual data files. In this example, we process
+                      a large TIFF image for Samui and overlay it with a point cloud feature.
                     </p>
 
-                    <div class="mt-3 grid gap-4 md:grid-cols-1 -ml-4">
-                      <!-- <div class="rounded-xl border border-neutral-800 bg-neutral-950/70 p-4">
-                  <p class="mb-1 text-xs uppercase tracking-wide text-neutral-400">CLI workflow</p>
-                  <CodeHighlight
-                    code={cliSnippet}
-                    language="bash"
-                    wrap
-                    className="text-xs"
-                    showCopy
-                    ariaLabel="Loopy CLI example"
-                  />
-                </div> -->
+                    <div class="mt-3 -ml-4 grid gap-4 md:grid-cols-1">
                       <div class="rounded-xl border border-neutral-800 bg-neutral-950/70 p-4">
                         <p class="mb-1 text-xs uppercase tracking-wide text-neutral-400">
                           Python API workflow
@@ -159,6 +142,11 @@ coords = pd.read_csv("coords.csv", index_col=0)
                     .
                   </li>
                   <li>Choose your prepared sample folder when prompted.</li>
+                  <li>
+                    Or drag a <code class="font-mono text-neutral-100">.tif</code>
+                    directly onto the page for image-only browsing. Raw TIFF imports are capped at 1 GB
+                    and do not create overlays.
+                  </li>
                 </ol>
               </section>
 
@@ -181,7 +169,7 @@ coords = pd.read_csv("coords.csv", index_col=0)
                   </li>
                   <li>
                     <strong>“Unsupported file type”</strong>
-                    : single-file imports accept ROI/annotation JSON and feature CSVs only.
+                    : single-file imports accept TIFF, ROI/annotation JSON, and feature CSVs only.
                   </li>
                   <li>
                     <strong>Slow conversion/large file size</strong>
