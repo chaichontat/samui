@@ -198,7 +198,9 @@ export class Mapp extends Deferrable {
   private syncScaleLineVisibility() {
     if (!this.map || !this.scaleLine) return;
 
-    const shouldShow = this.mPerPx != undefined && this.mPerPx !== 1;
+    const shouldShow =
+      this.mPerPx != undefined &&
+      this.persistentLayers.background.image?.hasPhysicalScale !== false;
     const isAttached = this.scaleLine.getMap() === this.map;
 
     if (shouldShow && !isAttached) {

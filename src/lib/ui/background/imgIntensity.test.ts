@@ -37,6 +37,7 @@ function createGeoTiffStub({
 
 beforeEach(() => {
   mocks.fromUrl.mockReset();
+  vi.unstubAllGlobals();
 });
 
 describe('estimatePercentileWindow', () => {
@@ -44,6 +45,74 @@ describe('estimatePercentileWindow', () => {
     const values = Uint16Array.from({ length: 100 }, (_, index) => index);
 
     expect(estimatePercentileWindow(values, 65535)).toEqual([0, 98]);
+  });
+
+  it('does not allocate an enormous histogram when values contain an extreme outlier', () => {
+    const RealUint32Array = Uint32Array;
+
+    class GuardedUint32Array extends RealUint32Array {
+      constructor(
+        input: number | ArrayBufferLike | ArrayLike<number>,
+        byteOffset?: number,
+        length?: number
+      ) {
+        if (typeof input === 'number' && input > 65536) {
+          throw new Error(`oversized histogram: ${input}`);
+        }
+
+        if (typeof input === 'number' || Array.isArray(input) || ArrayBuffer.isView(input)) {
+          super(input);
+          return;
+        }
+
+        if (byteOffset == null) {
+          super(input);
+        } else if (length == null) {
+          super(input, byteOffset);
+        } else {
+          super(input, byteOffset, length);
+        }
+      }
+    }
+
+    vi.stubGlobal('Uint32Array', GuardedUint32Array);
+
+    expect(() => estimatePercentileWindow([0, 1, 2, 1_000_000_000], 1_000_000_000)).not.toThrow();
+    expect(estimatePercentileWindow([0, 1, 2, 1_000_000_000], 1_000_000_000)).toEqual([0, 2]);
+  });
+
+  it('does not size the histogram directly from an oversized declared max', () => {
+    const RealUint32Array = Uint32Array;
+
+    class GuardedUint32Array extends RealUint32Array {
+      constructor(
+        input: number | ArrayBufferLike | ArrayLike<number>,
+        byteOffset?: number,
+        length?: number
+      ) {
+        if (typeof input === 'number' && input > 1000) {
+          throw new Error(`oversized histogram: ${input}`);
+        }
+
+        if (typeof input === 'number' || Array.isArray(input) || ArrayBuffer.isView(input)) {
+          super(input);
+          return;
+        }
+
+        if (byteOffset == null) {
+          super(input);
+        } else if (length == null) {
+          super(input, byteOffset);
+        } else {
+          super(input, byteOffset, length);
+        }
+      }
+    }
+
+    vi.stubGlobal('Uint32Array', GuardedUint32Array);
+
+    expect(() => estimatePercentileWindow(Uint16Array.of(0, 1, 2), 5000)).not.toThrow();
+    expect(estimatePercentileWindow(Uint16Array.of(0, 1, 2), 5000)).toEqual([0, 1]);
   });
 
   it('falls back to the image max when no samples are available', () => {

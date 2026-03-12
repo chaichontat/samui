@@ -52,6 +52,7 @@ describe('processHandle', () => {
       imgParams: {
         urls: [{ url: 'blob:scan', type: 'network' }],
         channels: 'rgb',
+        hasPhysicalScale: false,
         mPerPx: 1,
         maxVal: 255
       }
@@ -65,7 +66,31 @@ describe('processHandle', () => {
     expect(get(samples)[0]?.sample.image?.channels).toBe('rgb');
     expect(get(mapIdSample)[0]).toBe('scan');
     expect(noticeSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Imported scan as an image-only TIFF sample.')
+      expect.stringContaining(
+        'Imported scan as an image-only TIFF sample. Pixel scale defaulted to 1 because the TIFF did not expose meter-based resolution metadata.'
+      )
+    );
+  });
+
+  it('does not warn about fallback scale when the TIFF has a real 1 m/px resolution', async () => {
+    const noticeSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    const file = new File([new Uint8Array([1, 2, 3])], 'scaled.tif', { type: 'image/tiff' });
+
+    mocks.buildTiffSampleParams.mockResolvedValue({
+      name: 'scaled',
+      imgParams: {
+        urls: [{ url: 'blob:scaled', type: 'network' }],
+        channels: ['C1'],
+        hasPhysicalScale: true,
+        mPerPx: 1,
+        maxVal: 255
+      }
+    });
+
+    await processHandle(Promise.resolve(new FakeFileSystemFileHandle(file)), true);
+
+    expect(noticeSpy).toHaveBeenCalledWith(
+      'Imported scaled as an image-only TIFF sample. Coordinates and feature overlays still require a prepared sample folder.'
     );
   });
 
@@ -105,6 +130,7 @@ describe('processHandle', () => {
       imgParams: {
         urls: [{ url: 'blob:new', type: 'network' }],
         channels: ['C1'],
+        hasPhysicalScale: false,
         mPerPx: 1,
         maxVal: 255
       }

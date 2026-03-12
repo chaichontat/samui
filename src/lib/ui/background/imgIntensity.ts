@@ -5,6 +5,11 @@ import type { ImgData } from '$src/lib/data/objects/image';
 const MAX_SUBSAMPLE_EDGE = 256;
 const LOWER_PERCENTILE = 0.01;
 const UPPER_PERCENTILE = 0.99;
+const MAX_HISTOGRAM_VALUE = 65535;
+
+function clampHistogramValue(value: number, maxVal: number) {
+  return Math.min(MAX_HISTOGRAM_VALUE, maxVal, Math.max(0, Math.round(value)));
+}
 
 function getSubsampleDimensions(width: number, height: number) {
   const scale = Math.min(1, MAX_SUBSAMPLE_EDGE / Math.max(width, height));
@@ -26,11 +31,16 @@ export function estimatePercentileWindow(
     return [0, maxVal];
   }
 
-  const histogram = new Uint32Array(maxVal + 1);
+  let histogramMax = 0;
+  for (let index = 0; index < values.length; index += 1) {
+    histogramMax = Math.max(histogramMax, clampHistogramValue(values[index], maxVal));
+  }
+
+  const histogram = new Uint32Array(histogramMax + 1);
   let sampleCount = 0;
 
   for (let index = 0; index < values.length; index += 1) {
-    const value = Math.min(maxVal, Math.max(0, Math.round(values[index])));
+    const value = clampHistogramValue(values[index], maxVal);
     histogram[value] += 1;
     sampleCount += 1;
   }
@@ -40,7 +50,7 @@ export function estimatePercentileWindow(
 
   let cumulative = 0;
   let lower = 0;
-  let upper = maxVal;
+  let upper = histogramMax;
 
   for (let value = 0; value < histogram.length; value += 1) {
     cumulative += histogram[value];

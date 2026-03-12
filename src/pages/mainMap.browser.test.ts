@@ -33,6 +33,7 @@ it('keeps the sidebar hidden while an image-only sample remains selectable', asy
     imgParams: {
       urls: [{ url, type: 'network' }],
       channels: ['C1'],
+      hasPhysicalScale: false,
       mPerPx: 1,
       maxVal: 255
     }
@@ -86,7 +87,41 @@ it('shows the scale bar when the image has a real pixel scale', async () => {
   URL.revokeObjectURL(url);
 });
 
-it('loads the real two-channel JPEG XR TIFF without showing the fallback scale bar', async () => {
+it('shows the scale bar when the image has a real 1 m/px scale', async () => {
+  const buffer = writeArrayBuffer(
+    [
+      [
+        [0, 255],
+        [128, 64]
+      ]
+    ],
+    { width: 2, height: 2 }
+  );
+  const url = URL.createObjectURL(new Blob([buffer], { type: 'image/tiff' }));
+  const sample = new Sample({
+    name: 'meter-scale-sample',
+    imgParams: {
+      urls: [{ url, type: 'network' }],
+      channels: ['C1'],
+      hasPhysicalScale: true,
+      mPerPx: 1,
+      maxVal: 255
+    }
+  });
+
+  mapIdSample.set({ 0: 'meter-scale-sample' });
+  samples.set([{ name: sample.name, sample }]);
+  sSample.set(sample);
+
+  const screen = await render(MainMap);
+
+  await expect.poll(() => screen.container.querySelector('.ol-scale-line')).not.toBeNull();
+
+  screen.unmount();
+  URL.revokeObjectURL(url);
+});
+
+it('hides the scale bar when TIFF imports fall back to a synthetic 1 m/px scale', async () => {
   const blob = await fetch(reg0045Url).then((response) => response.blob());
   const objectUrl = URL.createObjectURL(blob);
   const sample = new Sample({
@@ -94,6 +129,7 @@ it('loads the real two-channel JPEG XR TIFF without showing the fallback scale b
     imgParams: {
       urls: [{ url: objectUrl, type: 'network' }],
       channels: ['C1', 'C2'],
+      hasPhysicalScale: false,
       mPerPx: 1,
       maxVal: 65535
     }

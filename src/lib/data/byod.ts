@@ -189,7 +189,7 @@ async function processTiff(file: File, setSample = true) {
 
     if (!localStorage.getItem('samui:tiff-import-notice')) {
       const scaleMessage =
-        params.imgParams?.mPerPx === 1
+        params.imgParams?.hasPhysicalScale === false
           ? ' Pixel scale defaulted to 1 because the TIFF did not expose meter-based resolution metadata.'
           : '';
       alert(
