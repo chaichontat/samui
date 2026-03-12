@@ -133,7 +133,7 @@
   }
 
   :global(.tab) {
-    @apply ring-opacity-60 w-full rounded-lg px-2 py-2.5 text-sm leading-5 font-medium text-neutral-500 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
+    @apply w-full rounded-lg px-2 py-2.5 text-sm font-medium leading-5 text-neutral-500 ring-offset-2 hover:bg-indigo-100 focus:outline-none;
   }
 
   :global(.dark .tab) {
