@@ -77,4 +77,14 @@ export class ImgData extends Deferrable {
     this.hydrated = true;
     return this;
   }
+
+  dispose() {
+    for (const url of this.urls) {
+      if (url.type === 'network' && url.url.startsWith('blob:')) {
+        URL.revokeObjectURL(url.url);
+      }
+    }
+
+    this.urls = [];
+  }
 }

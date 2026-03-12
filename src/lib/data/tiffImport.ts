@@ -9,6 +9,8 @@ registerTiffCodecs();
 const METER_LINEAR_UNIT_CODE = 9001;
 const RGB_PHOTOMETRIC_INTERPRETATION = 2;
 const SAMPLE_FORMAT_UINT = 1;
+const TIFF_RESOLUTION_UNIT_INCH = 2;
+const TIFF_RESOLUTION_UNIT_CENTIMETER = 3;
 
 export const MAX_BROWSER_TIFF_BYTES = 1024 ** 3;
 
@@ -25,6 +27,28 @@ function parseNumericMetadata(value: unknown) {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) {
       return parsed;
+    }
+  }
+
+  return undefined;
+}
+
+function parseRationalMetadata(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (Array.isArray(value) || ArrayBuffer.isView(value)) {
+    const numerator = parseNumericMetadata(value[0]);
+    const denominator = parseNumericMetadata(value[1]);
+    if (
+      numerator != undefined &&
+      denominator != undefined &&
+      Number.isFinite(numerator) &&
+      Number.isFinite(denominator) &&
+      denominator > 0
+    ) {
+      return numerator / denominator;
     }
   }
 
@@ -78,30 +102,62 @@ function inferDtype(image: GeoTIFFImage): ImageParams['dtype'] {
   throw new Error('Unsupported TIFF dtype: only uint8 and uint16 are supported.');
 }
 
-function inferScaleInfo(image: GeoTIFFImage) {
-  const geoKeys = image.getGeoKeys();
-  if (!geoKeys) {
-    return { hasPhysicalScale: false, mPerPx: 1 };
-  }
-
-  const unitCode = geoKeys.ProjLinearUnitsGeoKey;
-  const projected = geoKeys.ProjectedCSTypeGeoKey != null;
-
-  if (unitCode != null && unitCode !== METER_LINEAR_UNIT_CODE) {
-    return { hasPhysicalScale: false, mPerPx: 1 };
-  }
-
-  if (!projected && unitCode == null) {
-    return { hasPhysicalScale: false, mPerPx: 1 };
-  }
+async function loadIfdValue(image: GeoTIFFImage, tag: string) {
+  const fileDirectory = image.getFileDirectory();
 
   try {
-    const [resolutionX] = image.getResolution();
-    if (Number.isFinite(resolutionX) && resolutionX > 0) {
-      return { hasPhysicalScale: true, mPerPx: resolutionX };
+    return fileDirectory.getValue(tag);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes('is deferred') &&
+      'loadValue' in fileDirectory &&
+      typeof fileDirectory.loadValue === 'function'
+    ) {
+      return fileDirectory.loadValue(tag);
     }
-  } catch {
-    return { hasPhysicalScale: false, mPerPx: 1 };
+
+    throw error;
+  }
+}
+
+async function inferScaleInfo(image: GeoTIFFImage) {
+  const geoKeys = image.getGeoKeys();
+  if (geoKeys) {
+    const unitCode = geoKeys.ProjLinearUnitsGeoKey;
+    const projected = geoKeys.ProjectedCSTypeGeoKey != null;
+
+    if (unitCode != null && unitCode !== METER_LINEAR_UNIT_CODE) {
+      return { hasPhysicalScale: false, mPerPx: 1 };
+    }
+
+    if (projected || unitCode != null) {
+      try {
+        const [resolutionX] = image.getResolution();
+        if (Number.isFinite(resolutionX) && resolutionX > 0) {
+          return { hasPhysicalScale: true, mPerPx: resolutionX };
+        }
+      } catch {
+        return { hasPhysicalScale: false, mPerPx: 1 };
+      }
+    }
+  }
+
+  const [resolutionUnitValue, resolutionXValue] = await Promise.all([
+    loadIfdValue(image, 'ResolutionUnit'),
+    loadIfdValue(image, 'XResolution')
+  ]);
+  const resolutionUnit = parseNumericMetadata(resolutionUnitValue);
+  const resolutionX = parseRationalMetadata(resolutionXValue);
+
+  if (resolutionX != undefined && resolutionX > 0) {
+    if (resolutionUnit === TIFF_RESOLUTION_UNIT_INCH) {
+      return { hasPhysicalScale: true, mPerPx: 0.0254 / resolutionX };
+    }
+
+    if (resolutionUnit === TIFF_RESOLUTION_UNIT_CENTIMETER) {
+      return { hasPhysicalScale: true, mPerPx: 0.01 / resolutionX };
+    }
   }
 
   return { hasPhysicalScale: false, mPerPx: 1 };
@@ -161,6 +217,16 @@ function isChannelPageLayout(pages: TiffPage[]) {
       image.getSampleFormat(0) === firstFormat
     );
   });
+}
+
+function validateTiffLayout(pages: TiffPage[]) {
+  if (pages.length <= 1 || isChannelPageLayout(pages)) {
+    return;
+  }
+
+  throw new Error(
+    'Unsupported TIFF dimensions: only 2D images and 3D channel stacks are supported.'
+  );
 }
 
 function getEntryCount(view: DataView, ifdOffset: number, littleEndian: boolean, bigTiff: boolean) {
@@ -478,9 +544,10 @@ export function getTiffImportLimitMessage(maxBytes = MAX_BROWSER_TIFF_BYTES) {
 export async function buildTiffImageParams(file: File): Promise<ImageParams> {
   const tiff = await fromBlob(file);
   const pages = await getTiffPages(tiff);
+  validateTiffLayout(pages);
   const [firstPage] = pages;
   const dtype = inferDtype(firstPage.image);
-  const scaleInfo = inferScaleInfo(firstPage.image);
+  const scaleInfo = await inferScaleInfo(firstPage.image);
 
   if (isChannelPageLayout(pages)) {
     const maxVals = await Promise.all(pages.map(({ image }) => inferMaxVal(image, dtype)));
@@ -504,7 +571,7 @@ export async function buildTiffImageParams(file: File): Promise<ImageParams> {
       renderMode: 'local-tiff',
       size: { width: firstPage.image.getWidth(), height: firstPage.image.getHeight() },
       dtype,
-      maxVal: Math.max(...maxVals, getFallbackMax(dtype))
+      maxVal: Math.max(...maxVals)
     };
   }
 

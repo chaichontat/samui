@@ -111,6 +111,7 @@ describe('processHandle', () => {
   it('replaces a same-name sample after confirmation instead of duplicating it', async () => {
     vi.spyOn(window, 'alert').mockImplementation(() => undefined);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
 
     const existingSample = new Sample({
       name: 'scan',
@@ -141,6 +142,45 @@ describe('processHandle', () => {
     expect(get(samples)).toHaveLength(1);
     expect(get(samples)[0]?.sample.image?.channels).toEqual(['C1']);
     expect(get(mapIdSample)[0]).toBe('scan');
+    expect(revokeSpy).toHaveBeenCalledWith('blob:old');
+    expect(revokeSpy).not.toHaveBeenCalledWith('blob:new');
+  });
+
+  it('revokes the new TIFF blob URL when the user declines an overwrite', async () => {
+    vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+
+    const existingSample = new Sample({
+      name: 'scan',
+      imgParams: {
+        urls: [{ url: 'blob:old', type: 'network' }],
+        channels: 'rgb',
+        mPerPx: 2,
+        maxVal: 255
+      }
+    });
+    samples.set([{ name: 'scan', sample: existingSample }]);
+    mapIdSample.set({ 0: 'scan' });
+
+    const file = new File([new Uint8Array([1, 2, 3])], 'scan.tif', { type: 'image/tiff' });
+    mocks.buildTiffSampleParams.mockResolvedValue({
+      name: 'scan',
+      imgParams: {
+        urls: [{ url: 'blob:new', type: 'network' }],
+        channels: ['C1'],
+        hasPhysicalScale: false,
+        mPerPx: 1,
+        maxVal: 255
+      }
+    });
+
+    await processHandle(Promise.resolve(new FakeFileSystemFileHandle(file)), true);
+
+    expect(get(samples)).toHaveLength(1);
+    expect(get(samples)[0]?.sample.image?.urls).toEqual([{ url: 'blob:old', type: 'network' }]);
+    expect(revokeSpy).toHaveBeenCalledWith('blob:new');
+    expect(revokeSpy).not.toHaveBeenCalledWith('blob:old');
   });
 
   it('keeps non-TIFF single-file imports on the existing CSV/JSON path', async () => {

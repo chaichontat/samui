@@ -147,6 +147,7 @@ function registerImportedSample(sample: Sample, setSample = true) {
   const existingIdx = existing.findIndex((entry) => entry.name === sample.name);
 
   if (existingIdx >= 0 && !confirm(`Sample ${sample.name} already exists. Overwrite?`)) {
+    sample.dispose();
     return false;
   }
 

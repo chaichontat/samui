@@ -32,6 +32,7 @@ type ImageStub = Pick<
 
 function createImageStub({
   bitsPerSample = 8,
+  fileDirectoryValues,
   gdalMetadata,
   geoKeys = null,
   height = 10,
@@ -42,6 +43,7 @@ function createImageStub({
   width = 10
 }: {
   bitsPerSample?: number;
+  fileDirectoryValues?: Record<string, unknown>;
   gdalMetadata?: Record<number | 'dataset', Record<string, unknown> | null>;
   geoKeys?: ReturnType<GeoTIFFImage['getGeoKeys']>;
   height?: number;
@@ -58,7 +60,9 @@ function createImageStub({
       () =>
         ({
           getValue: (tag: string) =>
-            tag === 'PhotometricInterpretation' ? photometricInterpretation : undefined
+            tag === 'PhotometricInterpretation'
+              ? photometricInterpretation
+              : fileDirectoryValues?.[tag]
         }) as unknown as ReturnType<GeoTIFFImage['getFileDirectory']>
     ),
     getGDALMetadata: vi.fn(async (sample: number | null = null) => {
@@ -173,6 +177,28 @@ describe('buildTiffSampleParams', () => {
     });
   });
 
+  it('uses standard TIFF resolution tags when GeoTIFF keys are absent', async () => {
+    const file = new File([new Uint8Array([1, 2, 3])], 'micron-scan.tif', { type: 'image/tiff' });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValueOnce('blob:micron-scan');
+
+    const image = createImageStub({
+      fileDirectoryValues: {
+        ResolutionUnit: 3,
+        XResolution: Uint32Array.of(4000, 1),
+        YResolution: Uint32Array.of(4000, 1)
+      },
+      geoKeys: null
+    });
+    mocks.fromBlob.mockResolvedValue(createTiffStub({ images: [image] }));
+
+    const imgParams = await buildTiffImageParams(file);
+
+    expect(imgParams).toMatchObject({
+      hasPhysicalScale: true,
+      mPerPx: 0.01 / 4000
+    });
+  });
+
   it('rejects unsupported TIFF dtypes', async () => {
     const file = new File([new Uint8Array([1, 2, 3])], 'float-scan.tif', { type: 'image/tiff' });
 
@@ -184,6 +210,29 @@ describe('buildTiffSampleParams', () => {
 
     await expect(buildTiffImageParams(file)).rejects.toThrow(
       'Unsupported TIFF dtype: only uint8 and uint16 are supported.'
+    );
+  });
+
+  it('rejects TIFFs with more than three dimensions when pages add to channel dimensions', async () => {
+    const file = new File([new Uint8Array([1, 2, 3])], 'rgb-stack.tif', { type: 'image/tiff' });
+
+    const firstImage = createImageStub({
+      photometricInterpretation: 2,
+      samplesPerPixel: 3
+    });
+    const secondImage = createImageStub({
+      photometricInterpretation: 2,
+      samplesPerPixel: 3
+    });
+    mocks.fromBlob.mockResolvedValue(
+      createTiffStub({
+        images: [firstImage, secondImage],
+        nextIFDByteOffsets: [16, 0]
+      })
+    );
+
+    await expect(buildTiffImageParams(file)).rejects.toThrow(
+      'Unsupported TIFF dimensions: only 2D images and 3D channel stacks are supported.'
     );
   });
 
@@ -231,7 +280,7 @@ describe('buildTiffSampleParams', () => {
       size: { width: 12, height: 16 },
       mPerPx: 1,
       dtype: 'uint16',
-      maxVal: 65535
+      maxVal: 1200
     });
     expect(arrayBufferSpy).not.toHaveBeenCalled();
   });
