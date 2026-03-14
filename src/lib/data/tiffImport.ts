@@ -305,12 +305,13 @@ async function getExplicitChannelPageNames(pages: TiffPage[]) {
 
   const description = await loadIfdValue(pages[0]!.image, 'ImageDescription');
   if (typeof description !== 'string') {
-    return null;
+    return inferChannelNames(pages.length);
   }
 
   return (
     parseOmeChannelMetadata(description, pages.length) ??
-    parseImageDescriptionChannelMetadata(description, pages.length)
+    parseImageDescriptionChannelMetadata(description, pages.length) ??
+    inferChannelNames(pages.length)
   );
 }
 
@@ -323,13 +324,7 @@ function validateTiffLayout(
   }
 
   if (isChannelPageLayout(pages)) {
-    if (explicitChannelNames) {
-      return;
-    }
-
-    throw new Error(
-      'Unsupported TIFF dimensions: multi-page grayscale TIFFs require explicit channel metadata.'
-    );
+    return;
   }
 
   throw new Error(

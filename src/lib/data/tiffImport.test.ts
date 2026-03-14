@@ -259,12 +259,15 @@ describe('buildTiffSampleParams', () => {
     );
   });
 
-  it('rejects ambiguous multi-page grayscale TIFFs without explicit channel metadata', async () => {
+  it('auto-infers channel names for multi-page grayscale TIFFs without explicit metadata', async () => {
     const fileBytes = new Uint8Array(64);
     const view = new DataView(fileBytes.buffer);
     view.setUint16(8, 0, true);
     view.setUint16(16, 0, true);
     const file = new File([fileBytes], 'stack.tif', { type: 'image/tiff' });
+    vi.spyOn(URL, 'createObjectURL')
+      .mockReturnValueOnce('blob:page-1')
+      .mockReturnValueOnce('blob:page-2');
 
     const firstImage = createImageStub({
       bitsPerSample: 16,
@@ -285,9 +288,21 @@ describe('buildTiffSampleParams', () => {
       })
     );
 
-    await expect(buildTiffImageParams(file)).rejects.toThrow(
-      'Unsupported TIFF dimensions: multi-page grayscale TIFFs require explicit channel metadata.'
-    );
+    const imgParams = await buildTiffImageParams(file);
+
+    expect(imgParams).toMatchObject({
+      urls: [
+        { url: 'blob:page-1', type: 'network' },
+        { url: 'blob:page-2', type: 'network' }
+      ],
+      channels: ['C1', 'C2'],
+      hasPhysicalScale: false,
+      renderMode: 'local-tiff',
+      size: { width: 12, height: 16 },
+      mPerPx: 1,
+      dtype: 'uint16',
+      maxVal: 1200
+    });
   });
 
   it('splits multi-page same-resolution grayscale TIFFs into one URL per page when OME channel metadata is present', async () => {
