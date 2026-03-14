@@ -25,6 +25,16 @@ import {
 
 registerTiffCodecs();
 
+export function shouldEstimateCompositeDefaults(
+  image: Pick<ImgData, 'channels' | 'defaultMinMax' | 'renderMode' | 'size'>
+) {
+  return (
+    Array.isArray(image.channels) &&
+    Object.keys(image.defaultMinMax).length === 0 &&
+    isLocalTiffImage(image)
+  );
+}
+
 export class Background extends Deferrable {
   source?: GeoTIFF | DataTileSource;
   geoTiffSource?: GeoTIFF;
@@ -89,7 +99,7 @@ export class Background extends Deferrable {
     this.mPerPx = image.mPerPx;
     map.addLayer(this.layer);
 
-    if (Array.isArray(image.channels) && Object.keys(image.defaultMinMax).length === 0) {
+    if (shouldEstimateCompositeDefaults(image)) {
       const requestId = ++this.intensityRequestId;
       void this.applyEstimatedDefaults(image, requestId);
     }
