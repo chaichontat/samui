@@ -15,12 +15,8 @@ import { get } from 'svelte/store';
 import { fromCSV } from '../io';
 import { CoordsData, type Coord } from './objects/coords';
 import { valAnnFeatData, valROIData } from './schemas';
-import {
-  buildTiffSampleParams,
-  getTiffImportLimitMessage,
-  isTiffFileName,
-  MAX_BROWSER_TIFF_BYTES
-} from './tiffImport';
+
+const isTiffFileName = (name: string) => /\.tiff?$/i.test(name);
 
 async function readFile<T extends object>(
   dirHandle: FileSystemDirectoryHandle,
@@ -175,6 +171,9 @@ function registerImportedSample(sample: Sample, setSample = true) {
 }
 
 async function processTiff(file: File, setSample = true) {
+  const { MAX_BROWSER_TIFF_BYTES, buildTiffSampleParams, getTiffImportLimitMessage } =
+    await import('./tiffImport');
+
   if (file.size > MAX_BROWSER_TIFF_BYTES) {
     alert(getTiffImportLimitMessage());
     return;

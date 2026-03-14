@@ -1,10 +1,14 @@
 <script lang="ts">
   import Github from '$src/lib/components/github.svelte';
   import ImportInstructionsDialog from '$src/lib/components/ImportInstructionsDialog.svelte';
-  import { byod } from '$src/lib/data/byod';
   import { Plus } from '@lucide/svelte';
 
   let showProcessingGuide = false;
+
+  async function openByod() {
+    const { byod } = await import('$src/lib/data/byod');
+    await byod();
+  }
 </script>
 
 <!-- Splash import -->
@@ -25,7 +29,7 @@
   <div class="flex flex-col items-center mb-2">
     <button
       class="splash-button group mb-1 rounded-lg bg-linear-to-br from-emerald-500 to-green-500 text-xl font-medium text-neutral-50 ring-pink-800"
-      on:click={byod}
+      on:click={openByod}
     >
       <span
         class="flex items-center px-5 py-3 group-hover:bg-neutral-50/0 dark:group-hover:bg-neutral-900/0"
