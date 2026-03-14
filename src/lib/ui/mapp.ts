@@ -148,15 +148,22 @@ export class Mapp extends Deferrable {
     ]);
 
     if (sample.featureParams) {
-      // Must have an active feature, otherwise renderComplete will not fire.
-      const selected = get(overlays)[get(sOverlay)]?.currFeature ??
-        sample.overlayParams?.defaults?.[0] ?? {
-          group: sample.features[Object.keys(sample.features)[0]].name,
-          feature: sample.features[Object.keys(sample.features)[0]].featNames[0]
-        };
+      const overlayInstance = get(overlays)[get(sOverlay)];
+      let selected = overlayInstance?.currFeature;
+      if (!selected || !sample.hasFeature(selected)) {
+        const defaults = sample.overlayParams?.defaults ?? [];
+        selected = defaults.find((entry) => sample.hasFeature(entry));
+        if (!selected) {
+          selected = await sample.firstFeature();
+        }
+      }
 
       console.log('Selected', selected);
-      setHoverSelect({ selected }).catch(console.error);
+      try {
+        await setHoverSelect({ selected });
+      } catch (err) {
+        console.error(err);
+      }
     }
     sEvent.set({ type: 'sampleUpdated' });
   }

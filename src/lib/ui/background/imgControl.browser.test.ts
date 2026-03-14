@@ -1,8 +1,10 @@
 import { sEvent } from '$lib/store';
 import { ImgData, type ImageParams } from '$src/lib/data/objects/image';
+import CompositeChannelTable from '$src/lib/ui/background/CompositeChannelTable.svelte';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import type { BandInfo, CompCtrl, ImgCtrl, RGBCtrl } from '$src/lib/ui/background/imgColormap';
 import ImgControl from '$src/lib/ui/background/imgControl.svelte';
+import { normalizeCompositeController } from '$src/lib/ui/background/imgControlState';
 import { fireEvent } from '@testing-library/svelte';
 import { userEvent } from '@vitest/browser/context';
 import { beforeEach, expect, test, vi } from 'vitest';
@@ -193,6 +195,39 @@ test('rgb controls propagate slider changes to background style updates', async 
 
   await expect.poll(() => latest().Saturation).toBeCloseTo(0.4, 2);
 
+  screen.unmount();
+});
+
+test('composite channel table handles missing controller entries', async () => {
+  const image = {
+    channels: ['alpha', 'beta'],
+    maxVal: 255,
+    defaultChannels: {},
+    mPerPx: 1
+  } as ImgData;
+
+  const controller = normalizeCompositeController(image, {
+    type: 'composite',
+    variables: {
+      alpha: { enabled: true, color: 'red', minmax: [0, 1] }
+    }
+  });
+
+  const screen = render(CompositeChannelTable, {
+    props: {
+      image,
+      controller,
+      onSelect: vi.fn(),
+      onRequestExpand: vi.fn(),
+      maxNameWidth: 80
+    }
+  });
+
+  await flush();
+
+  const rows = screen.container.querySelectorAll('tr[aria-label$="controls"]');
+  expect(rows).toHaveLength(2);
+  expect(controller.variables.beta).toBeDefined();
   screen.unmount();
 });
 

@@ -76,78 +76,80 @@
 >
   <tbody>
     {#each image.channels as name, i (i)}
-      {@const band = controller.variables[name]!}
-      {@const colorIndex = colors.findIndex((color) => color === band.color)}
-      <tr aria-label={`${name} controls`}>
-        <td
-          class="flex justify-center min-w-[70px] -translate-y-[1.5px] relative"
-          aria-label="button-cell"
-        >
-          <button
-            class="max-w-[120px]"
-            onclick={() => onSelect(name, band.color, true)}
-            aria-label="Select channel button"
+      {@const band = controller.variables[name]}
+      {#if band}
+        {@const colorIndex = colors.findIndex((color) => color === band.color)}
+        <tr aria-label={`${name} controls`}>
+          <td
+            class="flex justify-center min-w-[70px] -translate-y-[1.5px] relative"
+            aria-label="button-cell"
           >
-            <div
-              class={classes(
-                band.enabled
-                  ? `${colorIndex >= 0 ? bgColors[colorIndex] : ''} text-white`
-                  : 'opacity-80 hover:opacity-100',
-                band.enabled && ['white', 'yellow'].includes(band.color) ? 'text-black' : '',
-                'rounded-lg px-2 py-[1px] w-fit max-w-[100px]'
-              )}
-            >
-              <div class="truncate" aria-label="Channel name">{name}</div>
-            </div>
-          </button>
-          <button
-            class="h-full w-2 absolute -right-1"
-            aria-label="Expand controls"
-            onclick={onRequestExpand}
-          ></button>
-        </td>
-        <td class="tabular-nums">
-          <div class="flex items-center">
-            <div class="min-w-[128px] pl-1 cursor-pointer">
-              <RangeSlider
-                min={0}
-                max={Math.sqrt(image.maxVal)}
-                step={0.1}
-                range
-                springValues={{ stiffness: 1, damping: 1 }}
-                on:start={() => onSelect(name, band.color)}
-                bind:values={band.minmax}
-                id={`slider-${name}`}
-              />
-            </div>
-            <span
-              class={classes(
-                band.enabled ? '' : 'opacity-80 hover:opacity-100',
-                'whitespace-nowrap'
-              )}
-              aria-label="Max channel intensity"
-            >
-              [{band.minmax.map((value: number) => Math.round(value ** 2))}]
-            </span>
-          </div>
-        </td>
-        <td class="flex items-center justify-center gap-x-1.5 ml-1">
-          {#each zip(colors, bgColors) as [color, bg], index (index)}
             <button
-              onclick={() => onSelect(name, color, true)}
-              class={cn(
-                bg,
-                color !== 'white' ? 'opacity-90' : '',
-                index === 0 ? 'ml-2' : '',
-                'mx-[1px] my-1 flex size-4 rounded-full transition-opacity duration-500 translate-y-[1.5px]',
-                band.color === color ? 'ring-2 ring-white opacity-100' : ''
-              )}
-              aria-label={`${color} color button`}
-              data-testid="imgctrl-color-button"
+              class="max-w-[120px]"
+              onclick={() => onSelect(name, band.color, true)}
+              aria-label="Select channel button"
+            >
+              <div
+                class={classes(
+                  band.enabled
+                    ? `${colorIndex >= 0 ? bgColors[colorIndex] : ''} text-white`
+                    : 'opacity-80 hover:opacity-100',
+                  band.enabled && ['white', 'yellow'].includes(band.color) ? 'text-black' : '',
+                  'rounded-lg px-2 py-[1px] w-fit max-w-[100px]'
+                )}
+              >
+                <div class="truncate" aria-label="Channel name">{name}</div>
+              </div>
+            </button>
+            <button
+              class="h-full w-2 absolute -right-1"
+              aria-label="Expand controls"
+              onclick={onRequestExpand}
             ></button>
-          {/each}
-        </td>
-      </tr>
+          </td>
+          <td class="tabular-nums">
+            <div class="flex items-center">
+              <div class="min-w-[128px] pl-1 cursor-pointer">
+                <RangeSlider
+                  min={0}
+                  max={Math.sqrt(image.maxVal)}
+                  step={0.1}
+                  range
+                  springValues={{ stiffness: 1, damping: 1 }}
+                  on:start={() => onSelect(name, band.color)}
+                  bind:values={band.minmax}
+                  id={`slider-${name}`}
+                />
+              </div>
+              <span
+                class={classes(
+                  band.enabled ? '' : 'opacity-80 hover:opacity-100',
+                  'whitespace-nowrap'
+                )}
+                aria-label="Max channel intensity"
+              >
+                [{band.minmax.map((value: number) => Math.round(value ** 2))}]
+              </span>
+            </div>
+          </td>
+          <td class="flex items-center justify-center gap-x-1.5 ml-1">
+            {#each zip(colors, bgColors) as [color, bg], index (index)}
+              <button
+                onclick={() => onSelect(name, color, true)}
+                class={cn(
+                  bg,
+                  color !== 'white' ? 'opacity-90' : '',
+                  index === 0 ? 'ml-2' : '',
+                  'mx-[1px] my-1 flex size-4 rounded-full transition-opacity duration-500 translate-y-[1.5px]',
+                  band.color === color ? 'ring-2 ring-white opacity-100' : ''
+                )}
+                aria-label={`${color} color button`}
+                data-testid="imgctrl-color-button"
+              ></button>
+            {/each}
+          </td>
+        </tr>
+      {/if}
     {/each}
   </tbody>
 </table>

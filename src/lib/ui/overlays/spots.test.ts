@@ -1,3 +1,5 @@
+import { sFeatureData } from '$src/lib/store';
+import { get } from 'svelte/store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const vectorSourceInstances: FakeVectorSource[] = [];
@@ -188,6 +190,31 @@ describe('WebGLSpots', () => {
     expect(overlay.currStyleVariables.opacity).toBeCloseTo(0.4);
     expect(layer.options.variables?.opacity).toBeCloseTo(0.4);
     expect(layer.updateStyleVariables).toHaveBeenCalledWith(overlay.currStyleVariables);
+  });
+
+  it('clears cached data when sample lacks the requested feature', async () => {
+    const { WebGLSpots } = await import('$src/lib/ui/overlays/points');
+    const map = mapStub();
+    const overlay = new WebGLSpots(map as any);
+
+    // Seed layer with points so we can confirm they are cleared.
+    overlay.features = [{ set: vi.fn(), setId: vi.fn() }] as any;
+    overlay.coords = coords as any;
+    overlay.source.addFeatures([{ id: 1 } as any]);
+
+    const missingSample = {
+      name: 'replacement',
+      getFeature: vi.fn().mockResolvedValue(undefined)
+    } as any;
+
+    const result = await overlay.update(missingSample, { group: 'genes', feature: 'SNAP25' });
+
+    expect(result).toBe(false);
+    expect(overlay.source.clear).toHaveBeenCalled();
+    expect(overlay.features).toBeUndefined();
+    expect(overlay.coords).toBeUndefined();
+    expect(overlay.currFeature).toBeUndefined();
+    expect(get(sFeatureData)).toBeUndefined();
   });
 });
 

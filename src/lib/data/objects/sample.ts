@@ -190,4 +190,30 @@ export class Sample extends Deferrable {
     }
     return featureList;
   }
+
+  hasFeature(fn: FeatureAndGroup) {
+    const dataset = this.features[fn.group];
+    if (!dataset) return false;
+    const names = (dataset as { featNames?: string[] }).featNames;
+    if (!Array.isArray(names)) return false;
+    return names.includes(fn.feature);
+  }
+
+  async firstFeature(): Promise<FeatureAndGroup | undefined> {
+    const defaults = this.overlayParams?.defaults;
+    if (defaults) {
+      for (const entry of defaults) {
+        if (this.hasFeature(entry)) {
+          return entry;
+        }
+      }
+    }
+    const list = await this.genFeatureList();
+    for (const { group, features } of list) {
+      if (features?.length) {
+        return { group, feature: features[0] };
+      }
+    }
+    return undefined;
+  }
 }

@@ -1,6 +1,7 @@
 import { CoordsData } from '$src/lib/data/objects/coords';
+import type { Sample } from '$src/lib/data/objects/sample';
 import { renderMappHarness } from '$src/lib/testing/mappFixture';
-import { ActiveSpots, CanvasSpots } from '$src/lib/ui/overlays/points';
+import { ActiveSpots, CanvasSpots, WebGLSpots } from '$src/lib/ui/overlays/points';
 import Circle from 'ol/geom/Circle.js';
 import { expect, test } from 'vitest';
 
@@ -73,5 +74,73 @@ test('CanvasSpots populates features only when visible and respects large datase
   expect(canvas.source.getFeatures()).toHaveLength(0);
 
   canvas.dispose();
+  cleanup();
+});
+
+test('WebGLSpots rebuilds geometry when a new sample with the same name is loaded', async () => {
+  const feature = { group: 'group-1', feature: 'feat-1' } as const;
+  const coordsOne = new CoordsData({
+    name: 'shared-coords',
+    shape: 'circle',
+    mPerPx: 1,
+    size: 5,
+    pos: [
+      { x: 0, y: 0, id: 'first-0' },
+      { x: 2, y: 3, id: 'first-1' }
+    ]
+  });
+
+  const { map, cleanup } = await renderMappHarness({ coords: coordsOne });
+  const overlay = new WebGLSpots(map);
+
+  const createSample = (coords: CoordsData): Sample =>
+    ({
+      name: 'duplicate-name',
+      async getFeature() {
+        const values = coords.pos!.map((_, idx) => idx);
+        return {
+          data: values,
+          dataType: 'quantitative' as const,
+          coords,
+          minmax: [0, values.length - 1] as [number, number],
+          unit: 'a.u.',
+          name: feature
+        };
+      }
+    }) as unknown as Sample;
+
+  const sampleOne = createSample(coordsOne);
+  await overlay.update(sampleOne, feature);
+  await wait();
+
+  const firstGeometry = overlay.source.getFeatures()[0]!.getGeometry()?.getCoordinates();
+
+  const coordsTwo = new CoordsData({
+    name: 'shared-coords',
+    shape: 'circle',
+    mPerPx: 0.5,
+    size: 5,
+    pos: [
+      { x: 20, y: 4, id: 'second-0' },
+      { x: 25, y: -8, id: 'second-1' }
+    ]
+  });
+
+  const sampleTwo = createSample(coordsTwo);
+  await overlay.update(sampleTwo, feature);
+  await wait();
+
+  const expected = [
+    coordsTwo.pos![0].x * coordsTwo.mPerPx,
+    -coordsTwo.pos![0].y * coordsTwo.mPerPx
+  ];
+  const updatedGeometry = overlay.source.getFeatures()[0]!.getGeometry()?.getCoordinates();
+
+  expect(firstGeometry).not.toEqual(expected);
+  expect(updatedGeometry).toEqual(expected);
+  expect(overlay.coords).toBe(coordsTwo);
+  expect(overlay.currPx).toBeCloseTo(coordsTwo.sizePx);
+
+  overlay.dispose();
   cleanup();
 });

@@ -33,6 +33,16 @@ export async function byod() {
   return processHandle(handle, true);
 }
 
+type NamedSample = { name: string; sample: Sample };
+
+export function upsertSampleEntry(existing: NamedSample[], entry: NamedSample): NamedSample[] {
+  const idx = existing.findIndex((x) => x.name === entry.name);
+  if (idx === -1) return [...existing, entry];
+  const next = existing.slice();
+  next[idx] = entry;
+  return next;
+}
+
 async function processCSV(name: string, text: string) {
   const res = (await fromCSV(text))?.data;
   if (!res) {
@@ -71,7 +81,7 @@ async function processCSV(name: string, text: string) {
 export async function processHandle(
   handle: Promise<FileSystemDirectoryHandle | FileSystemFileHandle>,
   setSample = true
-) {
+): Promise<'folder' | 'file' | undefined> {
   const h = await handle;
   if (h instanceof FileSystemFileHandle) {
     const file = await h.getFile();
@@ -82,12 +92,12 @@ export async function processHandle(
       proc = JSON.parse(text);
     } catch (e) {
       await processCSV(file.name, text);
-      return;
+      return 'file';
     }
 
     if (!proc) {
       alert('Invalid JSON file');
-      return;
+      return 'file';
     }
 
     const map = get(sMapp);
@@ -101,22 +111,22 @@ export async function processHandle(
         const roidata = proc;
         console.log('Got roi feature data');
         map.persistentLayers.rois.loadFeatures(roidata);
-        return;
+        return 'file';
       }
 
       if (valAnnFeatData(proc)) {
         const annfeatdata = proc;
         console.log('Got annotation feature data');
         map.persistentLayers.annotations.loadFeatures(annfeatdata);
-        return;
+        return 'file';
       }
 
       alert('Validation error: ' + JSON.stringify(valROIData.errors));
-      return;
+      return 'file';
     }
 
     alert('Unknown file type.');
-    return;
+    return 'file';
   }
 
   return processFolder(h, setSample);
@@ -128,7 +138,7 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = true
     sp = (await readFile<SampleParams>(handle, 'sample.json', 'plain')) as SampleParams;
   } catch (e) {
     alert('Got folder but cannot find sample.json in the specified directory');
-    return;
+    return undefined;
   }
 
   const existing = get(samples);
@@ -139,10 +149,10 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = true
     existing.find((x) => x.name === sample.name) &&
     !confirm(`Sample ${sample.name} already exists. Overwrite?`)
   ) {
-    return;
+    return undefined;
   }
-  existing.push({ name: sample.name, sample });
-  samples.set(existing);
+  const updated = upsertSampleEntry(existing, { name: sample.name, sample });
+  samples.set(updated);
   if (setSample) {
     const curr = get(mapIdSample);
     for (const id of Object.keys(curr)) {
@@ -151,4 +161,5 @@ async function processFolder(handle: FileSystemDirectoryHandle, setSample = true
     mapIdSample.set(curr);
     console.log('Set sample to', sample.name);
   }
+  return 'folder';
 }
