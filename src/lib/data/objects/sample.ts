@@ -190,4 +190,8 @@ export class Sample extends Deferrable {
     }
     return featureList;
   }
+
+  dispose() {
+    this.image?.dispose();
+  }
 }

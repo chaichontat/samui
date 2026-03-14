@@ -29,8 +29,26 @@ type Listener = (
   ev?: MapBrowserEvent<UIEvent>
 ) => void;
 
+export function buildMapResolutions(resolutions: number[]) {
+  const sourceResolutions = resolutions.filter((value) => Number.isFinite(value) && value > 0);
+
+  if (sourceResolutions.length === 0) {
+    throw new Error('GeoTIFF source returned no valid resolutions.');
+  }
+
+  if (sourceResolutions.length === 1) {
+    const native = sourceResolutions[0];
+    return [native * 128, native * 2, native, native / 2, native / 4];
+  }
+
+  const base = sourceResolutions.slice(0, -1);
+  const native = base.at(-1)! / 4;
+  return [native * 128, ...base, native * 2, native, native / 2, native / 4];
+}
+
 export class Mapp extends Deferrable {
   map?: Map;
+  scaleLine?: ScaleLine;
   persistentLayers: {
     background: Background;
     active: ActiveSpots;
@@ -67,7 +85,8 @@ export class Mapp extends Deferrable {
     // Move controls
     this.map.removeControl(this.map.getControls().getArray()[0]);
     this.map.addControl(new Zoom({ delta: 0.4 }));
-    this.map.addControl(new ScaleLine({ text: true, minWidth: 140 }));
+    this.scaleLine = new ScaleLine({ text: true, minWidth: 140 });
+    this.syncScaleLineVisibility();
 
     this.map.on('pointermove', (e) => this.runPointerListener(e));
     this.map.on('click', (e) => this.runPointerListener(e));
@@ -112,30 +131,41 @@ export class Mapp extends Deferrable {
     this.map.once('rendercomplete', () => sEvent.set({ type: 'renderComplete' }));
     if (image) {
       await bg.update(this.map, image);
-      promises.push(
-        bg
-          .source!.getView()
-          .then((v) => {
-            // Remove last resolution as the first tile is 1/4x the resolution of native.
-            // whereas others are 1/2x the resolution of the next tile.
-            const b = v.resolutions!.slice(0, -1);
-            const native = b.at(-1)! / 4;
-            return new View({
-              ...v,
-              // Fill in the missing 1/2x resolution and extend to 4x magnification over native.
-              // Also add another layer of zoom out.
-              resolutions: [native * 128, ...b, native * 2, native, native / 2, native / 4]
-            });
-          })
-          .then((v) => {
-            this.map!.setView(v);
-            this._needNewView = false;
-          })
-          .catch(console.error)
-      );
+      this.syncScaleLineVisibility();
+      if (bg.viewOptions) {
+        const view = new View(bg.viewOptions);
+        this.map.setView(view);
+        view.fit(bg.viewOptions.extent!, {
+          maxZoom: Math.max(
+            2,
+            bg.viewOptions.resolutions!.findIndex((resolution) => resolution === image.mPerPx)
+          )
+        });
+        this._needNewView = false;
+      } else {
+        promises.push(
+          bg
+            .geoTiffSource!.getView()
+            .then((v) => {
+              return new View({
+                ...v,
+                // Fill in the missing 1/2x resolution and extend to 4x magnification over native.
+                // Also add another layer of zoom out.
+                resolutions: buildMapResolutions(v.resolutions ?? [])
+              });
+            })
+            .then((v) => {
+              this.map!.setView(v);
+              this._needNewView = false;
+            })
+            .catch(console.error)
+        );
+      }
     } else {
       console.debug('No image. View must come from overlay.');
       this.persistentLayers.background.dispose(this.map);
+      bg.mPerPx = undefined;
+      this.syncScaleLineVisibility();
       this._needNewView = true;
     }
 
@@ -163,6 +193,21 @@ export class Mapp extends Deferrable {
 
   get mPerPx() {
     return this.persistentLayers.background?.mPerPx;
+  }
+
+  private syncScaleLineVisibility() {
+    if (!this.map || !this.scaleLine) return;
+
+    const shouldShow =
+      this.mPerPx != undefined &&
+      this.persistentLayers.background.image?.hasPhysicalScale !== false;
+    const isAttached = this.scaleLine.getMap() === this.map;
+
+    if (shouldShow && !isAttached) {
+      this.map.addControl(this.scaleLine);
+    } else if (!shouldShow && isAttached) {
+      this.map.removeControl(this.scaleLine);
+    }
   }
 
   moveView({ x, y }: { x: number; y: number }, zoom?: number) {

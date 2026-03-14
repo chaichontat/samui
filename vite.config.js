@@ -1,12 +1,19 @@
 import path from 'path';
 import { searchForWorkspaceRoot } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { playwright } from '@vitest/browser-playwright';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
 // https://stackoverflow.com/a/70069241
 // Get current tag/commit and last commit date from git
 const pexec = promisify(exec);
+const optimizedOpenLayersDeps = [
+  'ol/layer/WebGLVector',
+  'ol/source/DataTile.js',
+  'ol/tilegrid/TileGrid.js'
+];
+
 let [version, lastmod] = (
   await Promise.allSettled([
     pexec('git fetch --tags && git describe --tags || git rev-parse --short HEAD'),
@@ -39,6 +46,9 @@ const config = {
     target: 'esnext',
     chunkSizeWarningLimit: 1024
   },
+  optimizeDeps: {
+    include: optimizedOpenLayersDeps
+  },
 
   test: {
     testTimeout: 20000,
@@ -55,7 +65,7 @@ const config = {
           setupFiles: ['vitest-browser-svelte', './setupTestBrowser.cjs'],
           browser: {
             headless: true,
-            provider: 'playwright', // or 'webdriverio'
+            provider: playwright(),
             enabled: true,
             instances: [{ browser: 'chromium' }]
           }
