@@ -94,6 +94,29 @@ describe('processHandle', () => {
     );
   });
 
+  it('still warns about fallback scale after the one-time TIFF notice was already shown', async () => {
+    const noticeSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    localStorage.setItem('samui:tiff-import-notice', 'true');
+    const file = new File([new Uint8Array([1, 2, 3])], 'fallback.tif', { type: 'image/tiff' });
+
+    mocks.buildTiffSampleParams.mockResolvedValue({
+      name: 'fallback',
+      imgParams: {
+        urls: [{ url: 'blob:fallback', type: 'network' }],
+        channels: ['C1'],
+        hasPhysicalScale: false,
+        mPerPx: 1,
+        maxVal: 255
+      }
+    });
+
+    await processHandle(Promise.resolve(new FakeFileSystemFileHandle(file)), true);
+
+    expect(noticeSpy).toHaveBeenCalledWith(
+      'Imported fallback without meter-based resolution metadata. Pixel scale defaulted to 1, so the scale bar is hidden and any added coordinates are interpreted in pixel units.'
+    );
+  });
+
   it('blocks TIFF files larger than 1 GB before decoding', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
     const file = new File([new Uint8Array([1, 2, 3])], 'large.tif', { type: 'image/tiff' });

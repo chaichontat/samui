@@ -49,15 +49,20 @@ export class Background extends Deferrable {
       this.layer.dispose();
     }
     this.source?.dispose(); // Cannot reuse GeoTIFF.
+    this.source = undefined;
+    this.layer = undefined;
     this.geoTiffSource = undefined;
+    this.image = undefined;
+    this.mPerPx = undefined;
     this.viewOptions = undefined;
+    this.intensityRequestId += 1;
   }
 
   async update(map: Map, image: ImgData) {
     console.log('Updating background');
-    this.image = image;
     await image.promise;
     this.dispose(map);
+    this.image = image;
     if (isLocalTiffImage(image)) {
       this.source = await createLocalTiffSource(image);
       this.viewOptions = buildLocalTiffViewOptions(image);

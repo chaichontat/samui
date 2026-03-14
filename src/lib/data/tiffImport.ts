@@ -13,6 +13,8 @@ const TIFF_RESOLUTION_UNIT_INCH = 2;
 const TIFF_RESOLUTION_UNIT_CENTIMETER = 3;
 
 export const MAX_BROWSER_TIFF_BYTES = 1024 ** 3;
+export const MAX_BROWSER_TIFF_CHANNELS = 32;
+export const MAX_BROWSER_TIFF_DECODED_BYTES = 1024 ** 3;
 
 function getFileStem(name: string) {
   return name.replace(/\.[^.]+$/, '') || name;
@@ -78,6 +80,79 @@ function inferChannelNames(count: number): ImageParams['channels'] {
   return Array.from({ length: count }, (_, index) => `C${index + 1}`);
 }
 
+function getOmePixelsTag(description: string) {
+  return description.match(/<Pixels\b[^>]*>/i)?.[0];
+}
+
+function getXmlAttribute(tag: string, attribute: string) {
+  const match = tag.match(new RegExp(`${attribute}\\s*=\\s*["']([^"']+)["']`, 'i'));
+  return match?.[1];
+}
+
+function parseOmeChannelMetadata(description: string, expectedChannels: number) {
+  if (!description.includes('<OME')) {
+    return null;
+  }
+
+  const pixelsTag = getOmePixelsTag(description);
+  if (!pixelsTag) {
+    return null;
+  }
+
+  const sizeC = Number(getXmlAttribute(pixelsTag, 'SizeC'));
+  const sizeZ = Number(getXmlAttribute(pixelsTag, 'SizeZ') ?? '1');
+  const sizeT = Number(getXmlAttribute(pixelsTag, 'SizeT') ?? '1');
+  if (
+    !Number.isInteger(sizeC) ||
+    sizeC !== expectedChannels ||
+    !Number.isFinite(sizeZ) ||
+    sizeZ > 1 ||
+    !Number.isFinite(sizeT) ||
+    sizeT > 1
+  ) {
+    return null;
+  }
+
+  const names = Array.from(
+    description.matchAll(/<Channel\b[^>]*\bName\s*=\s*["']([^"']+)["'][^>]*>/gi)
+  )
+    .map((match) => match[1]?.trim())
+    .filter((name): name is string => Boolean(name));
+
+  return names.length === expectedChannels ? names : inferChannelNames(expectedChannels);
+}
+
+function parseImageDescriptionChannelMetadata(description: string, expectedChannels: number) {
+  const trimmed = description.replace(/\0+$/, '').trim();
+  if (!trimmed.startsWith('{')) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as { axes?: unknown; shape?: unknown };
+    if (
+      typeof parsed.axes !== 'string' ||
+      !Array.isArray(parsed.shape) ||
+      parsed.shape.length !== parsed.axes.length ||
+      parsed.shape.some((entry) => !Number.isInteger(entry) || entry <= 0)
+    ) {
+      return null;
+    }
+
+    const channelAxis = parsed.axes.indexOf('C');
+    const nonSpatialAxes = parsed.axes.replace(/[XY]/g, '');
+    if (channelAxis < 0 || nonSpatialAxes !== 'C') {
+      return null;
+    }
+
+    return parsed.shape[channelAxis] === expectedChannels
+      ? inferChannelNames(expectedChannels)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function inferDtype(image: GeoTIFFImage): ImageParams['dtype'] {
   const sampleCount = image.getSamplesPerPixel();
   const firstBits = image.getBitsPerSample(0);
@@ -100,6 +175,10 @@ function inferDtype(image: GeoTIFFImage): ImageParams['dtype'] {
   if (firstBits === 16) return 'uint16';
 
   throw new Error('Unsupported TIFF dtype: only uint8 and uint16 are supported.');
+}
+
+function getBytesPerSample(dtype: ImageParams['dtype']) {
+  return dtype === 'uint16' ? 2 : 1;
 }
 
 async function loadIfdValue(image: GeoTIFFImage, tag: string) {
@@ -138,7 +217,7 @@ async function inferScaleInfo(image: GeoTIFFImage) {
           return { hasPhysicalScale: true, mPerPx: resolutionX };
         }
       } catch {
-        return { hasPhysicalScale: false, mPerPx: 1 };
+        // Fall through to TIFF resolution tags below.
       }
     }
   }
@@ -219,14 +298,66 @@ function isChannelPageLayout(pages: TiffPage[]) {
   });
 }
 
-function validateTiffLayout(pages: TiffPage[]) {
-  if (pages.length <= 1 || isChannelPageLayout(pages)) {
+async function getExplicitChannelPageNames(pages: TiffPage[]) {
+  if (!isChannelPageLayout(pages)) {
+    return null;
+  }
+
+  const description = await loadIfdValue(pages[0]!.image, 'ImageDescription');
+  if (typeof description !== 'string') {
+    return null;
+  }
+
+  return (
+    parseOmeChannelMetadata(description, pages.length) ??
+    parseImageDescriptionChannelMetadata(description, pages.length)
+  );
+}
+
+function validateTiffLayout(
+  pages: TiffPage[],
+  explicitChannelNames: ImageParams['channels'] | null
+) {
+  if (pages.length <= 1) {
     return;
+  }
+
+  if (isChannelPageLayout(pages)) {
+    if (explicitChannelNames) {
+      return;
+    }
+
+    throw new Error(
+      'Unsupported TIFF dimensions: multi-page grayscale TIFFs require explicit channel metadata.'
+    );
   }
 
   throw new Error(
     'Unsupported TIFF dimensions: only 2D images and 3D channel stacks are supported.'
   );
+}
+
+function assertDecodedRasterBudget(
+  width: number,
+  height: number,
+  channelCount: number,
+  dtype: ImageParams['dtype']
+) {
+  if (channelCount > MAX_BROWSER_TIFF_CHANNELS) {
+    throw new Error(
+      `Browser TIFF import is limited to ${MAX_BROWSER_TIFF_CHANNELS} channels. Please preprocess higher-dimensional TIFF files before importing them into Samui.`
+    );
+  }
+
+  const decodedBytes = width * height * channelCount * getBytesPerSample(dtype);
+  if (decodedBytes > MAX_BROWSER_TIFF_DECODED_BYTES) {
+    const maxGigabytes = (MAX_BROWSER_TIFF_DECODED_BYTES / 1024 ** 3).toLocaleString(undefined, {
+      maximumFractionDigits: 1
+    });
+    throw new Error(
+      `Browser TIFF import is limited to decoded rasters under ${maxGigabytes} GB. Please preprocess larger TIFF files before importing them into Samui.`
+    );
+  }
 }
 
 function getEntryCount(view: DataView, ifdOffset: number, littleEndian: boolean, bigTiff: boolean) {
@@ -544,43 +675,57 @@ export function getTiffImportLimitMessage(maxBytes = MAX_BROWSER_TIFF_BYTES) {
 export async function buildTiffImageParams(file: File): Promise<ImageParams> {
   const tiff = await fromBlob(file);
   const pages = await getTiffPages(tiff);
-  validateTiffLayout(pages);
+  const explicitChannelNames = await getExplicitChannelPageNames(pages);
+  validateTiffLayout(pages, explicitChannelNames);
   const [firstPage] = pages;
   const dtype = inferDtype(firstPage.image);
   const scaleInfo = await inferScaleInfo(firstPage.image);
+  const width = firstPage.image.getWidth();
+  const height = firstPage.image.getHeight();
 
-  if (isChannelPageLayout(pages)) {
+  if (isChannelPageLayout(pages) && Array.isArray(explicitChannelNames)) {
+    assertDecodedRasterBudget(width, height, explicitChannelNames.length, dtype);
     const maxVals = await Promise.all(pages.map(({ image }) => inferMaxVal(image, dtype)));
-    const urls = await Promise.all(
-      pages.map(async ({ ifdOffset }) => ({
-        url: URL.createObjectURL(
-          await createSingleIfdTiffBlob(file, {
-            ifdOffset,
-            littleEndian: tiff.littleEndian,
-            bigTiff: tiff.bigTiff
-          })
-        ),
-        type: 'network' as const
-      }))
-    );
+    const createdUrls: string[] = [];
 
-    return {
-      urls,
-      channels: inferChannelNames(pages.length),
-      ...scaleInfo,
-      renderMode: 'local-tiff',
-      size: { width: firstPage.image.getWidth(), height: firstPage.image.getHeight() },
-      dtype,
-      maxVal: Math.max(...maxVals)
-    };
+    try {
+      const urls = await Promise.all(
+        pages.map(async ({ ifdOffset }) => {
+          const url = URL.createObjectURL(
+            await createSingleIfdTiffBlob(file, {
+              ifdOffset,
+              littleEndian: tiff.littleEndian,
+              bigTiff: tiff.bigTiff
+            })
+          );
+          createdUrls.push(url);
+          return { url, type: 'network' as const };
+        })
+      );
+
+      return {
+        urls,
+        channels: explicitChannelNames,
+        ...scaleInfo,
+        renderMode: 'local-tiff',
+        size: { width, height },
+        dtype,
+        maxVal: Math.max(...maxVals)
+      };
+    } catch (error) {
+      createdUrls.forEach((url) => URL.revokeObjectURL(url));
+      throw error;
+    }
   }
+
+  assertDecodedRasterBudget(width, height, firstPage.image.getSamplesPerPixel(), dtype);
 
   return {
     urls: [{ url: URL.createObjectURL(file), type: 'network' }],
     channels: inferChannels(firstPage.image),
     ...scaleInfo,
     renderMode: 'local-tiff',
-    size: { width: firstPage.image.getWidth(), height: firstPage.image.getHeight() },
+    size: { width, height },
     dtype,
     maxVal: await inferMaxVal(firstPage.image, dtype)
   };

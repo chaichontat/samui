@@ -188,15 +188,16 @@ async function processTiff(file: File, setSample = true) {
       return;
     }
 
+    const usesFallbackScale = params.imgParams?.hasPhysicalScale === false;
     if (!localStorage.getItem('samui:tiff-import-notice')) {
-      const scaleMessage =
-        params.imgParams?.hasPhysicalScale === false
-          ? ' Pixel scale defaulted to 1 because the TIFF did not expose meter-based resolution metadata.'
-          : '';
       alert(
-        `Imported ${sample.name} as an image-only TIFF sample.${scaleMessage} Coordinates and feature overlays still require a prepared sample folder.`
+        `Imported ${sample.name} as an image-only TIFF sample.${usesFallbackScale ? ' Pixel scale defaulted to 1 because the TIFF did not expose meter-based resolution metadata.' : ''} Coordinates and feature overlays still require a prepared sample folder.`
       );
       localStorage.setItem('samui:tiff-import-notice', 'true');
+    } else if (usesFallbackScale) {
+      alert(
+        `Imported ${sample.name} without meter-based resolution metadata. Pixel scale defaulted to 1, so the scale bar is hidden and any added coordinates are interpreted in pixel units.`
+      );
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to import TIFF file.';

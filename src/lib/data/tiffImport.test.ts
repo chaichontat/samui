@@ -199,6 +199,29 @@ describe('buildTiffSampleParams', () => {
     });
   });
 
+  it('falls back to TIFF resolution tags when GeoTIFF resolution lookup fails', async () => {
+    const file = new File([new Uint8Array([1, 2, 3])], 'fallback-scale.tif', {
+      type: 'image/tiff'
+    });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValueOnce('blob:fallback-scale');
+
+    const image = createImageStub({
+      fileDirectoryValues: {
+        ResolutionUnit: 3,
+        XResolution: Uint32Array.of(4000, 1)
+      },
+      geoKeys: { ProjectedCSTypeGeoKey: 32648 }
+    });
+    mocks.fromBlob.mockResolvedValue(createTiffStub({ images: [image] }));
+
+    const imgParams = await buildTiffImageParams(file);
+
+    expect(imgParams).toMatchObject({
+      hasPhysicalScale: true,
+      mPerPx: 0.01 / 4000
+    });
+  });
+
   it('rejects unsupported TIFF dtypes', async () => {
     const file = new File([new Uint8Array([1, 2, 3])], 'float-scan.tif', { type: 'image/tiff' });
 
@@ -236,7 +259,38 @@ describe('buildTiffSampleParams', () => {
     );
   });
 
-  it('splits multi-page same-resolution grayscale TIFFs into one URL per page', async () => {
+  it('rejects ambiguous multi-page grayscale TIFFs without explicit channel metadata', async () => {
+    const fileBytes = new Uint8Array(64);
+    const view = new DataView(fileBytes.buffer);
+    view.setUint16(8, 0, true);
+    view.setUint16(16, 0, true);
+    const file = new File([fileBytes], 'stack.tif', { type: 'image/tiff' });
+
+    const firstImage = createImageStub({
+      bitsPerSample: 16,
+      gdalMetadata: { dataset: null, 0: { STATISTICS_MAXIMUM: '1200' } },
+      height: 16,
+      width: 12
+    });
+    const secondImage = createImageStub({
+      bitsPerSample: 16,
+      gdalMetadata: { dataset: null, 0: { STATISTICS_MAXIMUM: '900' } },
+      height: 16,
+      width: 12
+    });
+    mocks.fromBlob.mockResolvedValue(
+      createTiffStub({
+        images: [firstImage, secondImage],
+        nextIFDByteOffsets: [16, 0]
+      })
+    );
+
+    await expect(buildTiffImageParams(file)).rejects.toThrow(
+      'Unsupported TIFF dimensions: multi-page grayscale TIFFs require explicit channel metadata.'
+    );
+  });
+
+  it('splits multi-page same-resolution grayscale TIFFs into one URL per page when OME channel metadata is present', async () => {
     const fileBytes = new Uint8Array(64);
     const view = new DataView(fileBytes.buffer);
     view.setUint16(8, 0, true);
@@ -249,6 +303,10 @@ describe('buildTiffSampleParams', () => {
 
     const firstImage = createImageStub({
       bitsPerSample: 16,
+      fileDirectoryValues: {
+        ImageDescription:
+          '<OME><Image><Pixels SizeC="2" SizeZ="1" SizeT="1"><Channel Name="DAPI"/><Channel Name="GFAP"/></Pixels></Image></OME>'
+      },
       gdalMetadata: { dataset: null, 0: { STATISTICS_MAXIMUM: '1200' } },
       height: 16,
       width: 12
@@ -274,7 +332,7 @@ describe('buildTiffSampleParams', () => {
         { url: 'blob:page-1', type: 'network' },
         { url: 'blob:page-2', type: 'network' }
       ],
-      channels: ['C1', 'C2'],
+      channels: ['DAPI', 'GFAP'],
       hasPhysicalScale: false,
       renderMode: 'local-tiff',
       size: { width: 12, height: 16 },
@@ -297,7 +355,14 @@ describe('buildTiffSampleParams', () => {
       .mockReturnValueOnce('blob:page-1')
       .mockReturnValueOnce('blob:page-2');
 
-    const firstImage = createImageStub({ height: 16, width: 12 });
+    const firstImage = createImageStub({
+      fileDirectoryValues: {
+        ImageDescription:
+          '<OME><Image><Pixels SizeC="2" SizeZ="1" SizeT="1"><Channel Name="DAPI"/><Channel Name="GFAP"/></Pixels></Image></OME>'
+      },
+      height: 16,
+      width: 12
+    });
     const secondImage = createImageStub({ height: 16, width: 12 });
     mocks.fromBlob.mockResolvedValue(
       createTiffStub({
@@ -312,5 +377,21 @@ describe('buildTiffSampleParams', () => {
     const secondBlob = createObjectURLSpy.mock.calls[1]?.[0] as Blob;
     expect(firstBlob.size).toBeLessThan(file.size);
     expect(secondBlob.size).toBeLessThan(file.size);
+  });
+
+  it('rejects TIFFs whose decoded raster budget exceeds the browser import limit', async () => {
+    const file = new File([new Uint8Array([1, 2, 3])], 'huge.tif', { type: 'image/tiff' });
+
+    const image = createImageStub({
+      bitsPerSample: 16,
+      height: 12000,
+      samplesPerPixel: 8,
+      width: 12000
+    });
+    mocks.fromBlob.mockResolvedValue(createTiffStub({ images: [image] }));
+
+    await expect(buildTiffImageParams(file)).rejects.toThrow(
+      'Browser TIFF import is limited to decoded rasters under'
+    );
   });
 });

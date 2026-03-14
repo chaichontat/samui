@@ -4,12 +4,10 @@ import { writeArrayBuffer } from 'geotiff';
 import { get } from 'svelte/store';
 
 import { Sample } from '$src/lib/data/objects/sample';
-import { buildTiffImageParams } from '$src/lib/data/tiffImport';
 import { mapIdSample, samples, sMapp, sSample } from '$src/lib/store';
 
 import MainMap from './mainMap.svelte';
 import reg0045Url from '../../e2e/reg-0045--reg-0045_z10.tif?url';
-import stitchedUrl from '../../out/stitched.tif?url';
 
 beforeEach(() => {
   samples.set([]);
@@ -150,13 +148,53 @@ it('hides the scale bar when TIFF imports fall back to a synthetic 1 m/px scale'
   URL.revokeObjectURL(objectUrl);
 });
 
-it('imports and renders multi-page stitched TIFFs as separate channels', async () => {
-  const fileBlob = await fetch(stitchedUrl).then((response) => response.blob());
-  const file = new File([fileBlob], 'stitched.tif', { type: 'image/tiff' });
-  const imgParams = await buildTiffImageParams(file);
+it('renders explicit split-page local TIFF sources as separate channels', async () => {
+  const firstUrl = URL.createObjectURL(
+    new Blob(
+      [
+        writeArrayBuffer(
+          [
+            [
+              [0, 255, 128, 64],
+              [32, 96, 160, 224]
+            ]
+          ],
+          { width: 4, height: 2 }
+        )
+      ],
+      { type: 'image/tiff' }
+    )
+  );
+  const secondUrl = URL.createObjectURL(
+    new Blob(
+      [
+        writeArrayBuffer(
+          [
+            [
+              [255, 0, 64, 128],
+              [224, 160, 96, 32]
+            ]
+          ],
+          { width: 4, height: 2 }
+        )
+      ],
+      { type: 'image/tiff' }
+    )
+  );
   const sample = new Sample({
     name: 'stitched',
-    imgParams
+    imgParams: {
+      urls: [
+        { url: firstUrl, type: 'network' },
+        { url: secondUrl, type: 'network' }
+      ],
+      channels: ['DAPI', 'GFAP'],
+      hasPhysicalScale: false,
+      mPerPx: 1,
+      maxVal: 255,
+      renderMode: 'local-tiff',
+      size: { width: 4, height: 2 }
+    }
   });
 
   mapIdSample.set({ 0: 'stitched' });
@@ -172,7 +210,9 @@ it('imports and renders multi-page stitched TIFFs as separate channels', async (
   await expect.poll(() => get(sMapp)?.persistentLayers.background.geoTiffSource).toBeUndefined();
   await expect
     .poll(() => get(sMapp)?.persistentLayers.background.viewOptions?.extent)
-    .toEqual([0, -16384, 12800, 0]);
+    .toEqual([0, -2, 4, 0]);
 
   screen.unmount();
+  URL.revokeObjectURL(firstUrl);
+  URL.revokeObjectURL(secondUrl);
 });
