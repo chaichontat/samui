@@ -29,6 +29,7 @@
   } = $props();
 
   const COLLAPSE_DELAY_MS = 3000;
+  const controlId = `img-control-${Math.random().toString(36).slice(2, 10)}`;
 
   let image = $state<ImgData | undefined>(undefined);
   let controller = $state<ImgCtrl | undefined>(undefined);
@@ -42,6 +43,13 @@
   let mountTimestamp = 0;
   let collapseTimer: ReturnType<typeof setTimeout> | null = null;
   let collapseInitiated = $state(false);
+  let hovered = $state(false);
+
+  const isHoveringControl = () => {
+    if (hovered) return true;
+    if (typeof document === 'undefined') return false;
+    return document.querySelector(`[data-img-control-id="${controlId}"]:hover`) !== null;
+  };
 
   function initialiseController(): void {
     const nextImage = background.image;
@@ -74,11 +82,16 @@
   };
 
   const scheduleCollapse = () => {
-    if (!mounted || collapseInitiated) return;
+    if (!mounted || collapseInitiated || isHoveringControl()) return;
 
     clearCollapseTimer(false);
     collapseInitiated = true;
     collapseTimer = setTimeout(() => {
+      if (isHoveringControl()) {
+        collapseTimer = null;
+        collapseInitiated = false;
+        return;
+      }
       expanded = false;
       collapseTimer = null;
       collapseInitiated = false;
@@ -99,6 +112,17 @@
       return;
     }
     clearCollapseTimer();
+  };
+
+  const handleMouseEnter = (event?: Event) => {
+    hovered = true;
+    handleInteraction(event);
+  };
+
+  const handleMouseLeave = (event?: Event) => {
+    hovered = false;
+    if (!mounted || !controller || !expanded) return;
+    scheduleCollapse();
   };
 
   const controllerSnapshot = $derived.by(() => cloneController(controller));
@@ -138,7 +162,7 @@
 
   $effect(() => {
     const ctrl = controller;
-    if (!mounted || !ctrl || collapseInitiated || !expanded) return;
+    if (!mounted || !ctrl || collapseInitiated || !expanded || isHoveringControl()) return;
     scheduleCollapse();
   });
 
@@ -165,10 +189,12 @@
           baseWidth={maxNameWidth + 11}
           expandWidthRatio={450 / (maxNameWidth + 11)}
           bind:expanded
+          data-img-control-id={controlId}
           class="relative group overflow-x-hidden pl-1.5 pr-2 py-2 font-medium"
           aria-label="Image controls"
           onRequestState={(detail) => (expanded = detail.expanded)}
-          onmouseenter={handleInteraction}
+          onmouseenter={handleMouseEnter}
+          onmouseleave={handleMouseLeave}
           onmousedown={handleInteraction}
           {...props}
         >

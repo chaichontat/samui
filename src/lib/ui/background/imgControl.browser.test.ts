@@ -3,9 +3,8 @@ import { ImgData, type ImageParams } from '$src/lib/data/objects/image';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import type { BandInfo, CompCtrl, ImgCtrl, RGBCtrl } from '$src/lib/ui/background/imgColormap';
 import ImgControl from '$src/lib/ui/background/imgControl.svelte';
-import { fireEvent } from '@testing-library/svelte';
-import { userEvent } from '@vitest/browser/context';
 import { beforeEach, expect, test, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 
 class BackgroundSpy extends Background {
@@ -316,7 +315,47 @@ test('auto-collapse engages after the inactivity delay elapses', async () => {
 
     expect(island.getAttribute('data-expanded')).toBe('true');
 
+    await userEvent.unhover(island);
     await wait(30);
+    await flush();
+
+    expect(island.getAttribute('data-expanded')).toBe('false');
+    screen.unmount();
+  } finally {
+    (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = originalSetTimeout;
+  }
+});
+
+test('auto-collapse stays paused while the mouse remains over the control bar', async () => {
+  const originalSetTimeout = window.setTimeout.bind(window);
+  (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = ((
+    handler: TimerHandler,
+    timeout?: number,
+    ...args: unknown[]
+  ) =>
+    originalSetTimeout(
+      handler,
+      timeout === 3000 ? 80 : (timeout ?? 0),
+      ...args
+    )) as typeof setTimeout;
+
+  try {
+    const { screen } = await setupCompositeControl();
+    const island = screen.container.querySelector(
+      '[data-testid="liquid-glass-island"]'
+    ) as HTMLElement | null;
+    if (!island) throw new Error('island not found');
+
+    expect(island.getAttribute('data-expanded')).toBe('true');
+
+    await userEvent.hover(island);
+    await wait(100);
+    await flush();
+
+    expect(island.getAttribute('data-expanded')).toBe('true');
+
+    await userEvent.unhover(island);
+    await wait(100);
     await flush();
 
     expect(island.getAttribute('data-expanded')).toBe('false');
@@ -346,6 +385,7 @@ test('expansion control reopens the panel after auto-collapse', async () => {
     ) as HTMLElement | null;
     if (!island) throw new Error('island not found');
 
+    await userEvent.unhover(island);
     await wait(40);
     await flush();
 
@@ -416,7 +456,7 @@ test('GlassIsland contracts when collapsed via keyboard toggle', async () => {
   await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
 
   island.focus();
-  await fireEvent.keyDown(island, { key: 'Enter' });
+  await userEvent.keyboard('{Enter}');
   await flush();
 
   await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('false');
@@ -441,7 +481,7 @@ test('GlassIsland re-expands after being reopened', async () => {
   await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
 
   island.focus();
-  await fireEvent.keyDown(island, { key: 'Enter' });
+  await userEvent.keyboard('{Enter}');
   await flush();
 
   await expect.poll(() => island.getAttribute('data-expanded'), { timeout: 1500 }).toBe('false');
@@ -477,12 +517,15 @@ test('GlassIsland toggles via mouse clicks on the shell', async () => {
   await expect.poll(() => measureWidth(mainPanel), { timeout: 1500 }).toBeGreaterThan(320);
 
   const clickShell = async () => {
-    await fireEvent.pointerDown(island, { pointerType: 'mouse', button: 0 });
-    await fireEvent.mouseDown(island, { button: 0 });
-    await fireEvent.pointerUp(island, { pointerType: 'mouse', button: 0 });
-    await fireEvent.mouseUp(island, { button: 0 });
-    await fireEvent.click(island, { button: 0 });
-    await flush();
+    const table = island.querySelector('table') as HTMLElement | null;
+    const previousPointerEvents = table?.style.pointerEvents ?? '';
+    if (table) table.style.pointerEvents = 'none';
+    try {
+      await userEvent.click(island);
+      await flush();
+    } finally {
+      if (table) table.style.pointerEvents = previousPointerEvents;
+    }
   };
 
   await clickShell();
@@ -573,8 +616,7 @@ test('range slider start event triggers channel selection', async () => {
 
   // Trigger a real interaction on the slider shell - should re-enable the channel selection
   if (slider) {
-    await fireEvent.pointerDown(slider, { pointerType: 'mouse', button: 0 });
-    await fireEvent.mouseDown(slider, { button: 0 });
+    await userEvent.click(slider);
     await flush();
   }
 
