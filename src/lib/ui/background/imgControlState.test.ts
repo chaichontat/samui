@@ -32,6 +32,25 @@ describe('imgControlState helpers', () => {
     expect(ctrl.variables.dapi.color).toBe('red');
   });
 
+  it('uses percentile-derived defaults when available on the image', () => {
+    const ctrl = buildCompositeController(
+      new ImgData({
+        urls: [{ url: '/tiles', type: 'network' }],
+        channels: ['dapi', 'actin', 'tubulin'],
+        mPerPx: 1,
+        maxVal: 4095,
+        defaultMinMax: {
+          dapi: [25, 2500],
+          actin: [100, 3500],
+          tubulin: [10, 1200]
+        }
+      })
+    );
+
+    expect(ctrl.variables.actin.minmax[0]).toBeCloseTo(10, 5);
+    expect(ctrl.variables.actin.minmax[1]).toBeCloseTo(Math.sqrt(3500), 5);
+  });
+
   it('restores composite controller from localStorage when channels match', () => {
     const ctrl = buildCompositeController(createCompositeImage());
     localStorage.setItem('imgCtrl', JSON.stringify(ctrl));
@@ -43,7 +62,10 @@ describe('imgControlState helpers', () => {
   it('ignores stored controller when channels mismatch', () => {
     localStorage.setItem(
       'imgCtrl',
-      JSON.stringify({ type: 'composite', variables: { other: { enabled: true, color: 'red', minmax: [0, 1] } } })
+      JSON.stringify({
+        type: 'composite',
+        variables: { other: { enabled: true, color: 'red', minmax: [0, 1] } }
+      })
     );
 
     expect(restoreCompositeController(['alpha'])).toBeNull();
@@ -76,4 +98,3 @@ describe('imgControlState helpers', () => {
     spy.mockRestore();
   });
 });
-

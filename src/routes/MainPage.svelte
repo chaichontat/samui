@@ -1,7 +1,6 @@
 <script lang="ts">
   import { getSample, getSampleListFromQuery } from '$lib/data/preload';
   import Modal from '$src/lib/components/modal.svelte';
-  import { processHandle } from '$src/lib/data/byod';
   import type { Sample } from '$src/lib/data/objects/sample';
   import { samples } from '$src/lib/store';
   import Store from '$src/lib/store.svelte';
@@ -63,7 +62,9 @@
     const handle = file.getAsFileSystemHandle() as Promise<
       FileSystemDirectoryHandle | FileSystemFileHandle
     >;
-    processHandle(handle, true).catch(console.error);
+    import('$src/lib/data/byod')
+      .then(({ processHandle }) => processHandle(handle, true))
+      .catch(console.error);
   }
   let dragging = false;
   let dragTimeout: ReturnType<typeof setTimeout>;

@@ -9,7 +9,32 @@ import type { Geometries } from './sidebar/annotation/annROI';
 import { HoverSelect, type FeatureGroupList } from './sidebar/searchBox';
 import type { WebGLSpots } from './ui/overlays/points';
 
-export const samples: Writable<{ name: string; sample: Sample }[]> = writable([]);
+type SampleEntry = { name: string; sample: Sample };
+
+function createSamplesStore(): Writable<SampleEntry[]> {
+  let current: SampleEntry[] = [];
+  const base = writable<SampleEntry[]>(current);
+
+  const set = (next: SampleEntry[]) => {
+    const retained = new Set(next.map((entry) => entry.sample));
+    for (const entry of current) {
+      if (!retained.has(entry.sample)) {
+        entry.sample.dispose();
+      }
+    }
+
+    current = next;
+    base.set(next);
+  };
+
+  return {
+    subscribe: base.subscribe,
+    set,
+    update: (updater) => set(updater(current))
+  };
+}
+
+export const samples = createSamplesStore();
 
 export const sMapp = writable(undefined as Mapp | undefined);
 export const sMapId: Writable<number> = writable(0);
@@ -124,6 +149,7 @@ export const sEvent = writable(
           | 'viewAdjusted'
           | 'maskUpdated'
           | 'overlayAdjusted'
+          | 'imgDefaultsUpdated'
           | 'renderComplete';
       }
     | undefined
