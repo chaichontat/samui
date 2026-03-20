@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Callable, Literal, cast
 
 import pandas as pd
+from pandas.api.types import is_object_dtype, is_string_dtype
 from pydantic import validator
 from scipy.sparse import csc_matrix, csr_matrix
 from typing_extensions import Self
@@ -112,15 +113,19 @@ def join_idx(template: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
     """
 
     for df in [template, feat]:
-        if not df.index.dtype == "object":
+        index = df.index
+        has_string_index = is_string_dtype(index.dtype) or (
+            is_object_dtype(index.dtype) and index.map(lambda value: isinstance(value, str)).all()
+        )
+        if not has_string_index:
             raise ValueError(
                 """Index must be string. This is to prevent subtle bugs.
                 Use`df.index = df.index.astype(str)` and verify that the index is unique with `df.index.is_unique`."""
             )
 
-        if not df.index.is_unique:
+        if not index.is_unique:
             raise ValueError(
-                f"Template (coords) index is not unique. {df.index[df.index.duplicated()]} duplicated"
+                f"Template (coords) index is not unique. {index[index.duplicated()]} duplicated"
             )
 
     joined = template.join(feat, validate="one_to_one")

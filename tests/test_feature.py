@@ -31,6 +31,17 @@ def test_join_idx_merges_on_string_index() -> None:
     assert joined.loc["b", "x"] == 1
 
 
+def test_join_idx_merges_on_pandas_string_index() -> None:
+    template = pd.DataFrame({"x": [0, 1], "y": [2, 3]}, index=pd.Index(["a", "b"], dtype="string"))
+    features = pd.DataFrame({"gene": [5, 7]}, index=pd.Index(["a", "b"], dtype="string"))
+
+    joined = join_idx(template, features)
+
+    assert list(joined.columns) == ["x", "y", "gene"]
+    assert joined.loc["a", "gene"] == 5
+    assert joined.loc["b", "x"] == 1
+
+
 def test_join_idx_requires_string_index() -> None:
     template = pd.DataFrame({"x": [0]}, index=[1])
     features = pd.DataFrame({"gene": [5]}, index=[1])
