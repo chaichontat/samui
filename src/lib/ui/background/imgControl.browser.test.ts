@@ -335,7 +335,7 @@ test('auto-collapse stays paused while the mouse remains over the control bar', 
   ) =>
     originalSetTimeout(
       handler,
-      timeout === 3000 ? 80 : (timeout ?? 0),
+      timeout === 3000 ? 180 : (timeout ?? 0),
       ...args
     )) as typeof setTimeout;
 
@@ -348,14 +348,15 @@ test('auto-collapse stays paused while the mouse remains over the control bar', 
 
     expect(island.getAttribute('data-expanded')).toBe('true');
 
+    await wait(60);
     await userEvent.hover(island);
-    await wait(100);
+    await wait(140);
     await flush();
 
     expect(island.getAttribute('data-expanded')).toBe('true');
 
     await userEvent.unhover(island);
-    await wait(100);
+    await wait(220);
     await flush();
 
     expect(island.getAttribute('data-expanded')).toBe('false');

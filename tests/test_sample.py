@@ -87,6 +87,16 @@ def test_add_coords_validates_indices(tmp_path: Path) -> None:
         sample.add_coords(missing, name="missing")
 
 
+def test_add_coords_accepts_pandas_string_index(tmp_path: Path) -> None:
+    sample = Sample(name="check", path=tmp_path / "check", lazy=False)
+    coords = coord_df().copy()
+    coords.index = pd.Index(coords.index, dtype="string")
+
+    sample.add_coords(coords, name="spots")
+
+    assert (sample.path / "spots.csv").exists()
+
+
 def test_add_csv_feature_requires_coords_first(tmp_path: Path) -> None:
     sample = Sample(name="demo", path=tmp_path / "demo", lazy=False)
 

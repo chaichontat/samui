@@ -6,6 +6,7 @@ from typing import Any, Callable, Concatenate, Generic, Literal, ParamSpec, Prot
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_object_dtype, is_string_dtype
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -204,7 +205,10 @@ class Sample(BaseModel):
                 raise ValueError("x and y must be in columns")
             if (df.x.isnull() | df.y.isnull()).any():
                 raise ValueError("x and y must not be null")
-            if df.index.dtype != "object":
+            has_string_index = is_string_dtype(df.index.dtype) or (
+                is_object_dtype(df.index.dtype) and df.index.map(lambda value: isinstance(value, str)).all()
+            )
+            if not has_string_index:
                 raise ValueError(
                     """Index must be string. This is to prevent subtle bugs.
                     Use `df.index = df.index.astype(str)` and verify that it's what you want."""

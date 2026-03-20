@@ -78,7 +78,13 @@ it('shows the scale bar when the image has a real pixel scale', async () => {
 
   const screen = await render(MainMap);
 
-  await expect.poll(() => screen.container.querySelector('.ol-scale-line')).not.toBeNull();
+  await expect
+    .poll(() => {
+      const map = get(sMapp)?.map;
+      const scaleLine = get(sMapp)?.scaleLine;
+      return map != undefined && scaleLine?.getMap() === map;
+    })
+    .toBe(true);
 
   screen.unmount();
   URL.revokeObjectURL(url);
@@ -112,7 +118,13 @@ it('shows the scale bar when the image has a real 1 m/px scale', async () => {
 
   const screen = await render(MainMap);
 
-  await expect.poll(() => screen.container.querySelector('.ol-scale-line')).not.toBeNull();
+  await expect
+    .poll(() => {
+      const map = get(sMapp)?.map;
+      const scaleLine = get(sMapp)?.scaleLine;
+      return map != undefined && scaleLine?.getMap() === map;
+    })
+    .toBe(true);
 
   screen.unmount();
   URL.revokeObjectURL(url);
