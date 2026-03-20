@@ -7,7 +7,6 @@ import { Sample } from '$src/lib/data/objects/sample';
 import { mapIdSample, samples, sMapp, sSample } from '$src/lib/store';
 
 import MainMap from './mainMap.svelte';
-import reg0045Url from '../../e2e/reg-0045--reg-0045_z10.tif?url';
 
 beforeEach(() => {
   samples.set([]);
@@ -120,8 +119,26 @@ it('shows the scale bar when the image has a real 1 m/px scale', async () => {
 });
 
 it('hides the scale bar when TIFF imports fall back to a synthetic 1 m/px scale', async () => {
-  const blob = await fetch(reg0045Url).then((response) => response.blob());
-  const objectUrl = URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(
+    new Blob(
+      [
+        writeArrayBuffer(
+          [
+            [
+              [0, 65535],
+              [32768, 16384]
+            ],
+            [
+              [65535, 0],
+              [16384, 32768]
+            ]
+          ],
+          { width: 2, height: 2 }
+        )
+      ],
+      { type: 'image/tiff' }
+    )
+  );
   const sample = new Sample({
     name: 'reg-0045',
     imgParams: {
