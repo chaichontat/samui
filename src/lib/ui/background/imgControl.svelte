@@ -114,9 +114,9 @@
     clearCollapseTimer();
   };
 
-  const handleMouseEnter = (event?: Event) => {
+  const handleMouseEnter = () => {
     hovered = true;
-    handleInteraction(event);
+    clearCollapseTimer();
   };
 
   const handleMouseLeave = (event?: Event) => {
