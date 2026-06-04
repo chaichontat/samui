@@ -38,7 +38,8 @@
       if (ks) {
         elem = Plot.legend({
           color: {
-            domain: ks.map((x) => `${x}`.toString()) // Convert null to string
+            domain: ks.map((x) => `${x}`.toString()), // Convert null to string
+            scheme: 'tableau10' // LAG: fixes two-palette divergence in the browser code
           },
           legend: 'swatches',
           className: 'alphabet',
