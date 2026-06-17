@@ -2,6 +2,7 @@ import type { ImgData } from '$src/lib/data/objects/image';
 import {
   colors,
   type BandInfo,
+  type ChannelSelection,
   type CompCtrl,
   type ImgCtrl,
   type RGBCtrl
@@ -115,6 +116,36 @@ export function selectChannelColor(
 
   current.enabled = true;
   current.color = color;
+}
+
+/** The enabled channels of a composite controller, as {@link ChannelSelection}s for the URL. */
+export function enabledChannels(ctrl: ImgCtrl | undefined): ChannelSelection[] {
+  if (!ctrl || ctrl.type !== 'composite') return [];
+  return Object.entries(ctrl.variables)
+    .filter(([, info]) => info.enabled)
+    .map(([channel, info]) => ({ channel, color: info.color }));
+}
+
+/**
+ * Apply a URL-restored channel selection onto a freshly built composite controller,
+ * overriding the default/localStorage enabled set. Channels absent from the controller
+ * are ignored; if none match (e.g. a different image), the controller is left untouched
+ * rather than blanked.
+ */
+export function applyChannelSelections(
+  ctrl: ImgCtrl | undefined,
+  channels: ChannelSelection[]
+): void {
+  if (!ctrl || ctrl.type !== 'composite' || channels.length === 0) return;
+
+  const matches = channels.filter((c) => ctrl.variables[c.channel]);
+  if (matches.length === 0) return;
+
+  for (const info of Object.values(ctrl.variables)) info.enabled = false;
+  for (const { channel, color } of matches) {
+    ctrl.variables[channel].enabled = true;
+    ctrl.variables[channel].color = color;
+  }
 }
 
 export function cloneController(ctrl: ImgCtrl | undefined): ImgCtrl | undefined {

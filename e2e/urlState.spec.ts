@@ -87,6 +87,46 @@ test.describe('URL viewer-state sync', () => {
     expect(view.feature).toEqual({ group, feature });
   });
 
+  test('writes the displayed image channels to the query string and restores them', async ({
+    page
+  }) => {
+    await gotoSamui(page, LOAD_URL);
+
+    // The composite controller initialises after the image loads and writes its
+    // enabled channels to `c` (debounced ~300ms). Preserve the load params.
+    await page.waitForFunction(
+      () => !!new URLSearchParams(window.location.search).get('c'),
+      null,
+      { timeout: 30000 }
+    );
+    const defaults = new URLSearchParams(new URL(page.url()).search);
+    expect(defaults.get('url')).toBeTruthy();
+    expect(defaults.getAll('s')).toContain(SAMPLE);
+
+    // Take one of the displayed channels and pin it to a single color, then reload.
+    const firstChannel = defaults.get('c')!.split(',')[0].split(':')[0];
+    const restoreUrl = `${LOAD_URL}&c=${encodeURIComponent(`${firstChannel}:white`)}`;
+    await gotoSamui(page, restoreUrl);
+
+    // The restored selection flows into the controller, which persists to localStorage
+    // on every style update — assert exactly that one channel is enabled, in white.
+    await page.waitForFunction(
+      (channel) => {
+        const raw = localStorage.getItem('imgCtrl');
+        if (!raw) return false;
+        const ctrl = JSON.parse(raw);
+        if (ctrl?.type !== 'composite') return false;
+        const target = ctrl.variables[channel];
+        if (!target?.enabled || target.color !== 'white') return false;
+        return Object.entries(ctrl.variables).every(
+          ([name, info]) => name === channel || !(info as { enabled: boolean }).enabled
+        );
+      },
+      firstChannel,
+      { timeout: 30000 }
+    );
+  });
+
   test('writes center and zoom to the query string on map move, preserving load params', async ({
     page
   }) => {

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSearch, meterToPixel, parseViewState, pixelToMeter } from '$src/lib/ui/urlState';
+import {
+  buildSearch,
+  meterToPixel,
+  parseChannels,
+  parseViewState,
+  pixelToMeter,
+  setChannelParam
+} from '$src/lib/ui/urlState';
 
 describe('parseViewState', () => {
   it('parses a full state', () => {
@@ -89,6 +96,49 @@ describe('buildSearch', () => {
       sample: 'Br2720'
     };
     expect(parseViewState(buildSearch('', state))).toEqual(state);
+  });
+});
+
+describe('channel params', () => {
+  it('parses channel:color pairs', () => {
+    expect(parseChannels('?c=DAPI:blue,GFP:green')).toEqual([
+      { channel: 'DAPI', color: 'blue' },
+      { channel: 'GFP', color: 'green' }
+    ]);
+  });
+
+  it('returns an empty array when absent', () => {
+    expect(parseChannels('?x=1')).toEqual([]);
+    expect(parseChannels('')).toEqual([]);
+  });
+
+  it('drops segments with an unknown color or no channel name', () => {
+    expect(parseChannels('?c=DAPI:teal,GFP:green,:red,bad')).toEqual([
+      { channel: 'GFP', color: 'green' }
+    ]);
+  });
+
+  it('keeps colons in channel names (splits on the last one)', () => {
+    expect(parseChannels('?c=ratio:a:b:red')).toEqual([{ channel: 'ratio:a:b', color: 'red' }]);
+  });
+
+  it('sets the c param while preserving other params', () => {
+    const out = setChannelParam('?url=data.example.com/&x=1', [
+      { channel: 'DAPI', color: 'blue' }
+    ]);
+    const p = new URLSearchParams(out);
+    expect(p.get('url')).toBe('data.example.com/');
+    expect(p.get('x')).toBe('1');
+    expect(parseChannels(out)).toEqual([{ channel: 'DAPI', color: 'blue' }]);
+  });
+
+  it('removes the c param for an empty selection', () => {
+    expect(new URLSearchParams(setChannelParam('?c=DAPI:blue&x=1', [])).get('c')).toBeNull();
+  });
+
+  it('leaves c untouched through buildSearch (separate writers)', () => {
+    const out = buildSearch('?c=DAPI:blue', { zoom: 2 });
+    expect(new URLSearchParams(out).get('c')).toBe('DAPI:blue');
   });
 });
 

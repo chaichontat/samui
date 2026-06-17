@@ -3,6 +3,7 @@ import { unByKey } from 'ol/Observable.js';
 import type { EventsKey } from 'ol/events.js';
 import { get } from 'svelte/store';
 import type { FeatureAndGroup } from '../data/objects/feature';
+import { colors, type ChannelSelection } from './background/imgColormap';
 import {
   mapIdSample,
   mapTiles,
@@ -35,8 +36,11 @@ const PARAM = {
   z: 'z',
   group: 'g',
   feature: 'f',
-  sample: 'sample'
+  sample: 'sample',
+  channels: 'c'
 } as const;
+
+const COLOR_SET: ReadonlySet<string> = new Set(colors);
 
 // OpenLayers stores the center in projected meters. The app's pixel convention
 // (see sPixel in store.ts and changeHover in mapp.svelte) negates the y axis.
@@ -104,6 +108,48 @@ export function buildSearch(currentSearch: string, state: ViewState): string {
 
   const s = p.toString();
   return s ? `?${s}` : '';
+}
+
+/**
+ * Composite image channels ride in their own `c` param (e.g. `c=DAPI:blue,GFP:green`),
+ * separate from {@link ViewState}: the channel controller lives in component state
+ * (see imgControl.svelte), not the global stores {@link UrlStateController} syncs.
+ * Keeping `c` out of {@link buildSearch} also lets the two writers coexist without
+ * clobbering each other's params.
+ */
+export function parseChannels(search: string): ChannelSelection[] {
+  const raw = new URLSearchParams(search).get(PARAM.channels);
+  if (!raw) return [];
+
+  const out: ChannelSelection[] = [];
+  for (const seg of raw.split(',')) {
+    const i = seg.lastIndexOf(':');
+    if (i <= 0) continue; // No channel name, or no separator.
+    const channel = seg.slice(0, i);
+    const color = seg.slice(i + 1);
+    if (COLOR_SET.has(color)) out.push({ channel, color: color as ChannelSelection['color'] });
+  }
+  return out;
+}
+
+/** Merge the channel selection into {@link currentSearch}, preserving unrelated params. */
+export function setChannelParam(currentSearch: string, channels: ChannelSelection[]): string {
+  const p = new URLSearchParams(currentSearch);
+  setOrDelete(
+    p,
+    PARAM.channels,
+    channels.length ? channels.map((c) => `${c.channel}:${c.color}`).join(',') : undefined
+  );
+  const s = p.toString();
+  return s ? `?${s}` : '';
+}
+
+/** Persist the enabled channels to the URL. No-op outside single-map mode (see flush). */
+export function writeChannelsToUrl(channels: ChannelSelection[]): void {
+  if (typeof window === 'undefined' || !singleTile()) return;
+  const search = setChannelParam(window.location.search, channels);
+  const url = `${window.location.pathname}${search}${window.location.hash}`;
+  history.replaceState(history.state, '', url);
 }
 
 function effectiveMPerPx(map: Mapp): number | undefined {

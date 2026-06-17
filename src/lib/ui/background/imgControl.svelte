@@ -4,16 +4,21 @@
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
     type BandInfo,
+    type ChannelSelection,
     type CompCtrl,
     type ImgCtrl,
     type RGBCtrl
   } from '$src/lib/ui/background/imgColormap';
   import {
+    applyChannelSelections,
     buildCompositeController,
     buildRgbController,
     cloneController,
+    enabledChannels,
     selectChannelColor
   } from '$src/lib/ui/background/imgControlState';
+  import { parseChannels, writeChannelsToUrl } from '$src/lib/ui/urlState';
+  import { debounce } from 'lodash-es';
   import { Tooltip } from 'bits-ui';
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -40,6 +45,7 @@
   let rgbController = $state<RGBCtrl | undefined>(undefined);
 
   let mounted = false;
+  let channelsReady = false;
   let mountTimestamp = 0;
   let collapseTimer: ReturnType<typeof setTimeout> | null = null;
   let collapseInitiated = $state(false);
@@ -64,10 +70,14 @@
       controller = buildRgbController();
     } else if (Array.isArray(nextImage.channels)) {
       controller = buildCompositeController(nextImage);
+      if (typeof window !== 'undefined') {
+        applyChannelSelections(controller, parseChannels(window.location.search));
+      }
     } else {
       throw new Error('Invalid channel configuration');
     }
 
+    channelsReady = true;
     collapseInitiated = false;
   }
 
@@ -160,6 +170,14 @@
     background?.updateStyle(controllerSnapshot);
   });
 
+  const writeChannels = debounce((sel: ChannelSelection[]) => writeChannelsToUrl(sel), 300);
+
+  $effect(() => {
+    const snap = controllerSnapshot;
+    if (!channelsReady || snap?.type !== 'composite') return;
+    writeChannels(enabledChannels(snap));
+  });
+
   $effect(() => {
     const ctrl = controller;
     if (!mounted || !ctrl || collapseInitiated || !expanded || isHoveringControl()) return;
@@ -174,6 +192,7 @@
 
     return () => {
       clearCollapseTimer();
+      writeChannels.cancel();
       mounted = false;
       collapseInitiated = false;
     };
