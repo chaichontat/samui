@@ -200,7 +200,6 @@ export class UrlStateController {
     if (get(sMapp)?.map?.getView()?.getCenter()) {
       this.attemptRestore();
       this.attachMoveEnd();
-      this.ready = true;
     }
   }
 
@@ -218,31 +217,36 @@ export class UrlStateController {
       this.attachMoveEnd();
     }
 
-    // The map has painted; further waiting is pointless. Open the write gate so
-    // user pans/zooms are recorded even if some state could not be restored.
-    if (type === 'renderComplete') this.ready = true;
-
     if (this.ready && (type === 'featureUpdated' || type === 'sampleUpdated')) this.write();
   }
 
   private attemptRestore() {
-    this.restoreSample();
-    this.restoreFeature();
-    this.restoreView();
+    const sampleReady = this.restoreSample();
+    if (sampleReady) {
+      this.restoreFeature();
+      this.restoreView();
+    }
     // Nothing left to restore -> begin tracking user changes immediately.
+    const needSample = !!this.pending.sample && !this.sampleRestored;
     const needFeature = !!this.pending.feature && !this.featureRestored;
     const needView =
       (!!this.pending.center || this.pending.zoom !== undefined) && !this.viewRestored;
-    if (!needFeature && !needView) this.ready = true;
+    if (!needSample && !needFeature && !needView) this.ready = true;
   }
 
-  private restoreSample() {
-    if (this.sampleRestored || !this.pending.sample) return;
-    this.sampleRestored = true;
-    if (get(sSample)?.name === this.pending.sample) return;
-    if (get(samples).some((s) => s.name === this.pending.sample)) {
-      mapIdSample.update((m) => ({ ...m, [get(sMapId)]: this.pending.sample! }));
+  private restoreSample(): boolean {
+    const sample = this.pending.sample;
+    if (this.sampleRestored || !sample) return true;
+
+    if (get(sSample)?.name === sample) {
+      this.sampleRestored = true;
+      return true;
     }
+
+    if (get(samples).some((s) => s.name === sample)) {
+      mapIdSample.update((m) => (m[get(sMapId)] === sample ? m : { ...m, [get(sMapId)]: sample }));
+    }
+    return false;
   }
 
   private restoreFeature() {

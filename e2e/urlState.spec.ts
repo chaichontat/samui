@@ -1,16 +1,18 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 // A single sample keeps the network load light for these viewport-focused tests.
 const DATA_BASE = process.env.URLSTATE_DATA_BASE ?? 'data.samuibrowser.com/VisiumIF/';
 const SAMPLE = process.env.URLSTATE_SAMPLE ?? 'Br2720_Ant_IF';
+const SECOND_SAMPLE = process.env.URLSTATE_SECOND_SAMPLE ?? 'Br6432_Ant_IF';
 const LOAD_URL = `/from?url=${DATA_BASE}&s=${SAMPLE}`;
+const MULTI_LOAD_URL = `/from?url=${DATA_BASE}&s=${SAMPLE}&s=${SECOND_SAMPLE}`;
 
 // Remote sample loading over the network can be slow; give it room.
 test.describe.configure({ timeout: 90000 });
 
 // Wait until the map exists and its view has been fit (a center is set). Avoids
 // the `renderComplete` edge-trigger, whose transient value the poller can miss.
-async function gotoSamui(page: import('@playwright/test').Page, url: string) {
+async function gotoSamui(page: Page, url: string) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
     () => !!(window as any).__SAMUI__?.stores?.sMapp?.()?.map?.getView?.()?.getCenter?.(),
@@ -19,8 +21,19 @@ async function gotoSamui(page: import('@playwright/test').Page, url: string) {
   );
 }
 
+async function importantFeature(page: Page, sample: string) {
+  const manifest = await page.request.get(`https://${DATA_BASE}${sample}/sample.json`);
+  expect(manifest.ok(), `${sample}/sample.json reachable`).toBeTruthy();
+  const important = ((await manifest.json()).overlayParams?.importantFeatures ?? []) as {
+    group: string;
+    feature: string;
+  }[];
+  expect(important.length, `${sample} has an important feature to restore`).toBeGreaterThan(0);
+  return important[0];
+}
+
 // Same pixel<->meter convention as src/lib/ui/urlState.ts (y axis negated).
-async function readView(page: import('@playwright/test').Page) {
+async function readView(page: Page) {
   return page.evaluate(() => {
     const stores = (window as any).__SAMUI__.stores;
     const mapp = stores.sMapp();
@@ -37,17 +50,40 @@ async function readView(page: import('@playwright/test').Page) {
   });
 }
 
+async function waitForRestoredView(
+  page: Page,
+  target: { sample?: string; x: number; y: number; z: number; group: string; feature: string }
+) {
+  await page.waitForFunction(
+    ({ sample, x, y, z, group, feature }) => {
+      if (sample) {
+        const sampleSelect = document.querySelector('[data-testid="sample-select"]');
+        if (!sampleSelect?.textContent?.includes(sample)) return false;
+      }
+
+      const stores = (window as any).__SAMUI__.stores;
+      const mapp = stores.sMapp?.();
+      const view = mapp?.map?.getView?.();
+      if (!view || mapp.mPerPx == null) return false;
+      const c = view.getCenter();
+      if (!c) return false;
+      const cf = stores.overlays()[stores.sOverlay()]?.currFeature;
+      return (
+        Math.abs(c[0] / mapp.mPerPx - x) <= 1 &&
+        Math.abs(-c[1] / mapp.mPerPx - y) <= 1 &&
+        Math.abs((view.getZoom() ?? 0) - z) <= 0.02 &&
+        cf?.group === group &&
+        cf?.feature === feature
+      );
+    },
+    target,
+    { timeout: 30000 }
+  );
+}
+
 test.describe('URL viewer-state sync', () => {
   test('restores center, zoom, and feature from the query string', async ({ page }) => {
-    // Pull a real feature from the sample manifest without loading the whole app.
-    const manifest = await page.request.get(`https://${DATA_BASE}${SAMPLE}/sample.json`);
-    expect(manifest.ok(), 'sample.json reachable').toBeTruthy();
-    const important = ((await manifest.json()).overlayParams?.importantFeatures ?? []) as {
-      group: string;
-      feature: string;
-    }[];
-    expect(important.length, 'an important feature to restore').toBeGreaterThan(0);
-    const { group, feature } = important[0];
+    const { group, feature } = await importantFeature(page, SAMPLE);
 
     const targetX = 6000;
     const targetY = 6000;
@@ -59,32 +95,52 @@ test.describe('URL viewer-state sync', () => {
     await gotoSamui(page, restoreUrl);
 
     // Restore lands after renderComplete and the feature reload; poll until settled.
-    await page.waitForFunction(
-      ({ x, y, z, g, f }) => {
-        const stores = (window as any).__SAMUI__.stores;
-        const mapp = stores.sMapp?.();
-        const view = mapp?.map?.getView?.();
-        if (!view || mapp.mPerPx == null) return false;
-        const c = view.getCenter();
-        if (!c) return false;
-        const cf = stores.overlays()[stores.sOverlay()]?.currFeature;
-        return (
-          Math.abs(c[0] / mapp.mPerPx - x) <= 1 &&
-          Math.abs(-c[1] / mapp.mPerPx - y) <= 1 &&
-          Math.abs((view.getZoom() ?? 0) - z) <= 0.02 &&
-          cf?.group === g &&
-          cf?.feature === f
-        );
-      },
-      { x: targetX, y: targetY, z: targetZoom, g: group, f: feature },
-      { timeout: 30000 }
-    );
+    await waitForRestoredView(page, {
+      x: targetX,
+      y: targetY,
+      z: targetZoom,
+      group,
+      feature
+    });
 
     const view = await readView(page);
     expect(Math.round(view.pixelX)).toBe(targetX);
     expect(Math.round(view.pixelY)).toBe(targetY);
     expect(view.zoom).toBeCloseTo(targetZoom, 1);
     expect(view.feature).toEqual({ group, feature });
+  });
+
+  test('restores the requested sample from a multi-sample shared URL before writing state', async ({
+    page
+  }) => {
+    const { group, feature } = await importantFeature(page, SECOND_SAMPLE);
+
+    const targetX = 6000;
+    const targetY = 6000;
+    const targetZoom = 4.2;
+    const restoreUrl =
+      `${MULTI_LOAD_URL}&sample=${encodeURIComponent(SECOND_SAMPLE)}` +
+      `&x=${targetX}&y=${targetY}&z=${targetZoom}` +
+      `&g=${encodeURIComponent(group)}&f=${encodeURIComponent(feature)}`;
+
+    await gotoSamui(page, restoreUrl);
+
+    await waitForRestoredView(page, {
+      sample: SECOND_SAMPLE,
+      x: targetX,
+      y: targetY,
+      z: targetZoom,
+      group,
+      feature
+    });
+
+    await expect(page.getByTestId('sample-select')).toContainText(SECOND_SAMPLE);
+    const params = new URLSearchParams(new URL(page.url()).search);
+    expect(params.get('url')).toBe(DATA_BASE);
+    expect(params.getAll('s')).toEqual([SAMPLE, SECOND_SAMPLE]);
+    expect(params.get('sample')).toBe(SECOND_SAMPLE);
+    expect(params.get('g')).toBe(group);
+    expect(params.get('f')).toBe(feature);
   });
 
   test('writes the displayed image channels to the query string and restores them', async ({
@@ -94,11 +150,9 @@ test.describe('URL viewer-state sync', () => {
 
     // The composite controller initialises after the image loads and writes its
     // enabled channels to `c` (debounced ~300ms). Preserve the load params.
-    await page.waitForFunction(
-      () => !!new URLSearchParams(window.location.search).get('c'),
-      null,
-      { timeout: 30000 }
-    );
+    await page.waitForFunction(() => !!new URLSearchParams(window.location.search).get('c'), null, {
+      timeout: 30000
+    });
     const defaults = new URLSearchParams(new URL(page.url()).search);
     expect(defaults.get('url')).toBeTruthy();
     expect(defaults.getAll('s')).toContain(SAMPLE);
