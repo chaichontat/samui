@@ -1,13 +1,46 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { get } from 'svelte/store';
 
+import { Sample } from '$src/lib/data/objects/sample';
+import { HoverSelect } from '$src/lib/sidebar/searchBox';
+import {
+  hoverSelect,
+  mapIdSample,
+  sEvent,
+  sMapId,
+  sMapp,
+  sOverlay,
+  sSample,
+  samples,
+  setHoverSelect
+} from '$src/lib/store';
+import type { Mapp } from '$src/lib/ui/mapp';
 import {
   buildSearch,
   meterToPixel,
   parseChannels,
   parseViewState,
   pixelToMeter,
-  setChannelParam
+  setChannelParam,
+  UrlStateController
 } from '$src/lib/ui/urlState';
+
+let resetFeatureId = 0;
+
+beforeEach(() => {
+  vi.useRealTimers();
+  sOverlay.set('active-overlay');
+  void setHoverSelect({
+    selected: { group: '__test_reset__', feature: String(resetFeatureId++) }
+  });
+  hoverSelect.set(new HoverSelect());
+  mapIdSample.set({});
+  samples.set([]);
+  sEvent.set(undefined);
+  sMapId.set(0);
+  sMapp.set(undefined);
+  sSample.set(undefined);
+});
 
 describe('parseViewState', () => {
   it('parses a full state', () => {
@@ -123,9 +156,7 @@ describe('channel params', () => {
   });
 
   it('sets the c param while preserving other params', () => {
-    const out = setChannelParam('?url=data.example.com/&x=1', [
-      { channel: 'DAPI', color: 'blue' }
-    ]);
+    const out = setChannelParam('?url=data.example.com/&x=1', [{ channel: 'DAPI', color: 'blue' }]);
     const p = new URLSearchParams(out);
     expect(p.get('url')).toBe('data.example.com/');
     expect(p.get('x')).toBe('1');
@@ -147,5 +178,84 @@ describe('pixel/meter conversion', () => {
     expect(meterToPixel([100, 200], 2)).toEqual([50, -100]);
     expect(pixelToMeter([50, -100], 2)).toEqual([100, 200]);
     expect(pixelToMeter(meterToPixel([123, -456], 0.5), 0.5)).toEqual([123, -456]);
+  });
+});
+
+describe('UrlStateController restore sequencing', () => {
+  it('waits for the requested sample before restoring the feature', () => {
+    const sampleA = new Sample({ name: 'A' });
+    const sampleB = new Sample({ name: 'B' });
+    const targetFeature = { group: 'genes', feature: 'GFAP' };
+
+    samples.set([
+      { name: 'A', sample: sampleA },
+      { name: 'B', sample: sampleB }
+    ]);
+    mapIdSample.set({ 0: 'A' });
+    sSample.set(sampleA);
+
+    const controller = new UrlStateController('?sample=B&g=genes&f=GFAP');
+    controller.start();
+
+    try {
+      sEvent.set({ type: 'sampleUpdated' });
+
+      expect(get(mapIdSample)[0]).toBe('B');
+      expect(get(hoverSelect).active).toBeUndefined();
+
+      sSample.set(sampleB);
+      sEvent.set({ type: 'sampleUpdated' });
+
+      expect(get(hoverSelect).active).toEqual(targetFeature);
+    } finally {
+      controller.stop();
+    }
+  });
+
+  it('does not write the current map state while the requested sample is still pending', () => {
+    vi.useFakeTimers();
+
+    const sampleA = new Sample({ name: 'A' });
+    const sampleB = new Sample({ name: 'B' });
+    const view = {
+      getCenter: () => [10, -20] as [number, number],
+      getZoom: () => 4,
+      setCenter: vi.fn(),
+      setZoom: vi.fn()
+    };
+    const fakeMapp = {
+      mPerPx: 1,
+      map: {
+        getView: () => view,
+        on: () => undefined
+      }
+    } as unknown as Mapp;
+
+    samples.set([
+      { name: 'A', sample: sampleA },
+      { name: 'B', sample: sampleB }
+    ]);
+    mapIdSample.set({ 0: 'A' });
+    sSample.set(sampleA);
+    sMapp.set(fakeMapp);
+    window.history.replaceState(null, '', '/?url=data.example.com&s=A&s=B&sample=B&g=genes&f=GFAP');
+
+    const controller = new UrlStateController(window.location.search);
+    controller.start();
+
+    try {
+      sEvent.set({ type: 'renderComplete' });
+      sEvent.set({ type: 'featureUpdated' });
+      vi.advanceTimersByTime(350);
+
+      const params = new URLSearchParams(window.location.search);
+      expect(params.get('x')).toBeNull();
+      expect(params.get('sample')).toBe('B');
+      expect(params.get('g')).toBe('genes');
+      expect(params.get('f')).toBe('GFAP');
+    } finally {
+      controller.stop();
+      vi.useRealTimers();
+    }
   });
 });
