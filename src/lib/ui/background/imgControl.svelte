@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { sEvent } from '$lib/store';
+  import { sEvent, sSample } from '$lib/store';
   import GlassIsland from '$src/lib/components/glass/GlassIsland.svelte';
   import type { ImgData } from '$src/lib/data/objects/image';
   import {
@@ -17,10 +17,11 @@
     enabledChannels,
     selectChannelColor
   } from '$src/lib/ui/background/imgControlState';
-  import { parseChannels, writeChannelsToUrl } from '$src/lib/ui/urlState';
+  import { parseChannels, parseViewState, writeChannelsToUrl } from '$src/lib/ui/urlState';
   import { debounce } from 'lodash-es';
   import { Tooltip } from 'bits-ui';
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import { fly } from 'svelte/transition';
   import CompositeChannelTable from './CompositeChannelTable.svelte';
   import type { Background } from './imgBackground';
@@ -46,6 +47,14 @@
 
   let mounted = false;
   let channelsReady = false;
+  // The sample requested by the shared URL (if any). Captured at init, not in onMount:
+  // a sample event can trigger initialiseController (and the first write) before onMount
+  // runs, which would otherwise bypass the gate below.
+  const pendingSample =
+    typeof window !== 'undefined' ? parseViewState(window.location.search).sample : undefined;
+  // Latches once that sample is active; until then, channel writes are held so a
+  // transient earlier sample cannot clobber the shared `c` (mirrors UrlStateController).
+  let channelRestoreDone = false;
   let mountTimestamp = 0;
   let collapseTimer: ReturnType<typeof setTimeout> | null = null;
   let collapseInitiated = $state(false);
@@ -69,10 +78,13 @@
     if (nextImage.channels === 'rgb') {
       controller = buildRgbController();
     } else if (Array.isArray(nextImage.channels)) {
-      controller = buildCompositeController(nextImage);
+      // Apply the URL selection to the plain object, then assign once. Mutating the
+      // reactive `controller` proxy here instead would cascade into an effect loop.
+      const built = buildCompositeController(nextImage);
       if (typeof window !== 'undefined') {
-        applyChannelSelections(controller, parseChannels(window.location.search));
+        applyChannelSelections(built, parseChannels(window.location.search));
       }
+      controller = built;
     } else {
       throw new Error('Invalid channel configuration');
     }
@@ -175,6 +187,13 @@
   $effect(() => {
     const snap = controllerSnapshot;
     if (!channelsReady || snap?.type !== 'composite') return;
+    if (!channelRestoreDone) {
+      // Hold writes until the URL's requested sample is the one being shown. Read
+      // sSample non-reactively: the controller is rebuilt when a new sample's image
+      // loads, so this effect already re-runs (via controllerSnapshot) at that point.
+      if (pendingSample && get(sSample)?.name !== pendingSample) return;
+      channelRestoreDone = true;
+    }
     writeChannels(enabledChannels(snap));
   });
 
@@ -192,7 +211,8 @@
 
     return () => {
       clearCollapseTimer();
-      writeChannels.cancel();
+      // Persist the last pending selection rather than dropping it on teardown.
+      writeChannels.flush();
       mounted = false;
       collapseInitiated = false;
     };

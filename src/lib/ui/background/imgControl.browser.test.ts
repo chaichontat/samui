@@ -1,5 +1,6 @@
-import { sEvent } from '$lib/store';
+import { sEvent, sSample } from '$lib/store';
 import { ImgData, type ImageParams } from '$src/lib/data/objects/image';
+import { Sample } from '$src/lib/data/objects/sample';
 import { Background } from '$src/lib/ui/background/imgBackground';
 import type { BandInfo, CompCtrl, ImgCtrl, RGBCtrl } from '$src/lib/ui/background/imgColormap';
 import ImgControl from '$src/lib/ui/background/imgControl.svelte';
@@ -79,6 +80,10 @@ function getChannelRow(screen: ImgControlScreen, name: string): HTMLTableRowElem
 
 beforeEach(() => {
   localStorage.clear();
+  // imgControl now syncs channels to the query string; reset it so a `c`/`sample`
+  // written by one test cannot leak into the next.
+  history.replaceState(null, '', window.location.pathname);
+  sSample.set(undefined);
 });
 
 async function setupCompositeControl(overrides?: Partial<ImageParams>) {
@@ -251,6 +256,48 @@ test('prevents duplicate colors across enabled channels', async () => {
   expect(state.variables.actin.enabled).toBe(false);
 
   screen.unmount();
+});
+
+test('holds channel URL writes until the requested sample is the active one', async () => {
+  // A multi-sample shared URL requests sample B with a channel only B has, while
+  // the mounted control still shows the transient first sample A. Without gating,
+  // A's control would write its own defaults to `c`, clobbering the shared `GFP:white`
+  // before B loads. (Same-channel samples never expose this; A must lack the channel.)
+  const shared = '?url=x&s=A&s=B&sample=B&c=' + encodeURIComponent('GFP:white');
+  history.replaceState(null, '', shared);
+  sSample.set(new Sample({ name: 'A' }));
+
+  const image = new ImgData({
+    urls: [{ url: '/tiles', type: 'network' }],
+    channels: ['dapi', 'actin', 'tubulin'],
+    mPerPx: 1,
+    maxVal: 4095,
+    defaultChannels: createDefaultChannels({ red: 'actin', green: 'tubulin', blue: 'dapi' })
+  });
+  const background = new BackgroundSpy(image);
+  const screen = render(ImgControl, { props: { background } });
+
+  sEvent.set({ type: 'sampleUpdated' });
+  await expect.poll(() => background.calls.length).toBeGreaterThan(0);
+
+  try {
+    // Past the 300ms write debounce, the shared selection is untouched: B is not active.
+    await wait(400);
+    expect(new URLSearchParams(window.location.search).get('c')).toBe('GFP:white');
+
+    // Once the requested sample becomes active, the gate latches open and writes resume.
+    // Use a distinct event type so the sampleEvent derived changes and rebuilds the controller.
+    sSample.set(new Sample({ name: 'B' }));
+    sEvent.set({ type: 'imgDefaultsUpdated' });
+    await expect
+      .poll(() => new URLSearchParams(window.location.search).get('c'), { timeout: 2000 })
+      .not.toBe('GFP:white');
+    expect(new URLSearchParams(window.location.search).get('c')).toContain('dapi:blue');
+  } finally {
+    screen.unmount();
+    sSample.set(undefined);
+    history.replaceState(null, '', '/');
+  }
 });
 
 test('handles range slider min/max constraints and sqrt transformation', async () => {
