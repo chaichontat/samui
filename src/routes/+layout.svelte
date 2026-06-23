@@ -10,6 +10,7 @@ import {
   sOverlay
 } from '$lib/store';
 import { handleError } from '$src/lib/utils';
+import { UrlStateController } from '$src/lib/ui/urlState';
 import { get } from 'svelte/store';
 import { onMount } from 'svelte';
 import '../app.css';
@@ -38,8 +39,12 @@ if (typeof window !== 'undefined') {
       document.body.dataset.renderComplete = evt?.type === 'renderComplete' ? 'true' : 'false';
     });
 
+    const urlState = new UrlStateController(window.location.search);
+    urlState.start();
+
     return () => {
       unsub();
+      urlState.stop();
       delete document.body.dataset.renderComplete;
       delete (window as any).__SAMUI__;
     };

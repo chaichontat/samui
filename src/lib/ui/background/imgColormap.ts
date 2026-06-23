@@ -21,6 +21,9 @@ export type CompCtrl = { type: 'composite'; variables: Record<string, BandInfo> 
 export type RGBCtrl = { type: 'rgb'; Exposure: number; Contrast: number; Saturation: number };
 export type ImgCtrl = CompCtrl | RGBCtrl;
 
+/** An enabled channel and the RGB slot it is mapped to (see {@link maskMap}). */
+export type ChannelSelection = { channel: string; color: (typeof colors)[number] };
+
 export function genCompStyle(
   bands: string[],
   max: number,

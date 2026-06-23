@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ImgData } from '$src/lib/data/objects/image';
 import {
+  applyChannelSelections,
   buildCompositeController,
   buildRgbController,
   cloneController,
+  enabledChannels,
   restoreCompositeController,
   selectChannelColor
 } from './imgControlState';
@@ -96,5 +98,34 @@ describe('imgControlState helpers', () => {
 
     expect(restoreCompositeController(['a'])).toBeNull();
     spy.mockRestore();
+  });
+
+  it('enabledChannels lists the enabled channels and their colors', () => {
+    const ctrl = buildCompositeController(createCompositeImage());
+    expect(enabledChannels(ctrl)).toEqual([
+      { channel: 'dapi', color: 'red' },
+      { channel: 'actin', color: 'green' },
+      { channel: 'tubulin', color: 'blue' }
+    ]);
+    expect(enabledChannels(buildRgbController())).toEqual([]);
+  });
+
+  it('applyChannelSelections overrides the enabled set and colors', () => {
+    const ctrl = buildCompositeController(createCompositeImage());
+    applyChannelSelections(ctrl, [{ channel: 'actin', color: 'magenta' }]);
+
+    expect(ctrl.variables.actin).toMatchObject({ enabled: true, color: 'magenta' });
+    expect(ctrl.variables.dapi.enabled).toBe(false);
+    expect(ctrl.variables.tubulin.enabled).toBe(false);
+  });
+
+  it('applyChannelSelections leaves the controller untouched when nothing matches', () => {
+    const ctrl = buildCompositeController(createCompositeImage());
+    const before = cloneController(ctrl);
+
+    applyChannelSelections(ctrl, [{ channel: 'missing', color: 'red' }]);
+    applyChannelSelections(ctrl, []);
+
+    expect(ctrl).toEqual(before);
   });
 });
