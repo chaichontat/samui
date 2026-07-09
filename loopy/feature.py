@@ -170,10 +170,15 @@ def sparse_compress_chunked_features(
     mode: Literal["csr", "csc"] = "csc",
     logger: Callback = log,
 ) -> tuple[ChunkedCSVHeader, bytearray]:
+    # Build the scipy sparse matrix without densifying: if every column is a
+    # pandas SparseDtype (e.g. a large gene-expression matrix), go via COO so we
+    # never materialize the dense array. A dense DataFrame falls back to the direct
+    # constructor, identical to the previous behaviour.
+    base = df.sparse.to_coo() if all(isinstance(dt, pd.SparseDtype) for dt in df.dtypes) else df
     if mode == "csr":
-        cs = csr_matrix(df)  # csR
+        cs = csr_matrix(base)  # csR
     elif mode == "csc":
-        cs = csc_matrix(df)  # csC
+        cs = csc_matrix(base)  # csC
     else:
         raise ValueError("Invalid mode")
 

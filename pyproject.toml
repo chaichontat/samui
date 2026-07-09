@@ -32,6 +32,7 @@ dependencies = [
 [project.scripts]
 loopy = "loopy.entrypoint:cli"
 samui = "loopy.entrypoint:cli"
+preprocess = "loopy.spatial_io.preprocess:main"
 
 [project.optional-dependencies]
 geo = ["gdal==3.8.4"]
