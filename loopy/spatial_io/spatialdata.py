@@ -67,6 +67,29 @@ def _opened_store(path: Path) -> Generator[Path, None, None]:
     fail(f"spatialdata format requires a .zarr directory or .zarr.zip file; got {path}")
 
 
+def _read_zarr_sanitized(store: Path) -> "sd.SpatialData":
+    """Read a store whose table keys violate spatialdata's naming rules.
+
+    spatialdata >=0.7 validates element/column names at ``SpatialData``
+    construction, rejecting otherwise-valid stores whose ``obs``/``var`` names
+    contain characters outside ``[A-Za-z0-9_.-]`` (e.g. 'µm', '^2', 'a/b').
+    Read the non-table elements normally, then attach each table after
+    running it through spatialdata's own sanitizer, which replaces invalid
+    characters with underscores (and de-duplicates any resulting collisions).
+    """
+    import anndata as ad
+    import spatialdata as sd
+
+    sdata = sd.read_zarr(store, selection=("images", "labels", "points", "shapes"))
+    tables_dir = store / "tables"
+    if tables_dir.is_dir():
+        for table_dir in sorted(p for p in tables_dir.iterdir() if p.is_dir()):
+            table = ad.read_zarr(table_dir)
+            sd.sanitize_table(table, inplace=True)
+            sdata.tables[table_dir.name] = table
+    return sdata
+
+
 def _coords_from_shapes(sdata: "sd.SpatialData", table: "anndata.AnnData") -> pd.DataFrame | None:
     """Centroids of the table's region shapes, indexed by the instance key."""
     attrs = table.uns.get("spatialdata_attrs", {})
@@ -105,13 +128,17 @@ def read(args: Namespace) -> SpatialSample:
     Images are not exported (see the module docstring).
     """
     import spatialdata as sd
+    from spatialdata._core.validation import ValidationError
 
     path = Path(args.zarr)
     mpp = (args.pixel_size * 1e-6) if args.pixel_size else DEFAULT_MPP
     spot_size = args.spot_size or DEFAULT_SPOT_SIZE
 
     with _opened_store(path) as store:
-        sdata = sd.read_zarr(store)
+        try:
+            sdata = sd.read_zarr(store)
+        except ValidationError:
+            sdata = _read_zarr_sanitized(store)
 
         if not sdata.tables:
             fail(f"SpatialData store {path} has no tables; nothing to export")

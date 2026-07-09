@@ -49,6 +49,7 @@ concrete directory trees and file headers observed in those datasets are recorde
 - Reads a `.zarr.zip` (extracted to a temp dir) or `.zarr` directory via the `spatialdata` package. Takes the AnnData table; **coords** from the table's `obsm['spatial']` if present, else the matching `shapes` GeoDataFrame `.geometry.centroid` joined on the table's instance key. **Expression** from `X`; categorical `obs` → **Annotations**. `mpp=1e-6` default. Image not exported (future extension).
 - **Tested with:** scverse sandbox MERFISH (2,389 cells, coords via shapes-centroid) and MIBI-TOF (3,309 cells, coords via `obsm['spatial']`).
 - **Deviation found:** the sandbox stores are **Zarr v3** (`zarr.json`) and unzip to a store literally named `data.zarr/`. The MERFISH table has **no** `obsm['spatial']` (coords come from shapes); MIBI-TOF has it.
+- **Deviation found:** stores written by older spatialdata can carry `obs`/`var` names with characters `spatialdata` >=0.7 now rejects at read (e.g. `µm`, `^2`, `a/b`), raising `ValidationError` inside `read_zarr`. The reader catches this and falls back to reading non-table elements via `selection` plus each table directly through `anndata`, then `spatialdata.sanitize_table` (invalid chars → `_`, collisions de-duplicated) — so the sanitized names become the feature/annotation labels.
 
 ## files (`files`, `--image`/`--cells`/`--features`/`--matrix`)
 The platform-agnostic AnnData decomposition expressed as separate files — see
