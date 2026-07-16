@@ -124,7 +124,7 @@ def read(args: Namespace) -> SpatialSample:
 
     return SpatialSample(
         coords=coords,
-        mpp=args.mpp if args.mpp is not None else 1.0,
+        mpp=args.mpp if args.mpp is not None else 1e-6,
         coords_name="cells",
         spot_size=args.spot_size if args.spot_size is not None else 1e-5,
         features=groups,
