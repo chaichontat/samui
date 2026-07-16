@@ -1,0 +1,16 @@
+.venv/
+.nextflow/
+.nextflow.log*
+work/
+results/
+test/data/
+test/xenium/
+test/visium/
+test/visium_hd/
+test/spatialdata/
+test/cosmx/
+test/certs/
+__pycache__/
+*.pyc
+results_bundle/
+results_test/
