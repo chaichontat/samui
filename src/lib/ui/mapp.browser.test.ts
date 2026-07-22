@@ -363,6 +363,112 @@ describe('Mapp lifecycle', () => {
     screen.unmount();
   });
 
+  test('a slower feature request cannot overwrite a newer feature on the same sample', async () => {
+    const screen = await render(MappPage, { props: { sample: undefined, uid: 0 } });
+    const overlay = get(overlays)[get(sOverlay)!];
+    const sample = new Sample({ name: 'feature-race' });
+    const firstFeature = { group: 'genes', feature: 'first' };
+    const secondFeature = { group: 'genes', feature: 'second' };
+    const coords = new CoordsData({
+      name: 'feature-race-coords',
+      shape: 'circle',
+      mPerPx: 1,
+      size: 10,
+      pos: [{ x: 1, y: 2, id: 'spot' }]
+    });
+    let beginFirstFeature!: () => void;
+    const firstFeatureStarted = new Promise<void>((resolve) => {
+      beginFirstFeature = resolve;
+    });
+    let finishFirstFeature!: () => void;
+    const firstFeatureGate = new Promise<void>((resolve) => {
+      finishFirstFeature = resolve;
+    });
+    vi.spyOn(sample, 'getFeature').mockImplementation(async (feature) => {
+      if (feature.feature === firstFeature.feature) {
+        beginFirstFeature();
+        await firstFeatureGate;
+        return {
+          data: [1],
+          dataType: 'quantitative',
+          coords,
+          minmax: [1, 1],
+          name: firstFeature
+        };
+      }
+      return {
+        data: [2],
+        dataType: 'quantitative',
+        coords,
+        minmax: [2, 2],
+        name: secondFeature
+      };
+    });
+
+    const firstUpdate = overlay.update(sample, firstFeature, () => true);
+    await firstFeatureStarted;
+    await expect(overlay.update(sample, secondFeature, () => true)).resolves.toBeTruthy();
+
+    finishFirstFeature();
+
+    await expect(firstUpdate).resolves.toBe(false);
+    expect(overlay.currFeature).toEqual(secondFeature);
+    expect(overlay.source.getFeatures()[0]?.get('value')).toBe(2);
+    expect(get(sFeatureData)?.name).toEqual(secondFeature);
+    screen.unmount();
+  });
+
+  test('deleting an overlay invalidates its pending feature request', async () => {
+    const screen = await render(MappPage, { props: { sample: undefined, uid: 0 } });
+    const map = get(sMapp)!;
+    const overlay = get(overlays)[get(sOverlay)!];
+    const sample = new Sample({ name: 'deleted-overlay' });
+    const feature = { group: 'genes', feature: 'delayed' };
+    const coords = new CoordsData({
+      name: 'deleted-overlay-coords',
+      shape: 'circle',
+      mPerPx: 1,
+      size: 10,
+      pos: [{ x: 1, y: 2, id: 'spot' }]
+    });
+    let beginFeature!: () => void;
+    const featureStarted = new Promise<void>((resolve) => {
+      beginFeature = resolve;
+    });
+    let finishFeature!: () => void;
+    const featureGate = new Promise<void>((resolve) => {
+      finishFeature = resolve;
+    });
+    vi.spyOn(sample, 'getFeature').mockImplementation(async () => {
+      beginFeature();
+      await featureGate;
+      return {
+        data: [1],
+        dataType: 'quantitative',
+        coords,
+        minmax: [1, 1],
+        name: feature
+      };
+    });
+
+    const update = overlay.update(sample, feature, () => true);
+    await featureStarted;
+    overlay.dispose();
+    overlays.update((current) => {
+      const { [overlay.uid]: removed, ...remaining } = current;
+      expect(removed).toBe(overlay);
+      return remaining;
+    });
+    const layerCountAfterDelete = map.map!.getLayers().getLength();
+
+    finishFeature();
+
+    await expect(update).resolves.toBe(false);
+    expect(overlay.layer).toBeUndefined();
+    expect(map.map!.getLayers().getLength()).toBe(layerCountAfterDelete);
+    screen.unmount();
+  });
+
   test('superseded image-default estimation cannot mutate the image or emit a stale event', async () => {
     const buffer = writeArrayBuffer(
       [
@@ -558,6 +664,87 @@ describe('Mapp lifecycle', () => {
     expect(get(sFeatureData)).toBe(sentinelData);
     expect(get(sEvent)).toEqual({ type: 'viewAdjusted' });
     expect(get(overlays)[overlayId].currFeature).toBeUndefined();
+    firstScreen.unmount();
+    secondScreen.unmount();
+  });
+
+  test('activating an inactive map replays its sample and restores its owned overlay', async () => {
+    mapTiles.set([0, 1]);
+    const firstScreen = await render(MappPage, { props: { sample: undefined, uid: 0 } });
+    const firstMap = get(sMapp)!;
+    const firstOverlay = new WebGLSpots(firstMap);
+    overlays.update((current) => ({ ...current, [firstOverlay.uid]: firstOverlay }));
+    sOverlay.set(firstOverlay.uid);
+    const sample = new Sample({ name: 'inactive-then-active' });
+    const hydrateSpy = vi.spyOn(sample, 'hydrate');
+    const secondScreen = await render(MappPage, { props: { sample, uid: 1 } });
+    await expect.poll(() => hydrateSpy.mock.calls.length).toBeGreaterThan(0);
+
+    sMapId.set(1);
+    await expect.poll(() => get(sMapp) !== firstMap).toBe(true);
+    const secondMap = get(sMapp)!;
+    const secondOverlay = new WebGLSpots(secondMap);
+    const selectedSecondOverlay = new WebGLSpots(secondMap);
+    overlays.update((current) => ({
+      ...current,
+      [secondOverlay.uid]: secondOverlay,
+      [selectedSecondOverlay.uid]: selectedSecondOverlay
+    }));
+    sOverlay.set(selectedSecondOverlay.uid);
+    await expect.poll(() => get(sEvent)?.type).toBe('sampleUpdated');
+
+    sMapId.set(0);
+    await expect.poll(() => get(sMapp)).toBe(firstMap);
+    expect(get(sOverlay)).toBe(firstOverlay.uid);
+
+    sMapId.set(1);
+    await expect.poll(() => get(sMapp)).toBe(secondMap);
+    expect(get(sOverlay)).toBe(selectedSecondOverlay.uid);
+    firstScreen.unmount();
+    secondScreen.unmount();
+  });
+
+  test('inactive maps do not consume hover state or retain active annotation interactions', async () => {
+    mapTiles.set([0, 1]);
+    const firstScreen = await render(MappPage, { props: { sample: undefined, uid: 0 } });
+    const firstMap = get(sMapp)!;
+    sMapId.set(1);
+    const secondScreen = await render(MappPage, { props: { sample: undefined, uid: 1 } });
+    const secondMap = get(sMapp)!;
+    const secondOverlay = new WebGLSpots(secondMap);
+    const coords = new CoordsData({
+      name: 'active-hover-owner',
+      shape: 'circle',
+      mPerPx: 1,
+      size: 10,
+      pos: [{ x: 2, y: 3, id: 'spot' }]
+    });
+    secondOverlay.coords = coords;
+    overlays.update((current) => ({ ...current, [secondOverlay.uid]: secondOverlay }));
+    sOverlay.set(secondOverlay.uid);
+    sFeatureData.set({
+      data: [7],
+      dataType: 'quantitative',
+      coords,
+      minmax: [7, 7],
+      name: { group: 'genes', feature: 'hover' }
+    });
+    firstMap.persistentLayers.active.visible = false;
+    secondMap.persistentLayers.active.visible = false;
+
+    sId.set({ source: 'test', idx: 0 });
+    await tick();
+
+    expect(firstMap.persistentLayers.active.visible).toBe(false);
+    expect(firstMap.tippy?.elem.style.opacity).not.toBe('1');
+    expect(firstMap.persistentLayers.annotations.select.getActive()).toBe(false);
+    expect(firstMap.persistentLayers.annotations.points.select.getActive()).toBe(false);
+    expect(firstMap.persistentLayers.rois.select.getActive()).toBe(false);
+    expect(secondMap.persistentLayers.active.visible).toBe(true);
+    expect(secondMap.tippy?.elem.style.opacity).toBe('1');
+    expect(secondMap.persistentLayers.annotations.select.getActive()).toBe(true);
+    expect(secondMap.persistentLayers.annotations.points.select.getActive()).toBe(true);
+    expect(secondMap.persistentLayers.rois.select.getActive()).toBe(true);
     firstScreen.unmount();
     secondScreen.unmount();
   });

@@ -37,6 +37,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
   currStyleVariables: StyleVariables = {};
   userStyleOverrides: StyleVariables = {};
   z: number;
+  private updateGeneration = 0;
 
   // WebGLSpots only gets created after mount.
   constructor(map: Mapp) {
@@ -62,7 +63,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
   async setCurrStyle(
     style: 'categorical' | 'quantitative',
     colorMap: keyof typeof colorMaps,
-    isCurrent: () => boolean = () => !this.map.isDestroyed
+    isCurrent: () => boolean = () => !this.isDisposed && !this.map.isDestroyed
   ) {
     if (!isCurrent()) return false;
     if (!this.coords) throw new Error('Must run update first.');
@@ -166,7 +167,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     return true;
   }
 
-  async _rebuildLayer(isCurrent: () => boolean = () => !this.map.isDestroyed) {
+  async _rebuildLayer(isCurrent: () => boolean = () => !this.isDisposed && !this.map.isDestroyed) {
     await this.map.promise;
     if (!isCurrent()) return;
     if (this.layer) {
@@ -188,7 +189,10 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     console.debug(`Overlay ${this.uid} rebuilt.`);
   }
 
-  async update(sample: Sample, fn: FeatureAndGroup, isCurrent: () => boolean) {
+  async update(sample: Sample, fn: FeatureAndGroup, isParentCurrent: () => boolean) {
+    const generation = ++this.updateGeneration;
+    const isCurrent = () =>
+      !this.isDisposed && this.updateGeneration === generation && isParentCurrent();
     console.debug(`Update called: ${this.uid} to ${fn.feature}.`);
     if (!fn.feature || !isCurrent()) return false;
     const res = await sample.getFeature(fn);
@@ -296,6 +300,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
   }
 
   dispose() {
+    this.updateGeneration += 1;
     this.updateStyleVariables.cancel();
     if (this.outline) this.outline.dispose();
     super.dispose();

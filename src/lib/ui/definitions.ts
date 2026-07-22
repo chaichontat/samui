@@ -22,6 +22,10 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   coords?: CoordsData;
   private disposed = false;
 
+  get isDisposed() {
+    return this.disposed;
+  }
+
   constructor(map: Mapp, style: LiteralStyle | Style, styleVariables?: StyleVariables) {
     super();
     this.map = map;

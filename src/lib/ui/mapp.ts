@@ -63,6 +63,8 @@ export class Mapp extends Deferrable {
   private destroyed = false;
   private updateGeneration = 0;
   private resizeTimeout?: ReturnType<typeof setTimeout>;
+  private selectedOverlay?: string;
+  private unsubscribeOverlaySelection?: () => void;
 
   get isDestroyed() {
     return this.destroyed;
@@ -125,17 +127,61 @@ export class Mapp extends Deferrable {
       overlays.set({ [ol.uid]: ol });
       sOverlay.set(ol.uid);
     }
+    this.unsubscribeOverlaySelection = sOverlay.subscribe((uid) => {
+      if (this.isActive && uid && get(overlays)[uid]?.map === this) this.selectedOverlay = uid;
+    });
 
     this._deferred.resolve();
     // Deals with sidebar showing up or not.
     this.resizeTimeout = setTimeout(() => this.map?.updateSize(), 100);
     this.mounted = true;
+    this.setInteractionsActive(this.isActive);
+  }
+
+  private ownedOverlayIds(currentOverlays = get(overlays)) {
+    return Object.entries(currentOverlays)
+      .filter(([, overlay]) => overlay.map === this)
+      .map(([uid]) => uid);
+  }
+
+  private setInteractionsActive(active: boolean) {
+    this.persistentLayers.annotations.setActive(active);
+    this.persistentLayers.rois.setActive(active);
+  }
+
+  /** Publish this map and one of its overlays as the active global editing context. */
+  activate() {
+    if (this.destroyed) throw new Error('Cannot activate a destroyed map.');
+    const currentOverlays = get(overlays);
+    const ownedOverlayIds = this.ownedOverlayIds(currentOverlays);
+    const currentSelection = get(sOverlay);
+    if (currentSelection && currentOverlays[currentSelection]?.map === this) {
+      this.selectedOverlay = currentSelection;
+    }
+    if (!this.selectedOverlay || !ownedOverlayIds.includes(this.selectedOverlay)) {
+      this.selectedOverlay = ownedOverlayIds[0];
+    }
+
+    sMapp.set(this);
+    this.setInteractionsActive(true);
+    sOverlay.set(this.selectedOverlay);
+  }
+
+  /** Stop this map from consuming global editing state while retaining its local rendering. */
+  deactivate() {
+    const currentSelection = get(sOverlay);
+    if (currentSelection && get(overlays)[currentSelection]?.map === this) {
+      this.selectedOverlay = currentSelection;
+    }
+    this.setInteractionsActive(false);
+    sMapp.update((current) => (current === this ? undefined : current));
   }
 
   /** Dispose this map's resources and invalidate pending work without disturbing sibling maps. */
   unmount() {
     if (this.destroyed) return;
 
+    this.deactivate();
     this.destroyed = true;
     this.mounted = false;
     this.updateGeneration += 1;
@@ -143,12 +189,12 @@ export class Mapp extends Deferrable {
     this.resizeTimeout = undefined;
     this.setCurrPixel.cancel();
     this.runPointerListener.cancel();
+    this.unsubscribeOverlaySelection?.();
+    this.unsubscribeOverlaySelection = undefined;
 
     const map = this.map;
     const currentOverlays = get(overlays);
-    const ownedOverlayIds = Object.entries(currentOverlays)
-      .filter(([, overlay]) => overlay.map === this)
-      .map(([uid]) => uid);
+    const ownedOverlayIds = this.ownedOverlayIds(currentOverlays);
     if (ownedOverlayIds.length > 0) {
       const owned = new Set(ownedOverlayIds);
       for (const uid of ownedOverlayIds) currentOverlays[uid].dispose();
@@ -158,7 +204,10 @@ export class Mapp extends Deferrable {
       overlays.set(remaining);
       const selectedOverlay = get(sOverlay);
       if (selectedOverlay && owned.has(selectedOverlay)) {
-        sOverlay.set(Object.keys(remaining)[0]);
+        const activeMap = get(sMapp);
+        sOverlay.set(
+          Object.entries(remaining).find(([, overlay]) => overlay.map === activeMap)?.[0]
+        );
       }
     }
 
@@ -176,12 +225,12 @@ export class Mapp extends Deferrable {
 
   private isCurrentUpdate(generation: number, map: Map) {
     return (
-      this.isActive &&
-      this.mounted &&
-      !this.destroyed &&
-      this.updateGeneration === generation &&
-      this.map === map
+      this.mounted && !this.destroyed && this.updateGeneration === generation && this.map === map
     );
+  }
+
+  private isCurrentPublisher(generation: number, map: Map) {
+    return this.isActive && this.isCurrentUpdate(generation, map);
   }
 
   /** Return false when a newer update or teardown supersedes this sample load. */
@@ -201,7 +250,7 @@ export class Mapp extends Deferrable {
     const promises = [];
     bg.image = image; // Necessary to mark image as non-existent.
     map.once('rendercomplete', () => {
-      if (this.isCurrentUpdate(generation, map)) sEvent.set({ type: 'renderComplete' });
+      if (this.isCurrentPublisher(generation, map)) sEvent.set({ type: 'renderComplete' });
     });
     if (image) {
       const updated = await bg.update(map, image, () => this.isCurrentUpdate(generation, map));
@@ -258,24 +307,24 @@ export class Mapp extends Deferrable {
     ]);
     if (!this.isCurrentUpdate(generation, map)) return false;
 
-    if (sample.featureParams) {
+    if (sample.featureParams && this.isCurrentPublisher(generation, map)) {
       // Must have an active feature, otherwise renderComplete will not fire.
-      const selected = get(overlays)[get(sOverlay)]?.currFeature ??
+      const selectedOverlay = get(overlays)[get(sOverlay)];
+      const selected = (selectedOverlay?.map === this ? selectedOverlay.currFeature : undefined) ??
         sample.overlayParams?.defaults?.[0] ?? {
           group: sample.features[Object.keys(sample.features)[0]].name,
           feature: sample.features[Object.keys(sample.features)[0]].featNames[0]
         };
 
       console.log('Selected', selected);
-      if (!this.isCurrentUpdate(generation, map)) return false;
       await setHoverSelectIfCurrent({ selected }, () =>
-        this.isCurrentUpdate(generation, map)
+        this.isCurrentPublisher(generation, map)
       ).catch((error) => {
-        if (this.isCurrentUpdate(generation, map)) console.error(error);
+        if (this.isCurrentPublisher(generation, map)) console.error(error);
       });
-      if (!this.isCurrentUpdate(generation, map)) return false;
+      if (!this.isCurrentPublisher(generation, map)) return false;
     }
-    sEvent.set({ type: 'sampleUpdated' });
+    if (this.isCurrentPublisher(generation, map)) sEvent.set({ type: 'sampleUpdated' });
     return true;
   }
 
@@ -326,7 +375,8 @@ export class Mapp extends Deferrable {
       if ((e.originalEvent as PointerEvent).pressure) return;
     }
 
-    const currLayer = get(overlays)[get(sOverlay)]?.layer;
+    const selectedOverlay = get(overlays)[get(sOverlay)];
+    const currLayer = selectedOverlay?.map === this ? selectedOverlay.layer : undefined;
     const eType = e.type as 'pointermove' | 'click';
     const listeners = this.listeners[eType];
     const alerted = new Array(listeners.length).fill(false);

@@ -46,10 +46,13 @@
   onMount(() => {
     map.mount(mapElem, tippyElem);
     const unsubscribe = sMapId.subscribe((activeMapId) => {
-      sMapp.update((current) => {
-        if (activeMapId === uid) return map;
-        return current === map ? undefined : current;
-      });
+      if (activeMapId === uid) {
+        const becameActive = !map.isActive;
+        map.activate();
+        if (becameActive && sample) updateSample(sample).catch((e) => handleError(e));
+      } else {
+        map.deactivate();
+      }
     });
 
     return () => {
@@ -57,7 +60,6 @@
       unsubscribe();
       cancelHide();
       map.unmount();
-      sMapp.update((current) => (current === map ? undefined : current));
     };
   });
 
@@ -87,7 +89,7 @@
   onMount(() => {
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
-        if (get(sMapp) !== map) return;
+        if (!map.isActive) return;
         $sId = { idx: id_?.idx, id: id_?.id, source: 'map' };
       })
     });
@@ -95,7 +97,7 @@
 
   const updateSample = async (sample: Sample) => {
     const updated = await map.updateSample(sample);
-    if (!updated || destroyed || get(sMapp) !== map) return;
+    if (!updated || destroyed || !map.isActive) return;
     $sId = { source: 'map' };
     map = map;
   };
@@ -114,16 +116,21 @@
     await ol.update(
       currentSample,
       fn,
-      () => !destroyed && get(sMapp) === map && sample === currentSample
+      () => !destroyed && map.isActive && sample === currentSample && get(overlays)[ol.uid] === ol
     );
   };
 
-  $: if ($sEvent?.type === 'maskUpdated') {
-    $overlays[$sOverlay]?.updateMask($mask);
+  $: if ($sMapp === map && $sEvent?.type === 'maskUpdated') {
+    const overlay = $overlays[$sOverlay];
+    if (overlay?.map === map) overlay.updateMask($mask);
   }
 
   // Hover/overlay.
-  $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);
+  $: if ($sMapp === map && $sId && $sOverlay) {
+    changeHover($sOverlay, $sId.idx);
+  } else if (map.mounted) {
+    clearHover();
+  }
 
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -136,16 +143,24 @@
   function hide() {
     timeout = undefined;
     if (destroyed) return;
-    map.persistentLayers.active.layer!.setVisible(false);
-    map.tippy!.elem.style.opacity = '0';
+    clearHover();
     // map.tippy?.elem.setAttribute('hidden', '');
+  }
+
+  function clearHover() {
+    cancelHide();
+    map.persistentLayers.active.layer?.setVisible(false);
+    if (map.tippy) map.tippy.elem.style.opacity = '0';
   }
 
   const changeHover = oneLRU((activeol: string, idx: number | undefined) => {
     const active = map.persistentLayers.active;
     const ov = $overlays[activeol];
 
-    if (!ov) return false;
+    if (!map.isActive || !ov || ov.map !== map) {
+      clearHover();
+      return false;
+    }
 
     if (idx != undefined && ov.coords) {
       const pos = ov.coords.pos![idx];

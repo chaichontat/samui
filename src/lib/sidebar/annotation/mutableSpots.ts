@@ -44,6 +44,7 @@ export class MutableSpots extends BaseSpots {
   }
 
   selectHandler_ = (ev: SelectEvent, e: KeyboardEvent) => {
+    if (!this.map.isActive) return;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       // Needs to be before our updatePoint.
       // Otherwise, the stroke color from select will be set after removel.
@@ -64,6 +65,7 @@ export class MutableSpots extends BaseSpots {
     super.mount();
     this.map.map!.addInteraction(this.select);
     this.select.on('select', (ev: SelectEvent) => {
+      if (!this.map.isActive) return;
       if (ev.selected.length) {
         if (this.selectHandler) {
           document.removeEventListener('keydown', this.selectHandler);
@@ -78,10 +80,24 @@ export class MutableSpots extends BaseSpots {
         this.selectHandler = undefined;
       }
     });
-    this.unsubscribeAnnoHover = annoHover.subscribe((i) =>
-      this.previewPoints(i === -1 ? 'unlabeled_' : get(annoFeat).keys[i])
-    );
+    this.unsubscribeAnnoHover = annoHover.subscribe((i) => {
+      if (this.map.isActive) this.previewPoints(i === -1 ? 'unlabeled_' : get(annoFeat).keys[i]);
+    });
+    this.setActive(this.map.isActive);
     return this;
+  }
+
+  setActive(active: boolean) {
+    this.select.setActive(active);
+    if (active) {
+      const hovered = get(annoHover);
+      this.previewPoints(hovered === -1 ? 'unlabeled_' : get(annoFeat).keys[hovered]);
+      return;
+    }
+
+    this.select.getFeatures().clear();
+    if (this.selectHandler) document.removeEventListener('keydown', this.selectHandler);
+    this.selectHandler = undefined;
   }
 
   dispose() {
@@ -197,7 +213,7 @@ export class MutableSpots extends BaseSpots {
       this.updatePoint(f, label);
     }
     this.source.addFeatures(toAdd);
-    if (fireEvent) sEvent.set({ type: 'pointsAdded' });
+    if (fireEvent && this.map.isActive) sEvent.set({ type: 'pointsAdded' });
   }
 
   addFromPolygon(polygonFeat: Feature<Polygon | Circle>) {
@@ -386,7 +402,7 @@ That is, the current points must contain the ID of all imported points.'
       this.add(match.idx!, label ?? 'Unlabeled');
     }
 
-    sEvent.set({ type: 'pointsAdded' });
+    if (this.map.isActive) sEvent.set({ type: 'pointsAdded' });
     flashing.set('Feature Annotation');
   }
 }
@@ -401,6 +417,7 @@ const dontCheck = [
   'startDraw',
   'length',
   'mount',
+  'setActive',
   'dispose',
   'getCounts',
   'getAllPointsByLabel',

@@ -93,6 +93,11 @@ export class DrawFeature extends Draww {
     );
   }
 
+  setActive(active: boolean) {
+    this.points.setActive(active);
+    super.setActive(active);
+  }
+
   loadFeatures(obj: AnnFeatData): void {
     const { coordName } = obj;
     const coords = get(sFeatureData).coords;
@@ -114,7 +119,7 @@ Got ${coordName} but current feature has ${coords.name}.`
     annoFeat.update((state) => ({ ...state, ready: true }));
     const queued = this.pendingPolygons.splice(0);
     queued.forEach((feature) => this.points.addFromPolygon(feature));
-    sEvent.set({ type: 'pointsAdded' });
+    if (this.map.isActive) sEvent.set({ type: 'pointsAdded' });
   }
 
   getCounts() {
@@ -160,7 +165,7 @@ Got ${coordName} but current feature has ${coords.name}.`
   relabel(old: string, newlabel: string): void {
     super.relabel(old, newlabel);
     this.points.relabel(old, newlabel);
-    sEvent.set({ type: 'pointsAdded' });
+    if (this.map.isActive) sEvent.set({ type: 'pointsAdded' });
   }
 
   clear() {
