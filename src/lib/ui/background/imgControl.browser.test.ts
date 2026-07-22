@@ -37,6 +37,50 @@ const flush = () =>
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** Controls only the product's collapse delay so Playwright interactions keep real timers. */
+function controlCollapseTimers() {
+  const originalSetTimeout = window.setTimeout.bind(window);
+  const originalClearTimeout = window.clearTimeout.bind(window);
+  const pending = new Map<number, () => void>();
+  let nextTimerId = Number.MAX_SAFE_INTEGER;
+
+  (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = ((
+    handler: TimerHandler,
+    timeout?: number,
+    ...args: unknown[]
+  ) => {
+    if (timeout !== 3000 || typeof handler !== 'function') {
+      return originalSetTimeout(handler, timeout, ...args);
+    }
+
+    const timerId = nextTimerId--;
+    pending.set(timerId, () => handler(...args));
+    return timerId;
+  }) as typeof setTimeout;
+
+  (window as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout = ((
+    timerId: number
+  ) => {
+    if (!pending.delete(timerId)) originalClearTimeout(timerId);
+  }) as typeof clearTimeout;
+
+  return {
+    get pendingCount() {
+      return pending.size;
+    },
+    runPending() {
+      const callbacks = [...pending.values()];
+      pending.clear();
+      callbacks.forEach((callback) => callback());
+    },
+    restore() {
+      (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = originalSetTimeout;
+      (window as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout =
+        originalClearTimeout;
+    }
+  };
+}
+
 function ensureGlassMain(island: HTMLElement): HTMLElement {
   const main = island.querySelector('.lgis-main');
   if (!(main instanceof HTMLElement)) throw new Error('GlassIsland main not found');
@@ -341,17 +385,7 @@ test('handles images with more than three channels and cycles colors', async () 
 });
 
 test('auto-collapse engages after the inactivity delay elapses', async () => {
-  const originalSetTimeout = window.setTimeout.bind(window);
-  (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = ((
-    handler: TimerHandler,
-    timeout?: number,
-    ...args: unknown[]
-  ) =>
-    originalSetTimeout(
-      handler,
-      timeout === 3000 ? 15 : (timeout ?? 0),
-      ...args
-    )) as typeof setTimeout;
+  const collapseTimers = controlCollapseTimers();
 
   try {
     const { screen } = await setupCompositeControl();
@@ -363,28 +397,18 @@ test('auto-collapse engages after the inactivity delay elapses', async () => {
     expect(island.getAttribute('data-expanded')).toBe('true');
 
     await userEvent.unhover(island);
-    await wait(30);
+    collapseTimers.runPending();
     await flush();
 
     expect(island.getAttribute('data-expanded')).toBe('false');
     screen.unmount();
   } finally {
-    (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = originalSetTimeout;
+    collapseTimers.restore();
   }
 });
 
 test('auto-collapse stays paused while the mouse remains over the control bar', async () => {
-  const originalSetTimeout = window.setTimeout.bind(window);
-  (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = ((
-    handler: TimerHandler,
-    timeout?: number,
-    ...args: unknown[]
-  ) =>
-    originalSetTimeout(
-      handler,
-      timeout === 3000 ? 180 : (timeout ?? 0),
-      ...args
-    )) as typeof setTimeout;
+  const collapseTimers = controlCollapseTimers();
 
   try {
     const { screen } = await setupCompositeControl();
@@ -395,36 +419,25 @@ test('auto-collapse stays paused while the mouse remains over the control bar', 
 
     expect(island.getAttribute('data-expanded')).toBe('true');
 
-    await wait(60);
     await userEvent.hover(island);
-    await wait(140);
+    collapseTimers.runPending();
     await flush();
 
     expect(island.getAttribute('data-expanded')).toBe('true');
 
     await userEvent.unhover(island);
-    await wait(220);
+    collapseTimers.runPending();
     await flush();
 
     expect(island.getAttribute('data-expanded')).toBe('false');
     screen.unmount();
   } finally {
-    (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = originalSetTimeout;
+    collapseTimers.restore();
   }
 });
 
 test('expansion control reopens the panel after auto-collapse', async () => {
-  const originalSetTimeout = window.setTimeout.bind(window);
-  (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = ((
-    handler: TimerHandler,
-    timeout?: number,
-    ...args: unknown[]
-  ) =>
-    originalSetTimeout(
-      handler,
-      timeout === 3000 ? 25 : (timeout ?? 0),
-      ...args
-    )) as typeof setTimeout;
+  const collapseTimers = controlCollapseTimers();
 
   try {
     const { screen } = await setupCompositeControl();
@@ -434,7 +447,7 @@ test('expansion control reopens the panel after auto-collapse', async () => {
     if (!island) throw new Error('island not found');
 
     await userEvent.unhover(island);
-    await wait(40);
+    collapseTimers.runPending();
     await flush();
 
     expect(island.getAttribute('data-expanded')).toBe('false');
@@ -450,7 +463,7 @@ test('expansion control reopens the panel after auto-collapse', async () => {
     expect(island.getAttribute('data-expanded')).toBe('true');
     screen.unmount();
   } finally {
-    (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = originalSetTimeout;
+    collapseTimers.restore();
   }
 });
 
@@ -755,42 +768,21 @@ test('loading skeleton UI displays when image is undefined', async () => {
 });
 
 test('cleanup properly removes timers and resets state on unmount', async () => {
-  const originalSetTimeout = window.setTimeout.bind(window);
-  const originalClearTimeout = window.clearTimeout.bind(window);
-  const activeTimers: number[] = [];
-  const clearedTimers: number[] = [];
-
-  (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = ((
-    handler: TimerHandler,
-    timeout?: number,
-    ...args: unknown[]
-  ) => {
-    const id = originalSetTimeout(handler, timeout === 3000 ? 10 : (timeout ?? 0), ...args);
-    activeTimers.push(id as unknown as number);
-    return id;
-  }) as typeof setTimeout;
-
-  (window as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout = ((id: number) => {
-    clearedTimers.push(id);
-    originalClearTimeout(id);
-  }) as typeof clearTimeout;
+  const collapseTimers = controlCollapseTimers();
 
   try {
     const { screen } = await setupCompositeControl();
 
     // Should have set a collapse timer
-    expect(activeTimers.length).toBeGreaterThan(0);
+    expect(collapseTimers.pendingCount).toBe(1);
 
     // Unmount component
     screen.unmount();
     await flush();
 
     // All timers should be cleared
-    expect(clearedTimers.length).toBeGreaterThan(0);
-    expect(clearedTimers.some((id) => activeTimers.includes(id))).toBe(true);
+    expect(collapseTimers.pendingCount).toBe(0);
   } finally {
-    (window as unknown as { setTimeout: typeof setTimeout }).setTimeout = originalSetTimeout;
-    (window as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout =
-      originalClearTimeout;
+    collapseTimers.restore();
   }
 });
