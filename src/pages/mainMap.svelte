@@ -1,5 +1,6 @@
 <script lang="ts">
   import { mapTiles, sMapp, sSample } from '$lib/store';
+  import type { Mapp } from '$lib/ui/mapp';
   // import Colorbar from '$src/lib/components/colorbar.svelte'; // Dynamic import
   import type { Hierarchy } from '$lib/mapTile';
   import MapTools from '$src/lib/ui/overlays/mapTools.svelte';
@@ -17,10 +18,14 @@
 
   $: showSidebar = haveFeatures;
 
-  const updateSize = () => $sMapp.map?.updateSize();
+  const scheduleResize = (scheduledMap: Mapp) => {
+    setTimeout(() => {
+      if ($sMapp === scheduledMap) scheduledMap.map?.updateSize();
+    }, 10);
+  };
   let shownOnce = false;
   $: if (showSidebar) shownOnce = true;
-  $: if ($sMapp && (showSidebar || !showSidebar)) setTimeout(updateSize, 10);
+  $: if ($sMapp && (showSidebar || !showSidebar)) scheduleResize($sMapp);
 </script>
 
 <svelte:head><title>Samui {$sSample?.name ? `- ${$sSample.name}` : ''}</title></svelte:head>

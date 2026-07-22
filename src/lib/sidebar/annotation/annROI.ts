@@ -48,6 +48,7 @@ export class Draww {
 
   _currHighlight: number | null = null;
   _colorCounter = 0; // Ensures that color increases when deleting older selections.
+  private disposed = false;
 
   constructor(map: Mapp, store: typeof annoROI) {
     this.source = new VectorSource();
@@ -124,6 +125,29 @@ export class Draww {
       this.map.map!.removeInteraction(this.translate);
       this.addedTranslate = false;
     });
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    if (this.selectHandler) document.removeEventListener('keydown', this.selectHandler);
+    this.selectHandler = undefined;
+
+    const map = this.map.map;
+    map?.removeInteraction(this.draw);
+    map?.removeInteraction(this.snap);
+    map?.removeInteraction(this.modify);
+    map?.removeInteraction(this.select);
+    map?.removeInteraction(this.translate);
+    map?.removeLayer(this.selectionLayer);
+
+    this.draw.dispose();
+    this.snap.dispose();
+    this.modify.dispose();
+    this.select.dispose();
+    this.translate.dispose();
+    this.selectionLayer.dispose();
+    this.source.dispose();
   }
 
   changeDrawType(type: 'Polygon' | 'Circle' | 'Point', first = false) {
@@ -334,8 +358,8 @@ Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
         type === 'Point' && properties?.radius
           ? new Circle(coordinates as Coordinate)
           : type === 'Polygon'
-          ? new Polygon(coordinates)
-          : new Point(coordinates as Coordinate);
+            ? new Polygon(coordinates)
+            : new Point(coordinates as Coordinate);
       const feature = new Feature({ geometry: geo });
       let idx = store.keys.findIndex((k) => k === label);
       if (idx === -1) {

@@ -170,6 +170,11 @@ Got ${coordName} but current feature has ${coords.name}.`
     this.points.clear();
   }
 
+  dispose() {
+    this.points.dispose();
+    super.dispose();
+  }
+
   dumpPoints() {
     return this.points.dump();
   }

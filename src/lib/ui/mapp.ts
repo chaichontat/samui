@@ -19,9 +19,10 @@ import {
   mapTiles,
   overlays,
   sEvent,
+  sMapp,
   sOverlay,
   sPixel,
-  setHoverSelect
+  setHoverSelectIfCurrent
 } from '../store';
 
 type Listener = (
@@ -59,6 +60,17 @@ export class Mapp extends Deferrable {
   tippy?: { overlay: Overlay; elem: HTMLElement };
   mounted = false;
   _needNewView = true;
+  private destroyed = false;
+  private updateGeneration = 0;
+  private resizeTimeout?: ReturnType<typeof setTimeout>;
+
+  get isDestroyed() {
+    return this.destroyed;
+  }
+
+  get isActive() {
+    return get(sMapp) === this;
+  }
 
   listeners = { pointermove: [], click: [] } as {
     pointermove: { f: Listener; layer?: Layer }[];
@@ -78,6 +90,8 @@ export class Mapp extends Deferrable {
   }
 
   mount(target: HTMLElement, tippyElem: HTMLElement) {
+    if (this.destroyed) throw new Error('Cannot remount a destroyed map.');
+
     // Mount components
     this.map = new Map({ target });
     Object.values(this.persistentLayers).map((l) => l.mount());
@@ -114,13 +128,71 @@ export class Mapp extends Deferrable {
 
     this._deferred.resolve();
     // Deals with sidebar showing up or not.
-    setTimeout(() => this.map!.updateSize(), 100);
+    this.resizeTimeout = setTimeout(() => this.map?.updateSize(), 100);
     this.mounted = true;
   }
 
-  async updateSample(sample: Sample) {
-    if (!this.map) throw new Error('Map not mounted.');
+  /** Dispose this map's resources and invalidate pending work without disturbing sibling maps. */
+  unmount() {
+    if (this.destroyed) return;
+
+    this.destroyed = true;
+    this.mounted = false;
+    this.updateGeneration += 1;
+    if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+    this.resizeTimeout = undefined;
+    this.setCurrPixel.cancel();
+    this.runPointerListener.cancel();
+
+    const map = this.map;
+    const currentOverlays = get(overlays);
+    const ownedOverlayIds = Object.entries(currentOverlays)
+      .filter(([, overlay]) => overlay.map === this)
+      .map(([uid]) => uid);
+    if (ownedOverlayIds.length > 0) {
+      const owned = new Set(ownedOverlayIds);
+      for (const uid of ownedOverlayIds) currentOverlays[uid].dispose();
+      const remaining = Object.fromEntries(
+        Object.entries(currentOverlays).filter(([uid]) => !owned.has(uid))
+      );
+      overlays.set(remaining);
+      const selectedOverlay = get(sOverlay);
+      if (selectedOverlay && owned.has(selectedOverlay)) {
+        sOverlay.set(Object.keys(remaining)[0]);
+      }
+    }
+
+    this.persistentLayers.background.dispose(map);
+    this.persistentLayers.active.dispose();
+    this.persistentLayers.annotations.dispose();
+    this.persistentLayers.rois.dispose();
+    this.listeners.pointermove = [];
+    this.listeners.click = [];
+    map?.dispose();
+    this.map = undefined;
+    this.scaleLine = undefined;
+    this.tippy = undefined;
+  }
+
+  private isCurrentUpdate(generation: number, map: Map) {
+    return (
+      this.isActive &&
+      this.mounted &&
+      !this.destroyed &&
+      this.updateGeneration === generation &&
+      this.map === map
+    );
+  }
+
+  /** Return false when a newer update or teardown supersedes this sample load. */
+  async updateSample(sample: Sample): Promise<boolean> {
+    const generation = ++this.updateGeneration;
+    await this.promise;
+    const map = this.map;
+    if (!map || !this.isCurrentUpdate(generation, map)) return false;
+
     await sample.hydrate();
+    if (!this.isCurrentUpdate(generation, map)) return false;
 
     // Image
     // TODO: Persistent view when returning to same sample.
@@ -128,13 +200,16 @@ export class Mapp extends Deferrable {
     const bg = this.persistentLayers.background;
     const promises = [];
     bg.image = image; // Necessary to mark image as non-existent.
-    this.map.once('rendercomplete', () => sEvent.set({ type: 'renderComplete' }));
+    map.once('rendercomplete', () => {
+      if (this.isCurrentUpdate(generation, map)) sEvent.set({ type: 'renderComplete' });
+    });
     if (image) {
-      await bg.update(this.map, image);
+      const updated = await bg.update(map, image, () => this.isCurrentUpdate(generation, map));
+      if (!updated) return false;
       this.syncScaleLineVisibility();
       if (bg.viewOptions) {
         const view = new View(bg.viewOptions);
-        this.map.setView(view);
+        map.setView(view);
         view.fit(bg.viewOptions.extent!, {
           maxZoom: Math.max(
             2,
@@ -155,15 +230,18 @@ export class Mapp extends Deferrable {
               });
             })
             .then((v) => {
-              this.map!.setView(v);
+              if (!this.isCurrentUpdate(generation, map)) return;
+              map.setView(v);
               this._needNewView = false;
             })
-            .catch(console.error)
+            .catch((error) => {
+              if (this.isCurrentUpdate(generation, map)) console.error(error);
+            })
         );
       }
     } else {
       console.debug('No image. View must come from overlay.');
-      this.persistentLayers.background.dispose(this.map);
+      this.persistentLayers.background.dispose(map);
       bg.mPerPx = undefined;
       this.syncScaleLineVisibility();
       this._needNewView = true;
@@ -174,8 +252,11 @@ export class Mapp extends Deferrable {
 
     await Promise.all([
       ...promises,
-      ...Object.values(get(overlays)).map((ol) => ol.updateSample(sample))
+      ...Object.values(get(overlays))
+        .filter((overlay) => overlay.map === this)
+        .map((overlay) => overlay.updateSample(sample, () => this.isCurrentUpdate(generation, map)))
     ]);
+    if (!this.isCurrentUpdate(generation, map)) return false;
 
     if (sample.featureParams) {
       // Must have an active feature, otherwise renderComplete will not fire.
@@ -186,9 +267,16 @@ export class Mapp extends Deferrable {
         };
 
       console.log('Selected', selected);
-      setHoverSelect({ selected }).catch(console.error);
+      if (!this.isCurrentUpdate(generation, map)) return false;
+      await setHoverSelectIfCurrent({ selected }, () =>
+        this.isCurrentUpdate(generation, map)
+      ).catch((error) => {
+        if (this.isCurrentUpdate(generation, map)) console.error(error);
+      });
+      if (!this.isCurrentUpdate(generation, map)) return false;
     }
     sEvent.set({ type: 'sampleUpdated' });
+    return true;
   }
 
   get mPerPx() {
@@ -223,12 +311,14 @@ export class Mapp extends Deferrable {
   }
 
   setCurrPixel = throttle((meter: [number, number]) => {
-    if (this.mPerPx) {
+    if (this.isActive && this.mPerPx) {
       sPixel.set([meter[0] / this.mPerPx, -meter[1] / this.mPerPx]);
     }
   });
 
   runPointerListener = throttle((e: MapBrowserEvent<UIEvent>) => {
+    if (!this.isActive) return;
+
     // Outlines take precedence. Either visible is fine.
     if (e.type === 'pointermove') {
       this.setCurrPixel(e.coordinate as [number, number]);

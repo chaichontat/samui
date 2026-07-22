@@ -30,6 +30,7 @@ export class MutableSpots extends BaseSpots {
   coords: undefined;
   lastPreviewed = undefined as string | undefined;
   pendingPolygons: Feature<Polygon | Circle>[] = [];
+  private unsubscribeAnnoHover?: () => void;
 
   constructor(map: Mapp, style?: Style) {
     super(map, style);
@@ -77,8 +78,20 @@ export class MutableSpots extends BaseSpots {
         this.selectHandler = undefined;
       }
     });
-    annoHover.subscribe((i) => this.previewPoints(i === -1 ? 'unlabeled_' : get(annoFeat).keys[i]));
+    this.unsubscribeAnnoHover = annoHover.subscribe((i) =>
+      this.previewPoints(i === -1 ? 'unlabeled_' : get(annoFeat).keys[i])
+    );
     return this;
+  }
+
+  dispose() {
+    if (this.selectHandler) document.removeEventListener('keydown', this.selectHandler);
+    this.selectHandler = undefined;
+    this.unsubscribeAnnoHover?.();
+    this.unsubscribeAnnoHover = undefined;
+    this.map.map?.removeInteraction(this.select);
+    this.select.dispose();
+    super.dispose();
   }
 
   static getPointCoords = (f: Feature<Point>) => f.getGeometry()!.getCoordinates();
@@ -388,6 +401,7 @@ const dontCheck = [
   'startDraw',
   'length',
   'mount',
+  'dispose',
   'getCounts',
   'getAllPointsByLabel',
   'addFromPolygon'
