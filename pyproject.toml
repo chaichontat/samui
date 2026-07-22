@@ -8,7 +8,7 @@ version = "0.0.1"
 description = ""
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "GPL v3.0" }
+license = { text = "MIT" }
 authors = [
   { name = "Chaichontat Sriworarat", email = "34997334+chaichontat@users.noreply.github.com" },
 ]
