@@ -2,6 +2,7 @@
   "name": "loopy-browser",
   "version": "0.0.1",
   "license": "MIT",
+  "packageManager": "pnpm@11.5.0",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -105,8 +106,15 @@
     "tippy.js": "^6.3.7",
     "unified": "^11.0.5"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.5.0",
+      "onFail": "download"
+    }
+  },
   "engines": {
     "node": ">=22",
-    "pnpm": ">=10.26"
+    "pnpm": ">=11.5"
   }
 }
