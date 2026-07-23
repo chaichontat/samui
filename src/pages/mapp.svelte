@@ -6,6 +6,7 @@
     sEvent,
     sFeatureData,
     sId,
+    sMapId,
     sMapp,
     sOverlay,
     userState
@@ -19,14 +20,11 @@
   import { isEqual } from 'lodash-es';
   import 'ol/ol.css';
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import { Mapp } from '../lib/ui/mapp';
 
   export let sample: Sample | undefined;
-  // let currSample: string;
-  $: sample
-    ?.hydrate()
-    .then(updateSample)
-    .catch((e) => handleError(e));
+  $: if (sample) updateSample(sample).catch((e) => handleError(e));
 
   $: showImgControl = $userState.showImgControl;
   // Only show image controls when a background image exists
@@ -39,7 +37,7 @@
   let mapElem: HTMLDivElement;
   let tippyElem: HTMLDivElement;
   let map = new Mapp();
-  $sMapp = map;
+  let destroyed = false;
 
   let width: number;
   let height: number;
@@ -47,6 +45,22 @@
 
   onMount(() => {
     map.mount(mapElem, tippyElem);
+    const unsubscribe = sMapId.subscribe((activeMapId) => {
+      if (activeMapId === uid) {
+        const becameActive = !map.isActive;
+        map.activate();
+        if (becameActive && sample) updateSample(sample).catch((e) => handleError(e));
+      } else {
+        map.deactivate();
+      }
+    });
+
+    return () => {
+      destroyed = true;
+      unsubscribe();
+      cancelHide();
+      map.unmount();
+    };
   });
 
   // function moveView(idx: number) {
@@ -75,13 +89,15 @@
   onMount(() => {
     map.attachPointerListener({
       pointermove: oneLRU((id_: { idx: number; id: number | string } | null) => {
+        if (!map.isActive) return;
         $sId = { idx: id_?.idx, id: id_?.id, source: 'map' };
       })
     });
   });
 
   const updateSample = async (sample: Sample) => {
-    await map.updateSample(sample);
+    const updated = await map.updateSample(sample);
+    if (!updated || destroyed || !map.isActive) return;
     $sId = { source: 'map' };
     map = map;
   };
@@ -92,48 +108,75 @@
   }
   const updateFeature = async () => {
     if (!sample) return;
+    const currentSample = sample;
     const ol = $overlays[$sOverlay];
     const fn = $overlaysFeature[$sOverlay];
     // Prevents update when state is inconsistent.
-    if (!fn || isEqual(ol.currFeature, fn)) return;
-    await ol.update(sample, fn);
+    if (!ol || ol.map !== map || !fn || isEqual(ol.currFeature, fn)) return;
+    await ol.update(
+      currentSample,
+      fn,
+      () => !destroyed && map.isActive && sample === currentSample && get(overlays)[ol.uid] === ol
+    );
   };
 
-  $: if ($sEvent?.type === 'maskUpdated') {
-    $overlays[$sOverlay]?.updateMask($mask);
+  $: if ($sMapp === map && $sEvent?.type === 'maskUpdated') {
+    const overlay = $overlays[$sOverlay];
+    if (overlay?.map === map) overlay.updateMask($mask);
   }
 
   // Hover/overlay.
-  $: if ($sId && $sOverlay) changeHover($sOverlay, $sId.idx);
+  $: if ($sMapp === map && $sId && $sOverlay) {
+    changeHover($sOverlay, $sId.idx);
+  } else if (map.mounted) {
+    clearHover();
+  }
 
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
+  function cancelHide() {
+    if (timeout === undefined) return;
+    clearTimeout(timeout);
+    timeout = undefined;
+  }
+
   function hide() {
-    map.persistentLayers.active.layer!.setVisible(false);
-    map.tippy!.elem.style.opacity = '0';
+    timeout = undefined;
+    if (destroyed) return;
+    clearHover();
     // map.tippy?.elem.setAttribute('hidden', '');
+  }
+
+  function clearHover() {
+    cancelHide();
+    map.persistentLayers.active.layer?.setVisible(false);
+    if (map.tippy) map.tippy.elem.style.opacity = '0';
   }
 
   const changeHover = oneLRU((activeol: string, idx: number | undefined) => {
     const active = map.persistentLayers.active;
     const ov = $overlays[activeol];
 
-    if (!ov) return false;
+    if (!map.isActive || !ov || ov.map !== map) {
+      clearHover();
+      return false;
+    }
 
     if (idx != undefined && ov.coords) {
       const pos = ov.coords.pos![idx];
       if (!pos) return; // Happens when changing focus.overlay. Idx from another ol can exceed the length of current ol.
+      cancelHide();
       active.layer!.setVisible(true);
       active.update(ov.coords, idx);
 
-      if (map.tippy && pos.id) {
-        if (timeout) clearTimeout(timeout);
+      if (map.tippy && pos.id != undefined) {
         map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
         map.tippy.elem.style.opacity = '1';
         // map.tippy.elem.removeAttribute('hidden');
-        map.tippy.elem.innerHTML = `<code>${pos.id}<br>${$sFeatureData.data[pos.idx]}</code>`;
+        map.tippy.elem.innerHTML = `<code>${pos.id}<br>${$sFeatureData.data[pos.idx ?? idx]}</code>`;
       }
     } else {
+      cancelHide();
       timeout = setTimeout(hide, 400);
     }
   });
@@ -211,7 +254,7 @@
   }
 
   .map :global(.ol-zoom) {
-    @apply absolute top-auto bottom-20 left-4 border-neutral-200 backdrop-blur;
+    @apply absolute bottom-20 left-4 top-auto border-neutral-200 backdrop-blur;
   }
 
   .map :global(.ol-zoom-in) {

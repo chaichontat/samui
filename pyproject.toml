@@ -13,7 +13,7 @@ authors = [
   { name = "Chaichontat Sriworarat", email = "34997334+chaichontat@users.noreply.github.com" },
 ]
 dependencies = [
-  "anndata",
+  "anndata<0.13",
   "numpy",
   "pandas",
   "pydantic>=1.10,<2",

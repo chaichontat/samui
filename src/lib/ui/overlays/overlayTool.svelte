@@ -42,7 +42,8 @@
       visible[uid] = layerVisible == undefined ? true : layerVisible;
     }
   };
-  $: Object.keys($overlays).forEach(ensureState);
+  $: activeOverlays = Object.entries($overlays).filter(([, overlay]) => overlay.map === $sMapp);
+  $: activeOverlays.forEach(([uid]) => ensureState(uid));
   $: viewZoom = $sMapp?.map?.getView()?.getZoom?.() ?? '';
   $: viewCenter =
     $sMapp?.map
@@ -82,7 +83,7 @@
 >
   {#if sample}
     <tbody>
-      {#each Object.entries($overlays) as [uid, ov], i (uid)}
+      {#each activeOverlays as [uid, ov], i (uid)}
         {@const fg = $overlaysFeature[uid]}
         <tr
           data-testid={`overlay-row-${i}`}
@@ -194,7 +195,10 @@
                   }
                   $overlays[uid].dispose();
                   delete $overlays[uid];
-                  $sOverlay = $sOverlay === uid ? Object.keys($overlays)[0] : $sOverlay;
+                  $sOverlay =
+                    $sOverlay === uid
+                      ? Object.values($overlays).find((overlay) => overlay.map === $sMapp)?.uid
+                      : $sOverlay;
                   $overlays = $overlays;
                   sEvent.set({ type: 'featureUpdated' });
                 }}
@@ -217,7 +221,10 @@
     data-testid="overlay-add-layer"
   >
     <div class="flex items-center">
-      <Plus class="svg-icon mr-1 h-[14px] w-[14px] translate-y-px stroke-[2.5]" stroke-width={2.5} />
+      <Plus
+        class="svg-icon mr-1 h-[14px] w-[14px] translate-y-px stroke-[2.5]"
+        stroke-width={2.5}
+      />
       <div class="font-normal">Add Layer</div>
       <div></div>
     </div>

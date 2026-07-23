@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import type { CoordsData } from '$src/lib/data/objects/coords';
   import { Mapp } from '$src/lib/ui/mapp';
 
@@ -14,8 +14,13 @@
   onMount(() => {
     map = new Mapp();
     map.mount(mapElem, tipElem);
+    map.activate();
     map.persistentLayers.active.visible = true;
     onReady?.(map);
+  });
+
+  onDestroy(() => {
+    map?.unmount();
   });
 
   $: if (map?.mounted && coords) {
