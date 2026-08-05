@@ -73,7 +73,7 @@
       </Select.Trigger>
 
       <Select.Portal>
-        <Select.Content forceMount side="bottom" align="start" sideOffset={4}>
+        <Select.Content forceMount side="bottom" align="start" sideOffset={12}>
           {#snippet child({ wrapperProps, props, open })}
             {#if open}
               {@const { class: rawContentClass, ...contentRest } = props}
@@ -84,7 +84,7 @@
                   {...contentRest}
                   class={classes(
                     contentClass,
-                    'bg-default z-40 mt-2 max-h-96 w-full overflow-y-auto rounded-lg py-1 leading-6 shadow shadow-blue-900 backdrop-blur focus:outline-none sm:leading-5'
+                    'bg-default z-40 max-h-[min(24rem,var(--bits-select-content-available-height))] w-full overflow-y-auto rounded-lg py-1 leading-6 shadow shadow-blue-900 backdrop-blur focus:outline-none sm:leading-5'
                   )}
                   transition:fly={{ y: 10, duration: 100, easing: cubicOut }}
                 >
