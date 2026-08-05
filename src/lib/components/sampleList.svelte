@@ -84,37 +84,33 @@
                   {...contentRest}
                   class={classes(
                     contentClass,
-                    'bg-default z-40 mt-2 w-full rounded-lg shadow shadow-blue-900 backdrop-blur'
+                    'bg-default z-40 mt-2 max-h-96 w-full overflow-y-auto rounded-lg py-1 leading-6 shadow shadow-blue-900 backdrop-blur focus:outline-none sm:leading-5'
                   )}
                   transition:fly={{ y: 10, duration: 100, easing: cubicOut }}
                 >
-                  <Select.Viewport
-                    class="overflow-auto rounded-lg pt-1 pb-1 leading-6 focus:outline-none sm:leading-5"
-                  >
-                    {#each rows as { name } (name)}
-                      <div class="px-1" data-testid={`sample-option-${name}`}>
-                        <Select.Item value={name} label={name}>
-                          {#snippet children({ selected, highlighted })}
-                            <div
-                              class={classes(
-                                // 'relative flex w-full items-center gap-2 rounded-lg py-2 pl-3 pr-4'
-                                'w-full relative flex items-center cursor-pointer select-none rounded-lg py-2 pl-3 pr-9 focus:outline-none',
-                                highlighted ? 'hover-default' : ''
-                              )}
-                            >
-                              <div class={classes(selected ? 'font-semibold' : 'font-normal')}>
-                                {name}
-                              </div>
-
-                              <div class={classes(selected && showArrow ? '' : 'opacity-0')}>
-                                <Check class="size-4 stroke-current stroke-2" />
-                              </div>
+                  {#each rows as { name } (name)}
+                    <div class="px-1" data-testid={`sample-option-${name}`}>
+                      <Select.Item value={name} label={name}>
+                        {#snippet children({ selected, highlighted })}
+                          <div
+                            class={classes(
+                              // 'relative flex w-full items-center gap-2 rounded-lg py-2 pl-3 pr-4'
+                              'w-full relative flex items-center cursor-pointer select-none rounded-lg py-2 pl-3 pr-9 focus:outline-none',
+                              highlighted ? 'hover-default' : ''
+                            )}
+                          >
+                            <div class={classes(selected ? 'font-semibold' : 'font-normal')}>
+                              {name}
                             </div>
-                          {/snippet}
-                        </Select.Item>
-                      </div>
-                    {/each}
-                  </Select.Viewport>
+
+                            <div class={classes(selected && showArrow ? '' : 'opacity-0')}>
+                              <Check class="size-4 stroke-current stroke-2" />
+                            </div>
+                          </div>
+                        {/snippet}
+                      </Select.Item>
+                    </div>
+                  {/each}
                 </div>
               </div>
             {/if}
