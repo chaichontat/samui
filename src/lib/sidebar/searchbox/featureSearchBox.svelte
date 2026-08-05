@@ -57,7 +57,7 @@
         </span>
 
         <Select.Portal>
-          <Select.Content forceMount side="bottom" align="start" sideOffset={4} class="z-50">
+          <Select.Content forceMount side="bottom" align="start" sideOffset={8} class="z-50">
             {#snippet child({ wrapperProps, props, open })}
               {#if open}
                 {@const { class: rawContentClass, ...contentRest } = props}
@@ -68,26 +68,24 @@
                     {...contentRest}
                     class={classes(
                       contentClass,
-                      'mt-1 rounded-md border border-neutral-200/30 bg-neutral-800 shadow-lg shadow-neutral-600/50'
+                      'max-h-[min(24rem,var(--bits-select-content-available-height))] overflow-y-auto rounded-md border border-neutral-200/30 bg-neutral-800 py-1 shadow-lg shadow-neutral-600/50'
                     )}
                   >
-                    <Select.Viewport class="py-1">
-                      {#each groups as group}
-                        <Select.Item value={group} label={group}>
-                          {#snippet children({ selected, highlighted })}
-                            <div
-                              class={classes(
-                                'cursor-pointer rounded-md py-1 px-3 text-left focus:outline-none hover:bg-neutral-700',
-                                selected ? 'font-medium' : '',
-                                highlighted ? 'bg-neutral-700' : 'bg-neutral-800'
-                              )}
-                            >
-                              {group}
-                            </div>
-                          {/snippet}
-                        </Select.Item>
-                      {/each}
-                    </Select.Viewport>
+                    {#each groups as group}
+                      <Select.Item value={group} label={group}>
+                        {#snippet children({ selected, highlighted })}
+                          <div
+                            class={classes(
+                              'cursor-pointer rounded-md py-1 px-3 text-left focus:outline-none hover:bg-neutral-700',
+                              selected ? 'font-medium' : '',
+                              highlighted ? 'bg-neutral-700' : 'bg-neutral-800'
+                            )}
+                          >
+                            {group}
+                          </div>
+                        {/snippet}
+                      </Select.Item>
+                    {/each}
                   </div>
                 </div>
               {/if}
