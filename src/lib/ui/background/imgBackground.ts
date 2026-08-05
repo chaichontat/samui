@@ -54,6 +54,7 @@ export class Background extends Deferrable {
   }
 
   dispose(map: Map | undefined) {
+    this.updateStyle.cancel();
     if (this.layer) {
       map?.removeLayer(this.layer);
       this.layer.dispose();
@@ -68,13 +69,20 @@ export class Background extends Deferrable {
     this.intensityRequestId += 1;
   }
 
-  async update(map: Map, image: ImgData) {
+  async update(map: Map, image: ImgData, isCurrent: () => boolean) {
     console.log('Updating background');
     await image.promise;
+    if (!isCurrent()) return false;
     this.dispose(map);
+    if (!isCurrent()) return false;
     this.image = image;
     if (isLocalTiffImage(image)) {
-      this.source = await createLocalTiffSource(image);
+      const source = await createLocalTiffSource(image);
+      if (!isCurrent()) {
+        source.dispose();
+        return false;
+      }
+      this.source = source;
       this.viewOptions = buildLocalTiffViewOptions(image);
     } else {
       const urls = image.urls.map((url) => ({ url: url.url }));
@@ -101,15 +109,20 @@ export class Background extends Deferrable {
 
     if (shouldEstimateCompositeDefaults(image)) {
       const requestId = ++this.intensityRequestId;
-      void this.applyEstimatedDefaults(image, requestId);
+      void this.applyEstimatedDefaults(image, requestId, isCurrent);
     }
     // TODO: Assuming same channels.
+    return true;
   }
 
-  private async applyEstimatedDefaults(image: ImgData, requestId: number) {
+  private async applyEstimatedDefaults(
+    image: ImgData,
+    requestId: number,
+    isCurrent: () => boolean
+  ) {
     try {
       const defaultMinMax = await estimateCompositeMinMax(image);
-      if (requestId !== this.intensityRequestId || this.image !== image) {
+      if (!isCurrent() || requestId !== this.intensityRequestId || this.image !== image) {
         return;
       }
 
@@ -120,10 +133,13 @@ export class Background extends Deferrable {
         return;
       }
 
+      if (!isCurrent()) return;
       this.updateStyle(buildCompositeController(image));
       sEvent.set({ type: 'imgDefaultsUpdated' });
     } catch (error) {
-      console.error('Failed to estimate composite image intensity defaults.', error);
+      if (isCurrent()) {
+        console.error('Failed to estimate composite image intensity defaults.', error);
+      }
     }
   }
 

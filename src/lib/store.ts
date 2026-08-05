@@ -36,7 +36,7 @@ function createSamplesStore(): Writable<SampleEntry[]> {
 
 export const samples = createSamplesStore();
 
-export const sMapp = writable(undefined as Mapp | undefined);
+export const sMapp: Writable<Mapp | undefined> = writable(undefined);
 export const sMapId: Writable<number> = writable(0);
 export const mapTiles: Writable<number[]> = writable([0]);
 export const mapIdSample: Writable<Record<number, string>> = writable({});
@@ -118,26 +118,44 @@ annoFeat.subscribe((ann) => {
 export type SimpleHS<T> = { hover?: T; selected?: T };
 export const hoverSelect = writable(new HoverSelect<FeatureAndGroup>());
 const _setHoverNow = (v: SimpleHS<FeatureAndGroup>) => hoverSelect.set(get(hoverSelect).update(v));
-const _setHover = debounce(_setHoverNow, 50);
+const _setHover = debounce((v: SimpleHS<FeatureAndGroup>, isCurrent: () => boolean) => {
+  if (isCurrent()) _setHoverNow(v);
+}, 50);
 
-export const setHoverSelect = oneLRU(async (v: SimpleHS<FeatureAndGroup>) => {
-  if (v.selected && get(annoFeat).annotating?.overlay === get(sOverlay)) {
-    const feat = await get(sSample).getFeature(v.selected);
-    if (feat?.coords.name !== get(annoFeat).annotating?.coordName) {
-      alert(
-        `You cannot change this layer's feature while annotating points from this layer. To see other features while annotating, add a new layer or change the active layer.`
-      );
-      return;
+export const setHoverSelectIfCurrent = oneLRU(
+  async (v: SimpleHS<FeatureAndGroup>, isCurrent: () => boolean) => {
+    if (!isCurrent()) return false;
+    if (v.selected && get(annoFeat).annotating?.overlay === get(sOverlay)) {
+      const sample = get(sSample);
+      if (!sample) return false;
+      const feat = await sample.getFeature(v.selected);
+      if (!isCurrent()) return false;
+      if (feat?.coords.name !== get(annoFeat).annotating?.coordName) {
+        alert(
+          `You cannot change this layer's feature while annotating points from this layer. To see other features while annotating, add a new layer or change the active layer.`
+        );
+        return false;
+      }
     }
-  }
 
-  _setHover(v);
-  if (v.selected) {
-    // Prevents hover from overriding actual selected.
-    _setHover.flush();
-    _setHoverNow(v);
+    if (!isCurrent()) return false;
+    _setHover(v, isCurrent);
+    if (v.selected) {
+      // Prevents hover from overriding actual selected.
+      _setHover.flush();
+      if (!isCurrent()) return false;
+      _setHoverNow(v);
+    }
+    return true;
   }
-});
+);
+
+const alwaysCurrent = () => true;
+
+/** Update hover selection from UI callbacks that are not owned by an async map update. */
+export const setHoverSelect = async (v: SimpleHS<FeatureAndGroup>): Promise<void> => {
+  await setHoverSelectIfCurrent(v, alwaysCurrent);
+};
 
 export const sEvent = writable(
   undefined as

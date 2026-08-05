@@ -48,6 +48,7 @@ export class Draww {
 
   _currHighlight: number | null = null;
   _colorCounter = 0; // Ensures that color increases when deleting older selections.
+  private disposed = false;
 
   constructor(map: Mapp, store: typeof annoROI) {
     this.source = new VectorSource();
@@ -66,6 +67,7 @@ export class Draww {
   }
 
   selectHandler_ = (ev: SelectEvent, e: KeyboardEvent) => {
+    if (!this.map.isActive) return;
     switch (e.key) {
       case 'Escape':
         this.select.getFeatures().clear();
@@ -104,6 +106,7 @@ export class Draww {
 
     // Deselect as well.
     this.select.on('select', (ev: SelectEvent) => {
+      if (!this.map.isActive) return;
       if (ev.selected.length) {
         if (!this.addedTranslate) {
           this.map.map!.addInteraction(this.translate);
@@ -124,6 +127,45 @@ export class Draww {
       this.map.map!.removeInteraction(this.translate);
       this.addedTranslate = false;
     });
+    this.setActive(this.map.isActive);
+  }
+
+  setActive(active: boolean) {
+    this.draw.setActive(active);
+    this.snap.setActive(active);
+    this.modify.setActive(active);
+    this.select.setActive(active);
+    this.translate.setActive(active);
+    if (active) return;
+
+    this.select.getFeatures().clear();
+    if (this.selectHandler) document.removeEventListener('keydown', this.selectHandler);
+    this.selectHandler = undefined;
+    this.map.map?.removeInteraction(this.translate);
+    this.addedTranslate = false;
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    if (this.selectHandler) document.removeEventListener('keydown', this.selectHandler);
+    this.selectHandler = undefined;
+
+    const map = this.map.map;
+    map?.removeInteraction(this.draw);
+    map?.removeInteraction(this.snap);
+    map?.removeInteraction(this.modify);
+    map?.removeInteraction(this.select);
+    map?.removeInteraction(this.translate);
+    map?.removeLayer(this.selectionLayer);
+
+    this.draw.dispose();
+    this.snap.dispose();
+    this.modify.dispose();
+    this.select.dispose();
+    this.translate.dispose();
+    this.selectionLayer.dispose();
+    this.source.dispose();
   }
 
   changeDrawType(type: 'Polygon' | 'Circle' | 'Point', first = false) {
@@ -146,11 +188,14 @@ export class Draww {
     this.draw.on('drawend', (e) => this.onDrawEnd_(e));
 
     this.snap = new Snap({ source: this.source });
+    this.draw.setActive(this.map.isActive);
+    this.snap.setActive(this.map.isActive);
     this.map.map!.addInteraction(this.snap);
     this.currDrawType = type;
   }
 
   onDrawEnd_(event: DrawEvent | ModifyEvent | TranslateEvent | Feature) {
+    if (!this.map.isActive) return;
     let feature: Feature<Geometry>;
     if (event instanceof Feature) {
       feature = event;
@@ -199,7 +244,7 @@ export class Draww {
     feature.set('color', color);
     feature.set('label', label);
     feature.set('keyIdx', keyIdx);
-    sEvent.set({ type: 'pointsAdded' });
+    if (this.map.isActive) sEvent.set({ type: 'pointsAdded' });
   }
 
   highlightPolygon(i: number | null) {
@@ -334,8 +379,8 @@ Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
         type === 'Point' && properties?.radius
           ? new Circle(coordinates as Coordinate)
           : type === 'Polygon'
-          ? new Polygon(coordinates)
-          : new Point(coordinates as Coordinate);
+            ? new Polygon(coordinates)
+            : new Point(coordinates as Coordinate);
       const feature = new Feature({ geometry: geo });
       let idx = store.keys.findIndex((k) => k === label);
       if (idx === -1) {
@@ -358,7 +403,7 @@ Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
 
   removeFeature(f: Feature) {
     this.source.removeFeature(f);
-    sEvent.set({ type: 'pointsAdded' });
+    if (this.map.isActive) sEvent.set({ type: 'pointsAdded' });
   }
 
   removeFeaturesByLabel(label: string) {
@@ -367,7 +412,7 @@ Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
         this.source.removeFeature(f);
       }
     }
-    sEvent.set({ type: 'pointsAdded' });
+    if (this.map.isActive) sEvent.set({ type: 'pointsAdded' });
   }
 
   getCounts() {
@@ -385,7 +430,7 @@ Got ${mPerPx} m/px but current sample has ${get(sSample).mPerPx} m/px.`
     for (const f of this.source.getFeatures()) {
       if (this.getLabel(f) === old) f.set('label', newlabel);
     }
-    sEvent.set({ type: 'pointsAdded' });
+    if (this.map.isActive) sEvent.set({ type: 'pointsAdded' });
   }
 
   /// To be used when renaming.

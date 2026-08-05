@@ -1,10 +1,12 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { writeArrayBuffer } from 'geotiff';
+import { tick } from 'svelte';
 import { get } from 'svelte/store';
 
 import { Sample } from '$src/lib/data/objects/sample';
-import { mapIdSample, samples, sMapp, sSample } from '$src/lib/store';
+import { mapIdSample, mapTiles, samples, sMapId, sMapp, sSample } from '$src/lib/store';
+import { Mapp } from '$src/lib/ui/mapp';
 
 import MainMap from './mainMap.svelte';
 
@@ -244,4 +246,59 @@ it('renders explicit split-page local TIFF sources as separate channels', async 
   screen.unmount();
   URL.revokeObjectURL(firstUrl);
   URL.revokeObjectURL(secondUrl);
+});
+
+it("does not resize a replacement map from an earlier map's delayed callback", async () => {
+  const realSetTimeout = globalThis.setTimeout;
+  const resizeCallbacks: (() => void)[] = [];
+  const fakeTimerHandles: ReturnType<typeof globalThis.setTimeout>[] = [];
+  const setTimeoutSpy = vi
+    .spyOn(globalThis, 'setTimeout')
+    .mockImplementation((...timerArgs: Parameters<typeof globalThis.setTimeout>) => {
+      const [handler, delay, ...handlerArgs] = timerArgs;
+      if (delay === 10 && typeof handler === 'function') {
+        resizeCallbacks.push(() => handler(...handlerArgs));
+        const handle = realSetTimeout(() => undefined, 0);
+        fakeTimerHandles.push(handle);
+        return handle;
+      }
+      if (delay === 100) {
+        const handle = realSetTimeout(() => undefined, 0);
+        fakeTimerHandles.push(handle);
+        return handle;
+      }
+      return realSetTimeout(...timerArgs);
+    });
+  let firstMap: Mapp | undefined;
+  let replacementMap: Mapp | undefined;
+  try {
+    mapTiles.set([]);
+    sMapId.set(0);
+    firstMap = new Mapp();
+    firstMap.mount(document.createElement('div'), document.createElement('div'));
+    sMapp.set(firstMap);
+    const firstUpdateSize = vi.spyOn(firstMap.map!, 'updateSize');
+    const mainScreen = await render(MainMap);
+    await tick();
+    const firstResize = resizeCallbacks[0];
+    if (!firstResize) throw new Error('MainMap did not schedule its delayed resize.');
+
+    replacementMap = new Mapp();
+    replacementMap.mount(document.createElement('div'), document.createElement('div'));
+    const replacementUpdateSize = vi.spyOn(replacementMap.map!, 'updateSize');
+    sMapp.set(replacementMap);
+    await tick();
+
+    expect(() => firstResize()).not.toThrow();
+    expect(firstUpdateSize).not.toHaveBeenCalled();
+    expect(replacementUpdateSize).not.toHaveBeenCalled();
+    mainScreen.unmount();
+  } finally {
+    setTimeoutSpy.mockRestore();
+    for (const handle of fakeTimerHandles) clearTimeout(handle);
+    firstMap?.unmount();
+    replacementMap?.unmount();
+    sMapp.set(undefined);
+    mapTiles.set([0]);
+  }
 });

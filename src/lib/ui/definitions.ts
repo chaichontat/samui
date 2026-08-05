@@ -20,6 +20,11 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   style: LiteralStyle | Style;
   styleVariables?: StyleVariables;
   coords?: CoordsData;
+  private disposed = false;
+
+  get isDisposed() {
+    return this.disposed;
+  }
 
   constructor(map: Mapp, style: LiteralStyle | Style, styleVariables?: StyleVariables) {
     super();
@@ -45,11 +50,15 @@ export class MapComponent<T extends OLLayer> extends Deferrable {
   }
 
   dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
     if (this.layer) {
+      const layerSource = this.layer.getSource();
       this.map.map?.removeLayer(this.layer);
       this.layer.dispose();
-      // this.outline?.dispose();
+      if (layerSource && layerSource !== this.source) layerSource.dispose();
     }
     this.source.dispose();
+    this.layer = undefined;
   }
 }

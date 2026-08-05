@@ -1288,7 +1288,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anndata" },
+    { name = "anndata", specifier = "<0.13" },
     { name = "gdal", marker = "extra == 'geo'", specifier = "==3.8.4" },
     { name = "numpy" },
     { name = "pandas" },

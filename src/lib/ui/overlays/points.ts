@@ -37,6 +37,7 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
   currStyleVariables: StyleVariables = {};
   userStyleOverrides: StyleVariables = {};
   z: number;
+  private updateGeneration = 0;
 
   // WebGLSpots only gets created after mount.
   constructor(map: Mapp) {
@@ -59,14 +60,19 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     return this._currStyle;
   }
 
-  async setCurrStyle(style: 'categorical' | 'quantitative', colorMap: keyof typeof colorMaps) {
+  async setCurrStyle(
+    style: 'categorical' | 'quantitative',
+    colorMap: keyof typeof colorMaps,
+    isCurrent: () => boolean = () => !this.isDisposed && !this.map.isDestroyed
+  ) {
+    if (!isCurrent()) return false;
     if (!this.coords) throw new Error('Must run update first.');
     if (
       style === this._currStyle &&
       this.currPx === this.coords.sizePx &&
       colorMap === this.currColorMap
     ) {
-      return;
+      return true;
     }
 
     // If image is loaded, view is based on that of image, which means zoom level
@@ -79,18 +85,22 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
       colorMap,
       scale: true
     });
+    if (!isCurrent()) return false;
     this.style = nextStyle;
     this.currStyleVariables = { ...variables, ...this.userStyleOverrides };
     this._currStyle = style;
     this.currColorMap = colorMap;
     this.currPx = this.coords.sizePx;
-    await this._rebuildLayer();
+    await this._rebuildLayer(isCurrent);
+    if (!isCurrent()) return false;
     this.layer?.updateStyleVariables(this.currStyleVariables);
+    return true;
   }
 
   async setColorMap(colorMap: keyof typeof colorMaps) {
-    await this.setCurrStyle(this.currStyle, colorMap);
-    sEvent.set({ type: 'overlayAdjusted' });
+    if (await this.setCurrStyle(this.currStyle, colorMap)) {
+      if (this.map.isActive) sEvent.set({ type: 'overlayAdjusted' });
+    }
   }
 
   updateMask(mask: boolean[]) {
@@ -110,8 +120,10 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
   async _updateProperties(
     sample: Sample,
     fn: FeatureAndGroup,
-    { dataType, data }: { dataType: 'quantitative' | 'categorical'; data: number[] }
+    { dataType, data }: { dataType: 'quantitative' | 'categorical'; data: number[] },
+    isCurrent: () => boolean
   ) {
+    if (!isCurrent()) return false;
     if (!data) throw new Error('No intensity provided');
     if (!this.features) throw new Error('No features to update');
     console.debug(`Updating ${this.uid} to ${fn.feature}.`);
@@ -139,22 +151,25 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     }
 
     if (dataType === 'quantitative') {
-      await this.setCurrStyle(dataType, this.currColorMap);
+      if (!(await this.setCurrStyle(dataType, this.currColorMap, isCurrent))) return false;
     } else if (dataType === 'categorical') {
-      await this.setCurrStyle(dataType, this.currColorMap);
+      if (!(await this.setCurrStyle(dataType, this.currColorMap, isCurrent))) return false;
     } else {
       throw new Error(`Unknown data type: ${dataType}`);
     }
+    if (!isCurrent()) return false;
 
     for (const [i, f] of this.features.entries()) {
       f.set('value', data[i]); // Cannot use silent. Update seems specific to each feature and value.
       f.set('opacity', 1);
     }
     this.layer?.changed();
+    return true;
   }
 
-  async _rebuildLayer() {
+  async _rebuildLayer(isCurrent: () => boolean = () => !this.isDisposed && !this.map.isDestroyed) {
     await this.map.promise;
+    if (!isCurrent()) return;
     if (this.layer) {
       this.layer.setStyle(this.style);
       this.layer.updateStyleVariables(this.currStyleVariables);
@@ -174,11 +189,14 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     console.debug(`Overlay ${this.uid} rebuilt.`);
   }
 
-  async update(sample: Sample, fn: FeatureAndGroup) {
+  async update(sample: Sample, fn: FeatureAndGroup, isParentCurrent: () => boolean) {
+    const generation = ++this.updateGeneration;
+    const isCurrent = () =>
+      !this.isDisposed && this.updateGeneration === generation && isParentCurrent();
     console.debug(`Update called: ${this.uid} to ${fn.feature}.`);
-    if (!fn.feature) return false;
+    if (!fn.feature || !isCurrent()) return false;
     const res = await sample.getFeature(fn);
-    if (!res) return false;
+    if (!res || !isCurrent()) return false;
 
     const { data, dataType, coords, minmax } = res;
     // Check if coord is the same.
@@ -250,13 +268,11 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     }
 
     if (this.currSample !== sample.name || !isEqual(this.currFeature, fn)) {
-      this._updateProperties(sample, fn, { dataType, data })
-        .then(() => {
-          if (this.currStyleVariables.min === 0 && this.currStyleVariables.max === 0) {
-            this.updateStyleVariables({ min: minmax[0], max: minmax[1] });
-          }
-        })
-        .catch(handleError);
+      const updated = await this._updateProperties(sample, fn, { dataType, data }, isCurrent);
+      if (!updated || !isCurrent()) return false;
+      if (this.currStyleVariables.min === 0 && this.currStyleVariables.max === 0) {
+        this.applyStyleVariables({ min: minmax[0], max: minmax[1] });
+      }
       this.currFeature = fn;
       this.currSample = sample.name;
     }
@@ -268,21 +284,24 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
 
     this.currUnit = res.unit;
     this.outline.updateSample(coords);
+    if (!isCurrent()) return false;
 
     // When changing between samples, all overlays are updated.
-    if (get(sOverlay) === this.uid) {
+    if (this.map.isActive && get(sOverlay) === this.uid) {
       sFeatureData.set({ ...res, name: fn });
       sEvent.set({ type: 'featureUpdated' });
     }
     return res;
   }
 
-  async updateSample(sample: Sample) {
+  async updateSample(sample: Sample, isCurrent: () => boolean) {
     if (!this.currFeature) return false;
-    return await this.update(sample, this.currFeature);
+    return await this.update(sample, this.currFeature, isCurrent);
   }
 
   dispose() {
+    this.updateGeneration += 1;
+    this.updateStyleVariables.cancel();
     if (this.outline) this.outline.dispose();
     super.dispose();
   }
@@ -300,12 +319,19 @@ export class WebGLSpots extends MapComponent<WebGLVectorLayer<VectorSource<Point
     });
   });
 
-  updateStyleVariables = throttle((opt: { opacity?: number; min?: number; max?: number }) => {
+  private applyStyleVariables(opt: { opacity?: number; min?: number; max?: number }) {
     this.layer?.updateStyleVariables(opt);
     this.currStyleVariables = { ...this.currStyleVariables, ...opt };
     this.userStyleOverrides = { ...this.userStyleOverrides, ...opt };
-    if ('min' in opt || 'max' in opt) sEvent.set({ type: 'overlayAdjusted' });
-  }, 50);
+    if (this.map.isActive && ('min' in opt || 'max' in opt)) {
+      sEvent.set({ type: 'overlayAdjusted' });
+    }
+  }
+
+  updateStyleVariables = throttle(
+    (opt: { opacity?: number; min?: number; max?: number }) => this.applyStyleVariables(opt),
+    50
+  );
 }
 
 // TODO: Combine activespots and canvasspots

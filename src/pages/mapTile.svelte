@@ -24,7 +24,7 @@
   //     .then(() => ($focus = $focus))
   //     .catch(console.error);
   // }
-  const adjustSize = (map: MappObj) => setTimeout(() => map.map!.updateSize(), 15);
+  const adjustSize = (map: MappObj) => setTimeout(() => map.map?.updateSize(), 15);
 
   function handleSplit(i: number, mode: 'h' | 'v') {
     if (!hie || typeof hie === 'number') throw new Error('No hie');
