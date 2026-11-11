@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           name: ${{ github.ref_name }}
           draft: false
@@ -39,10 +39,10 @@ jobs:
             outname: samui-preprocessor.exe
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
 
       - name: Install Conda environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@4b9113af4fba0e9e1124b252dd6497a419e7396d # v1.11.0
         with:
           cache-downloads: true
           cache-environment: true
@@ -75,7 +75,7 @@ jobs:
           zip -r dist/samui-preprocessor.app.zip dist/samui-preprocessor.app
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           tag_name: ${{ needs.create_release.outputs.tag-name }}
           files: dist/${{matrix.outname}}
