@@ -49,3 +49,25 @@ test('a long feature-group list stays within a short viewport and the last group
 
   screen.unmount();
 });
+
+test('feature names render as text with matched characters highlighted', async () => {
+  const name = '<img src=x data-injected>';
+  const screen = render(FeatureSearchBox, {
+    props: { featureGroup: [{ group: 'genes', features: [name, 'GFAP'] }] }
+  });
+
+  const input = page.getByTestId('feature-search-input');
+  await userEvent.click(input);
+
+  const suggestion = page.getByTestId(`feature-suggestion-${name}`);
+  await expect.element(suggestion).toHaveTextContent(name);
+  expect(screen.container.querySelector('[data-injected]')).toBeNull();
+
+  await userEvent.type(input, 'img');
+  await expect.element(page.getByTestId('feature-suggestion-GFAP')).not.toBeInTheDocument();
+  expect(suggestion.query()!.textContent).toBe(name);
+  const highlighted = suggestion.query()!.querySelectorAll('b');
+  expect(Array.from(highlighted, (b) => b.textContent).join('')).toBe('img');
+
+  screen.unmount();
+});

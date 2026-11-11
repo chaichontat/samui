@@ -749,6 +749,39 @@ describe('Mapp lifecycle', () => {
     secondScreen.unmount();
   });
 
+  test('tooltip renders spot id and feature value as text', async () => {
+    const screen = await render(MappPage, { props: { sample: undefined, uid: 0 } });
+    const map = get(sMapp)!;
+    const overlay = get(overlays)[get(sOverlay)!];
+    const id = '<img src=x data-injected-id>';
+    const value = '<img src=x data-injected-value>';
+    const coords = new CoordsData({
+      name: 'tooltip-text',
+      shape: 'circle',
+      mPerPx: 1,
+      size: 10,
+      pos: [{ x: 2, y: 3, id }]
+    });
+    overlay.coords = coords;
+    sFeatureData.set({
+      data: [value],
+      dataType: 'categorical',
+      coords,
+      minmax: [undefined, undefined],
+      name: { group: 'genes', feature: 'tooltip' }
+    });
+    sId.set({ source: 'test', idx: 0 });
+    await tick();
+
+    const elem = map.tippy!.elem;
+    expect(elem.querySelector('[data-injected-id], [data-injected-value]')).toBeNull();
+    const code = elem.querySelector('code')!;
+    expect(code.childNodes[0].textContent).toBe(id);
+    expect(code.childNodes[1].nodeName).toBe('BR');
+    expect(code.childNodes[2].textContent).toBe(value);
+    screen.unmount();
+  });
+
   test('tooltip hide timers are replaced, cancelled on resumed ID 0 hover, and cleared on teardown', async () => {
     const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
     const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
