@@ -173,7 +173,13 @@
         map.tippy.overlay.setPosition([pos.x * ov.coords.mPerPx, -pos.y * ov.coords.mPerPx]);
         map.tippy.elem.style.opacity = '1';
         // map.tippy.elem.removeAttribute('hidden');
-        map.tippy.elem.innerHTML = `<code>${pos.id}<br>${$sFeatureData.data[pos.idx ?? idx]}</code>`;
+        const code = document.createElement('code');
+        code.append(
+          String(pos.id),
+          document.createElement('br'),
+          String($sFeatureData.data[pos.idx ?? idx])
+        );
+        map.tippy.elem.replaceChildren(code);
       }
     } else {
       cancelHide();

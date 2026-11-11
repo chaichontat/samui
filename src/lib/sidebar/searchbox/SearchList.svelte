@@ -28,12 +28,11 @@
 
   let candidates: {
     group: string;
-    values: { group: string; feature: string; embellished: string }[];
+    values: { group: string; feature: string; segments: { text: string; matched: boolean }[] }[];
   }[] = [];
 
-  function highlightChars(str: string, indices: Set<number>): string {
-    const chars = str.split('');
-    return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
+  function highlightChars(str: string, indices: Set<number>) {
+    return str.split('').map((text, i) => ({ text, matched: indices.has(i) }));
   }
 
   $: if (featureGroup) {
@@ -63,7 +62,7 @@
         values: res.map((x) => ({
           group: group ?? 'nogroups',
           feature: x.item,
-          embellished: highlightChars(x.item, x.positions)
+          segments: highlightChars(x.item, x.positions)
         }))
       });
     }
@@ -103,7 +102,9 @@
             class="hover-default text-ellipsis whitespace-nowrap cursor-pointer rounded px-4 py-0.5 text-left text-base"
             data-testid={`feature-suggestion-${v.feature}`}
           >
-            {@html v.embellished}
+            {#each v.segments as s}
+              {#if s.matched}<b>{s.text}</b>{:else}{s.text}{/if}
+            {/each}
           </HoverableFeature>
         {:else}
           <span class="py-1 px-3 text-neutral-300">No features found.</span>
