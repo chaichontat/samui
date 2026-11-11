@@ -847,7 +847,7 @@ test('pointermove listeners receive active spot hits', async () => {
 
   const coordinate = [coords.pos![1].x * coords.mPerPx, -coords.pos![1].y * coords.mPerPx];
   olMap.getView().setCenter(coordinate);
-  olMap.getView().setZoom(6);
+  olMap.getView().setResolution(coords.mPerPx);
   olMap.renderSync();
 
   const pixel = olMap.getPixelFromCoordinate(coordinate);
